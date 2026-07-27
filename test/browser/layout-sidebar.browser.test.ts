@@ -1,4 +1,6 @@
-import { expect, fixture, html } from '@open-wc/testing';
+import { html } from 'lit/static-html.js';
+import { afterEach, describe, expect, it } from 'vitest';
+import { fixture } from './harness/browser-fixture.js';
 import { unsafeHTML } from 'lit/directives/unsafe-html.js';
 import { ifDefined } from 'lit/directives/if-defined.js';
 import type { LayoutSidebar } from '../../src/components/layout/layout-sidebar.js';
@@ -9,7 +11,7 @@ import {
 import { NOTE_SIDEBAR_FIXED_BREAKPOINT } from '../../src/layout/note-sidebar-breakpoint.js';
 import { getLayoutSidebarTreeStateStorageKey } from '../../src/components/layout/layout-sidebar-tree-state.js';
 import type { UiSidebarShell } from '../../src/components/ui/sidebar-shell/sidebar-shell.js';
-import { type LitLikeElement, waitForLitUpdate } from './helpers/wait-for-lit.js';
+import { type LitLikeElement, waitForLitUpdate } from './harness/browser-test-utilities.js';
 
 interface MatchMediaController {
   restore(): void;

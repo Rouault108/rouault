@@ -1,4 +1,4 @@
-import { expect } from '@open-wc/testing';
+import { afterEach, describe, expect, it } from 'vitest';
 import { enhanceFootnotePopovers } from '../../src/client/post-hydrate/footnote-popover-enhancer.js';
 import { enhanceImageLightboxes } from '../../src/client/post-hydrate/image-lightbox-enhancer.js';
 

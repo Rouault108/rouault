@@ -1,4 +1,7 @@
-import { expect, fixture, html, waitUntil } from '@open-wc/testing';
+import { html } from 'lit/static-html.js';
+import { afterEach, describe, expect, it } from 'vitest';
+import { fixture } from './harness/browser-fixture.js';
+import { waitForCondition } from './harness/browser-test-utilities.js';
 import {
   activateLayoutTocController,
   type LayoutTocController,
@@ -101,7 +104,7 @@ describe('layout-toc-controller', () => {
 
       activateLayoutTocController(controller);
 
-      await waitUntil(() => {
+      await waitForCondition(() => {
         return (
           currentRoot
             .querySelector<HTMLAnchorElement>('[data-toc-link][data-heading-id="section-2"]')
@@ -254,7 +257,7 @@ describe('layout-toc-controller', () => {
 
       activateLayoutTocController(controller);
 
-      await waitUntil(
+      await waitForCondition(
         () => currentRoot.querySelector('[data-toc-link][aria-current="location"]') !== null,
         '事前に current state が同期されること',
       );
@@ -262,7 +265,7 @@ describe('layout-toc-controller', () => {
       document.querySelector('#section-1')?.remove();
       document.querySelector('#section-2')?.remove();
 
-      await waitUntil(() => {
+      await waitForCondition(() => {
         const snapshot = layoutTocRuntimeStore.getSnapshot('toc-source-test');
         return snapshot.ready && !snapshot.hasVisibleHeadings && snapshot.activeId === null;
       }, 'visible headings 空状態が snapshot に反映されること');
@@ -330,7 +333,7 @@ describe('layout-toc-controller', () => {
 
       activateLayoutTocController(controller);
 
-      await waitUntil(
+      await waitForCondition(
         () =>
           currentRoot.querySelector('[data-toc-link][data-heading-id="section-2"].is-active') !==
           null,
@@ -434,7 +437,7 @@ describe('layout-toc-controller', () => {
 
       activateLayoutTocController(controller);
 
-      await waitUntil(() => {
+      await waitForCondition(() => {
         return (
           currentRoot
             .querySelector<HTMLAnchorElement>('[data-toc-link][data-heading-id="section-1"]')
@@ -524,7 +527,7 @@ describe('layout-toc-controller', () => {
       }
 
       activateLayoutTocController(controller);
-      await waitUntil(
+      await waitForCondition(
         () => layoutTocRuntimeStore.getSnapshot('toc-source-test').ready,
         'runtime snapshot が ready になること',
       );

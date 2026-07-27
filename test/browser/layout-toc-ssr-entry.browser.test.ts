@@ -1,9 +1,15 @@
-import { expect, fixture, html, waitUntil } from '@open-wc/testing';
+import { html } from 'lit/static-html.js';
+import { describe, expect, it } from 'vitest';
+import { fixture } from './harness/browser-fixture.js';
 import '@lit-labs/ssr-client/lit-element-hydrate-support.js';
 import { HydrationScheduler } from '../../src/client/hydration/scheduler.js';
 import { replaceElementChildrenFromHtml } from '../../src/router/declarative-shadow-dom.js';
 import { TOC_MOBILE_PANEL_SELECTOR } from '../../src/toc/toc-mobile-panel-dom-css-contract.js';
-import { nextAnimationFrame, waitForLitUpdate } from './helpers/wait-for-lit.js';
+import {
+  nextAnimationFrame,
+  waitForCondition,
+  waitForLitUpdate,
+} from './harness/browser-test-utilities.js';
 
 const headingsJson = JSON.stringify([
   { id: '71-配列の生成', text: '7.1 配列の生成', level: 2 },
@@ -69,7 +75,7 @@ const waitForDesktopTocSync = async (
   expectedActiveId: string,
   expectedLabel: string,
 ): Promise<void> => {
-  await waitUntil(
+  await waitForCondition(
     async () => {
       const toc = getDesktopToc(host);
       await waitForLitUpdate(toc);
@@ -87,11 +93,7 @@ const waitForDesktopTocSync = async (
 };
 
 describe('layout-toc SSR entry hydration', () => {
-  it('未定義 host を scheduler が upgrade した後も activeId の同期を維持すること', async function () {
-    // Firefox では scheduler 経由の upgrade と post-render 同期が 2s を超える回があり、
-    // waitUntil の個別 timeout より先に Mocha 側 timeout が発火し得る。
-    this.timeout(7000);
-
+  it('未定義 host を scheduler が upgrade した後も activeId の同期を維持すること', async () => {
     const cleanup = appendArticleFixture();
 
     try {

@@ -1,7 +1,7 @@
-import { expect } from '@open-wc/testing';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { attachStickyFooterBoundary } from '../../src/layout/sticky-footer-boundary.js';
-import { nextAnimationFrame } from './helpers/wait-for-lit.js';
+import { nextAnimationFrame } from './harness/browser-test-utilities.js';
 
 interface MatchMediaMockController {
   setMatches(nextMatches: boolean): void;

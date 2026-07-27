@@ -1,4 +1,4 @@
-import { expect } from '@open-wc/testing';
+import { afterEach, describe, expect, it } from 'vitest';
 
 import {
   NAVIGATION_ENVELOPE_SCHEMA_VERSION,

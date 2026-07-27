@@ -1,4 +1,4 @@
-import { expect } from '@open-wc/testing';
+import { describe, expect, it } from 'vitest';
 
 import { HYDRATION_REGISTRY_BY_TAG } from '../../src/client/hydration/registry.js';
 

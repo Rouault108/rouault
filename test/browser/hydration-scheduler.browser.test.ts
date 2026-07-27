@@ -1,4 +1,7 @@
-import { expect, fixture, html, waitUntil } from '@open-wc/testing';
+import { html } from 'lit/static-html.js';
+import { describe, expect, it } from 'vitest';
+import { fixture } from './harness/browser-fixture.js';
+import { waitForCondition } from './harness/browser-test-utilities.js';
 import { HydrationScheduler } from '../../src/client/hydration/scheduler.js';
 import type {
   HydrationDiagnostics,
@@ -61,7 +64,7 @@ const clickUntil = async (element: HTMLElement, isDone: () => boolean): Promise<
   }, 16);
 
   try {
-    await waitUntil(isDone, 'interaction hydration が完了すること');
+    await waitForCondition(isDone, 'interaction hydration が完了すること');
   } finally {
     window.clearInterval(intervalId);
   }
@@ -180,7 +183,7 @@ describe('HydrationScheduler', () => {
 
     const scheduler = new HydrationScheduler(registry);
     await scheduler.hydrateContent(root, { dispatchTarget: root });
-    await waitUntil(() => diagnostics !== null, 'content diagnostics が発火すること');
+    await waitForCondition(() => diagnostics !== null, 'content diagnostics が発火すること');
 
     const page = root.querySelector<HTMLElement>(tag);
     const currentDiagnostics = requireDiagnostics(
@@ -448,7 +451,7 @@ describe('HydrationScheduler', () => {
     const scheduler = new HydrationScheduler(registry);
     await scheduler.hydrateContent(root, { dispatchTarget: root });
 
-    await waitUntil(() => diagnostics !== null, 'enhancer diagnostics が発火すること');
+    await waitForCondition(() => diagnostics !== null, 'enhancer diagnostics が発火すること');
 
     const currentDiagnostics = requireDiagnostics(
       diagnostics,
@@ -540,7 +543,7 @@ describe('HydrationScheduler', () => {
     const scheduler = new HydrationScheduler(registry);
     await scheduler.hydrateContent(root, { dispatchTarget: root });
 
-    await waitUntil(
+    await waitForCondition(
       () =>
         steps.includes('activate:initial') &&
         steps.includes('activate:post') &&
@@ -553,7 +556,7 @@ describe('HydrationScheduler', () => {
     const visible = root.querySelector<HTMLElement>(visibleTag);
     visible?.dispatchEvent(new FocusEvent('focusin', { bubbles: true, composed: true }));
 
-    await waitUntil(
+    await waitForCondition(
       () => steps.includes('activate:visible') && diagnostics !== null,
       'visible が focusin で起動し diagnostics が発火すること',
     );
@@ -625,8 +628,8 @@ describe('HydrationScheduler', () => {
     const scheduler = new HydrationScheduler(registry);
     const hydration = scheduler.hydrateShell(root);
 
-    await waitUntil(() => steps.includes('load:preload'), 'planned preload が開始されること');
-    await waitUntil(
+    await waitForCondition(() => steps.includes('load:preload'), 'planned preload が開始されること');
+    await waitForCondition(
       () => steps.includes('activate:initial'),
       'preload 未解決でも initial activation が実行されること',
     );
@@ -724,7 +727,7 @@ describe('HydrationScheduler', () => {
     const shellScheduler = new HydrationScheduler(registry);
     const shellHydration = shellScheduler.hydrateShell(shellRoot);
 
-    await waitUntil(() => loadCount === 1, 'shell session で planned preload が開始されること');
+    await waitForCondition(() => loadCount === 1, 'shell session で planned preload が開始されること');
 
     resolveShellGate();
     await shellHydration;
@@ -795,7 +798,7 @@ describe('HydrationScheduler', () => {
     const scheduler = new HydrationScheduler(registry);
     const hydration = scheduler.hydrateShell(root);
 
-    await waitUntil(
+    await waitForCondition(
       () => steps.includes('load:interaction'),
       'second pass planned item の preload が開始されること',
     );
@@ -887,7 +890,7 @@ describe('HydrationScheduler', () => {
     });
 
     await scheduler.hydrateContent(firstRoot, { dispatchTarget: firstRoot });
-    await waitUntil(() => firstDiagnostics !== null, '1回目の diagnostics が発火すること');
+    await waitForCondition(() => firstDiagnostics !== null, '1回目の diagnostics が発火すること');
 
     const currentFirstDiagnostics = requireDiagnostics(
       firstDiagnostics,
@@ -918,7 +921,7 @@ describe('HydrationScheduler', () => {
     });
 
     await scheduler.hydrateContent(secondRoot, { dispatchTarget: secondRoot });
-    await waitUntil(() => secondDiagnostics !== null, '2回目の diagnostics が発火すること');
+    await waitForCondition(() => secondDiagnostics !== null, '2回目の diagnostics が発火すること');
 
     const currentSecondDiagnostics = requireDiagnostics(
       secondDiagnostics,
@@ -999,12 +1002,12 @@ describe('HydrationScheduler', () => {
     const scheduler = new HydrationScheduler(registry);
     const hydration = scheduler.hydrateShell(root);
 
-    await waitUntil(() => loadCount === 1, 'planned preload が開始されること');
+    await waitForCondition(() => loadCount === 1, 'planned preload が開始されること');
     rejectFirstLoad(new Error('preload failed'));
-    await waitUntil(() => preloadFailureObserved, 'preload 失敗が観測されること');
+    await waitForCondition(() => preloadFailureObserved, 'preload 失敗が観測されること');
 
     resolveGate();
-    await waitUntil(() => loadCount === 2, 'post-commit hydration で再試行されること');
+    await waitForCondition(() => loadCount === 2, 'post-commit hydration で再試行されること');
 
     resolveSecondLoad();
     await hydration;
@@ -1083,13 +1086,13 @@ describe('HydrationScheduler', () => {
       const scheduler = new HydrationScheduler(registry);
       const hydration = scheduler.hydrateShell(root);
 
-      await waitUntil(() => loadCount === 1, 'planned preload の loader が呼ばれること');
+      await waitForCondition(() => loadCount === 1, 'planned preload の loader が呼ばれること');
       rejectPreload(new Error('preload failed'));
       await delayTask();
       expect(unhandled).to.deep.equal([]);
 
       resolveGate();
-      await waitUntil(() => loadCount === 2, 'post-commit hydration で再試行されること');
+      await waitForCondition(() => loadCount === 2, 'post-commit hydration で再試行されること');
 
       resolveSecondLoad();
       await hydration;
@@ -1312,7 +1315,7 @@ describe('HydrationScheduler', () => {
     await scheduler.hydrateContent(firstRoot, { dispatchTarget: firstRoot });
     await scheduler.hydrateContent(secondRoot, { dispatchTarget: secondRoot });
 
-    await waitUntil(() => secondDiagnostics !== null, '後続 session の diagnostics が発火すること');
+    await waitForCondition(() => secondDiagnostics !== null, '後続 session の diagnostics が発火すること');
 
     const currentSecondDiagnostics = requireDiagnostics(
       secondDiagnostics,
@@ -1372,7 +1375,7 @@ describe('HydrationScheduler', () => {
     const scheduler = new HydrationScheduler(registry);
     await scheduler.hydrateContent(root, { dispatchTarget: root });
 
-    await waitUntil(() => diagnostics !== null, 'failure diagnostics が発火すること');
+    await waitForCondition(() => diagnostics !== null, 'failure diagnostics が発火すること');
 
     const currentDiagnostics = requireDiagnostics(
       diagnostics,

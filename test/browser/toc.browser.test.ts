@@ -1,8 +1,10 @@
-import { expect, fixture, html } from '@open-wc/testing';
+import { html } from 'lit/static-html.js';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { fixture } from './harness/browser-fixture.js';
 import '../../src/components/ui/toc/toc.js';
 import type { Toc } from '../../src/components/ui/toc/toc.js';
 import { hasDynamicTocScopeSelections } from '../../src/toc/toc-headings.js';
-import { nextAnimationFrame, waitForLitUpdate } from './helpers/wait-for-lit.js';
+import { nextAnimationFrame, waitForLitUpdate } from './harness/browser-test-utilities.js';
 
 const headers = [
   { id: '71-配列の生成', text: '7.1 配列の生成', level: 2 },

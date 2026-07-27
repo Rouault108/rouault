@@ -1,4 +1,4 @@
-import { expect } from '@open-wc/testing';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { DEFAULT_SITE_URL_CONTEXT } from '../../shared/site/site-url-context.js';
 import { normalizeSearchCanonicalPathname } from '../../shared/search/document-url.js';

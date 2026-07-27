@@ -72,6 +72,9 @@ importers:
       '@open-wc/testing':
         specifier: 4.0.0
         version: 4.0.0
+      '@open-wc/testing-helpers':
+        specifier: 3.0.1
+        version: 3.0.1
       '@playwright/test':
         specifier: 1.60.0
         version: 1.60.0

@@ -1,7 +1,10 @@
-import { expect, fixture, html } from '@open-wc/testing';
+import { html } from 'lit/static-html.js';
+import { afterEach, beforeAll, describe, expect, it } from 'vitest';
+import { fixture } from './harness/browser-fixture.js';
 import '../../src/components/ui/tag/tag.js';
 import type { Tag } from '../../src/components/ui/tag/tag.js';
-import { waitForLitUpdate } from './helpers/wait-for-lit.js';
+import { fetchCssText } from './helpers/fetch-css-text.js';
+import { waitForLitUpdate } from './harness/browser-test-utilities.js';
 
 const TOKENS_STYLE_ID = 'test-global-tokens-css';
 
@@ -10,15 +13,9 @@ const ensureTokensCssLoaded = async (): Promise<void> => {
     return;
   }
 
-  const response = await fetch(new URL('../../src/assets/css/tokens.css', import.meta.url).href);
-
-  if (!response.ok) {
-    throw new Error(
-      `tokens.css の読み込みに失敗しました: ${response.status} ${response.statusText}`,
-    );
-  }
-
-  const cssText = await response.text();
+  const cssText = await fetchCssText(
+    new URL('../../src/assets/css/tokens.css', import.meta.url),
+  );
   const style = document.createElement('style');
   style.id = TOKENS_STYLE_ID;
   style.textContent = cssText;
@@ -121,7 +118,7 @@ const getRootToken = (name: string): string =>
   getComputedStyle(document.documentElement).getPropertyValue(name).trim();
 
 describe('ui-tag browser contract', () => {
-  before(async () => {
+  beforeAll(async () => {
     await ensureTokensCssLoaded();
   });
 

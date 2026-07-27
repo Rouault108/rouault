@@ -1,4 +1,6 @@
-import { expect, fixture, html } from '@open-wc/testing';
+import { html } from 'lit/static-html.js';
+import { afterEach, describe, expect, it } from 'vitest';
+import { fixture } from './harness/browser-fixture.js';
 import '../../src/components/ui/dialog/dialog.js';
 import type {
   UiDialog,
@@ -7,7 +9,7 @@ import type {
   UiDialogModeChangedDetail,
   UiDialogOpenedDetail,
 } from '../../src/components/ui/dialog/dialog.js';
-import { nextAnimationFrame, waitForLitUpdate } from './helpers/wait-for-lit.js';
+import { nextAnimationFrame, waitForLitUpdate } from './harness/browser-test-utilities.js';
 
 const BODY_DIALOG_OPEN_ATTRIBUTE = 'data-ui-dialog-open';
 

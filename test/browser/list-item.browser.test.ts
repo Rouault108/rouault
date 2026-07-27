@@ -1,9 +1,11 @@
-import { expect, fixture, html } from '@open-wc/testing';
+import { html } from 'lit/static-html.js';
+import { describe, expect, it } from 'vitest';
+import { fixture } from './harness/browser-fixture.js';
 import '../../src/components/ui/list/list.js';
 import '../../src/components/ui/list-item/list-item.js';
 import type { ColumnDef, List } from '../../src/components/ui/list/list.js';
 import type { ListItem } from '../../src/components/ui/list-item/list-item.js';
-import { dispatchKey, nextAnimationFrame, waitForLitUpdate } from './helpers/wait-for-lit.js';
+import { dispatchKey, nextAnimationFrame, waitForLitUpdate } from './harness/browser-test-utilities.js';
 
 const columns: ColumnDef[] = [
   { id: 'title', label: 'タイトル', width: '1fr', lead: true },

@@ -1,4 +1,4 @@
-import { expect } from '@open-wc/testing';
+import { afterEach, describe, expect, it } from 'vitest';
 import type { TocActiveTracker } from '../../src/toc/toc-active-tracker.js';
 import {
   shouldCloseMobilePanelAfterTocNavigation,

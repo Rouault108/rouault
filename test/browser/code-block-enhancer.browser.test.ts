@@ -1,4 +1,4 @@
-import { expect } from '@open-wc/testing';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { enhanceCodeBlocks } from '../../src/client/post-hydrate/code-block-enhancer.js';
 

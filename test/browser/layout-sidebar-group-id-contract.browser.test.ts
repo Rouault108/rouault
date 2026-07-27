@@ -1,4 +1,6 @@
-import { expect, fixture, html } from '@open-wc/testing';
+import { html } from 'lit/static-html.js';
+import { afterEach, describe, expect, it } from 'vitest';
+import { fixture } from './harness/browser-fixture.js';
 import { unsafeHTML } from 'lit/directives/unsafe-html.js';
 
 import { renderNoteSidebarNav } from '../../build/navigation/render-note-sidebar-nav.js';

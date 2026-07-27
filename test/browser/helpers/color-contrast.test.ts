@@ -1,4 +1,6 @@
-import { expect, fixture, html } from '@open-wc/testing';
+import { html } from 'lit/static-html.js';
+import { describe, expect, it } from 'vitest';
+import { fixture } from '../harness/browser-fixture.js';
 
 import {
   compositeOver,
@@ -10,7 +12,7 @@ import {
   resolvePseudoColor,
   type Rgba,
 } from './color-contrast.js';
-import { waitForStyleRecalc } from './wait-for-lit.js';
+import { waitForStyleRecalc } from '../harness/browser-test-utilities.js';
 
 const rgba = (r: number, g: number, b: number, a = 1): Rgba => ({ r, g, b, a });
 

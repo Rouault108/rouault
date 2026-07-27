@@ -1,4 +1,4 @@
-import { expect } from '@open-wc/testing';
+import { afterEach, describe, expect, it } from 'vitest';
 
 import { enhanceSearchDialog } from '../../src/client/post-hydrate/search-dialog-enhancer.js';
 import {

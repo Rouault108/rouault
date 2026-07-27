@@ -1,4 +1,6 @@
-import { expect, fixture, html } from '@open-wc/testing';
+import { html } from 'lit/static-html.js';
+import { describe, expect, it } from 'vitest';
+import { fixture } from './harness/browser-fixture.js';
 import '../../src/components/ui/sidebar/sidebar.js';
 import type { TreeNode } from '../../src/components/ui/file-tree/file-tree.js';
 import type {
@@ -12,7 +14,7 @@ import type {
   UiSidebarShell,
   UiSidebarStateChangeDetail,
 } from '../../src/components/ui/sidebar-shell/sidebar-shell.js';
-import { nextAnimationFrame, waitForLitUpdate } from './helpers/wait-for-lit.js';
+import { nextAnimationFrame, waitForLitUpdate } from './harness/browser-test-utilities.js';
 
 const sampleItems: readonly TreeNode[] = [
   {

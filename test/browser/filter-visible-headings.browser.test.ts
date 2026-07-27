@@ -1,4 +1,4 @@
-import { expect } from '@open-wc/testing';
+import { describe, expect, it } from 'vitest';
 import type { Heading } from '../../src/components/ui/toc/toc.js';
 import {
   applyTocScopeSelections,

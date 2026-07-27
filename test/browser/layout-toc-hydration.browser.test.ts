@@ -1,4 +1,6 @@
-import { expect, fixture, html, waitUntil } from '@open-wc/testing';
+import { html } from 'lit/static-html.js';
+import { afterEach, describe, expect, it } from 'vitest';
+import { fixture } from './harness/browser-fixture.js';
 import '@lit-labs/ssr-client/lit-element-hydrate-support.js';
 import { HydrationScheduler } from '../../src/client/hydration/scheduler.js';
 import { planHydration } from '../../src/client/hydration/planner.js';
@@ -12,7 +14,11 @@ import type { Toc } from '../../src/components/ui/toc/toc.js';
 import type { HydrationDiagnostics } from '../../src/client/hydration/types.js';
 import { TOC_MOBILE_PANEL_SELECTOR } from '../../src/toc/toc-mobile-panel-dom-css-contract.js';
 import { replaceElementChildrenFromHtml } from '../../src/router/declarative-shadow-dom.js';
-import { nextAnimationFrame, waitForLitUpdate } from './helpers/wait-for-lit.js';
+import {
+  nextAnimationFrame,
+  waitForCondition,
+  waitForLitUpdate,
+} from './harness/browser-test-utilities.js';
 
 const headings = [
   { id: '71-配列の生成', text: '7.1 配列の生成', level: 2 },
@@ -72,7 +78,7 @@ const readActiveControllerLabel = (root: ParentNode): string | null =>
     ?.textContent?.trim() ?? null;
 
 const waitForActiveDom = async (toc: Toc, expected: string): Promise<void> => {
-  await waitUntil(async () => {
+  await waitForCondition(async () => {
     await waitForLitUpdate(toc);
     await nextAnimationFrame();
     return readActiveLabel(toc) === expected;
@@ -102,7 +108,7 @@ const hydrateWithScheduler = async (root: HTMLElement): Promise<HydrationDiagnos
   );
 
   await scheduler.hydrateContent(root, { dispatchTarget: root });
-  await waitUntil(() => diagnostics !== null, 'layout-toc の hydration diagnostics が発火すること');
+  await waitForCondition(() => diagnostics !== null, 'layout-toc の hydration diagnostics が発火すること');
 
   if (diagnostics === null) {
     throw new Error('hydration diagnostics が取得できません');
@@ -377,7 +383,7 @@ describe('layout-toc hydration reconciliation', () => {
         ></ui-toc>
       `);
 
-      await waitUntil(async () => {
+      await waitForCondition(async () => {
         await waitForLitUpdate(toc);
         await nextAnimationFrame();
         return queryActiveTocTooltip(toc)?.hasAttribute('disabled') === false;
@@ -390,7 +396,7 @@ describe('layout-toc hydration reconciliation', () => {
       expect(queryActiveTocTooltip(toc)?.hasAttribute('disabled')).to.equal(false);
 
       toc.activeId = 'long-next';
-      await waitUntil(async () => {
+      await waitForCondition(async () => {
         await waitForLitUpdate(toc);
         await nextAnimationFrame();
         return readActiveLabel(toc) === '次の見出し';
@@ -494,7 +500,7 @@ describe('layout-toc hydration reconciliation', () => {
       expect(diagnostics.failedCount).to.equal(0);
       expect(diagnostics.activatedCount).to.equal(1);
 
-      await waitUntil(
+      await waitForCondition(
         () => readActiveControllerLabel(root) === secondHeadingLabel,
         'layout-toc-controller の active DOM が hash と同期すること',
       );

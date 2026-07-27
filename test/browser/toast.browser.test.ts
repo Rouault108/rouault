@@ -1,4 +1,6 @@
-import { expect, fixture, html } from '@open-wc/testing';
+import { html } from 'lit/static-html.js';
+import { afterEach, describe, expect, it } from 'vitest';
+import { fixture } from './harness/browser-fixture.js';
 import '../../src/components/ui/toast/toast.js';
 import {
   DANGER_TOAST_DURATION_MS,
@@ -9,7 +11,7 @@ import {
   type ToastVariant,
   type UiToast,
 } from '../../src/components/ui/toast/toast.js';
-import { nextAnimationFrame, waitForLitUpdate, waitMs } from './helpers/wait-for-lit.js';
+import { nextAnimationFrame, waitForLitUpdate, waitMs } from './harness/browser-test-utilities.js';
 
 const expectPresent = <T>(value: T | null | undefined, name: string): T => {
   expect(value, `${name} should exist`).to.not.equal(null);

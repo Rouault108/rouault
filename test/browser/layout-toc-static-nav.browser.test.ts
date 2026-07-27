@@ -1,5 +1,8 @@
-import { expect, fixture, html } from '@open-wc/testing';
+import { html } from 'lit/static-html.js';
+import { beforeAll, describe, expect, it } from 'vitest';
+import { fixture } from './harness/browser-fixture.js';
 
+import { fetchCssText } from './helpers/fetch-css-text.js';
 import { ensureMainCssLoaded } from './helpers/load-main-css.js';
 
 const STYLE_ID = 'test-layout-toc-css';
@@ -18,22 +21,19 @@ const ensureLayoutTocCssLoaded = async (): Promise<void> => {
     return;
   }
 
-  const response = await fetch(
-    new URL('../../src/assets/css/layout-toc.css', import.meta.url).href,
+  const cssText = await fetchCssText(
+    new URL('../../src/assets/css/layout-toc.css', import.meta.url),
   );
-  if (!response.ok) {
-    throw new Error(`layout-toc.css の読み込みに失敗しました: ${response.status}`);
-  }
 
   const style = document.createElement('style');
   style.id = STYLE_ID;
-  style.textContent = await response.text();
+  style.textContent = cssText;
   document.head.append(style);
   await waitForStyleRecalc();
 };
 
 describe('layout-toc static nav browser style contract', () => {
-  before(async () => {
+  beforeAll(async () => {
     await ensureMainCssLoaded();
     await ensureLayoutTocCssLoaded();
   });

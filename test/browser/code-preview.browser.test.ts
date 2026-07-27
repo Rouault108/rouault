@@ -1,4 +1,6 @@
-import { expect, fixture, html } from '@open-wc/testing';
+import { html } from 'lit/static-html.js';
+import { describe, expect, it } from 'vitest';
+import { fixture } from './harness/browser-fixture.js';
 import '../../src/components/ui/code-preview/code-preview.js';
 import '../../src/components/ui/button/button.js';
 import { activateStaticCopyButtons } from '../../src/client/post-hydrate/static-copy-button-enhancer.js';
@@ -6,7 +8,7 @@ import type {
   CodePreview,
   CodePreviewStateChangeDetail,
 } from '../../src/components/ui/code-preview/code-preview.js';
-import { nextAnimationFrame, waitForLitUpdate, waitMs } from './helpers/wait-for-lit.js';
+import { nextAnimationFrame, waitForLitUpdate, waitMs } from './harness/browser-test-utilities.js';
 
 const getRoot = (preview: CodePreview): HTMLElement | null =>
   preview.shadowRoot?.querySelector<HTMLElement>('.root') ?? null;

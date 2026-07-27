@@ -1,11 +1,13 @@
-import { expect, fixture, html } from '@open-wc/testing';
+import { html } from 'lit/static-html.js';
+import { describe, expect, it } from 'vitest';
+import { fixture } from './harness/browser-fixture.js';
 import '../../src/components/ui/popover/popover.js';
 import type {
   UiPopover,
   UiPopoverOpenChangeDetail,
   UiPopoverOpenChangeRequestDetail,
 } from '../../src/components/ui/popover/popover.js';
-import { dispatchKey, nextAnimationFrame, waitForLitUpdate } from './helpers/wait-for-lit.js';
+import { dispatchKey, nextAnimationFrame, waitForLitUpdate } from './harness/browser-test-utilities.js';
 
 const supportsPopoverApi = (): boolean =>
   typeof HTMLElement !== 'undefined' &&

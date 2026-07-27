@@ -1,5 +1,6 @@
-import { expect, waitUntil } from '@open-wc/testing';
+import { afterEach, describe, expect, it } from 'vitest';
 
+import { waitForCondition } from './harness/browser-test-utilities.js';
 import { enhanceLayoutHeaderTocBridge } from '../../src/client/post-hydrate/layout-header-toc-bridge.js';
 import {
   commitShellGeneration,
@@ -185,7 +186,7 @@ describe('layout-header-toc-bridge', () => {
 
     dispatchValidated(header, 1);
 
-    await waitUntil(
+    await waitForCondition(
       () => document.querySelector(TOC_MOBILE_PANEL_SELECTOR) instanceof HTMLElement,
       'TOC mobile panel is created after app-shell:validated',
       { timeout: 4000, interval: 50 },
@@ -287,7 +288,7 @@ describe('layout-header-toc-bridge', () => {
 
     commitShellGeneration(1);
     dispatchValidated(header, 1);
-    await waitUntil(
+    await waitForCondition(
       () => document.querySelector(TOC_MOBILE_PANEL_SELECTOR) instanceof HTMLElement,
       'TOC mobile panel is created after app-shell:validated',
       { timeout: 4000, interval: 50 },
@@ -385,7 +386,7 @@ describe('layout-header-toc-bridge', () => {
       commitShellGeneration(1);
       dispatchValidated(header, 1);
 
-      await waitUntil(
+      await waitForCondition(
         () => whenDefinedRequested,
         'layout-toc-controller definition wait is requested',
       );
@@ -413,7 +414,7 @@ describe('layout-header-toc-bridge', () => {
 
     commitShellGeneration(1);
     dispatchValidated(header, 1);
-    await waitUntil(
+    await waitForCondition(
       () => document.querySelector(TOC_MOBILE_PANEL_SELECTOR) instanceof HTMLElement,
       'TOC mobile panel is created before rollback',
       { timeout: 4000, interval: 50 },

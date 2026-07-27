@@ -1,7 +1,7 @@
-import { expect } from '@open-wc/testing';
+import { describe, expect, it } from 'vitest';
 import { DropdownOpenSequencer } from '../../../src/components/ui/dropdown/internal/dropdown-open-sequencer.js';
 import type { AnchoredOverlayCommitSnapshot } from '../../../src/components/ui/overlay/internal/anchored-overlay-controller.js';
-import { waitMs } from '../helpers/wait-for-lit.js';
+import { waitMs } from '../harness/browser-test-utilities.js';
 
 const waitUntil = async (
   predicate: () => boolean,

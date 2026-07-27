@@ -1,4 +1,4 @@
-import { expect } from '@open-wc/testing';
+import { describe, expect, it } from 'vitest';
 import type { Heading } from '../../src/components/ui/toc/toc.js';
 import { TocActiveTracker } from '../../src/toc/toc-active-tracker.js';
 import { TOC_SCROLL_SETTLE_TIMEOUT_MS } from '../../src/toc/toc-scroll-contract.js';

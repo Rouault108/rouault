@@ -1,4 +1,4 @@
-import { expect } from '@open-wc/testing';
+import { afterEach, describe, expect, it } from 'vitest';
 
 import { enhanceTableScroll } from '../../src/client/post-hydrate/table-scroll-enhancer.js';
 
@@ -624,13 +624,14 @@ describe('table-scroll-enhancer Phase3B accessible top scroll rail', () => {
 
     root.scrollLeft = 80;
     root.dispatchEvent(new Event('scroll'));
-    expect(rail?.scrollLeft).to.equal(80);
+    // Firefoxのsubpixel scroll量子化だけを吸収し、同期値の契約は1px以内に限定する。
+    expect(rail?.scrollLeft).to.be.closeTo(80, 1);
 
     if (rail) {
       rail.scrollLeft = 160;
       rail.dispatchEvent(new Event('scroll'));
     }
-    expect(root.scrollLeft).to.equal(160);
+    expect(root.scrollLeft).to.be.closeTo(160, 1);
   });
 
   it('scroll 同期が scroll event の明確な無限ループを起こさないこと', async () => {
@@ -714,11 +715,12 @@ describe('table-scroll-enhancer Phase3B accessible top scroll rail', () => {
       rail.scrollLeft = 140;
       rail.dispatchEvent(new Event('scroll'));
     }
-    expect(root.scrollLeft).to.equal(140);
+    expect(root.scrollLeft).to.be.closeTo(140, 1);
 
     root.scrollLeft = 40;
     root.dispatchEvent(new Event('scroll'));
-    expect(rail?.scrollLeft).to.equal(40);
+    // Firefoxのsubpixel scroll量子化だけを吸収し、同期値の契約は1px以内に限定する。
+    expect(rail?.scrollLeft).to.be.closeTo(40, 1);
   });
 
   it('accessible region 属性、caption 由来 name、aria-controls、tabindex を持つこと', async () => {

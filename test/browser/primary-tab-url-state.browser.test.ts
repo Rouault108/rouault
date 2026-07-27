@@ -1,4 +1,4 @@
-import { expect } from '@open-wc/testing';
+import { afterEach, describe, expect, it } from 'vitest';
 import {
   clearTabsUrlSyncStrategy,
   getTabsUrlSyncStrategy,

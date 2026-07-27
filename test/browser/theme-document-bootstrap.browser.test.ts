@@ -1,4 +1,4 @@
-import { expect } from '@open-wc/testing';
+import { describe, expect, it } from 'vitest';
 
 import { buildThemeDocumentBootstrapScript } from '../../src/theme/theme-document-bootstrap.js';
 import {

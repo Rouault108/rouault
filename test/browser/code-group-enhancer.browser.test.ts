@@ -1,4 +1,4 @@
-import { expect } from '@open-wc/testing';
+import { afterEach, describe, expect, it } from 'vitest';
 
 import { enhanceCodeGroups } from '../../src/client/post-hydrate/code-group-enhancer.js';
 import { activateStaticCopyButtons } from '../../src/client/post-hydrate/static-copy-button-enhancer.js';

@@ -1,4 +1,6 @@
-import { expect, fixture, html } from '@open-wc/testing';
+import { html } from 'lit/static-html.js';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { fixture } from './harness/browser-fixture.js';
 import { RouterLinkInterceptor } from '../../src/router/browser-link-interceptor.js';
 import { LocationAdapter } from '../../src/router/location-adapter.js';
 import { toInternalDocumentNormalizedUrl } from '../../src/router/internal-document-normalized-url.js';

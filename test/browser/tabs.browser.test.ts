@@ -1,4 +1,6 @@
-import { expect, fixture, html } from '@open-wc/testing';
+import { html } from 'lit/static-html.js';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { fixture } from './harness/browser-fixture.js';
 import '../../src/components/ui/tabs/tabs.js';
 import type { Tabs } from '../../src/components/ui/tabs/tabs.js';
 import type { UiTabChangeDetail } from '../../src/components/ui/tabs/tabs.types.js';
@@ -7,7 +9,7 @@ import {
   registerTabsUrlSyncStrategy,
 } from '../../src/components/ui/tabs/tabs-url-sync-strategy.js';
 import { primaryTabTabsUrlSyncStrategy } from '../../src/components/app/navigation/primary-tab-url-state.js';
-import { dispatchKey, waitForLitUpdate } from './helpers/wait-for-lit.js';
+import { dispatchKey, waitForLitUpdate } from './harness/browser-test-utilities.js';
 
 const must = <T>(value: T | null | undefined, message: string): T => {
   if (value === null || value === undefined) {

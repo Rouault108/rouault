@@ -1,4 +1,4 @@
-import { expect } from '@open-wc/testing';
+import { afterEach, describe, expect, it } from 'vitest';
 
 import { APP_SHELL_ROOT_ATTRIBUTE } from '../../shared/app-shell/app-shell-root-contract.js';
 import {

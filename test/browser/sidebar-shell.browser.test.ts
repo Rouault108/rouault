@@ -1,10 +1,17 @@
-import { expect, fixture, html, waitUntil } from '@open-wc/testing';
+import { html } from 'lit/static-html.js';
+import { describe, expect, it } from 'vitest';
+import { fixture } from './harness/browser-fixture.js';
 import '../../src/components/ui/sidebar-shell/sidebar-shell.js';
 import type {
   UiSidebarShell,
   UiSidebarStateChangeDetail,
 } from '../../src/components/ui/sidebar-shell/sidebar-shell.js';
-import { dispatchKey, nextAnimationFrame, waitForLitUpdate } from './helpers/wait-for-lit.js';
+import {
+  dispatchKey,
+  nextAnimationFrame,
+  waitForCondition,
+  waitForLitUpdate,
+} from './harness/browser-test-utilities.js';
 
 const getNav = (host: UiSidebarShell): HTMLElement | null =>
   host.shadowRoot?.querySelector<HTMLElement>('nav') ?? null;
@@ -80,7 +87,7 @@ describe('ui-sidebar-shell browser contract', () => {
     expect(getComputedStyle(scrim).visibility).to.equal('visible');
     expect(getComputedStyle(scrim).pointerEvents).to.equal('auto');
 
-    await waitUntil(
+    await waitForCondition(
       () => document.activeElement === headerButton,
       'overlay expand 後に header の先頭 focusable へ focus が移ること',
     );

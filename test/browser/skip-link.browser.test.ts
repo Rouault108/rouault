@@ -1,7 +1,9 @@
-import { expect, fixture, html } from '@open-wc/testing';
+import { html } from 'lit/static-html.js';
+import { describe, expect, it } from 'vitest';
+import { fixture } from './harness/browser-fixture.js';
 import '../../src/components/ui/skip-link/skip-link.js';
 import type { SkipLink } from '../../src/components/ui/skip-link/skip-link.js';
-import { waitForLitUpdate } from './helpers/wait-for-lit.js';
+import { waitForLitUpdate } from './harness/browser-test-utilities.js';
 import { ensureMainCssLoaded } from './helpers/load-main-css.js';
 
 const must = <T>(value: T | null | undefined, message: string): T => {

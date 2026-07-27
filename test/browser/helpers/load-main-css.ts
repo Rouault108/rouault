@@ -1,4 +1,5 @@
-import { waitForStyleRecalc } from './wait-for-lit.js';
+import { waitForStyleRecalc } from '../harness/browser-test-utilities.js';
+import { fetchCssText } from './fetch-css-text.js';
 
 const TOKENS_STYLE_ID = 'test-global-tokens-css';
 const MAIN_STYLE_ID = 'test-global-main-css';
@@ -187,12 +188,7 @@ const ensureStyleTag = async (
     return;
   }
 
-  const response = await fetch(href);
-  if (!response.ok) {
-    throw new Error(`${href} の読み込みに失敗しました: ${response.status} ${response.statusText}`);
-  }
-
-  const cssText = await response.text();
+  const cssText = await fetchCssText(href);
   const style = document.createElement('style');
   style.id = id;
   style.textContent = transform ? await transform(cssText, href) : cssText;
@@ -243,13 +239,8 @@ const inlineTopLevelImports = async (
       continue;
     }
     visited.add(resolvedHref);
-    const response = await fetch(resolvedHref);
-    if (!response.ok) {
-      throw new Error(
-        `${resolvedHref} の読み込みに失敗しました: ${response.status} ${response.statusText}`,
-      );
-    }
-    output += `\n${await inlineTopLevelImports(await response.text(), resolvedHref, visited)}\n`;
+    const importedCssText = await fetchCssText(resolvedHref);
+    output += `\n${await inlineTopLevelImports(importedCssText, resolvedHref, visited)}\n`;
     cursor = range.end;
   }
   output += cssText.slice(cursor);

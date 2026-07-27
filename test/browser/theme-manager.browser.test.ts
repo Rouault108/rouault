@@ -1,4 +1,4 @@
-import { expect } from '@open-wc/testing';
+import { describe, expect, it } from 'vitest';
 import {
   RESOLVED_THEME_ATTRIBUTE,
   THEME_ATTRIBUTE,

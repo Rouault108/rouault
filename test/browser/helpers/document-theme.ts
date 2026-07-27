@@ -1,4 +1,4 @@
-import { waitForStyleRecalc } from './wait-for-lit.js';
+import { waitForStyleRecalc } from '../harness/browser-test-utilities.js';
 
 export const withDocumentTheme = async <T>(
   theme: 'light' | 'dark',
