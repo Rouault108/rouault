@@ -38,7 +38,7 @@ Rouaultは次を中核とする個人向け読書アプリです。
 - 検索: Pagefind
 - コードハイライト: Shiki
 - 数式: KaTeX
-- テスト: Vitest / Web Test Runner / Playwright / Storybook
+- テスト: Vitest（Node / SSR / Browser Mode）/ Playwright / Storybook
 
 ## 現行構成
 
@@ -206,6 +206,7 @@ Rouaultは**何を保証するか**でテストの置き場を分けています
   - smoke allowlistの健全性確認
 
 詳細は`docs/contracts/testing-taxonomy.md`を参照してください。
+Browser runner、browser selection、fixture lifecycleを含むtesting harnessのowner境界も同Contractを正本とします。
 
 ## 現在の設計上の要点
 

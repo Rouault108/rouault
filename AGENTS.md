@@ -118,7 +118,7 @@ Rouaultは長期保守性のためにownership boundaryを重視します。
 - コードハイライト: Shiki
 - 数式: KaTeX
 - コンテンツ処理: Velite + Markdown変換パイプライン
-- テスト: Vitest / Web Test Runner / Playwright / Storybook
+- テスト: Vitest（Node / SSR / Browser Mode）/ Playwright / Storybook
 
 ### 実行環境
 
@@ -378,6 +378,8 @@ Storybookはdocs / smoke / metadataに限定します。
 - 実装詳細ではなく契約を固定してください。
 - Storybookをcomponent/browser契約の主戦場にしないでください。
 - Story 名や並び順を契約正本にしないでください。
+
+Browser runner、browser selection、fixture lifecycleを含むtesting harnessのowner境界は、`docs/contracts/testing-taxonomy.md`を正本としてください。
 
 ---
 

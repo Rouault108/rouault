@@ -11,10 +11,23 @@ const repositoryRoot = process.cwd();
 const browserTestRoot = path.join(repositoryRoot, 'test', 'browser');
 const aggregateSpecifier = ['@open-wc', 'testing'].join('/');
 const helperSpecifierPrefix = [aggregateSpecifier, 'helpers'].join('-');
+const wtrSpecifierPrefix = ['@web', 'test-runner'].join('/');
+const wtrPlaywrightSpecifier = [wtrSpecifierPrefix, 'playwright'].join('-');
+const webDevServerEsbuildSpecifier = ['@web', 'dev-server-esbuild'].join('/');
+const chaiSpecifier = ['@esm-bundle', 'chai'].join('/');
+const mochaGlobalType = ['mo', 'cha'].join('');
+const mochaTypesSpecifier = ['@types', mochaGlobalType].join('/');
 const oldUtilitySpecifier = ['./helpers/wait-for', 'lit.js'].join('-');
 const oldUtilityFilename = ['wait-for', 'lit.js'].join('-');
 const directQuery = ['?', 'direct'].join('');
 const oldRunnerScript = ['scripts/run-web-test', 'runner.mjs'].join('-');
+const oldRunnerConfig = ['web-test', 'runner.config.mjs'].join('-');
+const oldUtilityPath = ['test/browser/helpers/wait-for', 'lit.ts'].join('-');
+const oldEnvironmentPrefix = ['ROUAULT', 'WTR'].join('_');
+const oldEnvironmentVariables = [
+  [oldEnvironmentPrefix, 'BROWSERS'].join('_'),
+  [oldEnvironmentPrefix, 'WEBKIT'].join('_'),
+] as const;
 
 const normalizePath = (value: string): string => value.replaceAll('\\', '/');
 
@@ -124,15 +137,32 @@ const repositorySourceFiles = [
   ...listFiles(path.join(repositoryRoot, 'shared')),
   ...listFiles(path.join(repositoryRoot, 'src')),
   ...listFiles(path.join(repositoryRoot, 'test')),
+  ...listFiles(path.join(repositoryRoot, 'tools')),
+  path.join(repositoryRoot, 'eslint.config.mjs'),
   path.join(repositoryRoot, 'vitest.config.ts'),
-  path.join(repositoryRoot, 'web-test-runner.config.mjs'),
 ].filter((file) => /\.(?:[cm]?[jt]s|tsx)$/u.test(file));
 
-describe('Phase 1 testing taxonomy contract', () => {
+const activeTextFiles = [
+  ...repositorySourceFiles,
+  ...listFiles(path.join(repositoryRoot, '.github')),
+  ...listFiles(path.join(repositoryRoot, 'docs', 'adr')),
+  ...listFiles(path.join(repositoryRoot, 'docs', 'architecture')),
+  ...listFiles(path.join(repositoryRoot, 'docs', 'contracts')),
+  ...listFiles(path.join(repositoryRoot, 'docs', 'design-system')),
+  ...listFiles(path.join(repositoryRoot, 'docs', 'guides')),
+  ...listFiles(path.join(repositoryRoot, 'docs', 'references')),
+  path.join(repositoryRoot, 'AGENTS.md'),
+  path.join(repositoryRoot, 'README.md'),
+  path.join(repositoryRoot, 'docs', 'README.md'),
+  path.join(repositoryRoot, 'package.json'),
+].filter((file) => fs.statSync(file).isFile());
+
+describe('final testing taxonomy contract', () => {
   const packageJson = JSON.parse(
     fs.readFileSync(path.join(repositoryRoot, 'package.json'), 'utf8'),
   ) as {
     scripts?: Record<string, string>;
+    devDependencies?: Record<string, string>;
   };
   const vitestConfig = fs.readFileSync(path.join(repositoryRoot, 'vitest.config.ts'), 'utf8');
 
@@ -149,6 +179,16 @@ describe('Phase 1 testing taxonomy contract', () => {
     expect(browserScript).toContain('vitest run');
     expect(browserScript).toContain('--project="browser-*"');
     expect(browserScript).not.toContain(oldRunnerScript);
+  });
+
+  it('keeps vitest.config.ts as the single browser project map', () => {
+    const browserProjectConfigs = fs
+      .readdirSync(repositoryRoot)
+      .filter((entry) => /(?:vitest|web-test-runner).*config\.[cm]?[jt]s$/u.test(entry))
+      .sort();
+
+    expect(browserProjectConfigs).toEqual(['vitest.config.ts']);
+    expect(getScript('test:browser')).not.toContain('--config');
   });
 
   it('keeps the shared browser project contract with the required instances and policies', () => {
@@ -264,7 +304,7 @@ describe('Phase 1 testing taxonomy contract', () => {
     expect(ordinaryLitConsumers).toEqual([]);
   });
 
-  it('removes active Open WC aggregate and Mocha API use from browser tests', () => {
+  it('removes active Open WC aggregate and legacy global API use from browser tests', () => {
     const aggregateConsumers: string[] = [];
     const mochaConsumers: string[] = [];
 
@@ -287,6 +327,64 @@ describe('Phase 1 testing taxonomy contract', () => {
     expect(mochaConsumers).toEqual([]);
   });
 
+  it('removes the legacy runner files, direct dependencies, imports, commands, and environment', () => {
+    const obsoletePaths = [oldRunnerConfig, oldRunnerScript, oldUtilityPath];
+    const forbiddenDirectDependencies = [
+      aggregateSpecifier,
+      wtrSpecifierPrefix,
+      wtrPlaywrightSpecifier,
+      webDevServerEsbuildSpecifier,
+      chaiSpecifier,
+      mochaTypesSpecifier,
+    ];
+    const legacyModuleConsumers = repositorySourceFiles
+      .filter((file) =>
+        collectModuleSpecifiers(readSourceFile(file)).some(
+          (specifier) =>
+            specifier === aggregateSpecifier ||
+            specifier.startsWith(`${aggregateSpecifier}/`) ||
+            specifier === wtrSpecifierPrefix ||
+            specifier.startsWith(`${wtrSpecifierPrefix}/`) ||
+            specifier.startsWith(`${wtrSpecifierPrefix}-`),
+        ),
+      )
+      .map((file) => normalizePath(path.relative(repositoryRoot, file)));
+    const activeLegacyReferences = activeTextFiles
+      .flatMap((file) => {
+        const source = fs.readFileSync(file, 'utf8');
+        return [...obsoletePaths, ...oldEnvironmentVariables]
+          .filter((sentinel) => source.includes(sentinel))
+          .map((sentinel) => `${normalizePath(path.relative(repositoryRoot, file))}: ${sentinel}`);
+      })
+      .sort();
+
+    for (const obsoletePath of obsoletePaths) {
+      expect(fs.existsSync(path.join(repositoryRoot, obsoletePath)), obsoletePath).toBe(false);
+    }
+    for (const dependency of forbiddenDirectDependencies) {
+      expect(packageJson.devDependencies?.[dependency], dependency).toBeUndefined();
+    }
+    expect(legacyModuleConsumers).toEqual([]);
+    expect(activeLegacyReferences).toEqual([]);
+    expect(
+      Object.values(packageJson.scripts ?? {}).some((script) => script.includes(oldRunnerScript)),
+    ).toBe(false);
+  });
+
+  it('does not expose legacy global types from TypeScript config', () => {
+    const configFiles = fs
+      .readdirSync(repositoryRoot)
+      .filter((entry) => /^tsconfig.*\.json$/u.test(entry));
+    const mochaTypeConsumers = configFiles.filter((configFile) => {
+      const config = JSON.parse(fs.readFileSync(path.join(repositoryRoot, configFile), 'utf8')) as {
+        compilerOptions?: { types?: string[] };
+      };
+      return config.compilerOptions?.types?.includes(mochaGlobalType) === true;
+    });
+
+    expect(mochaTypeConsumers).toEqual([]);
+  });
+
   it('limits direct Open WC pure helper imports to the fixture and setup owners', () => {
     const allowed = new Set(['test/browser/harness/browser-fixture.ts', 'test/browser/setup.ts']);
     const consumers = repositorySourceFiles
@@ -303,7 +401,7 @@ describe('Phase 1 testing taxonomy contract', () => {
     expect(consumers).toEqual([...allowed].sort());
   });
 
-  it('makes the repository utility the only active wait-for-lit owner', () => {
+  it('makes the repository utility the only active readiness owner', () => {
     const consumers = repositorySourceFiles
       .filter((file) =>
         collectModuleSpecifiers(readSourceFile(file)).some(

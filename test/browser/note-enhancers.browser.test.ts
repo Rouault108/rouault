@@ -431,9 +431,8 @@ describe('note progressive enhancers', () => {
     expect(trigger.type).to.equal('button');
     expect(trigger.getAttribute('aria-haspopup')).to.equal('dialog');
 
-    // Real keyboard Enter/Space activation for a focused native button dispatches click.
-    // Programmatic KeyboardEvent dispatch does not invoke that browser default action reliably
-    // in the web test runner, so this test fixes the keyboard contract as native button + click path.
+    // programmaticなKeyboardEvent dispatchではnative buttonのUA既定activationを
+    // 安定して発火できないため、native button + click pathとしてcontractを固定する。
     clickPrimary(trigger);
 
     expect(dialog.open).to.equal(true);
