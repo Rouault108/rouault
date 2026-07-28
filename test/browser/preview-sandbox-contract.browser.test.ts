@@ -1,6 +1,7 @@
 import { html } from 'lit/static-html.js';
 import { describe, expect, it } from 'vitest';
 import { fixture } from './harness/browser-fixture.js';
+import { waitForCondition } from './harness/browser-test-utilities.js';
 import '../../src/components/ui/preview-sandbox/preview-sandbox.js';
 
 type LitLikeElement = HTMLElement & {
@@ -22,18 +23,6 @@ const waitForElement = async (element: LitLikeElement): Promise<void> => {
   await element.updateComplete;
   await Promise.resolve();
   await Promise.resolve();
-};
-
-const waitForMutationFrame = async (element: LitLikeElement): Promise<void> => {
-  await element.updateComplete;
-  await Promise.resolve();
-  await new Promise<void>((resolve) => {
-    requestAnimationFrame(() => resolve());
-  });
-  await new Promise<void>((resolve) => {
-    requestAnimationFrame(() => resolve());
-  });
-  await element.updateComplete;
 };
 
 describe('ui-preview-sandbox contract', () => {
@@ -342,17 +331,22 @@ describe('ui-preview-sandbox contract', () => {
     );
     expect(template).to.not.equal(null);
     if (template) {
-      template.content.replaceChildren(document.createElement('strong'));
-      const strong = template.content.querySelector('strong');
-      if (strong) {
-        strong.textContent = 'After';
-      }
+      const strong = document.createElement('strong');
+      strong.textContent = 'After';
+      template.content.replaceChildren(strong);
     }
 
-    await waitForMutationFrame(sandbox);
+    const expectedHtml = '<strong>After</strong>';
+    await waitForCondition(
+      () =>
+        (
+          sandbox.shadowRoot?.querySelector<HTMLIFrameElement>('iframe')?.srcdoc ?? ''
+        ).includes(expectedHtml),
+      'template mutation が iframe srcdoc に反映されなかった',
+    );
 
     expect(sandbox.shadowRoot?.querySelector<HTMLIFrameElement>('iframe')?.srcdoc).to.contain(
-      '<strong>After</strong>',
+      expectedHtml,
     );
   });
 
