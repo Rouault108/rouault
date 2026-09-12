@@ -45,6 +45,30 @@ pnpm run codegen:ui-check-cases
 
 The search-controls case is an expanded inspection variant for visual checking. It deliberately adds `open` to the single `details.filter-details` element after verifying that exactly one such element exists. This is not the real search page initial state.
 
+## Retained production surfaces
+
+`footer.html` and `not-found.html` are generated from the production HTML renderers by
+`fixtures/retained-surfaces.ts`. The footer covers full, minimal, and external-link states.
+
+`reading-interactions.html` and `video.html` use the actual production custom elements.
+Their small fixture entries only register those components and supply local caption data;
+they do not load the application client or own shell hydration. Tabs expose horizontal,
+initially selected, vertical, automatic-activation, and icon states. Translation exposes
+popover, drawer, and single-open observation. Video exposes poster, captions, empty,
+autoplay/muted/loop, and prose/normal-width contexts. Player controls allow playback and
+fullscreen inspection without recreating the internal button catalog.
+
+`pnpm ui:screenshot` also collects light/dark, mobile, forced-colors, reduced-motion,
+and print observations for these cases. These are review images, not pixel baselines.
+Behavior remains in `test/browser/tabs.browser.test.ts`, `translation.browser.test.ts`,
+`video.browser.test.ts`, and the existing SSR/E2E suites. Generation consistency is checked
+by `test/node/ui-check-cases.test.ts`; it does not make the workbench a behavior owner.
+
+Shell, sidebar, TOC, native skip link, and URL-synchronized tabs are inspected on the
+actual generated pages from `content/testing/` and production E2E fixtures. Use
+`test/e2e/support/note-fixtures.ts` to resolve fixture URLs rather than duplicating hashes.
+The Phase 1 migration evidence is in `docs/temporary/lit-boundary-phase1/`.
+
 ## CSS loading
 
 The workbench index and case pages load the production stylesheet directly with:

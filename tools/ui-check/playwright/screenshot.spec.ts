@@ -15,6 +15,9 @@ const cases = [
   { name: 'code-surface-dark', path: '/tools/ui-check/cases/code-surface-dark.html' },
   { name: 'details', path: '/tools/ui-check/cases/details.html' },
   { name: 'footer', path: '/tools/ui-check/cases/footer.html' },
+  { name: 'not-found', path: '/tools/ui-check/cases/not-found.html' },
+  { name: 'reading-interactions', path: '/tools/ui-check/cases/reading-interactions.html' },
+  { name: 'video', path: '/tools/ui-check/cases/video.html' },
   { name: 'search-controls', path: '/tools/ui-check/cases/search-controls.html' },
   { name: 'table-overflow', path: '/tools/ui-check/cases/table-overflow.html' },
   { name: 'typography', path: '/tools/ui-check/cases/typography.html' },
@@ -28,10 +31,70 @@ test('captures ui-check workbench screenshots', async ({ page }) => {
 
   for (const workbenchCase of cases) {
     await page.goto(workbenchCase.path);
+    await page.evaluate(() => document.fonts.ready);
+    if (workbenchCase.name === 'video') {
+      await page.locator('#video-default .player-shell').waitFor({ state: 'visible' });
+    }
+    if (workbenchCase.name === 'reading-interactions') {
+      await page.locator('#tabs-horizontal [role="tab"]').first().waitFor({ state: 'visible' });
+    }
     await page.screenshot({
       path: path.join(screenshotDir, `${workbenchCase.name}.png`),
       fullPage: true,
     });
+  }
+});
+
+// 表示準備と撮影だけを行う。操作・a11yの契約判定はtest/browserとtest/e2eが所有する。
+test('captures retained surfaces under viewing preferences', async ({ page }) => {
+  await mkdir(screenshotDir, { recursive: true });
+  for (const preference of [
+    'light',
+    'dark',
+    'mobile',
+    'forced-colors',
+    'reduced-motion',
+    'print',
+  ] as const) {
+    await page.setViewportSize(
+      preference === 'mobile' ? { width: 390, height: 844 } : { width: 1280, height: 900 },
+    );
+    await page.emulateMedia({
+      media: preference === 'print' ? 'print' : 'screen',
+      colorScheme: preference === 'dark' ? 'dark' : 'light',
+      forcedColors: preference === 'forced-colors' ? 'active' : 'none',
+      reducedMotion: preference === 'reduced-motion' ? 'reduce' : 'no-preference',
+    });
+    for (const name of ['footer', 'not-found', 'reading-interactions', 'video'] as const) {
+      await page.goto(`/tools/ui-check/cases/${name}.html`);
+      await page.evaluate(() => document.fonts.ready);
+      if (name === 'reading-interactions') {
+        await page.locator('#tabs-horizontal [role="tab"]').first().waitFor({ state: 'visible' });
+        if (preference !== 'print') {
+          await page.locator('#translation-popover [data-part="trigger"]').click();
+          await page
+            .locator('#translation-popover [data-part="content"]')
+            .waitFor({ state: 'visible' });
+        }
+      }
+      if (name === 'video' && preference !== 'print') {
+        await page.locator('#video-default .player-shell').waitFor({ state: 'visible' });
+      }
+      await page.screenshot({
+        path: path.join(screenshotDir, `${name}-${preference}.png`),
+        fullPage: true,
+      });
+      if (name === 'reading-interactions' && preference !== 'print') {
+        await page.locator('#translation-drawer [data-part="trigger"]').click();
+        await page
+          .locator('#translation-drawer [data-part="content"]')
+          .waitFor({ state: 'visible' });
+        await page.screenshot({
+          path: path.join(screenshotDir, `translation-drawer-${preference}.png`),
+          fullPage: true,
+        });
+      }
+    }
   }
 });
 

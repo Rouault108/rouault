@@ -1,31 +1,14 @@
-# Rouault 問題解決ワークフロー 運用入口
+# Problem-solving workflow
 
-このディレクトリは、Rouaultで問題が発覚した後、ChatGPTを主体として原因特定、修正方針策定、Codexによる限定実装、差分精査、検証、完了判定まで進めるための運用資産です。
+問題、回帰、CIエラー、テスト失敗、期待結果と実際の結果の差、原因特定が主題の場合に使用します。
 
-## 最初に読むもの
+入口は`quick-start.md`です。R段階に応じ、次のpromptを使います。
 
-```text
-quick-start.md
-```
-
-日常運用では `quick-start.md` だけを入口にします。必要になった時だけ、詳細文書やR4/A2 validatorへ移動します。
-
-## 構成
-
-| パス                    | 用途                                                                   |
-| ----------------------- | ---------------------------------------------------------------------- |
-| `quick-start.md`        | 日常運用の薄い入口。R判定、ChatGPT/Codexの使い分け、完了までの最短手順 |
-| `prompts/`              | ChatGPT / Codexへ渡す短縮プロンプト                                    |
-| `full-workflow/`        | v85から抽出した詳細手順。迷った場合の参照先                            |
-| `r4-validation/`        | R4 / A2だけで使うSchema、validator、samples                            |
-| `frozen-v85-reference/` | v85完全版の凍結参照。通常は編集しない                                  |
-
-## 運用原則
-
-```text
-- ChatGPTは調査、原因整理、修正方針策定、Codexプロンプト作成、差分精査を担当する
-- CodexはFix PlanまたはRun Cardで限定された実装だけを担当する
-- 人間が最終判断、採否、コミット、マージを行う
-- R4/A2 validatorは例外時だけ使う
-- 軽微な問題にR4/A2の重い成果物を要求しない
-```
+| R段階 | prompt | 成果物 |
+|---|---|---|
+| R0 | なし | 限定直接修正＋対象状態とdiffの確認 |
+| R1 | `prompts/r1-mini.md` | Mini Brief |
+| R2-lite | `prompts/r2-lite.md` | Run Card |
+| R2-full | `prompts/r2-full-cause-analysis.md`→`prompts/r2-full-fix-plan.md` | Cause Analysis＋Fix Plan |
+| R3 | `prompts/r3-handoff.md` | Handoff Record |
+R1以上の基本計画作成後は、`../shared/prompts/`の計画精査、Codex限定実装、完了適合性精査を使用します。一括レビュー不能な場合だけ、承認済み基本計画へ`../shared/prompts/r4-phased.md`のR4段階実行overlayを適用し、完了時に`../shared/prompts/r4-completion-overlay.md`を併用します。計画精査を変更妥当性の中心とし、実装後は承認済み計画への適合性と完了可否だけを一工程で確認します。

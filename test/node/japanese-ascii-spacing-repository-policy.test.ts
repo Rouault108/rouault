@@ -234,10 +234,7 @@ interface RepositoryPolicyClassification {
   readonly kind: 'fail' | 'report-only' | 'excluded' | 'outside-policy';
 }
 
-const collectRepositoryFiles = async (
-  rootDir: string,
-  currentDir = rootDir,
-): Promise<string[]> => {
+const collectRepositoryFiles = async (rootDir: string, currentDir = rootDir): Promise<string[]> => {
   const entries = await readdir(currentDir, { withFileTypes: true });
   const filePaths: string[] = [];
 
@@ -362,18 +359,18 @@ describe('japanese-ascii-spacing repository policy', () => {
     expect(failTargetFiles).toContain('docs/README.md');
     expect(failTargetFiles).toContain('src/about.11ty.ts');
     expect(failTargetFiles).toContain('src/index.11ty.ts');
-    expect(failTargetFiles.some((filePath) => matchesPathPattern(filePath, 'docs/guides/**/*.md'))).toBe(
-      true,
-    );
+    expect(
+      failTargetFiles.some((filePath) => matchesPathPattern(filePath, 'docs/guides/**/*.md')),
+    ).toBe(true);
     expect(
       failTargetFiles.some((filePath) => matchesPathPattern(filePath, 'docs/contracts/**/*.md')),
     ).toBe(true);
     expect(
       failTargetFiles.some((filePath) => matchesPathPattern(filePath, 'docs/references/**/*.md')),
     ).toBe(true);
-    expect(failTargetFiles.some((filePath) => matchesPathPattern(filePath, 'docs/adr/**/*.md'))).toBe(
-      true,
-    );
+    expect(
+      failTargetFiles.some((filePath) => matchesPathPattern(filePath, 'docs/adr/**/*.md')),
+    ).toBe(true);
     expect(
       failTargetFiles.some((filePath) => matchesPathPattern(filePath, 'docs/architecture/**/*.md')),
     ).toBe(true);
@@ -389,20 +386,18 @@ describe('japanese-ascii-spacing repository policy', () => {
     expect(classifyRepositoryPolicyPath('docs/workflows/problem-solving/README.md').kind).toBe(
       'report-only',
     );
-    expect(
-      classifyRepositoryPolicyPath(
-        'docs/workflows/problem-solving/frozen-v85-reference/README.md',
-      ).kind,
-    ).toBe('report-only');
+    expect(classifyRepositoryPolicyPath('docs/workflows/proportionality-and-review.md').kind).toBe(
+      'report-only',
+    );
     expect(classifyRepositoryPolicyPath('content/program/_config.json').kind).toBe('report-only');
     expect(classifyRepositoryPolicyPath('content/testing/_config.json').kind).toBe('report-only');
     expect(classifyRepositoryPolicyPath('content/library/_config.json').kind).toBe('report-only');
     expect(classifyRepositoryPolicyPath('src/components/layout-sidebar.ts').kind).toBe(
       'report-only',
     );
-    expect(classifyRepositoryPolicyPath('test/node/japanese-ascii-spacing-policy.test.ts').kind).toBe(
-      'report-only',
-    );
+    expect(
+      classifyRepositoryPolicyPath('test/node/japanese-ascii-spacing-policy.test.ts').kind,
+    ).toBe('report-only');
   });
 
   it('fail対象とreport-only対象が重複する場合はfail対象を優先すること', () => {
@@ -415,16 +410,7 @@ describe('japanese-ascii-spacing repository policy', () => {
 
   it('Phase9除外対象はrepository policy対象外にすること', () => {
     expect(
-      classifyRepositoryPolicyPath('docs/workflows/problem-solving/r4-validation/samples/README.md')
-        .kind,
-    ).toBe('excluded');
-    expect(
-      classifyRepositoryPolicyPath('docs/workflows/problem-solving/r4-validation/schemas/README.md')
-        .kind,
-    ).toBe('excluded');
-    expect(
-      classifyRepositoryPolicyPath('docs/workflows/problem-solving/r4-validation/tools/README.md')
-        .kind,
+      classifyRepositoryPolicyPath('docs/old/workflows/problem-solving-v85/README.md').kind,
     ).toBe('excluded');
     expect(classifyRepositoryPolicyPath('docs/old/archived.md').kind).toBe('excluded');
     expect(classifyRepositoryPolicyPath('docs/temporary/draft.md').kind).toBe('excluded');

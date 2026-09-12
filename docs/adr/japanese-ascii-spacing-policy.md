@@ -131,10 +131,6 @@ DOM変更
 書誌データ正規化
 docs/old/**更新
 docs/temporary/**更新
-docs/workflows/problem-solving/frozen-v85-reference/**更新
-docs/workflows/problem-solving/r4-validation/samples/**更新
-docs/workflows/problem-solving/r4-validation/schemas/**更新
-docs/workflows/problem-solving/r4-validation/tools/**更新
 英語表記そのものの全面日本語化
 source comment/JSDocの全面整形
 formatterによる一括整形
@@ -172,4 +168,3 @@ npm script追加
 ## Verification ID
 
 - CH-JA-ASCII-SPACING-001A Verification
-

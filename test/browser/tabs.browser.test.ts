@@ -147,6 +147,32 @@ describe('ui-tabs browser contract', () => {
     expect(firstTab.getAttribute('tabindex')).to.equal('0');
   });
 
+  it('automatic activation は矢印キーでfocusと選択panelを同時に切り替えること', async () => {
+    const tabs = await fixture<Tabs>(html`
+      <ui-tabs automatic-activation>
+        <button slot="tab" value="overview">概要</button>
+        <div slot="panel">概要パネル</div>
+        <button slot="tab" value="details">詳細</button>
+        <div slot="panel">詳細パネル</div>
+      </ui-tabs>
+    `);
+    await waitForLitUpdate(tabs);
+    const first = must(tabs.querySelector<HTMLButtonElement>('[value="overview"]'), '概要tab');
+    const second = must(tabs.querySelector<HTMLButtonElement>('[value="details"]'), '詳細tab');
+    const panels = tabs.querySelectorAll<HTMLElement>('[slot="panel"]');
+    first.focus();
+    dispatchKey(first, 'ArrowRight');
+    await waitForLitUpdate(tabs);
+
+    expect(document.activeElement).to.equal(second);
+    expect(tabs.selectedValue).to.equal('details');
+    expect(second.getAttribute('aria-selected')).to.equal('true');
+    expect(first.getAttribute('aria-selected')).to.equal('false');
+    expect(must(panels[0], '概要panel').getAttribute('aria-hidden')).to.equal('true');
+    await expect.poll(() => must(panels[0], '概要panel').hidden).toBe(true);
+    expect(must(panels[1], '詳細panel').hidden).to.equal(false);
+  });
+
   it('vertical では ArrowUp / ArrowDown を使い、ArrowLeft は選択移動に使わないこと', async () => {
     const tabs = await fixture<Tabs>(html`
       <ui-tabs orientation="vertical">

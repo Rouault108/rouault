@@ -7,6 +7,14 @@
 `docs/adr/`は設計判断の経緯であり、現在の挙動を再定義しない。
 `docs/old/`と`docs/temporary/`は現行契約の正本ではない。
 
+## 開発workflow
+
+- [共通入口](workflows/README.md)
+- [機能変更](workflows/feature-change/quick-start.md)
+- [問題解決](workflows/problem-solving/quick-start.md)
+
+旧workflowは`docs/old/workflows/pre-strategy-20260912/`に保存し、現行手順として使用しない。
+
 ## 正本Contract
 
 - `docs/contracts/router.md`

@@ -27,9 +27,9 @@ describe('japanese-ascii-spacing-policy', () => {
   });
 
   it('inline code span + U+0020 + 日本語助詞を検出すること', () => {
-    expect(detect('`data-link-kind` を設定する').map((candidate) => candidate.reason)).to.deep.equal([
-      'inline-code-to-japanese',
-    ]);
+    expect(
+      detect('`data-link-kind` を設定する').map((candidate) => candidate.reason),
+    ).to.deep.equal(['inline-code-to-japanese']);
   });
 
   it('日本語文字 + U+0020 + inline code spanを検出すること', () => {
@@ -53,9 +53,7 @@ describe('japanese-ascii-spacing-policy', () => {
   });
 
   it('長いfence内の短いfence例は外側fenceの終了として扱わないこと', () => {
-    expect(
-      detect('````md\n```ts\nconst label = "Markdown を扱う";\n```\n````'),
-    ).to.deep.equal([]);
+    expect(detect('````md\n```ts\nconst label = "Markdown を扱う";\n```\n````')).to.deep.equal([]);
   });
 
   it('inline code内部は検出しないこと', () => {
@@ -113,19 +111,10 @@ describe('japanese-ascii-spacing-policy', () => {
     expect(shouldIncludeFilePath('content/testing/sidebar-scroll/_config.json')).toBe(true);
   });
 
-  it('frozen-v85-referenceは対象に含め、r4-validation samples/schemas/toolsは対象外にすること', () => {
-    expect(shouldIncludeFilePath('docs/workflows/problem-solving/frozen-v85-reference/README.md')).toBe(
-      true,
-    );
-    expect(
-      shouldIncludeFilePath('docs/workflows/problem-solving/r4-validation/samples/README.md'),
-    ).toBe(false);
-    expect(
-      shouldIncludeFilePath('docs/workflows/problem-solving/r4-validation/schemas/README.md'),
-    ).toBe(false);
-    expect(
-      shouldIncludeFilePath('docs/workflows/problem-solving/r4-validation/tools/README.md'),
-    ).toBe(false);
+  it('現行workflowは対象に含め、docs/old配下は対象外にすること', () => {
+    expect(shouldIncludeFilePath('docs/workflows/problem-solving/quick-start.md')).toBe(true);
+    expect(shouldIncludeFilePath('docs/workflows/feature-change/quick-start.md')).toBe(true);
+    expect(shouldIncludeFilePath('docs/old/workflows/problem-solving-v85/README.md')).toBe(false);
   });
 
   it('Japanese punctuationの対象文字をfixtureで明示していること', () => {

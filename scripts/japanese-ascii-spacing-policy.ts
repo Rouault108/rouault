@@ -18,9 +18,6 @@ export const DEFAULT_EXCLUDE_PATTERNS = [
   'playwright-report/**',
   'docs/old/**',
   'docs/temporary/**',
-  'docs/workflows/problem-solving/r4-validation/samples/**',
-  'docs/workflows/problem-solving/r4-validation/schemas/**',
-  'docs/workflows/problem-solving/r4-validation/tools/**',
   'content/_assets/**',
 ] as const;
 
