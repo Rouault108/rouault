@@ -109,3 +109,7 @@
 - `src/client.ts`がbootstrap以上のownershipを持たない。
 - state-only navigationがcontent hydrationを発火しない。
 - componentがconnected時に独自trigger判定をしない。
+
+## Sidebar shell infrastructure
+
+`layout-sidebar-enhancer`はshell profileで常時1件計上するplain enhancerである。sidebar absentの初期ページでも起動し、matching validation後にdormantとなる。routeごとにschedulerを再起動せず、shell lifecycle eventからpresent / absentを再評価する。`layout-sidebar`はproduction hydration / SSR targetから除外し、legacy Storybook sourceとしてのみ残す。state / readiness / generationの意味は`sidebar-state.md`を正本とする。

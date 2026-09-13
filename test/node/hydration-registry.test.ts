@@ -11,7 +11,7 @@ const expectedProfilesByTag = new Map<string, readonly string[]>([
   ['router-document-host', ['shell']],
   ['search-dialog-enhancer', ['shell']],
   ['search-page-enhancer', ['page']],
-  ['layout-sidebar', ['layout']],
+  ['layout-sidebar-enhancer', ['shell']],
   ['layout-toc-controller', ['layout']],
   ['note-static-surface-enhancer', ['note']],
   ['code-block-enhancer', ['note']],

@@ -163,9 +163,7 @@ function validateNoteHydrationBudget(
     interaction: 0,
   };
 
-  if (projection.showSidebar) {
-    shellCounts.initial += 1;
-  }
+  shellCounts.initial += 1;
 
   if (projection.tocPresence === 'present' && projection.toc.shouldHydrate) {
     shellCounts.initial += 1;

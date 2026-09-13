@@ -1,4 +1,4 @@
-import type { UiSidebarStateChangeDetail } from '../ui/sidebar-shell/sidebar-shell.js';
+import type { SidebarMode, SidebarState } from '../../../shared/navigation/sidebar-presentation.js';
 
 export const LAYOUT_SIDEBAR_TOGGLE_REQUEST_EVENT = 'layout-sidebar-toggle-request';
 export const LAYOUT_SIDEBAR_STATE_CHANGE_EVENT = 'layout-sidebar-state-change';
@@ -13,4 +13,7 @@ export interface LayoutSidebarTreeStateChangeDetail {
   expandedIds: string[];
 }
 
-export type LayoutSidebarStateChangeDetail = UiSidebarStateChangeDetail;
+export interface LayoutSidebarStateChangeDetail {
+  state: SidebarState;
+  mode: SidebarMode;
+}

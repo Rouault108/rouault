@@ -1,82 +1,19 @@
-import type {
-  PreparedShellUpdate,
-  RuntimeDocumentShellSnapshot,
-  ShellAdapter,
-} from '../../../router/router.js';
-import {
-  applyPayloadShellSnapshot,
-  applyRuntimeSidebarSnapshotForRollback,
-  readSidebarShellSnapshot,
-} from './layout-sidebar-shell-adapter.js';
+import type { PreparedShellUpdate, ShellAdapter } from '../../../router/router.js';
+import { createLayoutSidebarShellAdapter } from './layout-sidebar-shell-adapter.js';
 import { prepareStaticHeaderMutation } from './static-header-shell-mutation.js';
-import { commitShellGeneration } from './app-shell-lifecycle.js';
-import type { AppShellCommittedDetail } from './app-shell-events.js';
-import { STATIC_HEADER_ROOT_SELECTOR } from '../../../../shared/navigation/static-header-contract.js';
-
-const ROUTER_DOCUMENT_HOST_SELECTOR = 'router-document-host';
-const SIDEBAR_COLUMN_SELECTOR = '[data-app-shell-sidebar-host]';
-const SIDEBAR_HOST_SELECTOR = `${SIDEBAR_COLUMN_SELECTOR} layout-sidebar`;
-
-interface SidebarProjectionHost extends HTMLElement {
-  readShellProjection?(): RuntimeDocumentShellSnapshot['sidebar'];
-}
-
-const dispatchShellCommitted = (detail: AppShellCommittedDetail): void => {
-  document.dispatchEvent(
-    new CustomEvent<AppShellCommittedDetail>('app-shell:committed', { detail }),
-  );
-};
 
 export const createAppShellAdapter = (): ShellAdapter => ({
   prepare(update): PreparedShellUpdate {
-    const currentRouter = document.querySelector<HTMLElement>(ROUTER_DOCUMENT_HOST_SELECTOR);
-    const currentSidebarColumn = document.querySelector<HTMLElement>(SIDEBAR_COLUMN_SELECTOR);
-    const currentSidebar = document.querySelector<SidebarProjectionHost>(SIDEBAR_HOST_SELECTOR);
-    const headerMutation = prepareStaticHeaderMutation(update.shell.headerHtml);
-
-    const previousSidebar =
-      currentSidebar instanceof HTMLElement &&
-      currentSidebarColumn instanceof HTMLElement &&
-      !currentSidebarColumn.hidden &&
-      !currentSidebar.hidden
-        ? typeof currentSidebar.readShellProjection === 'function'
-          ? currentSidebar.readShellProjection()
-          : readSidebarShellSnapshot(currentSidebar)
-        : null;
-    const previousShell: RuntimeDocumentShellSnapshot = {
-      headerHtml: '',
-      sidebar: previousSidebar,
-    };
-
+    const header = prepareStaticHeaderMutation(update.shell.headerHtml);
+    const sidebar = createLayoutSidebarShellAdapter().prepare(update);
     return {
-      commit: () => {
-        headerMutation.commit();
-        applyPayloadShellSnapshot(
-          update.shell,
-          currentRouter,
-          currentSidebarColumn,
-          currentSidebar,
-        );
-        const header = document.querySelector<HTMLElement>(STATIC_HEADER_ROOT_SELECTOR);
-        if (!(header instanceof HTMLElement)) {
-          throw new Error(`committed ${STATIC_HEADER_ROOT_SELECTOR} is required.`);
-        }
-        commitShellGeneration(update.shellCommitId);
-        dispatchShellCommitted({
-          header,
-          navigationUrl: update.navigationUrl,
-          shell: update.shell,
-          shellCommitId: update.shellCommitId,
-        });
+      commit() {
+        header.commit();
+        return sidebar.commit();
       },
-      rollback: () => {
-        headerMutation.rollback();
-        applyRuntimeSidebarSnapshotForRollback(
-          previousShell,
-          currentRouter,
-          currentSidebarColumn,
-          currentSidebar,
-        );
+      rollback() {
+        header.rollback();
+        return sidebar.rollback();
       },
     };
   },

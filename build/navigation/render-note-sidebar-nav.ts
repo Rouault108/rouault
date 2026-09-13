@@ -59,11 +59,13 @@ const renderRow = (row: SidebarNavRow, groupIdPrefix: SidebarGroupIdPrefix): str
 
   return [
     `<li ${baseAttributes}>`,
-    `<button type="button" data-sidebar-nav-control data-sidebar-nav-branch-control aria-expanded="${expanded ? 'true' : 'false'}" aria-controls="${escapeHtml(groupId)}">`,
+    `<details data-sidebar-nav-branch${expanded ? ' open' : ''}>`,
+    `<summary data-sidebar-nav-control data-sidebar-nav-branch-control aria-controls="${escapeHtml(groupId)}">`,
     `<span data-sidebar-nav-label>${escapeHtml(row.label)}</span>`,
     renderDisclosureIcon(),
-    `</button>`,
-    `<ul id="${escapeHtml(groupId)}"${expanded ? '' : ' hidden'}>${row.children.map((child) => renderRow(child, groupIdPrefix)).join('')}</ul>`,
+    `</summary>`,
+    `<ul id="${escapeHtml(groupId)}">${row.children.map((child) => renderRow(child, groupIdPrefix)).join('')}</ul>`,
+    `</details>`,
     `</li>`,
   ].join('');
 };

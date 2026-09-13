@@ -340,7 +340,7 @@ const extractSidebarProjection = (
   const sidebarHost = findFirstElement(
     document,
     (candidate) =>
-      candidate.tagName === 'aside' && hasAttribute(candidate, 'data-app-shell-sidebar-host'),
+      candidate.tagName === 'div' && hasAttribute(candidate, 'data-app-shell-sidebar-host'),
   );
   if (sidebarHost === null || hasAttribute(sidebarHost, 'hidden')) {
     return null;
@@ -348,7 +348,8 @@ const extractSidebarProjection = (
 
   const sidebar = findFirstElement(
     sidebarHost,
-    (candidate) => candidate.tagName === 'layout-sidebar',
+    (candidate) =>
+      candidate.tagName === 'aside' && hasAttribute(candidate, 'data-layout-sidebar-root'),
   );
   if (sidebar === null || hasAttribute(sidebar, 'hidden')) {
     return null;
@@ -372,7 +373,16 @@ const extractSidebarProjection = (
       getAttribute(sidebar, 'topology-revision'),
       'layout-sidebar[topology-revision]',
     ),
-    navHtml: requireStringAttribute(serializeInnerHtml(sidebar), 'layout-sidebar navHtml'),
+    navHtml: requireStringAttribute(
+      (() => {
+        const nav = findFirstElement(
+          sidebar,
+          (candidate) => candidate.tagName === 'nav' && hasAttribute(candidate, 'data-sidebar-nav'),
+        );
+        return nav ? parse5.serializeOuter(nav) : null;
+      })(),
+      'sidebar navHtml',
+    ),
     heading: toOptionalString(getAttribute(sidebar, 'heading')),
     fixedBreakpoint: toNumber(
       getAttribute(sidebar, 'fixed-breakpoint'),

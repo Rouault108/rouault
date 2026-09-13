@@ -124,6 +124,15 @@ export const validateStaticHeaderDomTree = (root: Element): void => {
     readAttribute: (name) => root.getAttribute(name),
   });
   validateSearchTriggerContract(root);
+  const sidebarTriggers = root.querySelectorAll('[data-layout-sidebar-toggle]');
+  if (sidebarTriggers.length !== (root.getAttribute('data-sidebar-enabled') === 'true' ? 1 : 0)) {
+    fail('sidebar trigger cardinality must match data-sidebar-enabled.');
+  }
+  for (const trigger of sidebarTriggers) {
+    if (trigger.localName !== 'button' || !trigger.hasAttribute('hidden')) {
+      fail('canonical sidebar trigger must be a hidden button.');
+    }
+  }
   validateElement(root);
   for (const element of root.querySelectorAll('*')) {
     validateElement(element);

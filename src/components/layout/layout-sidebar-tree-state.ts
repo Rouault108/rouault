@@ -2,7 +2,7 @@ import {
   DEFAULT_SIDEBAR_ID,
   DEFAULT_SIDEBAR_STATE_SCOPE_ID,
 } from '../../../shared/navigation/sidebar-shell-defaults.js';
-import type { TreeNode } from '../ui/file-tree/file-tree.js';
+import type { TreeNode } from '../../../shared/navigation/tree-node.js';
 
 export const LAYOUT_SIDEBAR_TREE_STATE_STORAGE_KEY = 'rouault.sidebar.tree-state.v1';
 export const LAYOUT_SIDEBAR_TREE_STATE_STORAGE_KEY_V2 = 'rouault.sidebar.tree-state.v2';

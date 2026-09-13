@@ -1,0 +1,9 @@
+export const LAYOUT_SIDEBAR_ROOT_ATTRIBUTE = 'data-layout-sidebar-root';
+export const LAYOUT_SIDEBAR_ROOT_SELECTOR = `aside[${LAYOUT_SIDEBAR_ROOT_ATTRIBUTE}]`;
+export const LAYOUT_SIDEBAR_HOST_ATTRIBUTE = 'data-app-shell-sidebar-host';
+export const LAYOUT_SIDEBAR_HOST_SELECTOR = `[${LAYOUT_SIDEBAR_HOST_ATTRIBUTE}]`;
+export const SIDEBAR_ENHANCEMENT_STATE = 'data-sidebar-enhancement-state';
+export const SIDEBAR_ENHANCEMENT_COMMIT_ID = 'data-sidebar-enhancement-shell-commit-id';
+export const HEADER_ENHANCER_STATE = 'data-layout-header-enhancer-state';
+export const HEADER_READY_COMMIT_ID = 'data-layout-header-ready-shell-commit-id';
+export type SidebarEnhancementState = 'fallback' | 'dormant' | 'staged' | 'active';

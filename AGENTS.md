@@ -156,10 +156,10 @@ Windowsネイティブ環境で作業する場合は、PowerShell構文を前提
 #### sidebar
 
 - note sidebarはserver-first navigationを前提とします。
-- sidebar の正本は`layout-sidebar`のlight DOMにあるnav subtreeです。
+- sidebarの正本は静的`aside[data-layout-sidebar-root]`内のnav subtreeです。projectionはshell adapter / DOM adapter、presentation / interactionはcontrollerとplain enhancerが所有します。
 - presentation stateとtree stateは分離してください。
 - app shell上のsidebar hostは1実体だけに保ってください。
-- `layout-sidebar-surface` はoverlay表示のsurfaceであり、state ownerにしないでください。
+- enhancerはshell-level dormant infrastructureです。`layout-sidebar`と`layout-sidebar-surface`はPhase3まで残すlegacy sourceです。
 
 #### permanent URL
 

@@ -65,7 +65,7 @@ const STATIC_HEADER_ALLOWED_ATTRIBUTES_BY_ELEMENT: Readonly<Record<string, Reado
   div: new Set(['class', 'id', 'role']),
   span: new Set(['class']),
   a: new Set(['class', 'href', 'title', 'hidden']),
-  button: new Set(['class', 'type', 'title', 'disabled']),
+  button: new Set(['class', 'type', 'title', 'disabled', 'hidden']),
   details: new Set(['class', 'open']),
   summary: new Set(['class', 'id', 'title']),
   nav: new Set(['class', 'id']),

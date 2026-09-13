@@ -291,7 +291,7 @@ describe('BaseLayout', () => {
     expect(rendered).toContain('href="/notes/reader-note"');
     expect(rendered).toContain('data-link-kind="internal-document"');
     expect(rendered).toContain('data-link-surface="navigation"');
-    expect(rendered).toContain('data-sidebar-boot-state="ssr"');
+    expect(rendered).toContain('data-hydration-key="layout-sidebar-enhancer"');
     expect(rendered).not.toContain('heading="ナビゲーション"');
   });
 
@@ -636,7 +636,7 @@ describe('BaseLayout', () => {
     });
 
     expect(rendered.match(/data-app-shell-sidebar-host/g)?.length ?? 0).to.equal(1);
-    expect(rendered.match(/<layout-sidebar\b/g)?.length ?? 0).to.equal(1);
+    expect(rendered.match(/<aside data-layout-sidebar-root\b/g)?.length ?? 0).to.equal(1);
     expect(rendered.match(/data-app-shell-sidebar-overlay-layer/g)?.length ?? 0).to.equal(1);
   });
 
@@ -676,7 +676,9 @@ describe('BaseLayout', () => {
 
     expect(rendered).toContain('data-sidebar-presence="absent"');
     expect(rendered).toContain('data-app-shell-sidebar-host\n        hidden');
-    expect(rendered).toContain('<layout-sidebar\n          hidden');
+    expect(rendered).toContain(
+      '<aside data-layout-sidebar-root aria-label="ナビゲーション"\n          hidden',
+    );
     expect(rendered.match(/<main id="main-content" tabindex="-1">/g)?.length ?? 0).to.equal(1);
     expect(rendered.match(/data-app-shell-sidebar-overlay-layer/g)?.length ?? 0).to.equal(1);
   });

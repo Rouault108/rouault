@@ -36,12 +36,6 @@ export const SSR_COMPONENT_DEFINITIONS = [
     adapterKind: 'light-router-document-host',
   },
   {
-    tag: 'layout-sidebar',
-    ssr: 'none',
-    profiles: ['layout'],
-    adapterKind: 'none',
-  },
-  {
     tag: 'layout-toc',
     ssr: 'shadow',
     profiles: ['layout'],

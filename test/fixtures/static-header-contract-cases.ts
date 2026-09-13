@@ -47,6 +47,7 @@ export const STATIC_HEADER_CONTRACT_ACCEPTED_HTML = `
           aria-label="サイドバーを開く"
           aria-expanded="false"
           data-layout-sidebar-toggle
+          hidden
           data-sidebar-id="note-primary"
         >
           <span class="static-icon" aria-hidden="true">

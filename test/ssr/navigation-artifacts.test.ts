@@ -65,8 +65,8 @@ const html = (headerAttrs = ''): string => `
   <body>
     ${injectHeaderAttributes(renderTestHeaderHtml(), headerAttrs)}
     <router-document-host data-sidebar-presence="present">
-      <aside data-app-shell-sidebar-host>
-        <layout-sidebar
+      <div data-app-shell-sidebar-host>
+        <aside data-layout-sidebar-root
           sidebar-id="note-primary"
           state-scope-id="note-navigation"
           selected-id="notes/example"
@@ -74,8 +74,8 @@ const html = (headerAttrs = ''): string => `
           topology-revision="rev-1"
           fixed-breakpoint="1024"
           presentation="auto"
-        ><nav data-sidebar-nav data-sidebar-id="note-primary" data-topology-revision="rev-1"><ul><li data-node-id="notes/example" data-node-kind="leaf" data-node-depth="0"><a data-sidebar-nav-control data-sidebar-nav-link href="/base/notes/example/" data-link-kind="internal-document" data-link-surface="navigation" aria-current="page">Example</a></li></ul></nav></layout-sidebar>
-      </aside>
+        ><nav data-sidebar-nav data-sidebar-id="note-primary" data-topology-revision="rev-1"><ul><li data-node-id="notes/example" data-node-kind="leaf" data-node-depth="0"><a data-sidebar-nav-control data-sidebar-nav-link href="/base/notes/example/" data-link-kind="internal-document" data-link-surface="navigation" aria-current="page">Example</a></li></ul></nav></aside>
+      </div>
       <main id="main-content"><article>本文</article></main>
     </router-document-host>
   </body>

@@ -23,7 +23,7 @@
   - app shell rootの主要DOM containment
 - Non-goals:
   - app shell snapshot payload
-  - shell commitまたはrollback
+  - sidebar内部のinteraction実装
   - router document本文境界
   - sidebar state
   - hydration trigger
@@ -48,7 +48,7 @@
 - `main#main-content`のidentityまたは本文ownership
 - router document replacement semantics
 - app shell snapshot payload
-- app shell commitまたはrollback
+- sidebar内部のinteraction実装
 - sidebar state
 - sidebar overlay fallback全体
 - root欠落または重複時のruntime validation
@@ -79,8 +79,8 @@ data-app-shell-root
 structural attribute literalとselectorは次を正本とする。
 
 ```ts
-APP_SHELL_ROOT_ATTRIBUTE
-APP_SHELL_ROOT_SELECTOR
+APP_SHELL_ROOT_ATTRIBUTE;
+APP_SHELL_ROOT_SELECTOR;
 ```
 
 runtime lookupは`APP_SHELL_ROOT_SELECTOR`を使用する。
@@ -175,12 +175,8 @@ commandfor
 ARIA IDREFとHTML ID-referenceのtoken分割はHTML StandardのASCII whitespaceだけをseparatorとする。
 
 ```ts
-const splitAsciiWhitespaceTokens = (
-  value: string,
-): readonly string[] =>
-  value
-    .split(/[\t\n\f\r ]+/u)
-    .filter(Boolean);
+const splitAsciiWhitespaceTokens = (value: string): readonly string[] =>
+  value.split(/[\t\n\f\r ]+/u).filter(Boolean);
 ```
 
 `for`は要素により単一IDまたは空白区切りID列として解釈されるため、validatorは対象attribute valueを同じASCII whitespace token semanticsで検査する。Unicode全体の`\s`をseparatorとして使用しない。
@@ -192,7 +188,6 @@ final artifact validatorの責務はroot identity、presentation class、legacy 
 static header、router host、overlay layer、footerのcontainmentはSSR test、E2E、diff reviewで検証し、final artifact validatorへ重複実装しない。
 
 この契約は既存の`assertProductionHtmlContracts()`が検証する。別validatorを追加してはならない。
-
 
 ### Runtime Contract
 
@@ -342,3 +337,13 @@ Storybook fixtureの変更条件はChange Planで扱い、このContractのpubli
 - final production HTML artifactが新root identityを持つ。
 - final production HTML artifactに`href="#app"`、ARIA IDREF token`app`またはHTML ID-reference token`app`が存在しない。
 - 旧hook alias、compatibility shim、fallback selector、並行selectorを追加しない。
+
+## Sidebar transaction lifecycle
+
+persistent `aside[data-layout-sidebar-root]`はhiddenを含めapp shellに1個存在する。projectionのownerはshell adapter、presentationのownerはcontrollerとplain enhancerである。
+
+ContentCommitter / app shell lifecycleだけがgenerationをreserve / commit / restoreする。`app-shell:committed`はgeneration commit後に通知し、sidebarはpresent / absentともstagedへ移る。routeの`app-shell:validated`はDOM / link validation、通知detail準備、head / history更新がすべて成功し、rollback対象処理を抜けた後に1回だけ通知する。head / history失敗ではvalidatedを発火せず、rollback-startでfailed generationをstageし、旧DOM / raw state復元後にrestoredを通知する。通知後のenhancement失敗では終了済みtransactionをrollbackしない。
+
+initial validationはgeneration 0である。sidebar canonical DOM readbackと、rollbackと同じcanonical static header readbackをpayloadに使用する。runtime theme / menu / TOC / sidebar stateをcanonical headerへ混入させない。
+
+restored dispatch中はstagedを維持し、全listener後のmicrotaskでcurrent header readinessと同generationのsidebar stateを再評価する。成功時だけ旧engaged latchをpruneしてstaged branch pendingをflushする。failed navigationはstorage bytes、previous raw overlay state、nullable descriptor、旧generationのengaged latchを維持する。

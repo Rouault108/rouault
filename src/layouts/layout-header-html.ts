@@ -37,6 +37,7 @@ const renderSidebarToggle = (input: LayoutHeaderHtmlInput): string => {
       aria-label="サイドバーを開く"
       aria-expanded="false"
       data-layout-sidebar-toggle
+      hidden
       data-sidebar-id="${escapeHtmlAttribute(input.sidebarId)}"
     >
       ${renderStaticIconHtml('panel-left')}

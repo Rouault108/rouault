@@ -43,6 +43,7 @@ interface ParsedNavRow {
   readonly element: Parse5Element;
   readonly directControl: Parse5Element | null;
   readonly directGroup: Parse5Element | null;
+  readonly disclosure: Parse5Element | null;
 }
 
 const isElementNode = (node: Parse5Node): node is Parse5Element =>
@@ -101,11 +102,32 @@ const collectRows = (root: Parse5ParentNode, sourceLabel: string): ParsedNavRow[
       const kind = rawKind === 'branch' || rawKind === 'leaf' ? rawKind : 'invalid';
       const rawDepth = toTrimmedString(getAttribute(rowElement, 'data-node-depth'));
       const depth = Number.parseInt(rawDepth, 10);
-      const directChildren = directElementChildren(rowElement);
+      const rowChildren = directElementChildren(rowElement);
+      const disclosure = rowChildren.find((child) => child.tagName === 'details') ?? null;
+      if (
+        kind === 'branch' &&
+        (rowChildren.length !== 1 ||
+          disclosure === null ||
+          !hasAttribute(disclosure, 'data-sidebar-nav-branch'))
+      ) {
+        fail(sourceLabel, `branch row ${id} must contain one details[data-sidebar-nav-branch].`);
+      }
+      if (kind === 'leaf' && disclosure !== null) {
+        fail(sourceLabel, `leaf row ${id} must not contain a disclosure.`);
+      }
+      const directChildren = disclosure === null ? rowChildren : directElementChildren(disclosure);
       const directControls = directChildren.filter((child) =>
         child.attrs.some((attribute) => attribute.name === 'data-sidebar-nav-control'),
       );
       const directGroups = directChildren.filter((child) => child.tagName === 'ul');
+      if (
+        kind === 'branch' &&
+        (directChildren.length !== 2 ||
+          directChildren[0]?.tagName !== 'summary' ||
+          directChildren[1]?.tagName !== 'ul')
+      ) {
+        fail(sourceLabel, `branch row ${id} must contain summary followed by ul.`);
+      }
 
       if (directControls.length > 1) {
         fail(
@@ -132,6 +154,7 @@ const collectRows = (root: Parse5ParentNode, sourceLabel: string): ParsedNavRow[
         element: rowElement,
         directControl,
         directGroup,
+        disclosure,
       });
 
       if (directGroup !== null) {
@@ -449,10 +472,10 @@ export const validateSidebarNavHtmlInvariant = (input: SidebarNavHtmlInvariantIn
     }
 
     if (
-      directControl.tagName !== 'button' ||
+      directControl.tagName !== 'summary' ||
       !hasAttribute(directControl, 'data-sidebar-nav-branch-control')
     ) {
-      fail(sourceLabel, `branch row ${row.id} must have a direct child branch button.`);
+      fail(sourceLabel, `branch row ${row.id} must have a native summary control.`);
     }
 
     if (ariaCurrent !== null) {
@@ -469,14 +492,18 @@ export const validateSidebarNavHtmlInvariant = (input: SidebarNavHtmlInvariantIn
       fail(sourceLabel, `branch row ${row.id} must not have an empty child group.`);
     }
 
-    const expanded = getAttribute(directControl, 'aria-expanded');
-    if (expanded !== 'true' && expanded !== 'false') {
-      fail(sourceLabel, `branch row ${row.id} must have aria-expanded true/false.`);
+    const expanded = row.disclosure !== null && hasAttribute(row.disclosure, 'open');
+    if (
+      hasAttribute(directControl, 'aria-expanded') ||
+      hasAttribute(directControl, 'role') ||
+      hasAttribute(directGroup, 'hidden')
+    ) {
+      fail(sourceLabel, `branch row ${row.id} must use native disclosure state.`);
     }
 
     const groupId = toTrimmedString(getAttribute(directGroup, 'id'));
     const controls = toTrimmedString(getAttribute(directControl, 'aria-controls'));
-    if (groupId.length === 0 || controls !== groupId) {
+    if (groupId.length === 0 || (controls.length > 0 && controls !== groupId)) {
       fail(sourceLabel, `branch row ${row.id} aria-controls must match direct child group id.`);
     }
 
@@ -496,11 +523,7 @@ export const validateSidebarNavHtmlInvariant = (input: SidebarNavHtmlInvariantIn
       );
     }
 
-    if ((expanded === 'false') !== hasAttribute(directGroup, 'hidden')) {
-      fail(sourceLabel, `branch row ${row.id} aria-expanded and hidden must be consistent.`);
-    }
-
-    if (expanded === 'true') {
+    if (expanded) {
       expandedBranchIds.push(row.id);
     }
   }

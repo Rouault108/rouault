@@ -3,22 +3,16 @@ import type {
   PreparedShellUpdate,
   RuntimeDocumentShellSnapshot,
   RuntimeSidebarShellSnapshot,
-  ShellAdapter,
+  ShellUpdatePayload,
 } from '../../../router/router.js';
-import {
-  DEFAULT_SIDEBAR_FIXED_BREAKPOINT,
-  DEFAULT_SIDEBAR_ID,
-  DEFAULT_SIDEBAR_PRESENTATION,
-  DEFAULT_SIDEBAR_STATE_SCOPE_ID,
-} from '../../../../shared/navigation/sidebar-shell-defaults.js';
 import { createCanonicalAbsentRuntimeSidebarProjection } from '../../../../shared/navigation/sidebar-shell-projection-contract.js';
 import { validateRuntimeSidebarProjection } from '../../../../shared/navigation/navigation-shell-validator.js';
 import { layoutSidebarController } from '../../layout/layout-sidebar-controller.js';
+import { LAYOUT_SIDEBAR_ROOT_SELECTOR } from '../../../../shared/navigation/sidebar-enhancement-contract.js';
 
-const ROUTER_DOCUMENT_HOST_SELECTOR = 'router-document-host';
-const SIDEBAR_COLUMN_SELECTOR = '[data-app-shell-sidebar-host]';
-const SIDEBAR_HOST_SELECTOR = `${SIDEBAR_COLUMN_SELECTOR} layout-sidebar`;
-const SIDEBAR_PROJECTION_ATTRIBUTES = [
+export const SIDEBAR_ROOT_SELECTOR = LAYOUT_SIDEBAR_ROOT_SELECTOR;
+const ATTRIBUTES = [
+  'sidebar-id',
   'state-scope-id',
   'selected-id',
   'initial-expanded-ids',
@@ -26,239 +20,129 @@ const SIDEBAR_PROJECTION_ATTRIBUTES = [
   'heading',
   'fixed-breakpoint',
   'presentation',
-  'sidebar-id',
 ] as const;
 
-interface SidebarProjectionHost extends HTMLElement {
-  applyShellProjection?(snapshot: RuntimeSidebarShellSnapshot | null): void;
-  readShellProjection?(): RuntimeSidebarShellSnapshot;
-}
-
-const readRequiredAttribute = (element: Element, attributeName: string): string => {
-  const value = element.getAttribute(attributeName);
-  if (typeof value !== 'string' || value.trim().length === 0) {
-    throw new Error(`visible layout-sidebar requires ${attributeName}.`);
-  }
-  return value.trim();
+const expandedIds = (root: Element): string[] => {
+  const value: unknown = JSON.parse(root.getAttribute('initial-expanded-ids') ?? '[]');
+  if (!Array.isArray(value) || value.some((id: unknown) => typeof id !== 'string'))
+    throw new Error('invalid sidebar expanded ids');
+  return value as string[];
 };
 
-const toOptionalString = (value: string | null): string | null => {
-  if (typeof value !== 'string') {
-    return null;
+export const readSidebarShellSnapshot = (root: Element): RuntimeSidebarShellSnapshot => {
+  if (root.hasAttribute('hidden')) return createCanonicalAbsentRuntimeSidebarProjection();
+  const nav = root.querySelector('nav[data-sidebar-nav]');
+  if (!nav) throw new Error('present sidebar requires nav');
+  const canonical = nav.cloneNode(true) as HTMLElement;
+  const initialExpandedIds = expandedIds(root);
+  for (const branch of canonical.querySelectorAll<HTMLDetailsElement>(
+    'details[data-sidebar-nav-branch]',
+  )) {
+    branch.open = initialExpandedIds.includes(
+      branch.parentElement?.getAttribute('data-node-id') ?? '',
+    );
   }
-  const normalized = value.trim();
-  return normalized.length > 0 ? normalized : null;
-};
-
-const toNumber = (value: string | null, fallback: number): number => {
-  if (typeof value !== 'string') {
-    return fallback;
+  for (const element of [canonical, ...canonical.querySelectorAll('*')]) {
+    for (const name of [
+      'tabindex',
+      'inert',
+      'style',
+      'data-sidebar-active',
+      'data-active',
+      'data-focused',
+    ])
+      element.removeAttribute(name);
   }
-
-  const parsed = Number.parseInt(value, 10);
-  return Number.isFinite(parsed) ? parsed : fallback;
-};
-
-const readCurrentSidebarIdForFallback = (sidebar: HTMLElement): string => {
-  const propertyValue = (sidebar as { sidebarId?: unknown }).sidebarId;
-  if (typeof propertyValue === 'string' && propertyValue.trim().length > 0) {
-    return propertyValue.trim();
-  }
-
-  const attributeValue = sidebar.getAttribute('sidebar-id');
-  if (typeof attributeValue === 'string' && attributeValue.trim().length > 0) {
-    return attributeValue.trim();
-  }
-
-  return DEFAULT_SIDEBAR_ID;
-};
-
-const parseStringArrayAttribute = (value: string | null): string[] => {
-  if (typeof value !== 'string' || value.trim().length === 0) {
-    return [];
-  }
-
-  try {
-    const parsed: unknown = JSON.parse(value);
-    return Array.isArray(parsed)
-      ? parsed.filter((entry): entry is string => typeof entry === 'string')
-      : [];
-  } catch {
-    return [];
-  }
-};
-
-export const readSidebarShellSnapshot = (sidebar: Element): RuntimeSidebarShellSnapshot => {
-  if (sidebar instanceof HTMLElement && sidebar.hidden) {
-    return createCanonicalAbsentRuntimeSidebarProjection();
-  }
-
-  const presentationAttribute = sidebar.getAttribute('presentation');
-  const presentation =
-    presentationAttribute === 'fixed' || presentationAttribute === 'overlay'
-      ? presentationAttribute
-      : DEFAULT_SIDEBAR_PRESENTATION;
-
   return validateRuntimeSidebarProjection({
     present: true,
-    sidebarId: readRequiredAttribute(sidebar, 'sidebar-id'),
-    stateScopeId: readRequiredAttribute(sidebar, 'state-scope-id'),
-    selectedId: toOptionalString(sidebar.getAttribute('selected-id')),
-    initialExpandedIds: parseStringArrayAttribute(sidebar.getAttribute('initial-expanded-ids')),
-    topologyRevision: readRequiredAttribute(sidebar, 'topology-revision'),
-    navHtml: sidebar.innerHTML,
-    heading: toOptionalString(sidebar.getAttribute('heading')),
-    fixedBreakpoint: toNumber(
-      sidebar.getAttribute('fixed-breakpoint'),
-      DEFAULT_SIDEBAR_FIXED_BREAKPOINT,
-    ),
-    presentation,
+    sidebarId: root.getAttribute('sidebar-id'),
+    stateScopeId: root.getAttribute('state-scope-id'),
+    selectedId: root.getAttribute('selected-id'),
+    initialExpandedIds,
+    topologyRevision: root.getAttribute('topology-revision'),
+    navHtml: canonical.outerHTML,
+    heading: root.querySelector('[data-layout-sidebar-heading]')?.textContent ?? null,
+    fixedBreakpoint: Number(root.getAttribute('fixed-breakpoint') ?? 1024),
+    presentation: root.getAttribute('presentation') ?? 'auto',
   });
 };
 
-const applyRuntimeSidebarSnapshot = (
-  snapshot: RuntimeSidebarShellSnapshot | null,
-  currentRouter: HTMLElement | null,
-  currentSidebarColumn: HTMLElement | null,
-  currentSidebar: HTMLElement | null,
-): void => {
-  const runtimeSnapshot = snapshot ?? createCanonicalAbsentRuntimeSidebarProjection();
-  const validated = validateRuntimeSidebarProjection(runtimeSnapshot);
-  const isPresent = validated.present;
-
-  if (currentRouter instanceof HTMLElement) {
-    currentRouter.setAttribute('data-sidebar-presence', isPresent ? 'present' : 'absent');
-  }
-
-  if (!(currentSidebarColumn instanceof HTMLElement) || !(currentSidebar instanceof HTMLElement)) {
-    return;
-  }
-
-  currentSidebarColumn.hidden = !isPresent;
-
-  const projectionSidebar = currentSidebar as SidebarProjectionHost;
-  if (typeof projectionSidebar.applyShellProjection === 'function') {
-    projectionSidebar.applyShellProjection(validated);
-    return;
-  }
-
-  currentSidebar.hidden = !isPresent;
-
-  if (!isPresent) {
-    const previousSidebarId = readCurrentSidebarIdForFallback(currentSidebar);
-    layoutSidebarController.close(previousSidebarId);
-
-    for (const attributeName of SIDEBAR_PROJECTION_ATTRIBUTES) {
-      currentSidebar.removeAttribute(attributeName);
+const prepareProjection = (snapshot: RuntimeSidebarShellSnapshot | null, root: HTMLElement) => {
+  const validated = validateRuntimeSidebarProjection(
+    snapshot ?? createCanonicalAbsentRuntimeSidebarProjection(),
+  );
+  const content = root.ownerDocument.createDocumentFragment();
+  if (validated.present) {
+    const template = root.ownerDocument.createElement('template');
+    template.innerHTML = validated.navHtml;
+    const nav = template.content.firstElementChild;
+    if (template.content.children.length !== 1 || !nav?.matches('nav[data-sidebar-nav]'))
+      throw new Error('sidebar projection requires one nav');
+    if (validated.heading !== null) {
+      const heading = root.ownerDocument.createElement('header');
+      heading.setAttribute('data-layout-sidebar-heading', '');
+      heading.textContent = validated.heading;
+      content.append(heading);
     }
-    if ('sidebarId' in currentSidebar) {
-      (currentSidebar as { sidebarId?: unknown }).sidebarId = DEFAULT_SIDEBAR_ID;
-    }
-    if ('stateScopeId' in currentSidebar) {
-      (currentSidebar as { stateScopeId?: unknown }).stateScopeId = DEFAULT_SIDEBAR_STATE_SCOPE_ID;
-    }
-    if ('initialExpandedIdsJson' in currentSidebar) {
-      (currentSidebar as { initialExpandedIdsJson?: unknown }).initialExpandedIdsJson = '[]';
-    }
-    if ('presentation' in currentSidebar) {
-      (currentSidebar as { presentation?: unknown }).presentation = DEFAULT_SIDEBAR_PRESENTATION;
-    }
-    if ('fixedBreakpoint' in currentSidebar) {
-      (currentSidebar as { fixedBreakpoint?: unknown }).fixedBreakpoint =
-        DEFAULT_SIDEBAR_FIXED_BREAKPOINT;
-    }
-    currentSidebar.innerHTML = '';
-    return;
+    content.append(nav);
   }
-
-  currentSidebar.setAttribute('state-scope-id', validated.stateScopeId);
-
-  if (validated.selectedId === null) {
-    currentSidebar.removeAttribute('selected-id');
-  } else {
-    currentSidebar.setAttribute('selected-id', validated.selectedId);
-  }
-
-  currentSidebar.setAttribute('initial-expanded-ids', JSON.stringify(validated.initialExpandedIds));
-  currentSidebar.setAttribute('topology-revision', validated.topologyRevision);
-
-  if (validated.heading === null) {
-    currentSidebar.removeAttribute('heading');
-  } else {
-    currentSidebar.setAttribute('heading', validated.heading);
-  }
-  currentSidebar.setAttribute('fixed-breakpoint', String(validated.fixedBreakpoint));
-  currentSidebar.setAttribute('sidebar-id', validated.sidebarId);
-  currentSidebar.setAttribute('presentation', validated.presentation);
-  currentSidebar.innerHTML = validated.navHtml;
+  const surface = root.querySelector('[data-layout-sidebar-surface]');
+  const host = root.ownerDocument.querySelector<HTMLElement>('[data-app-shell-sidebar-host]');
+  if (!surface || !host) throw new Error('sidebar shell structure is missing');
+  return () => {
+    // 検証・detached parse後だけlive DOMを変更し、controller stateはvalidationまで保留する。
+    if (root.parentElement !== host) host.append(root);
+    surface.replaceChildren(content);
+    for (const name of ATTRIBUTES) root.removeAttribute(name);
+    root.setAttribute('sidebar-id', validated.sidebarId);
+    root.setAttribute('state-scope-id', validated.stateScopeId);
+    root.setAttribute('presentation', validated.presentation);
+    root.setAttribute('fixed-breakpoint', String(validated.fixedBreakpoint));
+    if (validated.present) {
+      root.setAttribute('initial-expanded-ids', JSON.stringify(validated.initialExpandedIds));
+      root.setAttribute('topology-revision', validated.topologyRevision);
+      if (validated.selectedId !== null) root.setAttribute('selected-id', validated.selectedId);
+      if (validated.heading !== null) root.setAttribute('heading', validated.heading);
+    }
+    root.hidden = !validated.present;
+    host.hidden = !validated.present;
+    root.ownerDocument
+      .querySelector('router-document-host')
+      ?.setAttribute('data-sidebar-presence', validated.present ? 'present' : 'absent');
+  };
 };
 
 export const applyPayloadShellSnapshot = (
   shell: PayloadDocumentShellSnapshot | null,
-  currentRouter: HTMLElement | null,
-  currentSidebarColumn: HTMLElement | null,
-  currentSidebar: HTMLElement | null,
+  _router: HTMLElement | null,
+  _column: HTMLElement | null,
+  root: HTMLElement | null,
 ): void => {
-  applyRuntimeSidebarSnapshot(
-    shell?.sidebarProjection ?? createCanonicalAbsentRuntimeSidebarProjection(),
-    currentRouter,
-    currentSidebarColumn,
-    currentSidebar,
-  );
+  if (root) prepareProjection(shell?.sidebarProjection ?? null, root)();
 };
-
 export const applyRuntimeSidebarSnapshotForRollback = (
   shell: RuntimeDocumentShellSnapshot | null,
-  currentRouter: HTMLElement | null,
-  currentSidebarColumn: HTMLElement | null,
-  currentSidebar: HTMLElement | null,
+  _router: HTMLElement | null,
+  _column: HTMLElement | null,
+  root: HTMLElement | null,
 ): void => {
-  applyRuntimeSidebarSnapshot(
-    shell?.sidebar ?? createCanonicalAbsentRuntimeSidebarProjection(),
-    currentRouter,
-    currentSidebarColumn,
-    currentSidebar,
-  );
+  if (root) prepareProjection(shell?.sidebar ?? null, root)();
 };
-
-/** @deprecated Use applyPayloadShellSnapshot for commit path. */
 export const applySidebarSnapshot = applyPayloadShellSnapshot;
 
-export const createLayoutSidebarShellAdapter = (): ShellAdapter => ({
-  prepare(update): PreparedShellUpdate {
-    const currentRouter = document.querySelector<HTMLElement>(ROUTER_DOCUMENT_HOST_SELECTOR);
-    const currentSidebarColumn = document.querySelector<HTMLElement>(SIDEBAR_COLUMN_SELECTOR);
-    const currentSidebar = document.querySelector<SidebarProjectionHost>(SIDEBAR_HOST_SELECTOR);
-    const previousRuntimeSidebar =
-      currentSidebar instanceof HTMLElement
-        ? typeof currentSidebar.readShellProjection === 'function'
-          ? currentSidebar.readShellProjection()
-          : readSidebarShellSnapshot(currentSidebar)
-        : createCanonicalAbsentRuntimeSidebarProjection();
-    const previousShell: RuntimeDocumentShellSnapshot | null =
-      currentSidebar instanceof HTMLElement
-        ? {
-            headerHtml: '',
-            sidebar: previousRuntimeSidebar,
-          }
-        : null;
-
+export const createLayoutSidebarShellAdapter = () => ({
+  prepare(update: ShellUpdatePayload): PreparedShellUpdate {
+    const root = document.querySelector<HTMLElement>(SIDEBAR_ROOT_SELECTOR);
+    if (!root) throw new Error('persistent sidebar root is required');
+    const previous = readSidebarShellSnapshot(root);
+    const state = layoutSidebarController.readRuntimeSnapshot(previous.sidebarId);
+    const commit = prepareProjection(update.shell.sidebarProjection, root);
+    const rollback = prepareProjection(previous, root);
     return {
-      commit: () => {
-        applyPayloadShellSnapshot(
-          update.shell,
-          currentRouter,
-          currentSidebarColumn,
-          currentSidebar,
-        );
-      },
-      rollback: () => {
-        applyRuntimeSidebarSnapshotForRollback(
-          previousShell,
-          currentRouter,
-          currentSidebarColumn,
-          currentSidebar,
-        );
+      commit,
+      rollback() {
+        rollback();
+        layoutSidebarController.restoreRuntimeSnapshot(previous.sidebarId, state);
       },
     };
   },

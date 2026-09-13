@@ -1,4 +1,9 @@
-import type { SidebarMode, SidebarState } from '../ui/sidebar-shell/sidebar-shell.js';
+import type {
+  SidebarMode,
+  SidebarState,
+  SidebarReturnFocusDescriptor,
+  SidebarRuntimeSnapshot,
+} from '../../../shared/navigation/sidebar-presentation.js';
 import {
   DEFAULT_SIDEBAR_ID,
   DEFAULT_SIDEBAR_FIXED_BREAKPOINT as NOTE_SIDEBAR_FIXED_BREAKPOINT,
@@ -28,12 +33,13 @@ interface Entry {
   fixedBreakpoint: number;
   mode: SidebarMode;
   overlayState: SidebarState;
-  returnFocusTarget: HTMLElement | null;
+  returnFocusDescriptor: SidebarReturnFocusDescriptor | null;
   listeners: Set<(snapshot: LayoutSidebarControllerSnapshot) => void>;
   mediaQuery: MediaQueryList | null;
   mediaQueryListener: ((event: MediaQueryListEvent) => void) | null;
   storage: Storage | null;
   hasRuntimeOverlayState: boolean;
+  pendingUserPersistence: boolean;
   hasHadSubscriber: boolean;
   cleanupScheduled: boolean;
 }
@@ -45,12 +51,13 @@ const createEntry = (): Entry => ({
   fixedBreakpoint: NOTE_SIDEBAR_FIXED_BREAKPOINT,
   mode: 'overlay',
   overlayState: 'collapsed',
-  returnFocusTarget: null,
+  returnFocusDescriptor: null,
   listeners: new Set(),
   mediaQuery: null,
   mediaQueryListener: null,
   storage: null,
   hasRuntimeOverlayState: false,
+  pendingUserPersistence: false,
   hasHadSubscriber: false,
   cleanupScheduled: false,
 });
@@ -58,11 +65,35 @@ const createEntry = (): Entry => ({
 const toSnapshot = (entry: Entry): LayoutSidebarControllerSnapshot => ({
   mode: entry.mode,
   state: entry.mode === 'fixed' ? 'expanded' : entry.overlayState,
-  returnFocusTarget:
-    entry.returnFocusTarget instanceof HTMLElement && entry.returnFocusTarget.isConnected
-      ? entry.returnFocusTarget
-      : null,
+  returnFocusTarget: resolveReturnFocus(entry.returnFocusDescriptor),
 });
+
+const resolveReturnFocus = (
+  descriptor: SidebarReturnFocusDescriptor | null,
+): HTMLElement | null => {
+  if (descriptor === null) return null;
+  if (descriptor.kind === 'connected-element') {
+    return descriptor.element.isConnected &&
+      descriptor.element.ownerDocument === globalThis.document
+      ? descriptor.element
+      : null;
+  }
+  if (typeof document === 'undefined') return null;
+  const matches = [
+    ...document.querySelectorAll<HTMLElement>(
+      'header[data-layout-header] [data-layout-sidebar-toggle]',
+    ),
+  ].filter((element) => element.getAttribute('data-sidebar-id') === descriptor.sidebarId);
+  return matches.length === 1 ? (matches[0] ?? null) : null;
+};
+
+const describeReturnFocus = (
+  trigger: HTMLElement,
+  sidebarId: string,
+): SidebarReturnFocusDescriptor =>
+  trigger.matches('[data-layout-sidebar-toggle]') && trigger.closest('header[data-layout-header]')
+    ? { kind: 'sidebar-header-trigger', sidebarId }
+    : { kind: 'connected-element', element: trigger };
 
 const normalizeFixedBreakpoint = (value: number): number => {
   if (!Number.isFinite(value)) {
@@ -84,11 +115,10 @@ class LayoutSidebarController {
     entry.fixedBreakpoint = normalizeFixedBreakpoint(options.fixedBreakpoint);
     entry.storage = options.storage ?? null;
 
-    if (entry.hasRuntimeOverlayState) {
-      this._persistOverlayState(resolvedId, entry);
-    } else {
+    if (!entry.hasRuntimeOverlayState) {
       this.restorePersistedOverlayState(resolvedId);
     }
+    if (entry.pendingUserPersistence) this._persistOverlayState(resolvedId, entry);
     this._initMediaQuery(resolvedId, entry);
     this._emit(resolvedId, entry);
   }
@@ -102,7 +132,13 @@ class LayoutSidebarController {
 
     entry.listeners.add(listener);
     entry.hasHadSubscriber = true;
-    listener(toSnapshot(entry));
+    try {
+      listener(toSnapshot(entry));
+    } catch (error) {
+      entry.listeners.delete(listener);
+      this._cleanupIfUnobserved(resolvedId, entry);
+      throw error;
+    }
 
     return () => {
       const current = this._entries.get(resolvedId);
@@ -118,6 +154,29 @@ class LayoutSidebarController {
 
   getSnapshot(id?: string): LayoutSidebarControllerSnapshot {
     return toSnapshot(this._ensure(id));
+  }
+
+  readRuntimeSnapshot(id?: string): SidebarRuntimeSnapshot {
+    const entry = this._ensure(id);
+    return { overlayState: entry.overlayState, returnFocusDescriptor: entry.returnFocusDescriptor };
+  }
+
+  restoreRuntimeSnapshot(id: string | undefined, snapshot: SidebarRuntimeSnapshot): void {
+    const resolvedId = this._resolveId(id);
+    const entry = this._ensure(resolvedId);
+    entry.overlayState = snapshot.overlayState;
+    entry.returnFocusDescriptor = snapshot.returnFocusDescriptor;
+    entry.hasRuntimeOverlayState = true;
+    entry.pendingUserPersistence = false;
+    this._emit(resolvedId, entry);
+  }
+
+  setOverlayStateWithoutPersisting(id: string | undefined, state: SidebarState): void {
+    this.restoreRuntimeSnapshot(id, { ...this.readRuntimeSnapshot(id), overlayState: state });
+  }
+
+  clearReturnFocusDescriptor(id?: string): void {
+    this._ensure(id).returnFocusDescriptor = null;
   }
 
   setViewportMode(id: string | undefined, mode: SidebarMode): void {
@@ -142,7 +201,7 @@ class LayoutSidebarController {
     }
 
     if (trigger instanceof HTMLElement) {
-      entry.returnFocusTarget = trigger;
+      entry.returnFocusDescriptor = describeReturnFocus(trigger, resolvedId);
     }
 
     entry.hasRuntimeOverlayState = true;
@@ -199,7 +258,7 @@ class LayoutSidebarController {
     }
 
     if (trigger instanceof HTMLElement) {
-      entry.returnFocusTarget = trigger;
+      entry.returnFocusDescriptor = describeReturnFocus(trigger, resolvedId);
     }
 
     entry.overlayState = 'expanded';
@@ -353,8 +412,10 @@ class LayoutSidebarController {
   private _persistOverlayState(resolvedId: string, entry: Entry): void {
     const storage = entry.storage;
     if (storage === null) {
+      entry.pendingUserPersistence = true;
       return;
     }
+    entry.pendingUserPersistence = false;
 
     try {
       const raw = storage.getItem(OVERLAY_STATE_STORAGE_KEY);

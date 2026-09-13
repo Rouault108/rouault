@@ -50,7 +50,6 @@ describe('static-first profiled hydration validation', () => {
     const result = validateStaticFirstProfiledHydration({
       profile: 'layout',
       html: `
-        <layout-sidebar data-hydration-key="layout-sidebar"></layout-sidebar>
         <layout-toc-controller data-hydration-key="layout-toc-controller"></layout-toc-controller>
       `,
       registry: HYDRATION_REGISTRY,
@@ -58,7 +57,7 @@ describe('static-first profiled hydration validation', () => {
     });
 
     expect(result.errors).toEqual([]);
-    expect(SSR_LAYOUT_TARGET_TAGS).toContain('layout-sidebar');
+    expect(SSR_LAYOUT_TARGET_TAGS).not.toContain('layout-sidebar');
     expect(SSR_LAYOUT_TARGET_TAGS).toContain('layout-toc');
   });
 
@@ -99,6 +98,6 @@ describe('static-first profiled hydration validation', () => {
 
     expect(result.errors).toEqual([]);
     expect(HYDRATION_REGISTRY.some((entry) => entry.tag === 'ui-tabs')).toBe(true);
-    expect(HYDRATION_REGISTRY.some((entry) => entry.tag === 'layout-sidebar')).toBe(true);
+    expect(HYDRATION_REGISTRY.some((entry) => entry.tag === 'layout-sidebar-enhancer')).toBe(true);
   });
 });

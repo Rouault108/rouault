@@ -6,6 +6,7 @@ import { enhanceScoreScroll } from '../post-hydrate/score-scroll-enhancer.js';
 import { enhanceSearchDialog } from '../post-hydrate/search-dialog-enhancer.js';
 import { enhanceSearchPage } from '../post-hydrate/search-page-enhancer.js';
 import { enhanceLayoutHeader } from '../post-hydrate/layout-header-enhancer.js';
+import { enhanceLayoutSidebar } from '../post-hydrate/layout-sidebar-enhancer.js';
 import { enhanceNoteStaticSurface } from '../post-hydrate/note-static-surface-enhancer.js';
 import type { HydrationActivationContext, HydrationRegistryEntry } from './types.js';
 
@@ -53,10 +54,8 @@ const activateScoreScroll = ({ element, signal }: HydrationActivationContext): v
   enhanceScoreScroll(element, signal);
 };
 
-const activateLayoutSidebar = ({ element }: HydrationActivationContext): void => {
-  if (!element.isConnected) {
-    return;
-  }
+const activateLayoutSidebar = ({ element, signal }: HydrationActivationContext): void => {
+  enhanceLayoutSidebar(element, signal);
 };
 
 const activateLayoutTocController = async ({ element, signal }: HydrationActivationContext) => {
@@ -114,19 +113,10 @@ export const HYDRATION_REGISTRY = [
     activate: activateScoreScroll,
   },
   {
-    tag: 'layout-sidebar',
-    kind: 'custom-element',
-    profiles: ['layout'],
-    loader: () => import('../../components/layout/layout-sidebar.js'),
-    preload: {
-      when: 'planned',
-      scopes: ['shell'],
-    },
-    bootMarker: {
-      attribute: 'data-sidebar-boot-state',
-      value: 'ssr',
-      remove: 'after-activation',
-    },
+    tag: 'layout-sidebar-enhancer',
+    kind: 'enhancer',
+    profiles: ['shell'],
+    loader: () => Promise.resolve(undefined),
     activate: activateLayoutSidebar,
   },
   {

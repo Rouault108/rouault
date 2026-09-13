@@ -52,7 +52,7 @@ const rootGroupId = createSidebarGroupId(
   createSidebarGroupIdPrefixFromSidebarIdentity('note-navigation', 'note-primary'),
   'root',
 );
-const validNavHtml = `<nav data-sidebar-nav aria-label="ノートナビゲーション" data-sidebar-id="note-primary" data-topology-revision="rev-1"><ul><li data-node-id="root" data-node-kind="branch" data-node-depth="0" data-current-branch="true" data-current-path-indicator="true"><button type="button" data-sidebar-nav-control data-sidebar-nav-branch-control aria-expanded="true" aria-controls="${rootGroupId}"><span data-sidebar-nav-label>Root</span></button><ul id="${rootGroupId}"><li data-node-id="root/child" data-node-kind="leaf" data-node-depth="1"><a data-sidebar-nav-control data-sidebar-nav-link href="/root/child/" data-link-kind="internal-document" data-link-surface="navigation" aria-current="page"><span data-sidebar-nav-label>Child</span></a></li></ul></li><li data-node-id="sibling" data-node-kind="leaf" data-node-depth="0"><a data-sidebar-nav-control data-sidebar-nav-link href="/sibling/" data-link-kind="internal-document" data-link-surface="navigation"><span data-sidebar-nav-label>Sibling</span></a></li></ul></nav>`;
+const validNavHtml = `<nav data-sidebar-nav aria-label="ノートナビゲーション" data-sidebar-id="note-primary" data-topology-revision="rev-1"><ul><li data-node-id="root" data-node-kind="branch" data-node-depth="0" data-current-branch="true" data-current-path-indicator="true"><details data-sidebar-nav-branch open><summary data-sidebar-nav-control data-sidebar-nav-branch-control aria-controls="${rootGroupId}"><span data-sidebar-nav-label>Root</span></summary><ul id="${rootGroupId}"><li data-node-id="root/child" data-node-kind="leaf" data-node-depth="1"><a data-sidebar-nav-control data-sidebar-nav-link href="/root/child/" data-link-kind="internal-document" data-link-surface="navigation" aria-current="page"><span data-sidebar-nav-label>Child</span></a></li></ul></details></li><li data-node-id="sibling" data-node-kind="leaf" data-node-depth="0"><a data-sidebar-nav-control data-sidebar-nav-link href="/sibling/" data-link-kind="internal-document" data-link-surface="navigation"><span data-sidebar-nav-label>Sibling</span></a></li></ul></nav>`;
 
 type SidebarNavHtmlInvariantInput = Parameters<typeof validateSidebarNavHtmlInvariant>[0];
 type SidebarNavHtmlInvariantTestOverrides = Omit<
@@ -190,8 +190,8 @@ describe('sidebar nav html invariant', () => {
     expectInvalidFixture({ navHtml: validNavHtml.replace('href="/root/child/"', 'href=""') });
     expectInvalidFixture({
       navHtml: validNavHtml.replace(
-        '<button type="button"',
-        '<button aria-current="true" type="button"',
+        '<summary data-sidebar-nav-control',
+        '<summary aria-current="true" data-sidebar-nav-control',
       ),
     });
     expectInvalidFixture({
@@ -237,12 +237,12 @@ describe('sidebar nav html invariant', () => {
       navHtml: validNavHtml.replace(`<ul id="${rootGroupId}">`, `<ul hidden id="${rootGroupId}">`),
     });
     expectInvalidFixture({
-      navHtml: validNavHtml.replace('aria-expanded="true"', 'aria-expanded="false"'),
+      navHtml: validNavHtml.replace('data-sidebar-nav-branch open', 'data-sidebar-nav-branch'),
       initialExpandedIds: [],
     });
     expectInvalidFixture({
       navHtml: validNavHtml
-        .replace('aria-expanded="true"', 'aria-expanded="false"')
+        .replace('data-sidebar-nav-branch open', 'data-sidebar-nav-branch')
         .replace(`<ul id="${rootGroupId}">`, `<ul hidden id="${rootGroupId}">`),
       initialExpandedIds: [],
     });

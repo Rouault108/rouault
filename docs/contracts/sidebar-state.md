@@ -3,108 +3,60 @@
 ## 1. Status
 
 - Type: Normative
-- Source of truth: `layout-sidebar` light DOM、sidebar coordinator、file tree tests
-- Applies to: note sidebarのpresentation state、tree state、route / shell projection state
-- Non-goals: note URL契約、`_config.json`入力仕様、NavigationEnvelope sidebar schema詳細
+- Source of truth: static sidebar DOM、shell adapter、plain enhancer、controller、およびbrowser / E2E契約
+- Applies to: note sidebarのprojection、presentation、native navigation、永続化
+- Non-goals: URL、content config、NavigationEnvelope schemaの変更
 
 ## 2. Ownership
 
-### This Layer Owns
+- `BaseLayout`はhiddenを含め正確に1個の`aside[data-layout-sidebar-root]`を出力する。
+- shell adapterはcanonical projectionの検証、detached parse、commit、rollbackを所有する。
+- `layout-sidebar-controller`はraw overlay state、derived mode、nullable return-focus descriptorを所有する。
+- `layout-sidebar-enhancer`はshell-level infrastructureとしてplacement、native / enhanced interaction、generationごとのfallbackを所有する。
+- header enhancerはcommand sender / snapshot consumerであり、header triggerのhidden、ARIA、labelのruntime write ownerである。
+- `layout-sidebar`、`layout-sidebar-surface`と旧nav helperはPhase3まで残すlegacy sourceであり、production ownerではない。
 
-- Sidebar stateをpresentation state、tree state、route / shell projection stateに分けること。
-- `header[data-layout-header]` enhancerをcommand sender + snapshot consumerとすること。
-- `layout-sidebar`をpersistent coordinator hostとすること。
-- `ui-sidebar` / `ui-sidebar-shell`を表示・対話部品とすること。
-- fixed / overlayの意味論とoverlay layering。
-- Sidebar表示におけるbranch label / page node label の使用面。
+## 3. DOMとNo-JS
 
-### This Layer Must Not Own
+presentの正本はpersistent root内の`nav[data-sidebar-nav]`1実体であり、absent時は0実体である。mode変更ではrootをsource hostとoverlay layer間で移し、navをclone / serializeしない。route更新だけがnav subtreeを交換する。
 
-- `_config.json.label`の入力仕様。正本は`docs/contracts/content-config.md`。
-- breadcrumb / directory-index / note identityにおけるlabel消費規則。正本は`docs/contracts/note-navigation.md`。
-- `shell.sidebarProjection` payload field詳細。正本は`docs/references/navigation-envelope-schema.md`。
+rootは初期openの`details[data-layout-sidebar-disclosure]`とnative summaryを持つ。branchは`details[data-sidebar-nav-branch] > summary + ul`を使う。branchの`open`だけが開閉を表し、重複する`aria-expanded`や子ulの`hidden`を持たない。group idは安定させる。No-JSでは全幅でsummary、branch、linkを操作できる。狭幅fallbackは本文の前に通常flowで配置し、0px trackにしない。
 
-## 3. Public Contract
+`_config.json.label`の入力は`content-config.md`、branch / page labelの投影は`note-navigation.md`、payload fieldは`../references/navigation-envelope-schema.md`を正本とする。
 
-### Inputs
+## 4. Generationとpresentation
 
-- `layout-sidebar` light DOMのnav subtree。
-- `NavigationEnvelope.shell.sidebarProjection`。
-- User command from header / sidebar controls。
+共有属性のliteralは`shared/navigation/sidebar-enhancement-contract.ts`が所有する。stateとshell commit IDは同一同期turnで更新する。
 
-### Outputs
+| State    | 意味                                                                                                |
+| -------- | --------------------------------------------------------------------------------------------------- |
+| 属性なし | infrastructure未起動、初期化失敗、cleanup後                                                         |
+| staged   | committed / rollback処理中。native操作だけを公開し、raw overlay stateとdescriptorを保持             |
+| dormant  | matching validationが成功したabsent                                                                 |
+| fallback | validated presentでnative表示を維持                                                                 |
+| active   | matching validation、同generationのheader readiness、open disclosure、未engagedを満たすenhanced表示 |
 
-- Sidebar presentation state。
-- Tree expanded state。
-- Selected page node表示。
+activeはsummary、placement、backdrop、inert、nav操作の同期準備を済ませて最後にpublishする。staged / fallbackではroving tabindexを除去する。native操作またはnative surface内focus占有はgenerationのengaged latchとなり、同generationでの自動昇格を抑止する。成功した次generationで旧latchを破棄し、rollbackでは旧generationのlatchを維持する。
 
-### Events
+activeからfallbackへ縮退するときだけtop-level disclosureをopenへ戻す。hidden triggerや無効化されるsidebar focusはnative summaryへpreventScrollで戻す。有効なnative focusや外部focusは維持する。初期 / staged / 既存fallbackのユーザーの開閉は変更しない。
 
-- Headerはcommandを送信し、sidebarのsnapshotを消費する。
-- Sidebar componentはroute stateをrouter coreへ押し戻さない。
+## 5. Stateと永続化
 
-### DOM Contract
+overlay preferenceとbranch expandedIdsは別storage契約を維持する。projection、initialize、rollback、fallbackの非永続collapseはstorageへ書かない。fallback overrideは同generationの保存済みexpandedより優先し、正常な次generationで失効する。
 
-- app shell上の`layout-sidebar` hostは1つだけである。
-- `NoteLayout`は`layout-sidebar`を出力しない。
-- route遷移ではhost identityを維持し、server-first nav subtreeを更新する。
-- note sidebarの正本は`layout-sidebar`のlight DOM nav subtreeである。
-- `source-id`はnote sidebarのpublic contractではない。
+branch永続化はtrustedかつcancelされていないactivationと一致するnative toggleだけに限定する。detailsごとのepisodeは最初のopen、最後のexpected open、operation ID、generation、sourceを保持し、ToggleEventのoldState / newStateと照合する。mixed-origin、synthetic、未対応toggleは永続化しない。staged中はidentity / generation付きpendingへ保留し、matching最終validation成功時だけflushする。失敗generationのpendingは破棄する。
 
-## 4. State Model
+return-focus descriptorはheader triggerのsidebarId、同documentへ接続中のHTMLElement、またはnullである。header交換後は新headerから再解決する。通常closeはcollapse後にfocus returnを試行してclearする。stable absent / fallbackはsessionを終了するが、rollbackのprovisional fallbackだけではprevious descriptorを破棄しない。nullは保存状態やtriggerなしcommandの正常値であり、初期focusを奪わない。
 
-### Durable State
+## 6. Transactionとfailure
 
-- Tree state。
-- Route / shell projection state。
+canonical snapshotはtransaction内だけで生成し、runtime expanded state / tabindex等を除去する。adapterはprevious canonical projectionとcontrollerのraw overlay state / descriptorを保持する。derived modeやphysical placement、generationを複製しない。generationと最終成功通知はContentCommitter / app shell lifecycleが所有する。
 
-### Ephemeral State
+初期化失敗、abort、unexpected disconnectではlistener / observer / subscriptionを解除し、共有state属性を除去する。header readiness喪失はnative fallbackへ収束する。schedulerがactivation timingを所有し、componentによる自己起動を追加しない。
 
-- Overlay open / closed。
-- Focus and transient interaction state。
+## 7. Verification
 
-### Derived State
-
-- Structural expanded ids。
-- Selected id。
-- Fixed / overlay mode。
-
-### Forbidden Coupling
-
-- overlay stateとtree expanded stateを混在させてはならない。
-- `TreeNode.id`と表示labelを混同してはならない。
-- Sidebar hostをrouteごとに再生成してはならない。
-
-## 5. Failure Semantics
-
-- projectionが欠落した場合、server-first nav subtreeを優先してno-JS navigationを維持する。
-- selected idが解決できない場合、tree全体を壊さずselected表示だけを省略する。
-
-## 6. Integration Boundaries
-
-### Build-time
-
-- nav subtreeとshell projectionを生成する。
-
-### SSR
-
-- server-first navigationを出力する。
-
-### Client Runtime
-
-- `layout-sidebar`がcoordinator hostとしてstateを保持する。
-
-### Hydration
-
-- Hydration triggerはsidebar componentではなくscheduler / registryが所有する。
-
-### Tests
-
-- Host identity、nav subtree更新、overlay/tree state分離をbrowser/e2e で検証する。
-
-## 7. Acceptance Criteria
-
-- Sidebar hostがapp shell上に1つだけ存在する。
-- route遷移でhost identityが維持される。
-- presentation state、tree state、route projection stateが分離されている。
-- labelの入力仕様、breadcrumb消費規則、sidebar表示規則が別文書で分離されている。
+- Node / SSR: native nav invariant、root cardinality、projection、hydration budget、SSR target
+- Browser: `layout-sidebar-enhancer.browser.test.ts`、controller、shell mutation、native keyboard / persistence
+- E2E: `sidebar-pre-hydration-leakage.spec.ts`、`sidebar-scroll.spec.ts`、`static-header-migration.spec.ts`
+- StorybookはPhase3まで比較用のmeta / smoke ownerとして維持する。

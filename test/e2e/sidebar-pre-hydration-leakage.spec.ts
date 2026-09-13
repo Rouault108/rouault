@@ -1,115 +1,94 @@
 import { expect, test } from '@playwright/test';
-
 import { e2eNoteFixtures } from './support/note-fixtures.js';
 
 const layoutRichPath = e2eNoteFixtures.layoutRich.directPath;
+const rootSelector = 'aside[data-layout-sidebar-root]';
 
-test.describe('sidebar pre-hydration leakage', () => {
-  test('狭幅 reload 中も SSR raw sidebar を paint せず、hydration 後は通常どおり開けること', async ({
+test.describe('sidebar native fallback', () => {
+  test('遅いJSでもnative navigationを表示し、入力後は同じ世代でoverlayへ昇格しない', async ({
     page,
-    browserName,
   }) => {
-    test.skip(browserName !== 'webkit', 'WebKit regression guard');
-
     await page.setViewportSize({ width: 390, height: 844 });
-    await page.goto(layoutRichPath);
-
     await page.addInitScript(() => {
-      const registry = window.customElements;
-      const realDefine = registry.define.bind(registry);
-      const heldDefinitions: [
-        string,
-        CustomElementConstructor,
-        ElementDefinitionOptions | undefined,
-      ][] = [];
-      const heldTagNames = new Set(['layout-sidebar']);
-
-      (
-        window as Window & {
-          __releaseHeldLayoutSidebarDefinition__?: () => void;
+      const dispatch = document.dispatchEvent.bind(document);
+      let held: Event | null = null;
+      document.dispatchEvent = (event: Event): boolean => {
+        if (event.type === 'app-shell:validated') {
+          held = event;
+          return true;
         }
-      ).__releaseHeldLayoutSidebarDefinition__ = () => {
-        while (heldDefinitions.length > 0) {
-          const entry = heldDefinitions.shift();
-          if (!entry) {
-            continue;
-          }
-
-          const [name, ctor, options] = entry;
-          if (!registry.get(name)) {
-            realDefine(name, ctor, options);
-          }
-        }
+        return dispatch(event);
       };
-
-      registry.define = ((name, ctor, options) => {
-        if (heldTagNames.has(name) && !registry.get(name)) {
-          heldDefinitions.push([name, ctor, options]);
-          return;
-        }
-
-        realDefine(name, ctor, options);
-      }) as typeof registry.define;
+      Object.assign(window, {
+        releaseSidebarValidation: () => {
+          if (held) dispatch(held);
+        },
+      });
     });
-
-    await page.reload();
-
-    const sidebarHost = page.locator('layout-sidebar[data-sidebar-boot-state="ssr"]');
-    const rawNav = sidebarHost.locator('[data-sidebar-nav]');
-
-    await expect(sidebarHost).toHaveCount(1);
-    await expect(rawNav).toHaveCount(1);
-    await expect(rawNav).toBeHidden();
-
-    const preHydrationState = await page.evaluate(() => {
-      const sidebarHost = document.querySelector<HTMLElement>(
-        'layout-sidebar[data-sidebar-boot-state="ssr"]',
-      );
-      const sidebarColumn = document.querySelector<HTMLElement>('[data-app-shell-sidebar-host]');
-
-      if (!(sidebarHost instanceof HTMLElement) || !(sidebarColumn instanceof HTMLElement)) {
-        return null;
-      }
-
-      const sidebarHostStyle = getComputedStyle(sidebarHost);
-      const sidebarColumnStyle = getComputedStyle(sidebarColumn);
-
-      return {
-        hostVisibility: sidebarHostStyle.visibility,
-        hostPointerEvents: sidebarHostStyle.pointerEvents,
-        columnOverflowX: sidebarColumnStyle.overflowX,
-        columnOverflowY: sidebarColumnStyle.overflowY,
-        columnWidth: Math.round(sidebarColumn.getBoundingClientRect().width),
-        horizontalOverflow:
-          document.documentElement.scrollWidth - document.documentElement.clientWidth,
-      };
-    });
-
-    expect(preHydrationState).not.toBeNull();
-    expect(preHydrationState?.hostVisibility).toBe('hidden');
-    expect(preHydrationState?.hostPointerEvents).toBe('none');
-    expect(preHydrationState?.columnOverflowX).toBe('hidden');
-    expect(preHydrationState?.columnOverflowY).toBe('hidden');
-    expect(preHydrationState?.columnWidth ?? Number.POSITIVE_INFINITY).toBeLessThanOrEqual(1);
-    expect(preHydrationState?.horizontalOverflow ?? Number.POSITIVE_INFINITY).toBeLessThanOrEqual(
-      1,
+    await page.goto(layoutRichPath);
+    const root = page.locator(rootSelector);
+    const summary = root.locator('[data-layout-sidebar-static-trigger]');
+    const nav = root.locator('nav[data-sidebar-nav]');
+    await expect(page.locator('[data-sidebar-enhancement-state]')).toHaveAttribute(
+      'data-sidebar-enhancement-state',
+      'staged',
     );
-
+    await expect(nav).toBeVisible();
+    await expect(page.locator('[data-layout-sidebar-toggle]')).toBeHidden();
+    await summary.click();
+    await expect(nav).toBeHidden();
+    await summary.press('Enter');
+    await expect(nav).toBeVisible();
     await page.evaluate(() => {
-      (
-        window as Window & {
-          __releaseHeldLayoutSidebarDefinition__?: () => void;
-        }
-      ).__releaseHeldLayoutSidebarDefinition__?.();
+      const release = Reflect.get(window, 'releaseSidebarValidation') as () => void;
+      release();
     });
+    await expect(page.locator('[data-sidebar-enhancement-state]')).toHaveAttribute(
+      'data-sidebar-enhancement-state',
+      'fallback',
+    );
+    await expect(summary).toBeFocused();
+    await expect(nav).toBeVisible();
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+      ),
+    ).toBeLessThanOrEqual(1);
+  });
 
-    await expect
-      .poll(async () => {
-        return await page.locator('layout-sidebar').getAttribute('data-sidebar-boot-state');
-      })
-      .toBeNull();
-
-    await page.getByRole('button', { name: 'サイドバーを開く' }).click();
-    await expect(page.locator('layout-sidebar-surface [data-sidebar-nav]')).toBeVisible();
+  test('JSなしでも幅変更後にsummaryと全native branchへ到達できる', async ({ browser, baseURL }) => {
+    const context = await browser.newContext({
+      baseURL: baseURL ?? 'http://127.0.0.1:4173',
+      javaScriptEnabled: false,
+      viewport: { width: 390, height: 844 },
+    });
+    const page = await context.newPage();
+    try {
+      await page.goto(layoutRichPath);
+      const root = page.locator(rootSelector);
+      await expect(root).toHaveCount(1);
+      await expect(page.locator('layout-sidebar')).toHaveCount(0);
+      await expect(page.locator('[data-layout-sidebar-toggle]')).toBeHidden();
+      for (const width of [390, 1023, 1280, 390]) {
+        await page.setViewportSize({ width, height: 844 });
+        const summary = root.locator('[data-layout-sidebar-static-trigger]');
+        await summary.press('Enter');
+        await expect(root.locator('nav')).toBeHidden();
+        await summary.press('Space');
+        await expect(root.locator('nav')).toBeVisible();
+      }
+      const branches = root.locator('details[data-sidebar-nav-branch]');
+      for (let index = 0; index < (await branches.count()); index += 1) {
+        const branch = branches.nth(index);
+        if ((await branch.getAttribute('open')) === null)
+          await branch.locator(':scope > summary').press('Enter');
+      }
+      const links = root.locator('a[data-sidebar-nav-link]');
+      expect(await links.count()).toBeGreaterThan(0);
+      for (let index = 0; index < (await links.count()); index += 1)
+        await expect(links.nth(index)).toBeVisible();
+    } finally {
+      await context.close();
+    }
   });
 });

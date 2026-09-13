@@ -1,5 +1,8 @@
 import type { DefaultTreeAdapterMap } from 'parse5';
-import { validateSidebarIdentityInstances } from '../../shared/navigation/sidebar-identity-document-contract.js';
+import {
+  validateSidebarIdentityInstances,
+  SidebarIdentityDocumentContractError,
+} from '../../shared/navigation/sidebar-identity-document-contract.js';
 
 type Parse5Node = DefaultTreeAdapterMap['node'];
 type Parse5ParentNode = DefaultTreeAdapterMap['parentNode'];
@@ -25,7 +28,11 @@ const findLayoutSidebars = (
   matches: Parse5Element[] = [],
 ): Parse5Element[] => {
   for (const childNode of node.childNodes) {
-    if (isElementNode(childNode) && childNode.tagName === 'layout-sidebar') {
+    if (
+      isElementNode(childNode) &&
+      childNode.tagName === 'aside' &&
+      hasAttribute(childNode, 'data-layout-sidebar-root')
+    ) {
       matches.push(childNode);
     }
 
@@ -42,8 +49,14 @@ export const validateDocumentSidebarIdentityContract = (
   options: { readonly sourceLabel?: string } = {},
 ): void => {
   const sourceLabel = options.sourceLabel ?? 'navigation-artifact';
+  const roots = findLayoutSidebars(document);
+  if (roots.length !== 1) {
+    throw new SidebarIdentityDocumentContractError(
+      `[${sourceLabel}] expected exactly one persistent sidebar root, including hidden roots.`,
+    );
+  }
   validateSidebarIdentityInstances(
-    findLayoutSidebars(document).map((sidebar, index) => ({
+    roots.map((sidebar, index) => ({
       sidebarId: getAttribute(sidebar, 'sidebar-id'),
       present: !hasAttribute(sidebar, 'hidden'),
       sourceLabel: `${sourceLabel}:layout-sidebar[${String(index)}]`,

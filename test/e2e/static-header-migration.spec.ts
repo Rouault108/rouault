@@ -2040,6 +2040,7 @@ test.describe('Static header migration', () => {
   test('sidebar toggle は controller state と aria を同期し focus return trigger を渡すこと', async ({
     page,
   }) => {
+    await page.emulateMedia({ reducedMotion: 'reduce' });
     await page.setViewportSize({ width: 390, height: 760 });
     await page.goto(layoutRich.directPath);
     await waitForRouterDocumentHostReady(page);
@@ -2060,18 +2061,16 @@ test.describe('Static header migration', () => {
     await expect(header).toHaveAttribute('data-overlay-sidebar-open', 'true');
     await expect(trigger).toHaveAttribute('aria-expanded', 'true');
     await expect(trigger).toHaveAttribute('aria-label', 'サイドバーを閉じる');
-    await expect(page.locator('layout-sidebar-surface ui-sidebar-shell')).toHaveAttribute(
+    await expect(page.locator('aside[data-layout-sidebar-root]')).toHaveAttribute(
       'data-state',
       'expanded',
     );
+    await expect(page.locator('aside[data-layout-sidebar-root] nav')).toBeVisible();
+    await expect(
+      page.locator('aside[data-layout-sidebar-root] [data-sidebar-nav-control]').first(),
+    ).toBeFocused();
 
-    await page.locator('layout-sidebar-surface ui-sidebar-shell').evaluate((element) => {
-      const scrim = element.shadowRoot?.querySelector<HTMLElement>('.scrim');
-      if (scrim === undefined || scrim === null) {
-        throw new Error('sidebar scrim is missing.');
-      }
-      scrim.click();
-    });
+    await page.locator('[data-layout-sidebar-backdrop]').click({ position: { x: 350, y: 100 } });
 
     await expect(header).toHaveAttribute('data-sidebar-state', 'collapsed');
     await expect(header).toHaveAttribute('data-overlay-sidebar-open', 'false');
@@ -2275,7 +2274,7 @@ test.describe('Static header migration', () => {
     );
   });
 
-  test('app-shell:validated 後の history 失敗時も rollback 後に TOC bridge を旧 shell へ再同期すること', async ({
+  test('history 失敗時は validated を通知せず rollback 後に TOC bridge を旧 shell へ再同期すること', async ({
     page,
   }) => {
     await page.setViewportSize({ width: 390, height: 760 });
@@ -2306,7 +2305,7 @@ test.describe('Static header migration', () => {
 
       const originalPushState = history.pushState.bind(history);
       history.pushState = (() => {
-        throw new Error('forced history failure after app-shell:validated');
+        throw new Error('forced history failure before app-shell:validated');
       }) as typeof history.pushState;
       state.restoreStaticHeaderHistoryPatch = () => {
         history.pushState = originalPushState;
@@ -2349,7 +2348,7 @@ test.describe('Static header migration', () => {
             ).staticHeaderHistoryFailureEvents ?? [],
         ),
       )
-      .toEqual(['validated:/about/', `restored:${originalNavigationUrl}`]);
+      .toEqual([`restored:${originalNavigationUrl}`]);
 
     const trigger = page.locator('header[data-layout-header] [data-toc-trigger]');
     await expect(trigger).toHaveAttribute('data-toc-trigger-interactive', 'true');
@@ -2364,7 +2363,7 @@ test.describe('Static header migration', () => {
 test.describe('Static header migration no-JS', () => {
   test.use({ javaScriptEnabled: false });
 
-  test('narrow note page は hydration 前の静的 CSS で sidebar toggle を表示可能にすること', async ({
+  test('narrow note page は hidden header trigger と操作可能なnative summaryを持つこと', async ({
     page,
   }) => {
     await page.setViewportSize({ width: 1023, height: 760 });
@@ -2372,7 +2371,13 @@ test.describe('Static header migration no-JS', () => {
 
     await expect(
       page.locator('header[data-layout-header] [data-layout-sidebar-toggle]'),
-    ).toBeVisible();
+    ).toBeHidden();
+    const summary = page.locator('[data-layout-sidebar-static-trigger]');
+    await expect(summary).toBeVisible();
+    await summary.press('Enter');
+    await expect(page.locator('[data-layout-sidebar-root] nav')).toBeHidden();
+    await summary.press('Space');
+    await expect(page.locator('[data-layout-sidebar-root] nav')).toBeVisible();
   });
 
   test('desktop note page は hydration 前の静的 CSS で sidebar toggle を隠すこと', async ({

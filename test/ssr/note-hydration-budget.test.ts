@@ -98,9 +98,7 @@ const renderNotePage = (
 
   const notePage = buildHydrationBudgetNotePageProjection(note);
   const sidebar =
-    notePage.showSidebar && notePage.sidebar
-      ? '<layout-sidebar data-hydration-capability="interactive" data-hydration-trigger="initial"></layout-sidebar>'
-      : '';
+    '<aside data-layout-sidebar-root data-hydration-key="layout-sidebar-enhancer" data-hydration-capability="interactive" data-hydration-trigger="initial"></aside>';
   const rendered = `${sidebar}${layout.render({ notePage })}`;
   return {
     slug,

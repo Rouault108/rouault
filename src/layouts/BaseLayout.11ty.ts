@@ -109,7 +109,7 @@ const buildSidebarAttributes = (sidebar: NonNullable<NotePageProjection['sidebar
     { name: 'fixed-breakpoint', value: sidebar.fixedBreakpoint },
     { name: 'sidebar-id', value: sidebar.sidebarId },
     { name: 'presentation', value: sidebar.presentation },
-    { name: 'data-sidebar-boot-state', value: 'ssr' },
+    { name: 'data-hydration-key', value: 'layout-sidebar-enhancer' },
     { name: 'data-hydration-capability', value: 'interactive' },
     { name: 'data-hydration-trigger', value: 'initial' },
   ]);
@@ -326,13 +326,12 @@ export class BaseLayout {
         aria-atomic="${ROUTER_DOCUMENT_HOST_ANNOUNCEMENT_ARIA_ATOMIC}"
         class="${ROUTER_DOCUMENT_HOST_ANNOUNCEMENT_CLASS_NAME}"
       ></div>
-      <aside
-        class="layout-sidebar-col"
-        aria-label="ナビゲーション"
+        <div
+          class="layout-sidebar-col"
         data-app-shell-sidebar-host
         ${sidebarPresence === 'absent' ? 'hidden' : ''}
       >
-        <layout-sidebar
+          <aside data-layout-sidebar-root aria-label="ナビゲーション"
           ${sidebarPresence === 'absent' ? 'hidden' : ''}
           ${
             data.notePage?.showSidebar && data.notePage.sidebar
@@ -342,17 +341,21 @@ export class BaseLayout {
                   { name: 'state-scope-id', value: DEFAULT_SIDEBAR_STATE_SCOPE_ID },
                   { name: 'fixed-breakpoint', value: DEFAULT_SIDEBAR_FIXED_BREAKPOINT_ATTRIBUTE },
                   { name: 'presentation', value: DEFAULT_SIDEBAR_PRESENTATION },
+                  { name: 'data-hydration-key', value: 'layout-sidebar-enhancer' },
                   { name: 'data-hydration-capability', value: 'interactive' },
                   { name: 'data-hydration-trigger', value: 'initial' },
                 ])
           }
-        >${data.notePage?.showSidebar && data.notePage.sidebar ? data.notePage.sidebar.navHtml : ''}</layout-sidebar>
-      </aside>
+          ><details open data-layout-sidebar-disclosure>
+            <summary data-layout-sidebar-static-trigger>ナビゲーション</summary>
+            <div data-layout-sidebar-surface>${data.notePage?.showSidebar && data.notePage.sidebar ? `${data.notePage.sidebar.heading ? `<header data-layout-sidebar-heading>${escapeHtmlText(data.notePage.sidebar.heading)}</header>` : ''}${data.notePage.sidebar.navHtml}` : ''}</div>
+          </details></aside>
+        </div>
       <main id="${MAIN_CONTENT_ID}" tabindex="-1">
         ${data.content}
       </main>
     </router-document-host>
-    <div class="layout-sidebar-overlay-layer" data-app-shell-sidebar-overlay-layer></div>
+    <div class="layout-sidebar-overlay-layer" data-app-shell-sidebar-overlay-layer><div data-layout-sidebar-backdrop hidden aria-hidden="true"></div></div>
     ${footerHtml}
   </div>
   ${renderSearchDialogHtml({ idContext })}

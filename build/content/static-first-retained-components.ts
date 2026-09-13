@@ -117,17 +117,15 @@ export const STATIC_FIRST_RETAINED_COMPONENTS: readonly StaticFirstRetainedCompo
   ),
   {
     tag: 'layout-sidebar',
-    kind: 'retained-layout',
+    kind: 'retained-storybook',
     implementationPaths: ['src/components/layout/layout-sidebar.ts'],
     ...includeManifest('src/components/layout/layout-sidebar.ts'),
-    ssrDefinitionRequired: true,
+    ssrDefinitionRequired: false,
     targetAdapterImportRequired: false,
-    targetAdapterImportExceptionReason:
-      'layout-sidebar SSR target is a no-op layout host; rendering does not evaluate the custom element module',
-    hydrationRegistryRequired: true,
-    ssrProfiles: ['layout'],
-    hydrationProfiles: ['layout'],
-    allowedFinalHtmlScopes: ['layout'],
+    hydrationRegistryRequired: false,
+    ssrProfiles: [],
+    hydrationProfiles: [],
+    allowedFinalHtmlScopes: ['storybook-only', 'internal-test'],
   },
   retainedDesignSystem('layout-sidebar-surface', 'src/components/layout/layout-sidebar-surface.ts'),
   {

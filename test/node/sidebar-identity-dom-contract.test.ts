@@ -9,8 +9,8 @@ describe('sidebar identity DOM contract', () => {
     const document = parse5.parse(`
       <html>
         <body>
-          <layout-sidebar sidebar-id="note-primary"></layout-sidebar>
-          <layout-sidebar sidebar-id="note-primary"></layout-sidebar>
+          <aside data-layout-sidebar-root sidebar-id="note-primary"></aside>
+          <aside data-layout-sidebar-root sidebar-id="note-primary"></aside>
         </body>
       </html>
     `);
@@ -20,18 +20,18 @@ describe('sidebar identity DOM contract', () => {
     ).toThrow(SidebarIdentityDocumentContractError);
   });
 
-  it('hidden absent placeholder は document-wide 重複判定から除外すること', () => {
+  it('hidden root も structural cardinality に数えること', () => {
     const document = parse5.parse(`
       <html>
         <body>
-          <layout-sidebar sidebar-id="note-primary"></layout-sidebar>
-          <layout-sidebar hidden sidebar-id="note-primary"></layout-sidebar>
+          <aside data-layout-sidebar-root sidebar-id="note-primary"></aside>
+          <aside data-layout-sidebar-root hidden sidebar-id="note-primary"></aside>
         </body>
       </html>
     `);
 
     expect(() =>
       validateDocumentSidebarIdentityContract(document, { sourceLabel: 'dom-contract-test' }),
-    ).not.toThrow();
+    ).toThrow(SidebarIdentityDocumentContractError);
   });
 });

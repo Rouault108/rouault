@@ -49,7 +49,7 @@ describe('component manifest / ssr targets', () => {
 
   it('layout component は note target ではなく layout target に分離すること', () => {
     expect(SSR_LAYOUT_TARGET_TAGS).toContain('layout-toc');
-    expect(SSR_LAYOUT_TARGET_TAGS).toContain('layout-sidebar');
+    expect(SSR_LAYOUT_TARGET_TAGS).not.toContain('layout-sidebar');
     expect(SSR_NOTE_TARGET_TAGS).not.toContain('layout-toc');
     expect(SSR_NOTE_TARGET_TAGS).not.toContain('layout-sidebar');
   });

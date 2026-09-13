@@ -39,16 +39,21 @@ router-document-host[data-sidebar-presence='absent'] > main#main-content {
   router-document-host[data-sidebar-presence='present'] {
     width: 100%;
     column-gap: 0;
-    grid-template-columns:
-      0px
-      minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 
-@media (max-width: 639px) {
-  router-document-host[data-sidebar-presence='present'] {
-    grid-template-columns:
-      0px
-      minmax(0, 1fr);
+/* native sidebarは本文より前に通常flowで配置し、active後だけoverlay用trackに切り替える。 */
+@media (max-width: 1023px) {
+  router-document-host[data-sidebar-presence='present'] > main#main-content {
+    grid-column: 1;
+  }
+  [data-sidebar-enhancement-state='active'] router-document-host[data-sidebar-presence='present'] {
+    grid-template-columns: 0px minmax(0, 1fr);
+  }
+  [data-sidebar-enhancement-state='active']
+    router-document-host[data-sidebar-presence='present']
+    > main#main-content {
+    grid-column: 2;
   }
 }

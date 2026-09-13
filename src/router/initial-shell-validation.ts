@@ -1,7 +1,11 @@
 import { validateCommittedRuntimeDomLinkContracts } from './dom-link-contract.js';
 import type { RouterRuntimeUrlDependencies } from './router-types.js';
 import { STATIC_HEADER_ROOT_SELECTOR } from '../../shared/navigation/static-header-contract.js';
-import { parseAndValidateStaticHeaderHtml } from '../components/app/shell/static-header-shell-mutation.js';
+import { readCanonicalStaticHeaderHtml } from '../components/app/shell/static-header-shell-mutation.js';
+import {
+  readSidebarShellSnapshot,
+  SIDEBAR_ROOT_SELECTOR,
+} from '../components/app/shell/layout-sidebar-shell-adapter.js';
 import type {
   AppShellValidatedDetail,
   RuntimeDomLinkValidationContext,
@@ -27,13 +31,15 @@ export const validateInitialAppShell = (options: {
   if (!(currentHeader instanceof HTMLElement)) {
     throw new Error(`initial ${STATIC_HEADER_ROOT_SELECTOR} is required.`);
   }
-  const header = parseAndValidateStaticHeaderHtml(currentHeader.outerHTML, document);
+  const headerHtml = readCanonicalStaticHeaderHtml(currentHeader);
+  const sidebarRoot = document.querySelector(SIDEBAR_ROOT_SELECTOR);
+  const sidebar = sidebarRoot ? readSidebarShellSnapshot(sidebarRoot) : null;
   const detail: AppShellValidatedDetail = {
     header: currentHeader,
     navigationUrl: options.normalizedNavigationUrl,
     shell: {
-      headerHtml: header.outerHTML,
-      sidebarProjection: null,
+      headerHtml,
+      sidebarProjection: sidebar?.present ? sidebar : null,
     },
     shellCommitId: 0,
     linkValidationContext,

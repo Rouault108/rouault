@@ -10,6 +10,7 @@ import {
   restoreShellGeneration,
 } from '../components/app/shell/app-shell-lifecycle.js';
 import type {
+  AppShellCommittedDetail,
   AppShellRollbackStartDetail,
   AppShellRestoredDetail,
   AppShellValidatedDetail,
@@ -95,11 +96,27 @@ export class ContentCommitter {
     );
 
     let historyApplied = false;
+    let validatedDetail: AppShellValidatedDetail;
 
     try {
       await preparedContentMutation.commit();
       await preparedShellMutation.commit();
       commitShellGeneration(shellCommitId);
+      const header = document.querySelector<HTMLElement>(STATIC_HEADER_ROOT_SELECTOR);
+      if (!(header instanceof HTMLElement)) {
+        throw new Error(`committed ${STATIC_HEADER_ROOT_SELECTOR} is required.`);
+      }
+      const committedDetail: AppShellCommittedDetail = {
+        header,
+        shell: request.envelope.shell,
+        shellCommitId,
+        navigationUrl: request.normalizedUrl,
+      };
+      document.dispatchEvent(
+        new CustomEvent<AppShellCommittedDetail>('app-shell:committed', {
+          detail: committedDetail,
+        }),
+      );
       const linkValidationContext: RuntimeDomLinkValidationContext = {
         siteUrlContext: this.urlDependencies.siteUrlContext,
         currentAbsoluteUrl: new URL(
@@ -114,17 +131,10 @@ export class ContentCommitter {
         sourceLabel: `commit:${request.normalizedUrl}`,
         ...linkValidationContext,
       });
-      const header = document.querySelector<HTMLElement>(STATIC_HEADER_ROOT_SELECTOR);
-      if (!(header instanceof HTMLElement)) {
-        throw new Error(`committed ${STATIC_HEADER_ROOT_SELECTOR} is required.`);
-      }
-      dispatchShellValidated({
-        header,
-        shell: request.envelope.shell,
-        shellCommitId,
-        navigationUrl: request.normalizedUrl,
+      validatedDetail = {
+        ...committedDetail,
         linkValidationContext,
-      });
+      };
 
       this.headManager.setTitle(request.envelope.document.title);
       this.headManager.setMetaDescription(request.envelope.document.description);
@@ -154,6 +164,8 @@ export class ContentCommitter {
 
       throw error;
     }
+    // 通知後のenhancement失敗で、成功済みの文書transactionを巻き戻さない。
+    dispatchShellValidated(validatedDetail);
   }
 
   private async prepareContentMutation(

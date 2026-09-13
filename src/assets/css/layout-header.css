@@ -331,7 +331,9 @@ header[data-layout-header]
   font-weight: var(--font-semibold, 600);
 }
 
-header[data-layout-header] [data-header-menu='theme'] [data-header-menu-item][data-selected='true'] {
+header[data-layout-header]
+  [data-header-menu='theme']
+  [data-header-menu-item][data-selected='true'] {
   background: var(--_header-menu-selected-background);
   font-weight: var(--font-semibold, 600);
 }
@@ -366,7 +368,6 @@ header[data-layout-header] [data-header-menu-item]:focus-visible {
   outline-offset: var(--focus-ring-offset, 2px);
   box-shadow: none;
 }
-
 
 header[data-layout-header] .sidebar-toggle:active,
 header[data-layout-header] .toc-trigger:active,
@@ -613,4 +614,10 @@ layout-toc:not(:defined) {
   display: block;
   inline-size: 100%;
   min-inline-size: 0;
+}
+
+/* observer反映前も非active triggerをfocus orderへ公開しない。 */
+header[data-layout-header] [data-layout-sidebar-toggle][hidden],
+.app-shell-root:not([data-sidebar-enhancement-state='active']) [data-layout-sidebar-toggle] {
+  display: none !important;
 }

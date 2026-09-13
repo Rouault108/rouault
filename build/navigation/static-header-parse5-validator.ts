@@ -149,6 +149,17 @@ const validateElement = (element: Parse5Element): void => {
       readAttribute: (name) => attr(element, name),
     });
     validateSearchTriggerContract(element);
+    const sidebarTriggers = descendantElements(element).filter(
+      (child) => attr(child, 'data-layout-sidebar-toggle') !== null,
+    );
+    if (sidebarTriggers.length !== (attr(element, 'data-sidebar-enabled') === 'true' ? 1 : 0)) {
+      fail('sidebar trigger cardinality must match data-sidebar-enabled.');
+    }
+    for (const trigger of sidebarTriggers) {
+      if (trigger.tagName !== 'button' || attr(trigger, 'hidden') === null) {
+        fail('canonical sidebar trigger must be a hidden button.');
+      }
+    }
   }
 
   for (const attribute of element.attrs) {
