@@ -58,15 +58,9 @@ const expectSectionNotToContain = (
   }
 };
 
-const expectTextNotToContain = (text: string, label: string, tokens: readonly string[]): void => {
-  for (const token of tokens) {
-    expect(text, `${label} must not contain ${token}`).not.toContain(token);
-  }
-};
-
 describe('static-first document contracts', () => {
   it('keeps the checkbox entrypoint focused on native and task-list static markup', () => {
-    const markdown = readDoc('docs/design-system/components/checkbox.md');
+    const markdown = readDoc('docs/contracts/static-checkbox.md');
     const currentContract = extractSection(markdown, '## 現行契約');
 
     expect(currentContract).toContain('<input type="checkbox">');
@@ -103,7 +97,7 @@ describe('static-first document contracts', () => {
 
   it('keeps legacy checkbox custom element wording isolated under docs/old', () => {
     const legacyMarkdown = readDoc('docs/old/design-system/ui-checkbox.md');
-    const entrypointMarkdown = readDoc('docs/design-system/components/checkbox.md');
+    const entrypointMarkdown = readDoc('docs/contracts/static-checkbox.md');
 
     expect(legacyMarkdown).toContain('廃止済み');
     expect(legacyMarkdown).toContain('現行実装契約ではありません');
@@ -112,7 +106,7 @@ describe('static-first document contracts', () => {
     expect(entrypointMarkdown).toContain('docs/old/design-system/ui-checkbox.md');
   });
 
-  it('checks reduced static select, kbd, and skeleton docs by current-contract section', () => {
+  it('checks reduced static select and kbd docs by current-contract section', () => {
     expectSectionNotToContain(readDoc('docs/contracts/static-select.md'), '## 現行契約', [
       'src/layouts/form-control-html.ts',
       'src/layouts/select-html.ts',
@@ -135,16 +129,6 @@ describe('static-first document contracts', () => {
       'sr-only reading support',
       'slot fallback',
     ]);
-
-    const staticSkeleton = readDoc('docs/contracts/static-skeleton.md');
-    expectTextNotToContain(
-      [
-        extractSection(staticSkeleton, '## Global `.skeleton` Utility'),
-        extractSection(staticSkeleton, '## `ui-file-tree` Internal Skeleton'),
-      ].join('\n'),
-      'static skeleton current sections',
-      ['src/layouts/skeleton-html.ts', 'src/assets/css/skeleton.css'],
-    );
   });
 
   it('keeps static icon and empty-state trusted HTML fields within their documented boundaries', () => {

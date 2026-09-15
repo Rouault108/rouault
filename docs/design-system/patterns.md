@@ -22,7 +22,7 @@ Reading surface flowは本文のCSS余白patternだけを所有する。Markdown
 
 ### Content Tabs / Embedded Code Tabs Boundary
 
-Content Tabsの正本は`docs/design-system/components/tabs.md`であり、実装は`ui-tabs`である。用途は本文構造、説明コンテンツ、主セクション切替である。
+Content Tabsの正本は`docs/contracts/tabs.md`であり、実装は`ui-tabs`である。用途は本文構造、説明コンテンツ、主セクション切替である。
 
 Embedded Code Tabsの正本は`docs/contracts/code-surfaces.md`であり、実装は`section[data-code-group]`と`code-group-enhancer`である。用途はcode surface内部の局所切替である。
 

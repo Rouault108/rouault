@@ -27,7 +27,7 @@
   - router document本文境界
   - sidebar state
   - hydration trigger
-  - Storybookまたはsynthetic fixtureの構造
+  - synthetic fixtureの構造
   - global search dialogのmount policy
 
 ## 2. Ownership
@@ -60,7 +60,6 @@
 - search state
 - note frame geometry
 - no-JS baseline全体
-- Storybook fixture policy
 
 `main#main-content`と`router-document-host`の本文境界は`docs/contracts/router-document.md`を正本とする。
 
@@ -314,12 +313,6 @@ app shell rootは`router-document-host`をcontainする。
 既存のhydration marker、owner、scopeを維持する。
 
 root identityとhydration ownershipを同一selectorへ統合しない。
-
-### Storybook
-
-Storybookはdocs／smoke／手動確認用fixtureであり、このContractのproduction structural ownerではない。
-
-Storybook fixtureの変更条件はChange Planで扱い、このContractのpublic surfaceへ昇格しない。
 
 ## 7. Acceptance Criteria
 

@@ -8,8 +8,8 @@ import {
 } from '../../shared/navigation/sidebar-identity-document-contract.js';
 
 const readLayoutSidebarInstances = (root: ParentNode) =>
-  [...root.querySelectorAll<HTMLElement>('layout-sidebar')].map((sidebar, index) => ({
-    sidebarId: sidebar.getAttribute('sidebar-id'),
+  [...root.querySelectorAll<HTMLElement>('[data-layout-sidebar-root]')].map((sidebar, index) => ({
+    sidebarId: sidebar.getAttribute('data-sidebar-id'),
     present: !sidebar.hasAttribute('hidden'),
     sourceLabel: `fixture:${String(index)}`,
   }));
@@ -18,8 +18,16 @@ describe('sidebar identity document contract', () => {
   it('stateScopeId が異なっても document-wide の sidebar-id 重複を拒否すること', async () => {
     const wrapper = await fixture<HTMLDivElement>(html`
       <div>
-        <layout-sidebar sidebar-id="note-primary" state-scope-id="scope-a"></layout-sidebar>
-        <layout-sidebar sidebar-id="note-primary" state-scope-id="scope-b"></layout-sidebar>
+        <aside
+          data-layout-sidebar-root
+          data-sidebar-id="note-primary"
+          data-state-scope-id="scope-a"
+        ></aside>
+        <aside
+          data-layout-sidebar-root
+          data-sidebar-id="note-primary"
+          data-state-scope-id="scope-b"
+        ></aside>
       </div>
     `);
 
@@ -33,8 +41,17 @@ describe('sidebar identity document contract', () => {
   it('hidden な absent placeholder は document-wide sidebar-id 重複として数えないこと', async () => {
     const wrapper = await fixture<HTMLDivElement>(html`
       <div>
-        <layout-sidebar sidebar-id="note-primary" state-scope-id="scope-a"></layout-sidebar>
-        <layout-sidebar hidden sidebar-id="note-primary" state-scope-id="scope-b"></layout-sidebar>
+        <aside
+          data-layout-sidebar-root
+          data-sidebar-id="note-primary"
+          data-state-scope-id="scope-a"
+        ></aside>
+        <aside
+          data-layout-sidebar-root
+          hidden
+          data-sidebar-id="note-primary"
+          data-state-scope-id="scope-b"
+        ></aside>
       </div>
     `);
 

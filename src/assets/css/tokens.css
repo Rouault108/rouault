@@ -241,9 +241,7 @@
   --sidebar-item-hover-bg: oklch(from var(--fg-default) l c h / 0.035);
   --sidebar-item-branch-hover-bg: oklch(from var(--fg-default) l c h / 0.022);
   --sidebar-item-active-bg-alpha: 0.045;
-  --sidebar-item-active-bg: oklch(
-    from var(--primary) l c h / var(--sidebar-item-active-bg-alpha)
-  );
+  --sidebar-item-active-bg: oklch(from var(--primary) l c h / var(--sidebar-item-active-bg-alpha));
   --sidebar-item-active-radius: var(--radius-sm);
   --sidebar-item-font-weight-current-branch: var(--sidebar-item-font-weight);
   --sidebar-item-indent-step: var(--space-4);
@@ -301,8 +299,7 @@
   --font-sans:
     'Rouault Sans', 'Noto Sans JP Variable', 'Noto Sans JP', -apple-system, BlinkMacSystemFont,
     'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'Yu Gothic UI', 'Segoe UI', 'Meiryo', sans-serif;
-  --font-mono:
-    'Geist Mono Variable', 'Consolas', 'Liberation Mono', 'Courier New', monospace;
+  --font-mono: 'Geist Mono Variable', 'Consolas', 'Liberation Mono', 'Courier New', monospace;
   --font-serif: 'Noto Serif JP', 'Hiragino Mincho ProN', 'Yu Mincho', 'YuMincho', serif;
 
   /* =========================================================================
@@ -625,8 +622,6 @@
   /* =========================================================================
    * Skeleton UI
    * ========================================================================= */
-  --skeleton-bg: var(--bg-fill-neutral);
-  --skeleton-shimmer: oklch(from var(--bg-fill-neutral) calc(l + 5%) c h);
 
   /* =========================================================================
    * Focus Animation

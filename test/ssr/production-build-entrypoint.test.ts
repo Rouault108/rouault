@@ -75,18 +75,12 @@ describe('production build entrypoint contract', () => {
 
   it('workflow_dispatch は full run 対象に含め、deploy は push main のみに限定すること', () => {
     const workflow = readFileSync(workflowPath, 'utf8');
-    const storybookSmokeJob = sliceWorkflowJob(
-      workflow,
-      'test-storybook-smoke',
-      'test-e2e-production',
-    );
     const testE2eProductionJob = sliceWorkflowJob(workflow, 'test-e2e-production', 'test-e2e-dev');
     const testE2eDevJob = sliceWorkflowJob(workflow, 'test-e2e-dev', 'build-production');
     const deployProductionJob = workflow.slice(workflow.indexOf('deploy-production:'));
     const fullRunCondition =
       "if: ${{ !cancelled() && needs.detect-changes.result == 'success' && needs.prebuild-gate.result == 'success' && needs.detect-changes.outputs.app == 'true' && ((github.event_name == 'push' && github.ref == 'refs/heads/main') || github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && github.base_ref == 'main')) }}";
 
-    expect(storybookSmokeJob).toContain(fullRunCondition);
     expect(testE2eProductionJob).toContain(fullRunCondition);
     expect(testE2eDevJob).toContain(fullRunCondition);
     expect(deployProductionJob).toContain('if: >-');
@@ -160,9 +154,7 @@ describe('production build entrypoint contract', () => {
     };
     const clientBuildEntrypoint = readFileSync(clientBuildEntrypointPath, 'utf8');
 
-    expect(packageJson.scripts?.['build:client']).toBe(
-      'pnpm exec tsx scripts/run-client-build.ts',
-    );
+    expect(packageJson.scripts?.['build:client']).toBe('pnpm exec tsx scripts/run-client-build.ts');
     expect(clientBuildEntrypoint).toContain(
       "import { resolveDevelopmentBuildMetadata } from '../build/metadata/build-metadata.js';",
     );
@@ -171,13 +163,9 @@ describe('production build entrypoint contract', () => {
     expect(clientBuildEntrypoint).toContain('RunBuildProcessConfigurationError');
     expect(clientBuildEntrypoint).toContain('ROUAULT_BUILD_ID: buildMetadata.buildId,');
     expect(clientBuildEntrypoint).toContain('ROUAULT_BUILD_LABEL: buildMetadata.buildLabel,');
-    expect(clientBuildEntrypoint).toContain(
-      'ROUAULT_GENERATED_AT: buildMetadata.generatedAt,',
-    );
+    expect(clientBuildEntrypoint).toContain('ROUAULT_GENERATED_AT: buildMetadata.generatedAt,');
     expect(clientBuildEntrypoint).toContain("pnpmArgs: ['run', 'codegen:icons']");
-    expect(clientBuildEntrypoint).toContain(
-      "pnpmArgs: ['run', 'prepare:static-font-assets']",
-    );
+    expect(clientBuildEntrypoint).toContain("pnpmArgs: ['run', 'prepare:static-font-assets']");
     expect(clientBuildEntrypoint).toContain(
       "pnpmArgs: ['exec', 'vite', 'build', '--config', 'vite.client.config.ts']",
     );

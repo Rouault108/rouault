@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { Heading } from '../../src/components/ui/toc/toc.js';
+import type { TocHeading as Heading } from '../../src/toc/toc-headings.js';
 import { TocActiveTracker } from '../../src/toc/toc-active-tracker.js';
 import { TOC_SCROLL_SETTLE_TIMEOUT_MS } from '../../src/toc/toc-scroll-contract.js';
 

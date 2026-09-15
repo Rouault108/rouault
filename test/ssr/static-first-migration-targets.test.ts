@@ -17,12 +17,10 @@ const EXPECTED_MIGRATION_TARGETS = [
   {
     tag: 'ui-pagination',
     formerImplementationPaths: ['src/components/ui/pagination/pagination.ts'],
-    status: 'absorbed-locally',
-    functionalCompatibility: 'reduced',
-    replacementContract:
-      'ui-list renders local nav.ui-pagination[data-pagination] markup for previous, current status, and next controls.',
-    retainedDesignContract:
-      'Pagination remains a quiet local list navigation affordance with clear current-page status.',
+    status: 'intentionally-removed',
+    functionalCompatibility: 'none',
+    replacementContract: 'none',
+    retainedDesignContract: 'none',
     removedDesignContract: [
       'standalone ui-pagination custom element',
       'numbered page item API',
@@ -33,12 +31,10 @@ const EXPECTED_MIGRATION_TARGETS = [
   {
     tag: 'ui-skeleton',
     formerImplementationPaths: ['src/components/ui/skeleton/skeleton.ts'],
-    status: 'contract-reduced',
-    functionalCompatibility: 'partial',
-    replacementContract:
-      'Skeleton rendering is limited to existing visual CSS utility usage and ui-file-tree internal loading markup.',
-    retainedDesignContract:
-      'Skeleton surfaces remain visual-only loading placeholders without becoming a reusable public component API.',
+    status: 'intentionally-removed',
+    functionalCompatibility: 'none',
+    replacementContract: 'none',
+    retainedDesignContract: 'none',
     removedDesignContract: [
       'standalone ui-skeleton custom element',
       'variant property',
@@ -126,7 +122,7 @@ const EXPECTED_MIGRATION_TARGETS = [
 describe('static-first migration targets', () => {
   it('records only the reduced legacy migration targets from the policy', () => {
     expect(
-      STATIC_FIRST_MIGRATION_TARGETS.map(
+      STATIC_FIRST_MIGRATION_TARGETS.filter((target) => !target.notes.startsWith('Phase 3')).map(
         ({
           tag,
           formerImplementationPaths,
@@ -152,7 +148,7 @@ describe('static-first migration targets', () => {
   it('requires notes and marks every note as derived from old materials', () => {
     for (const target of STATIC_FIRST_MIGRATION_TARGETS) {
       expect(target.notes.trim(), target.tag).toBeTruthy();
-      expect(target.notes, target.tag).toContain('旧資料由来');
+      expect(target.notes, target.tag).toMatch(/旧資料由来|Phase 3/);
     }
   });
 

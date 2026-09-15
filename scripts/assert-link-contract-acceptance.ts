@@ -159,12 +159,6 @@ forbidPattern(
   'Search data model docs must not reference the legacy candidate URL property',
 );
 
-forbidPatternIfExists(
-  'docs/design-system/components/search-dialog.md',
-  new RegExp('SearchResultItem' + '\\.url', 'u'),
-  'Search dialog docs must not reference legacy SearchResultItem' + '.url',
-);
-
 forbidFileExists(
   'src/router/rouault-url-policy.ts',
   'legacy router-local RouaultUrlPolicy module must be removed instead of kept as a compatibility wrapper',

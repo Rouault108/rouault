@@ -1,4 +1,4 @@
-import type { Heading } from '../components/ui/toc/toc.js';
+import type { TocHeading as Heading } from './toc-headings.js';
 import { decodeHashFragment } from '../router/url-hash.js';
 import { readRootScrollY } from '../router/root-scroll.js';
 import {

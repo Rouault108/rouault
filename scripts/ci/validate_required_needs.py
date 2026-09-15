@@ -15,7 +15,6 @@ from needs_contract import (
 
 
 EXTENDED_TEST_JOBS = (
-    "test-storybook-smoke",
     "test-e2e-production",
     "test-e2e-dev",
 )

@@ -19,3 +19,5 @@ task listのcheckboxは本文に属する静的surfaceである。本文表示�
 ## 旧契約
 
 旧`ui-checkbox` custom element契約はdocs/old に隔離する。現行契約ではShadow DOM、Form-Associated Custom Element、property API、custom event、custom methodを`ui-checkbox`の公開仕様として扱わない。
+
+旧APIの履歴は`docs/old/design-system/ui-checkbox.md`を参照する。

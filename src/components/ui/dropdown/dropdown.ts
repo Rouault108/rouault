@@ -11,7 +11,7 @@ import { DropdownOpenSequencer } from './internal/dropdown-open-sequencer.js';
 export type DropdownSide = 'top' | 'right' | 'bottom' | 'left';
 export type DropdownAlign = 'start' | 'center' | 'end';
 export type MenuItemVariant = 'default' | 'danger';
-export type DropdownMenuEntry = MenuItem | MenuLink;
+export type DropdownMenuEntry = MenuItem;
 
 type PositionPhase = 'idle' | 'positioning' | 'ready';
 type DropdownCloseReason =
@@ -52,7 +52,7 @@ interface NormalizedDropdownCloseOptions {
  * command menu を一時的に提示する dropdown です。
  *
  * @slot trigger - menu button として扱う単一トリガー要素
- * @slot - `ui-menu-item` と `ui-menu-separator`
+ * @slot - `ui-menu-item`
  *
  * @property {boolean} opened - 開閉状態
  * @property {DropdownSide} side - panel を出す辺
@@ -204,13 +204,11 @@ export class Dropdown extends LitElement {
   override connectedCallback(): void {
     super.connectedCallback();
     this.addEventListener('menu-item-click', this._handleMenuItemClick as EventListener);
-    this.addEventListener('menu-link-click', this._handleMenuLinkClick as EventListener);
   }
 
   override disconnectedCallback(): void {
     super.disconnectedCallback();
     this.removeEventListener('menu-item-click', this._handleMenuItemClick as EventListener);
-    this.removeEventListener('menu-link-click', this._handleMenuLinkClick as EventListener);
     this._detachTriggerListeners(this._boundTriggerElement);
     this._boundTriggerElement = null;
     this._clearScheduledTabClose();
@@ -634,10 +632,7 @@ export class Dropdown extends LitElement {
 
     return slot
       .assignedElements({ flatten: true })
-      .filter(
-        (element): element is DropdownMenuEntry =>
-          element instanceof MenuItem || element instanceof MenuLink,
-      );
+      .filter((element): element is DropdownMenuEntry => element instanceof MenuItem);
   }
 
   private _getTriggerElement(): HTMLElement | null {
@@ -835,15 +830,8 @@ export class Dropdown extends LitElement {
       case 'Enter':
       case ' ': {
         if (currentItem && !currentItem.disabled) {
-          if (currentItem.activationKind === 'command') {
-            event.preventDefault();
-            this._selectItem(currentItem);
-          } else if (event.key === ' ') {
-            event.preventDefault();
-            if (currentItem.activateByKeyboard()) {
-              this.close({ restoreFocus: false, reason: 'pointer-select' });
-            }
-          }
+          event.preventDefault();
+          this._selectItem(currentItem);
         }
         break;
       }
@@ -951,16 +939,6 @@ export class Dropdown extends LitElement {
         detail: event.detail,
       }),
     );
-    this.close({ restoreFocus: false, reason: 'pointer-select' });
-  };
-
-  private _handleMenuLinkClick = (event: CustomEvent): void => {
-    if (this._positionPhase !== 'ready') {
-      event.stopPropagation();
-      return;
-    }
-
-    event.stopPropagation();
     this.close({ restoreFocus: false, reason: 'pointer-select' });
   };
 
@@ -1178,185 +1156,9 @@ export class MenuItem extends LitElement {
   }
 }
 
-@customElement('ui-menu-link')
-export class MenuLink extends LitElement {
-  readonly activationKind = 'link' as const;
-
-  static override styles = css`
-    :host {
-      display: block;
-    }
-
-    a,
-    span {
-      display: flex;
-      align-items: center;
-      gap: var(--space-2, 8px);
-      height: var(--control-height-md, 32px);
-      min-height: var(--control-height-md, 32px);
-      width: 100%;
-      box-sizing: border-box;
-      padding: 0 var(--space-3, 12px);
-      font-family: inherit;
-      font-size: var(--text-base, 14px);
-      font-weight: var(--font-normal, 400);
-      color: var(--fg-default, oklch(20% 0 0));
-      background: transparent;
-      border: none;
-      border-radius: var(--radius-sm, 4px);
-      text-align: start;
-      text-decoration: none;
-      cursor: pointer;
-      user-select: none;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      position: relative;
-      transition: background-color var(--duration-fast, 70ms)
-        var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9));
-    }
-
-    a:hover,
-    a:focus-visible,
-    a:active {
-      background: var(--bg-surface-active, oklch(0% 0 0 / 0.05));
-    }
-
-    a:focus-visible {
-      outline: var(--focus-ring-width, 2px) solid var(--focus-ring-color, oklch(60% 0.15 250));
-      outline-offset: -2px;
-      animation: var(--animation-focus);
-    }
-
-    :host([disabled]) span {
-      color: var(--fg-disabled);
-      cursor: default;
-    }
-  `;
-
-  @property({ type: String, reflect: true })
-  href = '';
-
-  @property({ type: Boolean, reflect: true })
-  disabled = false;
-
-  @property({ type: String, attribute: 'text-value', reflect: true })
-  textValue = '';
-
-  getNormalizedLabel(): string {
-    return this.textValue.trim() || this.textContent.trim() || '';
-  }
-
-  activateByKeyboard(): boolean {
-    const anchor = this._getAnchor();
-    if (this.disabled || !anchor?.hasAttribute('href')) {
-      return false;
-    }
-
-    anchor.click();
-    return true;
-  }
-
-  override focus(options?: FocusOptions): void {
-    this._getAnchor()?.focus(options);
-  }
-
-  private _getAnchor(): HTMLAnchorElement | null {
-    return this.shadowRoot?.querySelector('a') ?? null;
-  }
-
-  private _activeHref(): string | null {
-    const normalized = this.href.trim();
-    if (this.disabled || normalized.length === 0 || normalized.startsWith('//')) {
-      return null;
-    }
-
-    try {
-      const parsed = new URL(normalized, 'https://rouault.invalid/');
-      if (parsed.protocol === 'http:' || parsed.protocol === 'https:') {
-        return normalized;
-      }
-    } catch {
-      return null;
-    }
-
-    return null;
-  }
-
-  private _forwardedAnnotationAttributes(): { readonly name: string; readonly value: string }[] {
-    return ['data-link-kind', 'data-link-surface'].flatMap((name) => {
-      const value = this.getAttribute(name);
-      return value === null ? [] : [{ name, value }];
-    });
-  }
-
-  private _handleClick = (event: Event): void => {
-    if (this.disabled || this._activeHref() === null) {
-      event.preventDefault();
-      return;
-    }
-
-    this.dispatchEvent(
-      new CustomEvent('menu-link-click', {
-        bubbles: true,
-        composed: true,
-      }),
-    );
-  };
-
-  override render() {
-    const href = this._activeHref();
-    if (href === null) {
-      return html`<span role="menuitem" aria-disabled="true"><slot></slot></span>`;
-    }
-
-    const annotations = this._forwardedAnnotationAttributes();
-    return html`
-      <a
-        role="menuitem"
-        tabindex="-1"
-        href=${href}
-        data-link-kind=${annotations.find((item) => item.name === 'data-link-kind')?.value ??
-        nothing}
-        data-link-surface=${annotations.find((item) => item.name === 'data-link-surface')?.value ??
-        nothing}
-        @click=${this._handleClick}
-      >
-        <slot></slot>
-      </a>
-    `;
-  }
-}
-
-@customElement('ui-menu-separator')
-export class MenuSeparator extends LitElement {
-  static override styles = css`
-    :host {
-      display: block;
-    }
-
-    .separator {
-      height: 1px;
-      margin: var(--space-1, 4px) 0;
-      background: var(--border-muted, oklch(90% 0 0 / 0.08));
-    }
-
-    @media (forced-colors: active) {
-      .separator {
-        background: CanvasText !important;
-      }
-    }
-  `;
-
-  override render() {
-    return html`<div class="separator" role="separator"></div>`;
-  }
-}
-
 declare global {
   interface HTMLElementTagNameMap {
     'ui-dropdown': Dropdown;
     'ui-menu-item': MenuItem;
-    'ui-menu-separator': MenuSeparator;
   }
 }

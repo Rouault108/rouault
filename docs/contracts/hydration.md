@@ -84,7 +84,7 @@
 
 - Hydration directiveと対象metadataを付与する。
 - Markdown由来の`ui-preview-sandbox`はMarkdown出力層が`data-hydration-capability="sandboxed"`とtriggerを決める。通常previewは`visible`、`activation-policy="eager"`は`initial`、`activation-policy="manual"`は`interaction`としてschedulerへ渡す。
-- `ui-preview-sandbox`のactivation-policy、capability属性、raw HAST入力検証の詳細正本は`docs/contracts/markdown.md`と`docs/design-system/components/preview-sandbox.md`に置き、本契約はhydration layerとの接続だけを扱う。
+- `ui-preview-sandbox`のactivation-policy、capability属性、raw HAST入力検証の詳細正本は`docs/contracts/markdown.md`と`docs/contracts/preview-sandbox.md`に置き、本契約はhydration layerとの接続だけを扱う。
 
 ### SSR
 
@@ -112,4 +112,4 @@
 
 ## Sidebar shell infrastructure
 
-`layout-sidebar-enhancer`はshell profileで常時1件計上するplain enhancerである。sidebar absentの初期ページでも起動し、matching validation後にdormantとなる。routeごとにschedulerを再起動せず、shell lifecycle eventからpresent / absentを再評価する。`layout-sidebar`はproduction hydration / SSR targetから除外し、legacy Storybook sourceとしてのみ残す。state / readiness / generationの意味は`sidebar-state.md`を正本とする。
+`layout-sidebar-enhancer`はshell profileで常時1件計上するplain enhancerである。sidebar absentの初期ページでも起動し、matching validation後にdormantとなる。routeごとにschedulerを再起動せず、shell lifecycle eventからpresent / absentを再評価する。旧Lit sidebar sourceは削除済みである。state / readiness / generationの意味は`sidebar-state.md`を正本とする。

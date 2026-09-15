@@ -24,22 +24,10 @@ export interface SsrComponentDefinition {
 
 export const SSR_COMPONENT_DEFINITIONS = [
   {
-    tag: 'ui-skip-link',
-    ssr: 'shadow',
-    profiles: ['shell'],
-    adapterKind: 'shadow-default',
-  },
-  {
     tag: 'router-document-host',
     ssr: 'light',
     profiles: ['shell'],
     adapterKind: 'light-router-document-host',
-  },
-  {
-    tag: 'layout-toc',
-    ssr: 'shadow',
-    profiles: ['layout'],
-    adapterKind: 'shadow-default',
   },
   {
     tag: 'ui-code-preview',

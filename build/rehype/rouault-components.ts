@@ -291,7 +291,9 @@ const readPreviewSandboxBooleanProperty = (
     : undefined;
 
   if (kebabValue !== undefined && camelValue !== undefined && kebabValue !== camelValue) {
-    throw new Error(`[markdown] ui-preview-sandbox の ${pair.kebab}/${pair.camel} 指定が競合しています`);
+    throw new Error(
+      `[markdown] ui-preview-sandbox の ${pair.kebab}/${pair.camel} 指定が競合しています`,
+    );
   }
 
   const normalizedValue = kebabValue ?? camelValue ?? false;
@@ -558,8 +560,6 @@ const hasToolbarSlot = (node: HastNode): boolean =>
 
 const resolveHydrationDirective = (node: HastNode): HydrationDirective | null => {
   switch (node.tagName) {
-    case 'layout-sidebar':
-    case 'layout-toc':
     case 'ui-tabs':
       return { capability: 'interactive', trigger: 'initial' };
 
@@ -743,11 +743,7 @@ const insertTableColgroup = (table: HastNode, columnWidths: readonly string[]): 
   const captionIndex = children.findIndex((child) => isElement(child, 'caption'));
   table.children =
     captionIndex >= 0
-      ? [
-          ...children.slice(0, captionIndex + 1),
-          colgroup,
-          ...children.slice(captionIndex + 1),
-        ]
+      ? [...children.slice(0, captionIndex + 1), colgroup, ...children.slice(captionIndex + 1)]
       : [colgroup, ...children];
 };
 

@@ -10,7 +10,6 @@ playwright-report
 custom-elements.json
 *.log
 .DS_Store
-storybook-static
 
 temporary/
 tmp/

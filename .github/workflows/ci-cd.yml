@@ -145,23 +145,6 @@ jobs:
       - run: pnpm exec playwright install --with-deps chromium firefox webkit
       - run: pnpm run test:browser
 
-  test-storybook-meta:
-    name: test-storybook-meta
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    needs: [detect-changes]
-    if: needs.detect-changes.outputs.app == 'true'
-    steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
-      - uses: pnpm/action-setup@0e279bb959325dab635dd2c09392533439d90093
-      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: pnpm
-      - run: corepack enable
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm run test:storybook:meta
-
   prebuild-gate:
     name: prebuild-gate
     runs-on: ubuntu-latest
@@ -175,34 +158,12 @@ jobs:
       - test-node
       - test-ssr
       - test-browser
-      - test-storybook-meta
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
       - name: validate prerequisite results
         env:
           NEEDS_JSON: ${{ toJson(needs) }}
         run: python3 scripts/ci/validate_prebuild_needs.py
-
-  test-storybook-smoke:
-    name: test-storybook-smoke
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-    needs:
-      - detect-changes
-      - prebuild-gate
-    if: ${{ !cancelled() && needs.detect-changes.result == 'success' && needs.prebuild-gate.result == 'success' && needs.detect-changes.outputs.app == 'true' && ((github.event_name == 'push' && github.ref == 'refs/heads/main') || github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && github.base_ref == 'main')) }}
-    steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
-      - run: echo "ROUAULT_BUILD_LABEL=${GITHUB_SHA::7}" >> "$GITHUB_ENV"
-      - uses: pnpm/action-setup@0e279bb959325dab635dd2c09392533439d90093
-      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: pnpm
-      - run: corepack enable
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm exec playwright install --with-deps chromium
-      - run: pnpm run test:storybook:smoke
 
   test-e2e-production:
     name: test-e2e-production
@@ -305,7 +266,6 @@ jobs:
     needs:
       - detect-changes
       - prebuild-gate
-      - test-storybook-smoke
       - test-e2e-production
       - test-e2e-dev
       - build-production

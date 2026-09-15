@@ -8,14 +8,12 @@ export type StaticFirstStaleTargetKind =
   | 'old-event-adapter'
   | 'stale-generated-artifact'
   | 'stale-test-fixture'
-  | 'stale-storybook-artifact'
   | 'stale-docs-reference'
   | 'stale-package-or-script-reference';
 
 export type StaticFirstStalePathKind =
   | 'production-source'
   | 'test'
-  | 'storybook'
   | 'generated-artifact'
   | 'docs'
   | 'package-export'
@@ -34,7 +32,6 @@ export type StaticFirstStaleDeleteMode =
 export type StaticFirstAllowedResidualReferenceKind =
   | 'negative-test'
   | 'historical-prose'
-  | 'retained-design-system-internal-test'
   | 'stale-fixture'
   | 'archived-snapshot';
 

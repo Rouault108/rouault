@@ -593,14 +593,6 @@ const POPOVER_BODY_TEXT_LINK_SELECTOR =
   "[data-footnote-popover] .footnote-popover-body a[href]:not(:where([data-link-surface='card'],.heading-anchor,[data-footnote-ref='true'][role='doc-noteref'],[data-footnote-backref='true'][role='doc-backlink'],[data-footnote-popover] .footnote-list-link))";
 
 const ALLOWED_BROAD_UNDERLINE_SELECTORS = new Set([
-  "ui-list-item>a[slot][href]:not([slot='actions'])",
-  "ui-list-item>[slot]:not([slot='actions']) a[href]",
-  "ui-list-item>a[slot][href]:not([slot='actions']):hover",
-  "ui-list-item>[slot]:not([slot='actions']) a[href]:hover",
-  "ui-list-item>a[slot][href]:not([slot='actions']):focus-visible",
-  "ui-list-item>[slot]:not([slot='actions']) a[href]:focus-visible",
-  "ui-list-item>a[slot][href]:not([slot='actions']):visited",
-  "ui-list-item>[slot]:not([slot='actions']) a[href]:visited",
   PROSE_TEXT_LINK_SELECTOR,
   `${PROSE_TEXT_LINK_SELECTOR}:hover`,
   `${PROSE_TEXT_LINK_SELECTOR}:focus-visible`,
@@ -618,7 +610,7 @@ const LINK_PSEUDO_PATTERN = /(^|[>+~\s,(]):(?:any-link|link|visited)\b/u;
 const ANCHOR_SURFACE_PATTERN = /(^|[>+~\s,(])a(?:[#.:[\s]|$)/u;
 
 const isAllowedBroadUnderlineSelector = (selector: string): boolean =>
-  ALLOWED_BROAD_UNDERLINE_SELECTORS.has(selector) || selector.startsWith('ui-list-item>');
+  ALLOWED_BROAD_UNDERLINE_SELECTORS.has(selector);
 
 const isBroadLinkSelector = (selector: string): boolean =>
   LINK_PSEUDO_PATTERN.test(selector) ||

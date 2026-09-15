@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { TreeNode } from '../../src/components/ui/file-tree/file-tree.js';
+import type { TreeNode } from '../../shared/navigation/tree-node.js';
 import {
   LAYOUT_SIDEBAR_TREE_STATE_STORAGE_KEY_V2,
   LAYOUT_SIDEBAR_TREE_STATE_STORAGE_KEY_V3,

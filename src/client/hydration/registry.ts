@@ -73,12 +73,6 @@ const activateLayoutTocController = async ({ element, signal }: HydrationActivat
 
 export const HYDRATION_REGISTRY = [
   {
-    tag: 'ui-skip-link',
-    kind: 'custom-element',
-    profiles: ['shell'],
-    loader: () => import('../../components/ui/skip-link/skip-link.js'),
-  },
-  {
     tag: 'layout-header-enhancer',
     kind: 'enhancer',
     profiles: ['shell'],

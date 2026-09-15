@@ -35,7 +35,7 @@ import {
   restoreTriggerFocus,
   showNativeDialog,
   waitForDialogAnimations,
-} from '../../components/ui/dialog/dialog-helpers.js';
+} from './native-dialog-helpers.js';
 import {
   closestFromEvent,
   focusDialogControl,
@@ -316,8 +316,7 @@ export const createSearchDialogDomController = (
     getResultIdAt,
     getActiveId: () => state.activeId,
     getNavigationStartIndex: (delta) => {
-      const total =
-        deriveShowResults() && resultsList?.hidden === false ? state.results.length : 0;
+      const total = deriveShowResults() && resultsList?.hidden === false ? state.results.length : 0;
       if (total === 0) return null;
       if (virtualizer.isVirtualized(total) && resultsList !== null) {
         const range = virtualizer.getViewportIndexRange(

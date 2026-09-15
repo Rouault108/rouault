@@ -75,10 +75,8 @@ const manifestReferencePaths = (): readonly string[] =>
       path === 'package.json' ||
       path === 'cem.config.mjs' ||
       /^\.github\//u.test(path) ||
-      /^\.storybook\//u.test(path) ||
       /^docs\//u.test(path) ||
       /^scripts\//u.test(path) ||
-      /^test\/(storybook|storybook-meta|storybook-smoke)\//u.test(path) ||
       /^test\/.+\.(?:ts|js|mjs)$/u.test(path)
     );
   });
@@ -140,7 +138,7 @@ describe('static-first manifest generation contract', () => {
     }
   });
 
-  it('keeps old manifest path denylist out of package, CI, docs, tests, Storybook, and scripts', () => {
+  it('keeps old manifest path denylist out of package, CI, docs, tests, and scripts', () => {
     for (const path of manifestReferencePaths()) {
       const source = readRepoFile(path);
       expect(source.includes(oldManifestScriptPath), path).toBe(false);
@@ -148,11 +146,8 @@ describe('static-first manifest generation contract', () => {
     }
   });
 
-  it('keeps cem and Storybook consumers from replacing retained inventory filtering', () => {
-    const scopedConsumerPaths = manifestReferencePaths().filter(
-      (path) =>
-        path === 'cem.config.mjs' || /^\.storybook\//u.test(path) || /^test\/storybook/u.test(path),
-    );
+  it('keeps manifest consumers from replacing retained inventory filtering', () => {
+    const scopedConsumerPaths = ['cem.config.mjs'];
     const deletedImplementationPaths = STATIC_FIRST_DELETION_TARGETS.flatMap(
       (target) => target.implementationPaths,
     );

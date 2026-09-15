@@ -417,7 +417,6 @@ describe('final testing taxonomy contract', () => {
   it('uses the CSS response owner for every known stylesheet text path', () => {
     const knownPaths = [
       'test/browser/helpers/load-main-css.ts',
-      'test/browser/tag.browser.test.ts',
       'test/browser/layout-toc-static-nav.browser.test.ts',
     ];
 
@@ -437,28 +436,31 @@ describe('final testing taxonomy contract', () => {
     }
   });
 
-  it('keeps Storybook and E2E commands in their existing layers', () => {
+  it('keeps Node, SSR, browser and E2E coverage after Storybook removal', () => {
     const testScript = normalizeScript(getScript('test'));
     const extendedScript = normalizeScript(getScript('test:extended'));
     const nodeScript = normalizeScript(getScript('test:node'));
     const browserScript = normalizeScript(getScript('test:browser'));
-    const storybookMetaScript = normalizeScript(getScript('test:storybook:meta'));
-    const storybookSmokeScript = normalizeScript(getScript('test:storybook:smoke'));
 
+    expect(testScript).toEqual('pnpm run test:node && pnpm run test:ssr && pnpm run test:browser');
+    expect(extendedScript).toEqual('pnpm run test:e2e:production && pnpm run test:e2e:dev');
+    expect(
+      Object.keys(packageJson.scripts ?? {}).filter((key) => key.includes('storybook')),
+    ).toEqual([]);
+    expect(
+      Object.keys(packageJson.devDependencies ?? {}).filter((key) => key.includes('storybook')),
+    ).toEqual([]);
+    expect(vitestConfig).not.toContain('storybook');
     expect(testScript).toContain('test:node');
     expect(testScript).toContain('test:ssr');
     expect(testScript).toContain('test:browser');
-    expect(testScript).toContain('test:storybook:meta');
-    expect(testScript).not.toContain('test:storybook:smoke');
     expect(testScript).not.toContain('test:e2e');
 
-    expect(extendedScript).toContain('test:storybook:smoke');
     expect(extendedScript).toContain('test:e2e:production');
     expect(extendedScript).toContain('test:e2e:dev');
     expect(extendedScript).not.toContain('test:node');
     expect(extendedScript).not.toContain('test:ssr');
     expect(extendedScript).not.toContain('test:browser');
-    expect(extendedScript).not.toContain('test:storybook:meta');
 
     expect(nodeScript).toContain('vitest');
     expect(nodeScript).toContain('--project node');
@@ -469,15 +471,6 @@ describe('final testing taxonomy contract', () => {
     expect(getScript('test:e2e')).toContain('playwright test');
     expect(getScript('test:e2e:production')).toContain('playwright test');
     expect(getScript('test:e2e:dev')).toContain('playwright test');
-    expect(storybookMetaScript).toContain('vitest');
-    expect(storybookMetaScript).toContain('--project storybook-meta');
-    expect(storybookSmokeScript).toContain('vitest');
-    expect(storybookSmokeScript).toContain('--project storybook-smoke');
     expect(vitestConfig).toContain("name: 'node'");
-    expect(vitestConfig).toContain("name: 'storybook-smoke'");
-    expect(vitestConfig).toContain("name: 'storybook-meta'");
-    expect(vitestConfig).toContain("include: ['smoke']");
-    expect(vitestConfig).toContain("exclude: ['manual-only']");
-    expect(vitestConfig).not.toContain("name: 'storybook-runtime'");
   });
 });

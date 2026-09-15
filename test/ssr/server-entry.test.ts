@@ -68,14 +68,14 @@ describe('server-entry', () => {
       [{ name: 'data-sidebar-presence', value: 'present' }],
       `
         <aside class="layout-sidebar-col" data-app-shell-sidebar-host>
-          <layout-sidebar heading="Navigation"></layout-sidebar>
+          <nav data-sidebar-nav aria-label="Navigation"></nav>
         </aside>
         <main id="main-content"><h1>SSR App Router</h1></main>
       `.trim(),
     );
 
     expect(rendered).toContain('data-app-shell-sidebar-host');
-    expect(rendered).toContain('<layout-sidebar heading="Navigation">');
+    expect(rendered).toContain('data-sidebar-nav');
     expect(rendered).toContain(
       '<main id="main-content" tabindex="-1"><h1>SSR App Router</h1></main>',
     );
@@ -114,29 +114,30 @@ describe('server-entry', () => {
     );
   });
 
-  it('layout-sidebar は router-document-host 内でも shadow SSR を持たず light DOM host のまま保持されること', async () => {
+  it('静的sidebar navはrouter-document-host内でもshadow SSRを持たず保持されること', async () => {
     const rendered = await renderCustomElement(
       'router-document-host',
       [],
       `
         <aside class="layout-sidebar-col" data-app-shell-sidebar-host>
-          <layout-sidebar heading="Navigation">
             <nav data-sidebar-nav aria-label="Navigation"></nav>
-          </layout-sidebar>
         </aside>
         <main id="main-content"><h1>SSR App Router</h1></main>
       `.trim(),
     );
 
-    expect(rendered).toContain('<layout-sidebar heading="Navigation">');
+    expect(rendered).toContain('data-sidebar-nav');
     expect(rendered).toContain('<nav data-sidebar-nav="" aria-label="Navigation"></nav>');
     expect(rendered).not.toContain('shadowrootmode="open"');
-    expect(rendered).not.toMatch(/<layout-sidebar[\s\S]*?<template\s+shadowroot(?:mode)?=/);
   });
 
   it('router-document-host は bare main を strict contract violation として拒否すること', async () => {
     await expect(
-      renderCustomElement('router-document-host', [], '<main><h1>SSR App Router</h1><p>Body</p></main>'),
+      renderCustomElement(
+        'router-document-host',
+        [],
+        '<main><h1>SSR App Router</h1><p>Body</p></main>',
+      ),
     ).rejects.toThrow(/id="main-content"/);
   });
 

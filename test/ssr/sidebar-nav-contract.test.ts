@@ -26,10 +26,10 @@ const hoverMedia = (params: string): boolean =>
 
 const currentPage = "[data-sidebar-nav-link][aria-current='page']";
 const currentBranch =
-  "li[data-current-branch='true'] > [data-sidebar-nav-control]:not([aria-current='page'])";
+  "li[data-current-branch='true'] > details > [data-sidebar-nav-control]:not([aria-current='page'])";
 const currentPathIndicator = [
   "li[data-current-path-indicator='true']",
-  '> button[data-sidebar-nav-control][data-sidebar-nav-branch-control]',
+  '> details > summary[data-sidebar-nav-control][data-sidebar-nav-branch-control]',
 ].join(' ');
 
 const expectOnlyDeclarationPropertiesForSelector = (

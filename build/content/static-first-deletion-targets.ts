@@ -28,6 +28,81 @@ const createDeletionTarget = (
 
 export const STATIC_FIRST_DELETION_TARGETS = [
   createDeletionTarget(
+    'ui-input',
+    'src/components/ui/input/input.ts',
+    'none; Design System-only surface removed',
+  ),
+  createDeletionTarget(
+    'ui-textarea',
+    'src/components/ui/textarea/textarea.ts',
+    'none; Design System-only surface removed',
+  ),
+  createDeletionTarget(
+    'ui-radio',
+    'src/components/ui/radio/radio.ts',
+    'none; Design System-only surface removed',
+  ),
+  createDeletionTarget(
+    'ui-radio-group',
+    'src/components/ui/radio/radio-group.ts',
+    'none; Design System-only surface removed',
+  ),
+  createDeletionTarget(
+    'ui-switch',
+    'src/components/ui/switch/switch.ts',
+    'none; Design System-only surface removed',
+  ),
+  createDeletionTarget(
+    'ui-spinner',
+    'src/components/ui/spinner/spinner.ts',
+    'none; Design System-only surface removed',
+  ),
+  createDeletionTarget(
+    'ui-toast',
+    'src/components/ui/toast/toast.ts',
+    'none; Design System-only surface removed',
+  ),
+  createDeletionTarget(
+    'ui-tag',
+    'src/components/ui/tag/tag.ts',
+    'none; Design System-only surface removed',
+  ),
+  createDeletionTarget(
+    'ui-dialog',
+    'src/components/ui/dialog/dialog.ts',
+    'none; Design System-only surface removed',
+  ),
+  createDeletionTarget(
+    'ui-popover',
+    'src/components/ui/popover/popover.ts',
+    'none; Design System-only surface removed',
+  ),
+  createDeletionTarget(
+    'ui-list',
+    'src/components/ui/list/list.ts',
+    'none; Design System-only surface removed',
+  ),
+  createDeletionTarget(
+    'ui-list-item',
+    'src/components/ui/list-item/list-item.ts',
+    'none; Design System-only surface removed',
+  ),
+  createDeletionTarget(
+    'ui-file-tree',
+    'src/components/ui/file-tree/file-tree.ts',
+    'none; Design System-only surface removed',
+  ),
+  createDeletionTarget(
+    'ui-tree-item',
+    'src/components/ui/tree-item/tree-item.ts',
+    'none; Design System-only surface removed',
+  ),
+  createDeletionTarget(
+    'ui-tooltip',
+    'src/components/ui/tooltip/tooltip.ts',
+    'none; Design System-only surface removed',
+  ),
+  createDeletionTarget(
     'ui-article-header',
     'src/components/ui/article-header/article-header.ts',
     'static article header HTML from src/layouts/article-header-html.ts',

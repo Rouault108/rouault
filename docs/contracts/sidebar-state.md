@@ -14,7 +14,6 @@
 - `layout-sidebar-controller`はraw overlay state、derived mode、nullable return-focus descriptorを所有する。
 - `layout-sidebar-enhancer`はshell-level infrastructureとしてplacement、native / enhanced interaction、generationごとのfallbackを所有する。
 - header enhancerはcommand sender / snapshot consumerであり、header triggerのhidden、ARIA、labelのruntime write ownerである。
-- `layout-sidebar`、`layout-sidebar-surface`と旧nav helperはPhase3まで残すlegacy sourceであり、production ownerではない。
 
 ## 3. DOMとNo-JS
 
@@ -59,4 +58,4 @@ canonical snapshotはtransaction内だけで生成し、runtime expanded state /
 - Node / SSR: native nav invariant、root cardinality、projection、hydration budget、SSR target
 - Browser: `layout-sidebar-enhancer.browser.test.ts`、controller、shell mutation、native keyboard / persistence
 - E2E: `sidebar-pre-hydration-leakage.spec.ts`、`sidebar-scroll.spec.ts`、`static-header-migration.spec.ts`
-- StorybookはPhase3まで比較用のmeta / smoke ownerとして維持する。
+- UI CheckはPhase3まで比較用のmeta / smoke ownerとして維持する。

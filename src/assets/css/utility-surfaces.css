@@ -29,28 +29,3 @@
     }
   }
 }
-
-/* Skeleton UI */
-.skeleton {
-  background: var(--skeleton-bg);
-  position: relative;
-  overflow: hidden;
-  border-radius: var(--radius-sm);
-}
-
-.skeleton::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  left: 0;
-  background: linear-gradient(90deg, transparent, var(--skeleton-shimmer), transparent);
-  animation: shimmer 1.5s infinite;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .skeleton::after {
-    animation: none;
-  }
-}

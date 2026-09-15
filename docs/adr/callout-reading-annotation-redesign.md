@@ -8,7 +8,7 @@
 - Decision ID: D-CALLOUT-READING-ANNOTATION-001
 - Scope: Markdown callout visual contract and authoring guidance
 
-この文書はdecision recordです。現在のcontractを再定義する正本ではありません。Markdown safety boundaryは`docs/contracts/markdown.md`、final DOMは`docs/references/markdown-output.md`、視覚契約は`docs/design-system/components/callout.md`を参照します。
+この文書はdecision recordです。現在のcontractを再定義する正本ではありません。Markdown safety boundaryは`docs/contracts/markdown.md`、final DOMは`docs/references/markdown-output.md`、視覚契約は`docs/design-system/callout.md`を参照します。
 
 ## Decision
 
@@ -18,13 +18,13 @@
 
 kindの意味は次の通り固定する。
 
-| kind | 意味 | 視覚強度 |
-|---|---|---:|
-| `note` | 中立的な補足、前提、余談 | 最弱 |
-| `tip` | 実践上の助言、読み方のヒント | 弱から中 |
-| `success` | 確認済み、成立、完了 | 中 |
-| `warning` | 制約、誤読防止、注意 | 中から強 |
-| `danger` | 重大危険、破壊的操作、強い警告 | 最強 |
+| kind      | 意味                           | 視覚強度 |
+| --------- | ------------------------------ | -------: |
+| `note`    | 中立的な補足、前提、余談       |     最弱 |
+| `tip`     | 実践上の助言、読み方のヒント   | 弱から中 |
+| `success` | 確認済み、成立、完了           |       中 |
+| `warning` | 制約、誤読防止、注意           | 中から強 |
+| `danger`  | 重大危険、破壊的操作、強い警告 |     最強 |
 
 ## Negative Breaking Change Gate
 

@@ -70,11 +70,9 @@ APP_PREREQUISITE_JOBS = (
     "typecheck-node",
     "test-node",
     "test-browser",
-    "test-storybook-meta",
 )
 
 EXTENDED_TEST_JOBS = (
-    "test-storybook-smoke",
     "test-e2e-production",
     "test-e2e-dev",
 )
@@ -119,7 +117,6 @@ class ValidatePrebuildNeedsTest(unittest.TestCase):
             "typecheck-node": job("skipped"),
             "test-node": job("skipped"),
             "test-browser": job("skipped"),
-            "test-storybook-meta": job("skipped"),
             "test-ssr": job("success"),
         }
 
@@ -134,7 +131,6 @@ class ValidatePrebuildNeedsTest(unittest.TestCase):
             "typecheck-node": job("skipped"),
             "test-node": job("skipped"),
             "test-browser": job("skipped"),
-            "test-storybook-meta": job("skipped"),
             "test-ssr": job("skipped"),
         }
 
@@ -149,7 +145,6 @@ class ValidatePrebuildNeedsTest(unittest.TestCase):
             "typecheck-node": job("success"),
             "test-node": job("success"),
             "test-browser": job("success"),
-            "test-storybook-meta": job("success"),
             "test-ssr": job("success"),
         }
 
@@ -276,7 +271,6 @@ class ValidateRequiredNeedsTest(unittest.TestCase):
         needs = {
             "detect-changes": detect(False, True, True),
             "prebuild-gate": job("success"),
-            "test-storybook-smoke": job("success"),
             "test-e2e-production": job("success"),
             "test-e2e-dev": job("success"),
             "build-production": job("success"),
@@ -309,7 +303,6 @@ class ValidateRequiredNeedsTest(unittest.TestCase):
         needs = {
             "detect-changes": detect(False, True, True),
             "prebuild-gate": job("success"),
-            "test-storybook-smoke": job("skipped"),
             "test-e2e-production": job("skipped"),
             "test-e2e-dev": job("skipped"),
             "build-production": job("success"),
@@ -327,7 +320,6 @@ class ValidateRequiredNeedsTest(unittest.TestCase):
         needs = {
             "detect-changes": detect(False, False, False),
             "prebuild-gate": job("success"),
-            "test-storybook-smoke": job("skipped"),
             "test-e2e-production": job("skipped"),
             "test-e2e-dev": job("skipped"),
             "build-production": job("skipped"),
@@ -345,7 +337,6 @@ class ValidateRequiredNeedsTest(unittest.TestCase):
         needs = {
             "detect-changes": detect(True, False, True),
             "prebuild-gate": job("success"),
-            "test-storybook-smoke": job("skipped"),
             "test-e2e-production": job("skipped"),
             "test-e2e-dev": job("skipped"),
             "build-production": job("skipped"),

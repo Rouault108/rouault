@@ -1,4 +1,4 @@
-import type { Heading } from '../ui/toc/toc.js';
+import type { TocHeading as Heading } from '../../toc/toc-headings.js';
 import {
   filterHeadingsByScopeSelections,
   filterVisibleHeadings,

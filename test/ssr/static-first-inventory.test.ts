@@ -31,6 +31,21 @@ const profilesEqual = (actual: readonly string[], expected: readonly string[]): 
   actual.every((profile, index) => profile === expected[index]);
 
 describe('static-first retained inventory', () => {
+  it('keeps note controls internal to their parent without independent SSR or hydration', () => {
+    for (const tag of ['ui-button', 'ui-dropdown', 'ui-menu-item']) {
+      expect(retainedByTag.get(tag)).toMatchObject({
+        kind: 'retained-production',
+        manifest: 'include',
+        ssrDefinitionRequired: false,
+        targetAdapterImportRequired: false,
+        hydrationRegistryRequired: false,
+        ssrProfiles: [],
+        hydrationProfiles: [],
+        allowedFinalHtmlScopes: ['note-stateful'],
+      });
+    }
+  });
+
   it('does not retain removed-or-reduced legacy tags', () => {
     const retainedTags = new Set<string>(
       STATIC_FIRST_RETAINED_COMPONENTS.map((component) => component.tag),

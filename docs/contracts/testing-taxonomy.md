@@ -5,14 +5,13 @@
 - Type: Normative
 - Source of truth: `package.json` scripts、`test/**`、test runner config
 - Applies to: test placement、contract verification layer、browser test harness、fixture policy
-- Non-goals: 機能別の詳細test plan、Storybookをcontract test harnessにすること
+- Non-goals: 機能別の詳細test plan
 
 ## 2. Ownership
 
 ### This Layer Owns
 
-- `test/node/**`、`test/browser/**`、`test/ssr/**`、`test/e2e/**`、`test/storybook/**`の責務境界。
-- Storybookはcontract test harnessではないこと。
+- `test/node/**`、`test/browser/**`、`test/ssr/**`、`test/e2e/**`の責務境界。
 - CSS構造契約とcomputed style検証の分離。
 - Production import boundaryとproduction CSS artifact assertionの配置。
 - Browser runner、provider、selection、project mapのowner境界。
@@ -49,7 +48,6 @@
 - `test/ssr/**`はbuild-time / final DOM / static artifact / CSS structureを担当する。
 - `test/e2e/**`はapp shell integration、no-JS baseline、router/history/search、主要導線を担当する。
 - `pnpm test:e2e:dev`はEleventy dev server上の開発時専用経路に限定したsmokeを担当する。production build / previewで固定するfinal DOMや横断的なrouter挙動を重複検証してはならない。
-- `test/storybook/**`はdocs / smoke / metadataに限定する。
 - Production import-boundary / CSS artifact / search import-boundary scriptsはnode-level verificationとして扱い、読書chromeのruntime UI挙動はbrowser / e2eで固定する。
 
 ### Browser Test Harness
@@ -66,7 +64,7 @@
 - Test APIとassertionは`vitest`から明示importし、templateは`lit/static-html.js`を使用する。
 - Raw HTML fixtureによるparser / custom-element upgrade contractを維持し、形式的にLit templateへ変換しない。
 - Web Test Runnerは削除済みであり、旧runner固有のconfig、wrapper、command、環境変数をcompatibility surfaceとして残さない。
-- Browser harnessの変更はstatic-first / no-JS baselineを変更しない。SSR、Storybook、E2Eの責務も移動しない。
+- Browser harnessの変更はstatic-first / no-JS baselineを変更しない。SSR、E2Eの責務も移動しない。
 
 ## 4. State Model
 
@@ -86,8 +84,6 @@
 ### Forbidden Coupling
 
 - `test/unit/**`と`src/**/*.test.ts`は使わない。
-- Storybookをcomponent/browser 契約の主戦場にしてはならない。
-- Story名や並び順を契約正本にしてはならない。
 
 ## 5. Failure Semantics
 
@@ -128,3 +124,9 @@
 - NavigationEnvelope schema変更時の検証レイヤが明確である。
 - Permanent URL hash生成規則変更時の検証レイヤが明確である。
 - Browser test harnessのactive ownerが一意であり、旧runnerとの恒久併存がない。
+
+## 観察面と集約検証
+
+UI Checkは局所的な視覚観察だけを担う。behavior・a11y・DOM・CSSの合否は既存のSSR / browser / E2Eが所有する。
+
+`pnpm test`はNode + SSR + Browser、`pnpm test:extended`はproduction E2E + dev E2Eを実行する。`check`のlint・型検証・note link・import boundaryと、`verify`のlink acceptance・extended coverageは維持する。

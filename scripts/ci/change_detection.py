@@ -40,7 +40,6 @@ APP_PREFIXES = (
     "types/",
     "scripts/",
     "test/",
-    ".storybook/",
     ".github/",
 )
 

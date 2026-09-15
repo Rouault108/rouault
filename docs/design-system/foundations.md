@@ -26,7 +26,7 @@ Componentは、まずSemanticまたはPattern tokenを参照する。Primitive t
 - 読書体験を優先し、本文領域では強い色面、過剰な影、装飾的なcontrastを避ける。
 - Light / dark themeは同じsemantic roleを保つ。
 - Forced colors modeでは色そのものではなく、境界、状態、focusの可視性を優先する。
-- Component固有の色運用は`docs/design-system/components/**`に置く。
+- Component固有の色運用は`docs/contracts/`に置く。
 
 ## 4. Typography
 

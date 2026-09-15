@@ -21,7 +21,6 @@ export default defineConfig(
       '.velite/',
       '.generated/',
       'node_modules/',
-      'storybook-static/',
       '*.config.js',
       '*.config.ts',
       '*.config.mjs',

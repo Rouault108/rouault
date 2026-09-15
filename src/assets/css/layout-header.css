@@ -610,12 +610,6 @@ header[data-layout-header] .corpus-trigger-text {
   }
 }
 
-layout-toc:not(:defined) {
-  display: block;
-  inline-size: 100%;
-  min-inline-size: 0;
-}
-
 /* observer反映前も非active triggerをfocus orderへ公開しない。 */
 header[data-layout-header] [data-layout-sidebar-toggle][hidden],
 .app-shell-root:not([data-sidebar-enhancement-state='active']) [data-layout-sidebar-toggle] {

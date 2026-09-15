@@ -24,7 +24,7 @@
 - Hydration triggerの正本。正本は`docs/contracts/hydration.md`。
 - `NavigationEnvelope` schemaの詳細。正本は`docs/references/navigation-envelope-schema.md`。
 - 検索ranking、source統合、diagnostics aggregationの詳細。正本は`docs/contracts/search.md`と`docs/references/search-ranking-and-diagnostics.md`。
-- Component単体のvisual token詳細。正本は`docs/design-system/components/`。
+- 保持するnote componentの個別契約。正本は`docs/contracts/`内の各契約、共通のvisual tokenは`docs/design-system/foundations.md`。
 - Header geometry。static headerの幅・配置契約はreading chrome note frame geometryとは別契約として扱う。
 - Sidebar state persistence。tree state、overlay state、保存先、復元条件は`docs/contracts/sidebar-state.md`を正本とする。
 
@@ -62,8 +62,8 @@
 - Density tierは`compact`、`comfortable`、`expanded`の視覚密度であり、heading identity、URL、active stateの意味を変えない。
 - TOC density tierは表示密度を調整するが、階層だけを理由に見出しラベルを1行省略してはならない。
 - `compact` densityは余白を詰めるための契約であり、見出し情報を過剰に欠落させる契約ではない。
-- Desktop TOC nav、static-first mobile panel clone、Lit `ui-toc`は同じlabel wrapping contractを共有する。
-- SSR `.layout-toc`とLit `ui-toc`は、同じ`--toc-item-inactive-max-lines` / `--toc-item-active-max-lines` contractに従う。
+- Desktop TOC nav、static-first mobile panel cloneは同じlabel wrapping contractを共有する。
+- desktop navとmobile panel navは、同じ`--toc-item-inactive-max-lines` / `--toc-item-active-max-lines` contractに従う。
 - `data-heading-depth`は階層インデントなどの構造表現に使うが、label wrappingを1行化する根拠として使ってはならない。
 - Mobile panelのDOM contract hookは`[data-layout-toc-mobile-panel]`であり、CSS styling hookは`.layout-toc-mobile-panel`である。DOM / test lookupは`[data-layout-toc-mobile-panel]`を正本とし、`.layout-toc-mobile-panel`を正本DOM selectorとして扱わない。
 - Searchのreturn-to-readingはrouter coreのimport boundaryを壊さず、検索UIはrouterを直接所有しない。

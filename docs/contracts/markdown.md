@@ -96,7 +96,7 @@ Markdown link-cardのfocus表示は、native anchorである`.link-card__link:fo
 
 `::callout`はstatic-firstな短い読書注記surfaceとして出力する。操作surface、runtime-dependent component、dangerous props、raw HTMLの抜け道として扱ってはならない。
 
-`::callout`の入力記法、kind値、final DOM、aria契約はMarkdown transform pipelineが所有する。詳細DOM mappingは`docs/references/markdown-output.md`、kind別の意味と視覚強度は`docs/design-system/components/callout.md`、author向け使い分けは`docs/guides/markdown-authoring.md`を参照する。
+`::callout`の入力記法、kind値、final DOM、aria契約はMarkdown transform pipelineが所有する。詳細DOM mappingは`docs/references/markdown-output.md`、kind別の意味と視覚強度は`docs/design-system/callout.md`、author向け使い分けは`docs/guides/markdown-authoring.md`を参照する。
 
 ### Static Code Group Sync Scope
 
@@ -200,7 +200,7 @@ raw `<br>`、Markdown hard break、`:br[]`は表セル改行契約として採�
 - fallback childには対応する`lang`を付与する。
 - fallbackはhydrated UI用の`data-part` selectorを使わず、generic `data-surface`も持たない。
 - JS無効またはJS遅延時でも、読者はnative `summary`から訳文へ到達できなければならない。
-- hostの`open`属性はcomponent API / Storybook / direct HTML compatibilityの範囲に限る。Markdown `translation-overlay`の入力属性として復活させてはならない。
+- hostの`open`属性はcomponent API / direct HTML compatibilityの範囲に限る。Markdown `translation-overlay`の入力属性として復活させてはならない。
 
 ### Preview Sandbox Output Contract
 

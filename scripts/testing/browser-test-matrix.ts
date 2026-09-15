@@ -28,7 +28,6 @@ const webkitUrlStateTestFiles = [
 
 const webkitNavigationStateTestFiles = [
   'test/browser/layout-toc-controller.browser.test.ts',
-  'test/browser/layout-toc-hydration.browser.test.ts',
   'test/browser/router-stale-fetch-artifact-fallback.browser.test.ts',
   'test/browser/toc-active-tracker.browser.test.ts',
   'test/browser/toc-navigation-controller.browser.test.ts',

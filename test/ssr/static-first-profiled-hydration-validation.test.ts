@@ -58,7 +58,7 @@ describe('static-first profiled hydration validation', () => {
 
     expect(result.errors).toEqual([]);
     expect(SSR_LAYOUT_TARGET_TAGS).not.toContain('layout-sidebar');
-    expect(SSR_LAYOUT_TARGET_TAGS).toContain('layout-toc');
+    expect(SSR_LAYOUT_TARGET_TAGS).not.toContain('layout-toc');
   });
 
   it('validates page and shell hydration roots with profile-specific denylists', () => {

@@ -80,13 +80,13 @@ Guide、ADR、component文書はこの文書を上書きしてはならない。
 - Icon Button: accessible nameを必ず持つ。
 - Loading / Skeleton: busy stateとno-JS fallbackを考慮する。
 
-Component固有の詳細は`docs/design-system/components/**`に置く。
+Component固有の詳細は`docs/contracts/`に置く。
 
 ## 5. Verification
 
 - 検証レイヤの一般分類は`docs/contracts/testing-taxonomy.md`に従う。
 - 自動検証だけでなく、keyboard、screen reader、forced colors、reduced motion、zoomの手動確認を行う。
-- Storybookはdocs / smokeの補助であり、contract test harnessではない。
+- UI Checkは観察用であり、アクセシビリティの合否はSSR / browser / E2Eで検証する。
 
 ## 6. Forbidden
 

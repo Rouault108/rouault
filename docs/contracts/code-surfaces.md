@@ -20,7 +20,7 @@
 ### This Layer Must Not Own
 
 - Markdown parser全体の安全境界。`docs/contracts/markdown.md`を参照する。
-- `ui-code-preview`自身のpreview state、built-in controls、toolbar contract。`docs/design-system/components/code-preview.md`を参照する。
+- `ui-code-preview`自身のpreview state、built-in controls、toolbar contract。`docs/contracts/code-preview.md`を参照する。
 - copy buttonのdetailed enhanced state contract。Phase 6で別途固定する。
 - hydration trigger ownership。`docs/contracts/hydration.md`を参照する。
 

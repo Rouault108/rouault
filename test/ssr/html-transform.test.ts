@@ -124,7 +124,7 @@ describe('transformHtmlWithLitSsr', () => {
       </html>`;
 
     const transformed = await transformHtmlWithLitSsr(html, {
-      targetTagNames: ['page-host', 'layout-toc'],
+      targetTagNames: ['page-host', 'fixture-child'],
       renderCustomElement: (tagName: string, attributes: readonly SsrAttribute[]) => {
         renderCalls.push(tagName);
 
@@ -133,7 +133,7 @@ describe('transformHtmlWithLitSsr', () => {
             `<page-host${serializeAttributes(attributes)}>
               <section class="synthetic-shell">
                 <aside class="synthetic-toc-col">
-                  <layout-toc headings-json="[]"></layout-toc>
+                  <fixture-child headings-json="[]"></fixture-child>
                 </aside>
               </section>
             </page-host>`,
@@ -141,15 +141,15 @@ describe('transformHtmlWithLitSsr', () => {
         }
 
         return Promise.resolve(
-          `<layout-toc${serializeAttributes(attributes)}><template shadowrootmode="open"><div>SSR layout-toc</div></template></layout-toc>`,
+          `<fixture-child${serializeAttributes(attributes)}><template shadowrootmode="open"><div>SSR fixture-child</div></template></fixture-child>`,
         );
       },
       collectDocumentStylesForTags: () => [],
     });
 
-    expect(renderCalls).toEqual(['page-host', 'layout-toc']);
+    expect(renderCalls).toEqual(['page-host', 'fixture-child']);
     expect(transformed).toContain(
-      '<layout-toc headings-json="[]"><template shadowrootmode="open"><div>SSR layout-toc</div></template></layout-toc>',
+      '<fixture-child headings-json="[]"><template shadowrootmode="open"><div>SSR fixture-child</div></template></fixture-child>',
     );
   });
 
@@ -160,20 +160,20 @@ describe('transformHtmlWithLitSsr', () => {
       <html lang="ja">
         <head></head>
         <body>
-          <layout-sidebar heading="ナビゲーション">
+          <fixture-parent heading="ナビゲーション">
             <template shadowrootmode="open">
-              <ui-sidebar mode="fixed">
+              <fixture-nested mode="fixed">
                 <template shadowrootmode="open">
                   <div class="sidebar-head">head</div>
                 </template>
-              </ui-sidebar>
+              </fixture-nested>
             </template>
-          </layout-sidebar>
+          </fixture-parent>
         </body>
       </html>`;
 
     const transformed = await transformHtmlWithLitSsr(html, {
-      targetTagNames: ['layout-sidebar', 'ui-sidebar'],
+      targetTagNames: ['fixture-parent', 'fixture-nested'],
       renderCustomElement: (tagName: string, attributes: readonly SsrAttribute[]) => {
         renderCalls.push(tagName);
         return Promise.resolve(
@@ -183,17 +183,17 @@ describe('transformHtmlWithLitSsr', () => {
       collectDocumentStylesForTags: (tagNames: ReadonlySet<string>) => {
         const styles: DocumentStyleDefinition[] = [];
 
-        if (tagNames.has('layout-sidebar')) {
+        if (tagNames.has('fixture-parent')) {
           styles.push({
-            id: 'layout-sidebar-document-styles',
-            cssText: '.layout-sidebar{display:block;}',
+            id: 'fixture-parent-document-styles',
+            cssText: '.fixture-parent{display:block;}',
           });
         }
 
-        if (tagNames.has('ui-sidebar')) {
+        if (tagNames.has('fixture-nested')) {
           styles.push({
-            id: 'ui-sidebar-document-styles',
-            cssText: '.ui-sidebar{display:block;}',
+            id: 'fixture-nested-document-styles',
+            cssText: '.fixture-nested{display:block;}',
           });
         }
 
@@ -203,8 +203,8 @@ describe('transformHtmlWithLitSsr', () => {
 
     expect(renderCalls).toEqual([]);
     expect(transformed.match(/<template shadowrootmode="open">/g)).toHaveLength(2);
-    expect(transformed).toContain('id="layout-sidebar-document-styles"');
-    expect(transformed).not.toContain('id="ui-sidebar-document-styles"');
+    expect(transformed).toContain('id="fixture-parent-document-styles"');
+    expect(transformed).not.toContain('id="fixture-nested-document-styles"');
   });
 
   it('document style を重複注入しない', async () => {

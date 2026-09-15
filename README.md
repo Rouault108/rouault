@@ -38,14 +38,13 @@ Rouaultは次を中核とする個人向け読書アプリです。
 - 検索: Pagefind
 - コードハイライト: Shiki
 - 数式: KaTeX
-- テスト: Vitest（Node / SSR / Browser Mode）/ Playwright / Storybook
+- テスト: Vitest（Node / SSR / Browser Mode）/ Playwright
 
 ## 現行構成
 
 ```text
 .
 ├─ .github/                   # CI、release、repository automation
-├─ .storybook/                # Storybook設定
 ├─ build/                     # build-time専用処理: content / navigation / projections / search / ssr / remark / rehype
 ├─ content/                   # ノート本文、frontmatter、関連アセット
 ├─ docs/                      # 契約、Design System、guide、ADR、reference
@@ -54,7 +53,7 @@ Rouaultは次を中核とする個人向け読書アプリです。
 ├─ scripts/                   # codegen、build、CI、content同期、deployment補助
 ├─ shared/                    # build-time / runtime共有ドメインロジック
 ├─ src/                       # テンプレート、router、client、components、layout、search、theme
-├─ test/                      # node / browser / ssr / e2e / storybook
+├─ test/                      # node / browser / ssr / e2e
 ├─ tools/                     # ui-checkなどの開発ツール
 ├─ types/                     # repository-wideな型補助
 └─ package.json
@@ -110,18 +109,13 @@ pnpm build:images           # 画像生成
 
 pnpm ui:check               # UI確認用sandboxを起動
 pnpm ui:screenshot          # UI確認用screenshotを生成・検証
-pnpm storybook              # Storybook起動
-pnpm storybook:build        # Storybook静的ビルド
 
 pnpm test:node              # pure logic / policy / parser / projection helper
 pnpm test:browser           # custom element / shadow DOM / keyboard / pointer / focus
 pnpm test:ssr               # build-time / final DOM / static artifact / CSS structure
 pnpm test:e2e               # app shell / no-JS baseline / router / search / 主要導線
-pnpm test:storybook:meta    # story metadata / import boundary
-pnpm test:storybook:smoke   # Storybook smoke
-pnpm test:storybook         # storybook:meta + storybook:smoke
-pnpm test                   # test:node + test:ssr + test:browser + test:storybook:meta
-pnpm test:extended          # storybook smoke + e2e:production + e2e:dev
+pnpm test                   # test:node + test:ssr + test:browser
+pnpm test:extended          # e2e:production + e2e:dev
 
 pnpm lint                   # ESLint
 pnpm lint:fix               # ESLint auto-fix + Prettier write
@@ -200,11 +194,6 @@ Rouaultは**何を保証するか**でテストの置き場を分けています
   - note読書フロー
   - 主要UXの最終確認
 
-- `test/storybook/`
-  - story metadata validation
-  - import boundary
-  - smoke allowlistの健全性確認
-
 詳細は`docs/contracts/testing-taxonomy.md`を参照してください。
 Browser runner、browser selection、fixture lifecycleを含むtesting harnessのowner境界も同Contractを正本とします。
 
@@ -215,7 +204,6 @@ Browser runner、browser selection、fixture lifecycleを含むtesting harness�
 - hydration triggerの正本はscheduler / registryです
 - sidebarはserver-first navigationを前提にし、light DOMのnav subtreeを正本とします
 - URLは共有可能で再構成可能な状態だけを担います
-- Storybookは仕様決定の場ではなく、docs / visual catalog / smokeに限定します
 
 ## 文書体系
 
@@ -237,7 +225,6 @@ READMEでは個別機能やContractの完全な一覧を重複管理しません
 - router / search / markdown / projection / layoutの責務を混在させない
 - static-firstを崩さない
 - 一時的な回避策を恒久仕様にしない
-- Storybookを契約の主戦場にしない
 
 ## ライセンス
 

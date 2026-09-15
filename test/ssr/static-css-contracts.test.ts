@@ -1,4 +1,4 @@
-import { existsSync, readFileSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import postcss, { type AnyNode, type AtRule, type Declaration, type Rule } from 'postcss';
 import selectorParser from 'postcss-selector-parser';
@@ -465,7 +465,6 @@ const mainCssImportRegistry = [
 const forbiddenMainCssTokens = [
   '@fontsource/',
   './fonts/',
-  'body[data-ui-dialog-open]',
   'body[data-ui-search-dialog-open]',
   '@view-transition',
   '::view-transition-group(*)',
@@ -657,10 +656,7 @@ describe('static CSS contracts', () => {
   it('keeps root viewport gutter stable while dialog open states only own body scroll lock', () => {
     const mainCss = readCss('main.css');
     const dialogStateCss = readCss('dialog-state.css');
-    const bodyOpenStateSelectors = [
-      'body[data-ui-dialog-open]',
-      'body[data-ui-search-dialog-open]',
-    ] as const;
+    const bodyOpenStateSelectors = ['body[data-ui-search-dialog-open]'] as const;
 
     expect(declarationValuesForSelector(mainCss, 'html', 'scrollbar-gutter')).toContain('stable');
 
@@ -743,29 +739,8 @@ describe('static CSS contracts', () => {
     expect(mobileWidthValues).toContain('100%');
   });
 
-  it('utility skeleton CSS exposes visual-only static skeleton contract', () => {
-    const css = readCss('utility-surfaces.css');
-
-    expectRuleToDeclare(css, '.skeleton', [
-      'background: var(--skeleton-bg)',
-      'position: relative',
-      'overflow: hidden',
-      'border-radius: var(--radius-sm)',
-    ]);
-    expectRuleToDeclare(css, '.skeleton::after', [
-      "content: ''",
-      'position: absolute',
-      'top: 0',
-      'right: 0',
-      'bottom: 0',
-      'left: 0',
-      'background: linear-gradient(90deg, transparent, var(--skeleton-shimmer), transparent)',
-      'animation: shimmer 1.5s infinite',
-    ]);
-
-    const reducedMotion = atRuleBlock(css, '@media (prefers-reduced-motion: reduce)');
-    expectRuleToDeclare(reducedMotion, '.skeleton::after', ['animation: none']);
-    expect(existsSync(resolve(cssDir, 'skeleton.css'))).to.equal(false);
+  it('removed skeleton surface does not leave utility CSS', () => {
+    expect(readCss('utility-surfaces.css')).not.toMatch(/\.skeleton\b/u);
   });
 
   it('layout header CSS keeps sticky and container ownership on the static header root', () => {

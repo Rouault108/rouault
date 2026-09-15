@@ -23,7 +23,7 @@ Phase 0調査では、次が確認されています。
 - `ui-code-block-change` / `copy-error` / `copy` custom eventの現行ランタイム利用は確認されていない。
 - `selected-value` / `default-selected-value` / `activation`は別文脈の利用があり、旧code group APIとしてのランタイム利用は確認されていない。
 - code surface専用contract文書は存在しなかった。
-- `docs/design-system/components/code-preview.md`には、存在しないcode composition文書への参照と、現行実装と矛盾するcode group変更イベント記述があった。
+- `docs/contracts/code-preview.md`には、存在しないcode composition文書への参照と、現行実装と矛盾するcode group変更イベント記述があった。
 - `docs/contracts/markdown.md`はstatic-first final DOMとno-JS可読性を上位契約として持つ。
 - 現状code groupはSSR時点からtabs semanticsとhidden inactive panelを持つ候補寄り実装であり、no-JS可読性と弱く衝突する。
 
@@ -44,15 +44,15 @@ code block、code group、copy UIは旧Lit Custom Elementではなく静的HTML�
 
 旧Custom Element APIの削除判断は、Phase 0調査結果と対応します。
 
-| Phase 0 evidence | Gate interpretation |
-| --- | --- |
-| P0-1〜P0-3: 旧code component実装ファイルが存在しない | 旧実装を復元対象ではなく削除済み対象として扱う。 |
-| P0-4〜P0-5: 旧tagsはdeletion target / forbidden input tag登録済み | final DOMとauthor inputに旧tagsを戻さない。 |
-| P0-6〜P0-9: hydration registry / tests / revival guard / SSR targetが旧componentを除外 | runtime正本を旧Custom Elementへ戻さない。 |
-| P0-10: 旧custom eventの現行ランタイム利用なし | `ui-code-block-change` / `copy` / `copy-error`を互換復元しない。 |
-| P0-11: 旧code group APIとしてのランタイム利用なし | `selected-value` / `default-selected-value` / `activation`をcode surface APIとして復元しない。 |
-| P0-12〜P0-14: 専用contract不在、markdown contractはstatic-firstを要求 | `docs/contracts/code-surfaces.md`を正本として追加する。 |
-| P0-15: SSR tabs + hidden inactive panelはno-JS可読性と弱く衝突 | SSR stack → enhanced tabsへ移行する。 |
+| Phase 0 evidence                                                                       | Gate interpretation                                                                            |
+| -------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| P0-1〜P0-3: 旧code component実装ファイルが存在しない                                   | 旧実装を復元対象ではなく削除済み対象として扱う。                                               |
+| P0-4〜P0-5: 旧tagsはdeletion target / forbidden input tag登録済み                      | final DOMとauthor inputに旧tagsを戻さない。                                                    |
+| P0-6〜P0-9: hydration registry / tests / revival guard / SSR targetが旧componentを除外 | runtime正本を旧Custom Elementへ戻さない。                                                      |
+| P0-10: 旧custom eventの現行ランタイム利用なし                                          | `ui-code-block-change` / `copy` / `copy-error`を互換復元しない。                               |
+| P0-11: 旧code group APIとしてのランタイム利用なし                                      | `selected-value` / `default-selected-value` / `activation`をcode surface APIとして復元しない。 |
+| P0-12〜P0-14: 専用contract不在、markdown contractはstatic-firstを要求                  | `docs/contracts/code-surfaces.md`を正本として追加する。                                        |
+| P0-15: SSR tabs + hidden inactive panelはno-JS可読性と弱く衝突                         | SSR stack → enhanced tabsへ移行する。                                                          |
 
 ## Alternatives Reviewed
 
@@ -76,7 +76,7 @@ code block、code group、copy UIは旧Lit Custom Elementではなく静的HTML�
 
 - code surface contractの正本は`docs/contracts/code-surfaces.md`になる。
 - ADRは判断経緯を保存するだけで、contractを上書きしない。
-- `docs/design-system/components/code-preview.md`はcode root / copy / tab / code group contractとして`docs/contracts/code-surfaces.md`を参照する。
+- `docs/contracts/code-preview.md`はcode root / copy / tab / code group contractとして`docs/contracts/code-surfaces.md`を参照する。
 - `docs/references/markdown-output.md`は詳細参照であり、code surface contractを上書きしない。
 - copy buttonのdetailed no-JS / enhanced / state contractはPhase 6で固定する。
 - Phase 3A〜3Cはまとめてrelease-ready判定する。

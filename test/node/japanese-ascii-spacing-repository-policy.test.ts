@@ -37,13 +37,7 @@ const PHASE9B_FAIL_PATTERNS = [
 
 const FAIL_PATTERNS = [...PHASE9A_FAIL_PATTERNS, ...PHASE9B_FAIL_PATTERNS] as const;
 
-const REPORT_ONLY_PATTERNS = [
-  'docs/design-system/components/**',
-  'docs/workflows/**',
-  'content/**',
-  'src/**',
-  'test/**',
-] as const;
+const REPORT_ONLY_PATTERNS = ['docs/workflows/**', 'content/**', 'src/**', 'test/**'] as const;
 
 const EXCLUDE_PATTERNS = DEFAULT_EXCLUDE_PATTERNS;
 
@@ -380,9 +374,7 @@ describe('japanese-ascii-spacing repository policy', () => {
   });
 
   it('report-only維持対象は候補が残っていてもfail対象へ分類しないこと', async () => {
-    expect(classifyRepositoryPolicyPath('docs/design-system/components/button.md').kind).toBe(
-      'report-only',
-    );
+    expect(classifyRepositoryPolicyPath('docs/workflows/README.md').kind).toBe('report-only');
     expect(classifyRepositoryPolicyPath('docs/workflows/problem-solving/README.md').kind).toBe(
       'report-only',
     );

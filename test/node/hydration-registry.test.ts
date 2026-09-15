@@ -6,7 +6,6 @@ import {
 } from '../../src/client/hydration/registry.js';
 
 const expectedProfilesByTag = new Map<string, readonly string[]>([
-  ['ui-skip-link', ['shell']],
   ['layout-header-enhancer', ['shell']],
   ['router-document-host', ['shell']],
   ['search-dialog-enhancer', ['shell']],

@@ -6,7 +6,7 @@ Decision ID: `D-UI-CHECK-WORKBENCH-001`
 
 `tools/ui-check/` is a local development workbench for quick visual inspection of small Rouault UI fragments. It is intentionally scoped as an auxiliary surface for observation, state comparison, and screenshot collection.
 
-It is not a specification source, contract test, CI acceptance gate, screenshot regression baseline, Storybook replacement, `content/testing/` replacement, or `test/e2e` replacement.
+It is not a specification source, contract test, CI acceptance gate, screenshot regression baseline, `content/testing/` replacement, or `test/e2e` replacement.
 
 When a behavior, DOM shape, CSS token contract, accessibility meaning, or visual guarantee should become formal, promote it out of this workbench into the existing ownership area: `docs/contracts/`, `docs/design-system/`, `test/ssr`, `test/browser`, or `test/e2e`.
 
@@ -86,4 +86,4 @@ They do not load CSS through `ui-check-entry.ts` or a module script. This keeps 
 - The workbench does not import `src/client.ts` and does not connect to router, search, Pagefind, navigation artifacts, permalink, note source root, or publication surfaces.
 - `tools/ui-check/**/*.ts` belongs to `tsconfig.node.json` because this directory mixes browser entry files with Node-oriented config and Playwright helper code.
 - TypeScript imports in this area should use relative paths rather than the `@` alias. Relative TypeScript module imports should use `.js` extensions; Vite asset imports should keep their real extension.
-- Playwright assertions in `tools/ui-check/playwright/screenshot.spec.ts` are operational smoke checks for the workbench surface. They are not contract tests, CI acceptance criteria, screenshot regression baselines, or Storybook replacements.
+- Playwright assertions in `tools/ui-check/playwright/screenshot.spec.ts` are operational smoke checks for the workbench surface. They are not contract tests, CI acceptance criteria, screenshot regression baselines.

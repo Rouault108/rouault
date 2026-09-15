@@ -33,7 +33,6 @@ class ClassificationTest(unittest.TestCase):
             ("types/foo.ts", False, True, True),
             ("scripts/foo.ts", False, True, True),
             ("test/foo.test.ts", False, True, True),
-            (".storybook/main.ts", False, True, True),
             (".github/workflows/ci-cd.yml", False, True, True),
             (".github/actions/foo/action.yml", False, True, True),
             (".github/dependabot.yml", False, True, True),

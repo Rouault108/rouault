@@ -170,7 +170,7 @@ const collectDecoratorTagMap = (): ReadonlyMap<string, string> => {
     if (!filePath.endsWith('.ts')) {
       continue;
     }
-    if (filePath.endsWith('.stories.ts') || filePath.endsWith('.test.ts')) {
+    if (filePath.endsWith('.test.ts')) {
       continue;
     }
 

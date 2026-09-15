@@ -28,6 +28,19 @@
 - `docs/contracts/note-navigation.md`
 - `docs/contracts/note-metadata.md`
 - `docs/contracts/reading-chrome.md`
+- `docs/contracts/toc.md`
+- `docs/contracts/code-preview.md`
+- `docs/contracts/footer.md`
+- `docs/contracts/preview-sandbox.md`
+- `docs/contracts/tabs.md`
+- `docs/contracts/translation.md`
+- `docs/contracts/video.md`
+- `docs/contracts/note-controls.md`
+- `docs/contracts/static-checkbox.md`
+- `docs/contracts/static-select.md`
+- `docs/contracts/static-kbd.md`
+- `docs/contracts/static-icon.md`
+- `docs/contracts/static-empty-state.md`
 - `docs/contracts/static-header-contract.md`
 - `docs/contracts/static-choice-menu.md`
 - `docs/contracts/theme.md`
@@ -47,8 +60,7 @@
 - `docs/design-system/pattern-reading-surface.md`
 - `docs/design-system/pattern-reading-chrome.md`
 - `docs/design-system/pattern-reading-block-intrusion.md`
-- `docs/design-system/components/`
-- `docs/design-system/components/callout.md`
+- `docs/design-system/callout.md`
 
 Design System patternはUIの見え方と配置判断を扱う。Router、search、hydration、note navigation、reading chromeの機能契約を上書きしない。
 

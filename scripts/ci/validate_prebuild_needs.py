@@ -19,7 +19,6 @@ APP_PREREQUISITE_JOBS = (
     "typecheck-node",
     "test-node",
     "test-browser",
-    "test-storybook-meta",
 )
 
 

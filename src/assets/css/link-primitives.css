@@ -20,7 +20,7 @@ a:focus-visible {
 
 /* ===========================================================================
  * Text Links（テキストリンク）
- * @see docs/design-system/components.md - Prose Link仕様
+ * @see docs/design-system/patterns.md - Prose Link仕様
  * =========================================================================== */
 
 /*
@@ -187,7 +187,7 @@ a:focus-visible {
 
 /* ===========================================================================
  * Control Links（構造型リンク / UIリンク）
- * @see docs/design-system/components.md - Contextual Link仕様
+ * @see docs/design-system/patterns.md - Contextual Link仕様
  *
  * カード、サイドバー等のUIコンポーネント内に配置される
  * ナビゲーションやアクションを目的としたリンク。

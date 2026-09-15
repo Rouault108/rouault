@@ -8,9 +8,7 @@ export type StaticFirstRetainedComponentKind =
   | 'retained-shell'
   | 'retained-layout'
   | 'retained-note-stateful'
-  | 'retained-controller'
-  | 'retained-design-system'
-  | 'retained-storybook';
+  | 'retained-controller';
 
 export type StaticFirstManifestPolicy = 'include' | 'exclude';
 
@@ -20,8 +18,6 @@ export type StaticFirstFinalHtmlScope =
   | 'page'
   | 'layout'
   | 'note-stateful'
-  | 'design-system-only'
-  | 'storybook-only'
   | 'internal-test'
   | 'none';
 
@@ -49,9 +45,9 @@ const includeManifest = (
   manifestModulePaths: [path],
 });
 
-const retainedDesignSystem = (tag: string, path: string): StaticFirstRetainedComponent => ({
+const retainedProductionInternal = (tag: string, path: string): StaticFirstRetainedComponent => ({
   tag,
-  kind: 'retained-design-system',
+  kind: 'retained-production',
   implementationPaths: [path],
   ...includeManifest(path),
   ssrDefinitionRequired: false,
@@ -59,7 +55,7 @@ const retainedDesignSystem = (tag: string, path: string): StaticFirstRetainedCom
   hydrationRegistryRequired: false,
   ssrProfiles: [],
   hydrationProfiles: [],
-  allowedFinalHtmlScopes: ['design-system-only', 'storybook-only', 'internal-test'],
+  allowedFinalHtmlScopes: ['note-stateful'],
 });
 
 const retainedSsrComponent = (
@@ -116,32 +112,6 @@ export const STATIC_FIRST_RETAINED_COMPONENTS: readonly StaticFirstRetainedCompo
     'router-document-host uses the light-router-document-host string adapter; SSR does not evaluate the HTMLElement module',
   ),
   {
-    tag: 'layout-sidebar',
-    kind: 'retained-storybook',
-    implementationPaths: ['src/components/layout/layout-sidebar.ts'],
-    ...includeManifest('src/components/layout/layout-sidebar.ts'),
-    ssrDefinitionRequired: false,
-    targetAdapterImportRequired: false,
-    hydrationRegistryRequired: false,
-    ssrProfiles: [],
-    hydrationProfiles: [],
-    allowedFinalHtmlScopes: ['storybook-only', 'internal-test'],
-  },
-  retainedDesignSystem('layout-sidebar-surface', 'src/components/layout/layout-sidebar-surface.ts'),
-  {
-    tag: 'layout-toc',
-    kind: 'retained-layout',
-    implementationPaths: ['src/components/layout/layout-toc.ts'],
-    ...includeManifest('src/components/layout/layout-toc.ts'),
-    ssrDefinitionRequired: true,
-    targetAdapterImportRequired: true,
-    targetAdapterImportPaths: ['src/components/layout/layout-toc.ts'],
-    hydrationRegistryRequired: false,
-    ssrProfiles: ['layout'],
-    hydrationProfiles: [],
-    allowedFinalHtmlScopes: ['layout'],
-  },
-  {
     tag: 'layout-toc-controller',
     kind: 'retained-controller',
     implementationPaths: ['src/components/layout/layout-toc-controller.ts'],
@@ -154,7 +124,7 @@ export const STATIC_FIRST_RETAINED_COMPONENTS: readonly StaticFirstRetainedCompo
     hydrationProfiles: ['layout'],
     allowedFinalHtmlScopes: ['layout'],
   },
-  retainedDesignSystem('ui-button', 'src/components/ui/button/button.ts'),
+  retainedProductionInternal('ui-button', 'src/components/ui/button/button.ts'),
   retainedSsrComponent(
     'ui-code-preview',
     'src/components/ui/code-preview/code-preview.ts',
@@ -163,16 +133,8 @@ export const STATIC_FIRST_RETAINED_COMPONENTS: readonly StaticFirstRetainedCompo
     ['note'],
     ['note-stateful'],
   ),
-  retainedDesignSystem('ui-dialog', 'src/components/ui/dialog/dialog.ts'),
-  retainedDesignSystem('ui-dropdown', 'src/components/ui/dropdown/dropdown.ts'),
-  retainedDesignSystem('ui-menu-item', 'src/components/ui/dropdown/dropdown.ts'),
-  retainedDesignSystem('ui-menu-link', 'src/components/ui/dropdown/dropdown.ts'),
-  retainedDesignSystem('ui-menu-separator', 'src/components/ui/dropdown/dropdown.ts'),
-  retainedDesignSystem('ui-file-tree', 'src/components/ui/file-tree/file-tree.ts'),
-  retainedDesignSystem('ui-input', 'src/components/ui/input/input.ts'),
-  retainedDesignSystem('ui-list', 'src/components/ui/list/list.ts'),
-  retainedDesignSystem('ui-list-item', 'src/components/ui/list-item/list-item.ts'),
-  retainedDesignSystem('ui-popover', 'src/components/ui/popover/popover.ts'),
+  retainedProductionInternal('ui-dropdown', 'src/components/ui/dropdown/dropdown.ts'),
+  retainedProductionInternal('ui-menu-item', 'src/components/ui/dropdown/dropdown.ts'),
   retainedSsrComponent(
     'ui-preview-sandbox',
     'src/components/ui/preview-sandbox/preview-sandbox.ts',
@@ -181,20 +143,6 @@ export const STATIC_FIRST_RETAINED_COMPONENTS: readonly StaticFirstRetainedCompo
     ['note'],
     ['note-stateful'],
   ),
-  retainedDesignSystem('ui-radio', 'src/components/ui/radio/radio.ts'),
-  retainedDesignSystem('ui-radio-group', 'src/components/ui/radio/radio-group.ts'),
-  retainedDesignSystem('ui-sidebar', 'src/components/ui/sidebar/sidebar.ts'),
-  retainedDesignSystem('ui-sidebar-shell', 'src/components/ui/sidebar-shell/sidebar-shell.ts'),
-  retainedSsrComponent(
-    'ui-skip-link',
-    'src/components/ui/skip-link/skip-link.ts',
-    'retained-shell',
-    ['shell'],
-    ['shell'],
-    ['shell'],
-  ),
-  retainedDesignSystem('ui-spinner', 'src/components/ui/spinner/spinner.ts'),
-  retainedDesignSystem('ui-switch', 'src/components/ui/switch/switch.ts'),
   retainedSsrComponent(
     'ui-tabs',
     'src/components/ui/tabs/tabs.ts',
@@ -203,11 +151,6 @@ export const STATIC_FIRST_RETAINED_COMPONENTS: readonly StaticFirstRetainedCompo
     ['note'],
     ['note-stateful'],
   ),
-  retainedDesignSystem('ui-tag', 'src/components/ui/tag/tag.ts'),
-  retainedDesignSystem('ui-textarea', 'src/components/ui/textarea/textarea.ts'),
-  retainedDesignSystem('ui-toast', 'src/components/ui/toast/toast.ts'),
-  retainedDesignSystem('ui-toc', 'src/components/ui/toc/toc.ts'),
-  retainedDesignSystem('ui-tooltip', 'src/components/ui/tooltip/tooltip.ts'),
   retainedSsrComponent(
     'ui-translation',
     'src/components/ui/translation/translation.ts',
@@ -216,7 +159,6 @@ export const STATIC_FIRST_RETAINED_COMPONENTS: readonly StaticFirstRetainedCompo
     ['note'],
     ['note-stateful'],
   ),
-  retainedDesignSystem('ui-tree-item', 'src/components/ui/tree-item/tree-item.ts'),
   retainedSsrComponent(
     'ui-video',
     'src/components/ui/video/video.ts',

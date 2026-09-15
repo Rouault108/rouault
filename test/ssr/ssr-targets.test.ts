@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
 import { STATIC_FIRST_REMOVED_OR_REDUCED_LEGACY_TAGS } from '../../build/content/static-first-removed-or-reduced-tags.js';
-import { renderCustomElement } from '../../build/ssr/server-entry.js';
 import { SSR_COMPONENT_DEFINITIONS } from '../../build/ssr/target-definitions.js';
 import {
   SSR_LAYOUT_TARGET_TAGS,
@@ -48,7 +47,7 @@ describe('component manifest / ssr targets', () => {
   });
 
   it('layout component は note target ではなく layout target に分離すること', () => {
-    expect(SSR_LAYOUT_TARGET_TAGS).toContain('layout-toc');
+    expect(SSR_LAYOUT_TARGET_TAGS).not.toContain('layout-toc');
     expect(SSR_LAYOUT_TARGET_TAGS).not.toContain('layout-sidebar');
     expect(SSR_NOTE_TARGET_TAGS).not.toContain('layout-toc');
     expect(SSR_NOTE_TARGET_TAGS).not.toContain('layout-sidebar');
@@ -101,24 +100,6 @@ describe('component manifest / ssr targets', () => {
         SSR_COMPONENT_DEFINITIONS.some((definition) => String(definition.tag) === tagName),
       ).toBe(false);
     }
-  });
-
-  it('layout-toc の SSR が Node 環境で HTMLElement を参照せずに完了すること', async () => {
-    const rendered = await renderCustomElement(
-      'layout-toc',
-      [
-        { name: 'headings-json', value: '[{"id":"intro","text":"Intro","level":2}]' },
-        {
-          name: 'capabilities-json',
-          value: '{"activeTracking":false,"dynamicScopes":false,"mobilePanel":false}',
-        },
-        { name: 'content-root-id', value: 'note-content-intro' },
-        { name: 'data-hydration-trigger', value: '' },
-      ],
-      '',
-    );
-
-    expect(rendered).toContain('<layout-toc');
   });
 });
 

@@ -24,7 +24,6 @@
     "tools/**/*.ts",
     "types/**/*.d.ts",
     "test/node/**/*.test.ts",
-    "test/ssr/**/*.test.ts",
-    "test/storybook/**/*.test.ts"
+    "test/ssr/**/*.test.ts"
   ]
 }

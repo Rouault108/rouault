@@ -50,7 +50,7 @@
 - `compact`は長いTOCのscanningを優先し、`expanded`は短いTOCのtap / focus余白を優先する。
 - `compact`は余白を詰めるdensityであり、見出し情報を過剰に欠落させる契約ではない。
 - 右TOCは補助navigationだが、現在地と章題を実用上把握できるだけの情報量を保持する。
-- Desktop TOC、static-first mobile panel clone、Lit `ui-toc`は同じlabel wrapping contractに従う。
+- Desktop TOC、static-first mobile panel cloneは同じlabel wrapping contractに従う。
 - Mobile panelはDOM contract hook `[data-layout-toc-mobile-panel]`とCSS styling hook `.layout-toc-mobile-panel`を分離する。
 
 ## 6. Diagnostics Pattern

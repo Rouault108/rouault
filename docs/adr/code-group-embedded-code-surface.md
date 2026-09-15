@@ -14,15 +14,15 @@ R3/A0
 
 R3理由:
 
-* code groupのvisual contractとdesign-system contractを変更する。
-* code block surfaceとcode group surfaceのownership boundaryを固定する。
-* CSS contract、code surface contract、Design System patternを同時に更新する。
+- code groupのvisual contractとdesign-system contractを変更する。
+- code block surfaceとcode group surfaceのownership boundaryを固定する。
+- CSS contract、code surface contract、Design System patternを同時に更新する。
 
 A0理由:
 
-* private / restricted Evidenceは扱わない。
-* content本文、secret、外部サービスを変更しない。
-* CSS、文書、SSR CSS contract testで検証可能である。
+- private / restricted Evidenceは扱わない。
+- content本文、secret、外部サービスを変更しない。
+- CSS、文書、SSR CSS contract testで検証可能である。
 
 ## Context
 
@@ -32,14 +32,14 @@ Rouaultのcode groupは、複数panelを1つのcode surface内で切り替える
 
 ## Decision
 
-* outer surface ownershipを`section[data-code-group]`へ集約する。
-* `section[data-code-group]`がborder、background、radius、overflow clippingを所有する。
-* group-owned code blockはsemantic / code body wrapperとし、独立surfaceとして見せない。
-* group-owned rootはsurface視覚、余白、overflow clipping、root-level focus shadowを持たない。
-* code group tabsは`ui-tabs`へ統合しない。
-* enhanced状態ではheaderとcode bodyを1つのsurface内の上下領域として表示する。
-* header / body dividerはforced-colorsでも視認可能にし、`box-shadow`だけへ依存させない。
-* DOM、Markdown構文、ARIA enhancer、copy同期、URL、routingは変更しない。
+- outer surface ownershipを`section[data-code-group]`へ集約する。
+- `section[data-code-group]`がborder、background、radius、overflow clippingを所有する。
+- group-owned code blockはsemantic / code body wrapperとし、独立surfaceとして見せない。
+- group-owned rootはsurface視覚、余白、overflow clipping、root-level focus shadowを持たない。
+- code group tabsは`ui-tabs`へ統合しない。
+- enhanced状態ではheaderとcode bodyを1つのsurface内の上下領域として表示する。
+- header / body dividerはforced-colorsでも視認可能にし、`box-shadow`だけへ依存させない。
+- DOM、Markdown構文、ARIA enhancer、copy同期、URL、routingは変更しない。
 
 ## Alternatives considered
 
@@ -71,10 +71,10 @@ CSSを変更せず、group-owned code blockが独立cardに見える現状を契
 
 ## Why rejected
 
-* 読書面で二重surfaceが過剰である。
-* no-JS / print / copy同期契約が通常`ui-tabs`とは異なる。
-* forced-colorsで`box-shadow`だけのdividerは視認不能になる可能性がある。
-* 文書だけの更新では、実際のvisual contractと契約が一致しない。
+- 読書面で二重surfaceが過剰である。
+- no-JS / print / copy同期契約が通常`ui-tabs`とは異なる。
+- forced-colorsで`box-shadow`だけのdividerは視認不能になる可能性がある。
+- 文書だけの更新では、実際のvisual contractと契約が一致しない。
 
 ## Compatibility impact
 
@@ -88,24 +88,24 @@ visual compatibilityとしては、group-owned code blockのborder、background�
 
 Acceptance:
 
-* A-CODE-GROUP-SINGLE-SURFACE-001
-* A-CODE-GROUP-NOJS-STACK-001
-* A-CODE-GROUP-PRINT-001
-* A-CODE-GROUP-TABS-VARIANT-001
-* A-CODE-GROUP-CAPTION-NONREGRESSION-001
-* A-CODE-GROUP-FORCED-COLORS-001
-* A-CODE-GROUP-HEADER-DIVIDER-001
-* A-CODE-GROUP-HEADER-DIVIDER-FORCED-COLORS-001
-* A-CODE-GROUP-OVERFLOW-OWNERSHIP-001
-* A-CODE-GROUP-RESET-SCOPE-001
-* A-CODE-GROUP-NONREGRESSION-001
+- A-CODE-GROUP-SINGLE-SURFACE-001
+- A-CODE-GROUP-NOJS-STACK-001
+- A-CODE-GROUP-PRINT-001
+- A-CODE-GROUP-TABS-VARIANT-001
+- A-CODE-GROUP-CAPTION-NONREGRESSION-001
+- A-CODE-GROUP-FORCED-COLORS-001
+- A-CODE-GROUP-HEADER-DIVIDER-001
+- A-CODE-GROUP-HEADER-DIVIDER-FORCED-COLORS-001
+- A-CODE-GROUP-OVERFLOW-OWNERSHIP-001
+- A-CODE-GROUP-RESET-SCOPE-001
+- A-CODE-GROUP-NONREGRESSION-001
 
 Verification:
 
-* `pnpm run test:ssr -- test/ssr/static-css-contracts.test.ts`
-* `pnpm run test:ssr -- test/ssr/rehype-static-code-groups.test.ts`
-* `pnpm run test:browser -- test/browser/code-group-enhancer.browser.test.ts`
-* `pnpm run test:browser -- test/browser/code-preview.browser.test.ts`
+- `pnpm run test:ssr -- test/ssr/static-css-contracts.test.ts`
+- `pnpm run test:ssr -- test/ssr/rehype-static-code-groups.test.ts`
+- `pnpm run test:browser -- test/browser/code-group-enhancer.browser.test.ts`
+- `pnpm run test:browser -- test/browser/code-preview.browser.test.ts`
 
 ## Rollback
 
@@ -115,10 +115,10 @@ Rollback時もDOM、Markdown構文、ARIA enhancer、copy同期、URL、routing�
 
 ## Out of scope
 
-* DOM変更
-* enhancer変更
-* `ui-tabs`変更
-* `docs/design-system/components/tabs.md`変更
-* Markdown構文変更
-* URL同期追加
-* token体系新設
+- DOM変更
+- enhancer変更
+- `ui-tabs`変更
+- `docs/contracts/tabs.md`変更
+- Markdown構文変更
+- URL同期追加
+- token体系新設

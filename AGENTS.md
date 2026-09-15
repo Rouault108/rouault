@@ -15,7 +15,7 @@ README・AGENTS・実装の内容が衝突した場合は、次の優先順位�
 1. 実行可能な設定と実装  
    （`package.json`、`*.config.*`、`build/`、`src/`、`shared/`、`content/`、`scripts/`、`types/`）
 2. テストで明示された契約  
-   （`test/node`、`test/browser`、`test/ssr`、`test/e2e`、`test/storybook`）
+   （`test/node`、`test/browser`、`test/ssr`、`test/e2e`）
 3. `docs/`の仕様文書
 4. README
 5. `temporary/`、`docs/old/`、`docs/temporary/`
@@ -118,7 +118,7 @@ Rouaultは長期保守性のためにownership boundaryを重視します。
 - コードハイライト: Shiki
 - 数式: KaTeX
 - コンテンツ処理: Velite + Markdown変換パイプライン
-- テスト: Vitest（Node / SSR / Browser Mode）/ Playwright / Storybook
+- テスト: Vitest（Node / SSR / Browser Mode）/ Playwright
 
 ### 実行環境
 
@@ -159,7 +159,7 @@ Windowsネイティブ環境で作業する場合は、PowerShell構文を前提
 - sidebarの正本は静的`aside[data-layout-sidebar-root]`内のnav subtreeです。projectionはshell adapter / DOM adapter、presentation / interactionはcontrollerとplain enhancerが所有します。
 - presentation stateとtree stateは分離してください。
 - app shell上のsidebar hostは1実体だけに保ってください。
-- enhancerはshell-level dormant infrastructureです。`layout-sidebar`と`layout-sidebar-surface`はPhase3まで残すlegacy sourceです。
+- enhancerはshell-level dormant infrastructureです。旧Lit sidebar sourceは削除済みです。
 
 #### permanent URL
 
@@ -170,7 +170,6 @@ Windowsネイティブ環境で作業する場合は、PowerShell構文を前提
 ### 主なコード配置
 
 - `.github/` : CI、release、repository automation
-- `.storybook/` : Storybook設定
 - `build/` : build-time専用処理。content / navigation / projections / search / ssr / remark / rehype
 - `content/` : ノート本文、frontmatter、関連アセット
 - `docs/` : 契約、Design System、guide、ADR、reference、architecture snapshot
@@ -191,8 +190,7 @@ Windowsネイティブ環境で作業する場合は、PowerShell構文を前提
 - `src/theme/` : テーマ切替と状態
 - `src/toc/` : TOC公開入口
 - `src/assets/` / `src/styles/` : CSS、静的UI資産、design token利用箇所
-- `src/testing/` / `src/stories/` : テスト・Storybook補助
-- `test/` : node / browser / ssr / e2e / storybook
+- `test/` : node / browser / ssr / e2e
 - `tools/` : `ui-check`などの開発ツール
 - `types/` : repository-wideな型補助
 
@@ -279,18 +277,13 @@ pnpm build:images           # 画像生成
 
 pnpm ui:check               # UI確認用sandboxを起動
 pnpm ui:screenshot          # UI確認用screenshotを生成・検証
-pnpm storybook              # Storybook起動
-pnpm storybook:build        # Storybook静的ビルド
 
 pnpm test:node              # pure logic / policy / parser / projection helper
 pnpm test:browser           # custom element / enhancerのbrowser-observable contract
 pnpm test:ssr               # build-time / final DOM / static artifact / CSS structure
 pnpm test:e2e               # app shell / no-JS baseline / router / search / 主要導線
-pnpm test:storybook:meta    # story metadata / import boundary
-pnpm test:storybook:smoke   # Storybook smoke
-pnpm test:storybook         # storybook meta + smoke
-pnpm test                   # node + ssr + browser + storybook:meta
-pnpm test:extended          # storybook smoke + e2e:production + e2e:dev
+pnpm test                   # node + ssr + browser
+pnpm test:extended          # e2e:production + e2e:dev
 
 pnpm lint                   # ESLint
 pnpm lint:fix               # ESLint auto-fix + Prettier write
@@ -358,26 +351,12 @@ app全体で成立する統合契約を担当します。
 - note読書フロー
 - 主要導線の最終確認
 
-### `pnpm test:storybook`
-
-Storybookはdocs / smoke / metadataに限定します。
-
-- `pnpm test:storybook:meta`
-  - story metadata
-  - import boundary
-  - smoke allowlistの妥当性
-
-- `pnpm test:storybook:smoke`
-  - docs面の最低限の健全性確認
-
 ### テスト追加時の原則
 
 - `test/unit/**`は使用しません。
 - `src/**/*.test.ts`は使用しません。
 - バグ修正では、可能なら先に再現テストを追加してください。
 - 実装詳細ではなく契約を固定してください。
-- Storybookをcomponent/browser契約の主戦場にしないでください。
-- Story 名や並び順を契約正本にしないでください。
 
 Browser runner、browser selection、fixture lifecycleを含むtesting harnessのowner境界は、`docs/contracts/testing-taxonomy.md`を正本としてください。
 
