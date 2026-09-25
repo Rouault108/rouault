@@ -1,0 +1,125 @@
+{
+  "note": {
+    "title": "株式会社",
+    "slug": "example",
+    "permalink": "/notes/example/",
+    "description": "説明",
+    "genre": [
+      "tag"
+    ]
+  },
+  "html": "<main data-note-static-surface><h2 id=\"h\">値型</h2><p>コピー boxing コピー</p><p>株式会社</p></main>",
+  "manifest": {
+    "schemaVersion": 2,
+    "engine": "minisearch",
+    "engineVersion": "7.2.0",
+    "indexOptionsId": "rouault-minisearch-index-v1",
+    "indexOptionsSha256": "efbd55a37c821e08f909e24171d28c43cd675bb1193ba3d71a5cd8cc52080392",
+    "analyzerPolicyId": "rouault-lexical-v3",
+    "rankingProfileId": "rouault-search-v3",
+    "exactRulesSha256": "3465a99ea725e96139ba685f60789995d4a040307e58a6f0631a6725d9ac4c38",
+    "providerVersion": "0.9.11",
+    "providerConfigSha256": "ba6712f0da9761f52471c630d80c4c53b001481fc835591d799e48404a0dbf57",
+    "providerArtifactSha256": "f0ee2d14fcbbb0559c3246263aa907987012a1ff45939484ee6b79bae1821baf",
+    "buildId": "fixture-build",
+    "documentIndexSha256": "796cf0f7c9a91b5e57bc1af3f2d25b7bb7a39d7e1d2b11fa7b0e2b80059c9aef",
+    "passageIndexSha256": "692221ee711330b167db762683e4ea592aa489be9f269d496a78ff80b25afdc2",
+    "passageStoreSha256": "d18ed5e1a43f8cd48f0e458c4ffa8688816fc453707749f8dfb2d748f30e00de",
+    "documentIndex": {
+      "path": "/search/document.796cf0f7c9a91b5e57bc1af3f2d25b7bb7a39d7e1d2b11fa7b0e2b80059c9aef.json",
+      "sha256": "796cf0f7c9a91b5e57bc1af3f2d25b7bb7a39d7e1d2b11fa7b0e2b80059c9aef",
+      "bytes": 1347
+    },
+    "passageIndex": {
+      "path": "/search/passage.692221ee711330b167db762683e4ea592aa489be9f269d496a78ff80b25afdc2.json",
+      "sha256": "692221ee711330b167db762683e4ea592aa489be9f269d496a78ff80b25afdc2",
+      "bytes": 1324
+    },
+    "passageStore": {
+      "path": "/search/store.d18ed5e1a43f8cd48f0e458c4ffa8688816fc453707749f8dfb2d748f30e00de.json",
+      "sha256": "d18ed5e1a43f8cd48f0e458c4ffa8688816fc453707749f8dfb2d748f30e00de",
+      "bytes": 171
+    },
+    "providerArtifact": {
+      "path": "/search/suzume.f0ee2d14fcbbb0559c3246263aa907987012a1ff45939484ee6b79bae1821baf.wasm",
+      "sha256": "f0ee2d14fcbbb0559c3246263aa907987012a1ff45939484ee6b79bae1821baf",
+      "bytes": 578362
+    },
+    "providerConfig": {
+      "path": "/search/provider-config.ba6712f0da9761f52471c630d80c4c53b001481fc835591d799e48404a0dbf57.json",
+      "sha256": "ba6712f0da9761f52471c630d80c4c53b001481fc835591d799e48404a0dbf57",
+      "bytes": 3163
+    }
+  },
+  "document": {
+    "schemaVersion": 2,
+    "serializedIndex": "{\"documentCount\":1,\"nextId\":1,\"documentIds\":{\"0\":\"/notes/example/\"},\"fieldIds\":{\"titleWord\":0,\"titleGram\":1,\"descriptionWord\":2,\"descriptionGram\":3,\"bodyWord\":4,\"bodyGram\":5,\"pathWord\":6,\"keywordWord\":7,\"tagWord\":8},\"fieldLength\":{\"0\":[1,3,1,1,4,6,2,4,1]},\"averageFieldLength\":[1,3,1,1,4,6,2,4,1],\"storedFields\":{},\"dirtCount\":0,\"index\":[[\"tag\",{\"7\":{\"0\":1},\"8\":{\"0\":1}}],[\"example\",{\"6\":{\"0\":1},\"7\":{\"0\":1}}],[\"notes\",{\"6\":{\"0\":1}}],[\"ピー\",{\"5\":{\"0\":2}}],[\"コピ\",{\"5\":{\"0\":2}}],[\"コピー\",{\"4\":{\"0\":2}}],[\"boxing\",{\"4\":{\"0\":1}}],[\"値型\",{\"4\":{\"0\":1},\"5\":{\"0\":1}}],[\"説明\",{\"2\":{\"0\":1},\"3\":{\"0\":1},\"7\":{\"0\":1}}],[\"会社\",{\"1\":{\"0\":1},\"5\":{\"0\":1}}],[\"式会\",{\"1\":{\"0\":1},\"5\":{\"0\":1}}],[\"株式\",{\"1\":{\"0\":1},\"5\":{\"0\":1}}],[\"株式会社\",{\"0\":{\"0\":1},\"4\":{\"0\":1},\"7\":{\"0\":1}}]],\"serializationVersion\":2}",
+    "indexSha256": "00b25f670e93e118426ce3de11425cb9d92410da9b9647f9ad7c8099c6d1027a",
+    "kind": "document",
+    "documents": [
+      {
+        "id": "/notes/example/",
+        "canonicalPathname": "/notes/example/",
+        "title": "株式会社",
+        "description": "説明",
+        "pathLabel": "notes / example",
+        "keywords": [
+          "example",
+          "tag",
+          "株式会社",
+          "説明"
+        ],
+        "tags": [
+          "tag"
+        ],
+        "date": ""
+      }
+    ]
+  },
+  "passage": {
+    "schemaVersion": 2,
+    "serializedIndex": "{\"documentCount\":2,\"nextId\":2,\"documentIds\":{\"0\":\"[\\\"/notes/example/\\\",0]\",\"1\":\"[\\\"/notes/example/\\\",1]\"},\"fieldIds\":{\"passageWord\":0,\"passageGram\":1,\"currentHeadingWord\":2,\"currentHeadingGram\":3,\"ancestorHeadingWord\":4,\"ancestorHeadingGram\":5},\"fieldLength\":{\"0\":[2,2,1,1,0,0],\"1\":[1,3,1,1,0,0]},\"averageFieldLength\":[1.5,2.5,1,1,0,0],\"storedFields\":{},\"dirtCount\":0,\"index\":[[\"会社\",{\"1\":{\"1\":1}}],[\"式会\",{\"1\":{\"1\":1}}],[\"株式\",{\"1\":{\"1\":1}}],[\"株式会社\",{\"0\":{\"1\":1}}],[\"値型\",{\"2\":{\"0\":1,\"1\":1},\"3\":{\"0\":1,\"1\":1}}],[\"ピー\",{\"1\":{\"0\":2}}],[\"コピ\",{\"1\":{\"0\":2}}],[\"コピー\",{\"0\":{\"0\":2}}],[\"boxing\",{\"0\":{\"0\":1}}]],\"serializationVersion\":2}",
+    "indexSha256": "78ea1fe4d6dec280b1818dcb9788d6fb2f1cf043a4b4b9cf8ad7da2b7e667231",
+    "kind": "passage",
+    "passages": [
+      {
+        "id": "[\"/notes/example/\",0]",
+        "documentId": "/notes/example/",
+        "canonicalPathname": "/notes/example/",
+        "order": 0,
+        "headingPath": [
+          "値型"
+        ],
+        "anchorId": "h",
+        "currentHeading": "値型",
+        "ancestorHeading": ""
+      },
+      {
+        "id": "[\"/notes/example/\",1]",
+        "documentId": "/notes/example/",
+        "canonicalPathname": "/notes/example/",
+        "order": 1,
+        "headingPath": [
+          "値型"
+        ],
+        "anchorId": "h",
+        "currentHeading": "値型",
+        "ancestorHeading": ""
+      }
+    ]
+  },
+  "store": {
+    "schemaVersion": 2,
+    "kind": "store",
+    "passages": [
+      {
+        "id": "[\"/notes/example/\",0]",
+        "text": "コピー boxing コピー"
+      },
+      {
+        "id": "[\"/notes/example/\",1]",
+        "text": "株式会社"
+      }
+    ]
+  }
+}

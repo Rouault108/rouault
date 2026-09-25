@@ -1,0 +1,3 @@
+# 採用済みartifactのhashをOS間の改行変換で変更しない。
+shared/search/suzume-provider-config.json -text
+build/search/licenses/suzume-LICENSE.txt -text

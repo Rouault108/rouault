@@ -6,3 +6,5 @@ playwright-report
 test-results
 custom-elements.json
 pnpm-lock.yaml
+shared/search/suzume-provider-config.json
+test/fixtures/search/canonical-v3.json

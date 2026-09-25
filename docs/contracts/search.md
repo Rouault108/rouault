@@ -9,6 +9,42 @@
 
 ## 2. Ownership
 
+### 採用済み移行計画のStage 1基盤
+
+2026-09-24の明示採用に基づき、`build/search/build-search-projection.ts`と
+`project-search-html.ts`にfinal HTML projectionを追加した。公開対象とmetadataは既存の
+publication / Catalog projectionを共用し、本文は一意の`data-note-static-surface`から抽出する。
+metadata・HTML欠落とcanonical重複はbuild failure、空本文は有効なdocumentとする。
+`shared/search/search-projection.ts`は表示用原文のdocument / passage型を所有する。
+
+passageは外側のparagraph / list / blockquote / table / preごとに抽出し、見出しを別metadataにする。
+800 Unicode code pointsを上限として改行、空白、hard splitの順に分割し、overlapは設けない。
+操作用・明示除外subtreeを除き、画像altと数式TeXは一度だけ採用する。
+`shared/search/lexical-analyzer.ts`はSuzume 0.9.11 / S-Nを使う
+`rouault-lexical-v3`の正本である。NFKCの原文UTF-16被覆範囲を保持し、ASCII小文字化、
+camelCase境界、word出現列と日本語exact 2-gram出現列を生成する。query列だけをdedupeする。
+provider側の追加正規化やoffset不整合は失敗とし、別Analyzerへfallbackしない。
+WASMは公式配布の固定hashを検証し、Nodeとbrowser Workerで同一bytesを使用する。
+
+`shared/search/lexical-artifacts.ts`はschema 2、MiniSearch 7.2.0、
+`rouault-minisearch-index-v1`と既採用profile/provider identityを検証する。
+document metadataに本文、passage metadataに原文を複製せず、原文は単一passage storeへ置く。
+descriptor / inner index hash、metadata / index / store参照、canonical重複、passage順序を検証する。
+`build/search/emit-lexical-foundation.ts`はprojectionからNodeでindexを生成し、
+`write-lexical-artifacts.ts`が検証後にcontent-hashed assetsを出力してmanifestを最後に置換する。
+SuzumeとMiniSearchのLICENSEも同じ静的資産集合に含める。
+
+`shared/search/suzume-provider-config.json`は採用済みEvidenceのbytesを保存する。
+中の隔離比較時点のscope/provenanceは履歴であり、2026-09-24の明示採用により実装入力となった。
+このファイルは固定hashのため改行変換・format対象から除外する。
+`test/fixtures/search/canonical-v3.json`は採用済み1,867入力の期待値と出典hashを保持する。
+`serialized-v2.json`はNode生成indexの固定fixtureで、browser側で再indexしない。
+
+検証入口は通常の`pnpm build`後の`pnpm verify:search-foundation`。
+現在のfinal HTMLを読み、`.generated/search-foundation/`だけへ生成して、再生成の決定性とloadを検証する。
+Stage 1基盤は実装済みである。production build / runtimeへの接続は未実施であり、
+以下のPagefind契約は切替まで有効である。Stage 2のWorker・ranking・response・recovery結合とD1は別途必要となる。
+
 ### This Layer Owns
 
 - 検索コア、検索ソース層、UI層の分離。

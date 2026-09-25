@@ -17,6 +17,9 @@ importers:
       '@fontsource-variable/noto-sans-jp':
         specifier: 5.2.10
         version: 5.2.10
+      '@libraz/suzume':
+        specifier: 0.9.11
+        version: 0.9.11
       '@lit-labs/ssr':
         specifier: ~4.0.0
         version: 4.0.0(@types/node@24.10.9)
@@ -41,6 +44,9 @@ importers:
       lit-html:
         specifier: ~3.3.2
         version: 3.3.2
+      minisearch:
+        specifier: 7.2.0
+        version: 7.2.0
       sharp:
         specifier: 0.34.5
         version: 0.34.5
@@ -1144,6 +1150,10 @@ packages:
 
   '@jridgewell/trace-mapping@0.3.9':
     resolution: {integrity: sha512-3Belt6tdc8bPgAtbcmdtNJlirVoTmEb5e2gC94PnkwEW9jI6CAHUeoG85tjWP5WquqfavoMtMwiG4P926ZKKuQ==}
+
+  '@libraz/suzume@0.9.11':
+    resolution: {integrity: sha512-VKLwxr9pRdUQ+48TxY+RJ7QLqaDHMudkTQ9UhBATXbuQDelEIdKtVh7cer/HKamaaw6DucK/Wj5D5UktNdAYyA==}
+    engines: {node: '>=18.0.0'}
 
   '@lit-labs/ssr-client@1.1.8':
     resolution: {integrity: sha512-PjGh81oKsoI64m3IDjTqqjhC7dr2uC/o0jrllUb5gRAyp/RlAHxapgJrjq9kWz97faCHLQ8jUlTi6tGm+8fgyA==}
@@ -2981,6 +2991,9 @@ packages:
     resolution: {integrity: sha512-qOOzS1cBTWYF4BH8fVePDBOO9iptMnGUEZwNc/cMWnTV2nVLZ7VoNWEPHkYczZA0pdoA7dl6e7FL659nX9S2aw==}
     engines: {node: '>=16 || 14 >=14.17'}
 
+  minisearch@7.2.0:
+    resolution: {integrity: sha512-dqT2XBYUOZOiC5t2HRnwADjhNS2cecp9u+TJRiJ1Qp/f5qjkeT5APcGPjHw+bz89Ms8Jp+cG4AlE+QZ/QnDglg==}
+
   moo@0.5.2:
     resolution: {integrity: sha512-iSAJLHYKnX41mKcJKjqvnAN9sf0LMDTXDEvFv+ffuRR9a1MIuXLjMNL6EsnDHSkKLTWNqQQ5uo61P4EbU4NU+Q==}
 
@@ -4734,6 +4747,8 @@ snapshots:
     dependencies:
       '@jridgewell/resolve-uri': 3.1.2
       '@jridgewell/sourcemap-codec': 1.5.5
+
+  '@libraz/suzume@0.9.11': {}
 
   '@lit-labs/ssr-client@1.1.8':
     dependencies:
@@ -7070,6 +7085,8 @@ snapshots:
   minimist@1.2.8: {}
 
   minipass@7.1.2: {}
+
+  minisearch@7.2.0: {}
 
   moo@0.5.2: {}
 

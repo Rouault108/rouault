@@ -1,0 +1,81 @@
+{
+  "id": "S-N",
+  "provider": "Suzume",
+  "release": "0.9.11",
+  "scope": "Checkpoint C isolated comparison only",
+  "dictionary": "same official 0.9.11 WASM embedded core + user; no additional dictionary",
+  "options": {
+    "mode": "normal",
+    "mergeCompounds": false,
+    "preserveVu": true,
+    "preserveCase": true,
+    "preserveSymbols": false,
+    "lemmatize": true,
+    "skipUserDictionary": false,
+    "skipCoreDictionary": false,
+    "skipEnvConfig": false,
+    "reportScorerConfig": false,
+    "freshWasmModule": true
+  },
+  "omittedOptions": {
+    "scorerOptions": "not supplied; fixed provider defaults"
+  },
+  "wasmPath": "environment-local path/HTTP URL to identical hashed WASM",
+  "outputsUsed": [
+    "surface",
+    "offset"
+  ],
+  "providerArtifactSha256": "3e7d33c14b66604dbdfbf35dbdda9770082deaa6122beee33ef06f7ca2c32592",
+  "files": [
+    {
+      "relativePath": "providers/suzume/artifact/package/dist/abi_labels.js",
+      "bytes": 1015,
+      "sha256": "df82ff85785eeefa3e857967608d93de68f083915735c3f2e8f868b795b582b7",
+      "acquiredAt": "2026-09-18T23:28:28.155Z",
+      "sourceArchive": "official-sources/suzume-0.9.11.tgz",
+      "member": "package/dist/abi_labels.js"
+    },
+    {
+      "relativePath": "providers/suzume/artifact/package/dist/abi_layout.js",
+      "bytes": 1355,
+      "sha256": "40941aee965095ab02dd3e4c7e2317e24b8b992e1429d3d8f6cc7c6ed7556f5c",
+      "acquiredAt": "2026-09-18T23:28:28.155Z",
+      "sourceArchive": "official-sources/suzume-0.9.11.tgz",
+      "member": "package/dist/abi_layout.js"
+    },
+    {
+      "relativePath": "providers/suzume/artifact/package/dist/decode.js",
+      "bytes": 3904,
+      "sha256": "33ac5d0e208deaea87a76d75d30931c64b194b0c660f9487e2d7b681cfa50629",
+      "acquiredAt": "2026-09-18T23:28:28.155Z",
+      "sourceArchive": "official-sources/suzume-0.9.11.tgz",
+      "member": "package/dist/decode.js"
+    },
+    {
+      "relativePath": "providers/suzume/artifact/package/dist/index.js",
+      "bytes": 23184,
+      "sha256": "64e0f651a6493fa60a182766bfe50803df56c1e8e069b515ec144324cd4d3cbe",
+      "acquiredAt": "2026-09-18T23:28:28.155Z",
+      "sourceArchive": "official-sources/suzume-0.9.11.tgz",
+      "member": "package/dist/index.js"
+    },
+    {
+      "relativePath": "providers/suzume/artifact/package/dist/suzume.js",
+      "bytes": 12466,
+      "sha256": "8b07ad2c426ea641f04ed8914b60178f9942bf70bc041381b1656173e6941e34",
+      "acquiredAt": "2026-09-18T23:28:28.155Z",
+      "sourceArchive": "official-sources/suzume-0.9.11.tgz",
+      "member": "package/dist/suzume.js"
+    },
+    {
+      "relativePath": "providers/suzume/artifact/package/dist/suzume.wasm",
+      "bytes": 578362,
+      "sha256": "f0ee2d14fcbbb0559c3246263aa907987012a1ff45939484ee6b79bae1821baf",
+      "acquiredAt": "2026-09-18T23:28:28.155Z",
+      "sourceArchive": "official-sources/suzume-0.9.11.tgz",
+      "member": "package/dist/suzume.wasm"
+    }
+  ],
+  "approvalSource": "current user message explicitly approves S-N in 01-provider-facts.md; conditional on unique correct definition",
+  "definitionSha256": "b0abde36fc84ad84aa2d729b28d52c78767c2d1090f31807c3c66af26063ab38"
+}

@@ -11,6 +11,7 @@
   "packageManager": "pnpm@11.7.0+sha512.19cc852c120c7125760f2443ee6be0ca5b40f9f50598de1a09a1f177503e010e57c23c77646e01e761de59bf874fb22a3398c33ab9691fc13eb946b6f0f4d620",
   "license": "CC BY 4.0",
   "scripts": {
+    "verify:search-foundation": "tsx scripts/verify-search-foundation.ts",
     "check:workflow": "tsx scripts/ci/check-workflow-docs.ts",
     "codegen:icons": "node --import tsx scripts/generate-icon-subset.ts",
     "codegen:ui-check-cases": "node --import tsx tools/ui-check/codegen-ui-check-cases.ts",
@@ -55,6 +56,7 @@
     "@floating-ui/dom": "1.7.5",
     "@fontsource-variable/geist-mono": "5.2.8",
     "@fontsource-variable/noto-sans-jp": "5.2.10",
+    "@libraz/suzume": "0.9.11",
     "@lit-labs/ssr": "~4.0.0",
     "@lit-labs/ssr-client": "~1.1.8",
     "@lit/reactive-element": "~2.1.2",
@@ -63,6 +65,7 @@
     "katex": "0.16.27",
     "lit": "~3.3.2",
     "lit-html": "~3.3.2",
+    "minisearch": "7.2.0",
     "sharp": "0.34.5",
     "shiki": "3.21.0"
   },

@@ -36,6 +36,8 @@ const createBrowserTestProject = (
   }[],
   groupOrder?: number,
 ) => ({
+  // Worker内の遅延importでも実行途中の依存再最適化・reloadを発生させない。
+  optimizeDeps: { include: ['@libraz/suzume', 'minisearch'] },
   test: {
     name,
     include: [...include],
