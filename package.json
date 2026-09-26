@@ -12,6 +12,7 @@
   "license": "CC BY 4.0",
   "scripts": {
     "verify:search-foundation": "tsx scripts/verify-search-foundation.ts",
+    "verify:search-target": "pnpm run verify:search-foundation && pnpm exec tsx scripts/verify-search-target.ts && pnpm exec tsx scripts/build-search-target.ts && pnpm exec tsx scripts/testing/run-search-target-verification.ts",
     "check:workflow": "tsx scripts/ci/check-workflow-docs.ts",
     "codegen:icons": "node --import tsx scripts/generate-icon-subset.ts",
     "codegen:ui-check-cases": "node --import tsx tools/ui-check/codegen-ui-check-cases.ts",

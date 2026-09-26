@@ -43,7 +43,44 @@ SuzumeとMiniSearchのLICENSEも同じ静的資産集合に含める。
 検証入口は通常の`pnpm build`後の`pnpm verify:search-foundation`。
 現在のfinal HTMLを読み、`.generated/search-foundation/`だけへ生成して、再生成の決定性とloadを検証する。
 Stage 1基盤は実装済みである。production build / runtimeへの接続は未実施であり、
-以下のPagefind契約は切替まで有効である。Stage 2のWorker・ranking・response・recovery結合とD1は別途必要となる。
+以下のPagefind契約は切替まで有効である。
+
+### Stage 2の直接target（production未接続）
+
+`src/search/lexical/`は採用済み`rouault-search-v3`のWorker、ranking/snippet、main lifetime、
+response、Catalog fallbackを所有する。`shared/search/lexical-ranking-profile.json`のconfig digestは
+`3465a99ea725e96139ba685f60789995d4a040307e58a6f0631a6725d9ac4c38`。
+`rankingBestPassageId`はdocument fusion、`snippetPassageId`は表示選択を所有し、後者をscoreへ戻さない。
+新しいfinal HTML由来artifactで検証し、旧隔離実験のpassage数への一致を要求しない。
+
+protocol 1は全messageのgeneration/requestId/identityを検証し、終了済みrequest・旧generationはcommitしない。
+failure payloadの`message`には公開例外文ではなく`fetch` / `validate` / `normalize` / `rank`の固定stageだけを格納する。
+最終failure型・issueは`shared/search/lexical-response.ts`、wire型は`lexical-protocol.ts`に置く。
+旧Pagefind public型への統合はStage 4で行い、Stage 2ではproduction入口から新targetを呼ばない。
+
+artifact/body 15秒、Worker init/search各30秒、store 15秒、lexical全体45秒、Catalog 15秒を有限deadlineとする。
+timerの遅延があっても期限後のartifact bodyを採用しない。storeのみ失敗した場合は順位・score・countsを維持し、
+表示される該当itemのsnippetだけをdescription/nullへ縮退し、次queryでstoreを再取得する。
+正常0件・空tokenはCatalogを呼ばない。caller Abort/staleはfailureにしない。
+Workerが失敗したら終了し、次queryで同一identityのfresh Workerを1回だけ許す。
+成功・close・Abort・同一identity refreshではbudgetを補充しない。検証済みの別identityへの明示refresh、
+またはterminal dispose後に新しいsessionを作った場合だけ初期budgetへ戻る。
+occurrence cacheはencoded payload 8 MiB / 128 entriesのLRUで、Worker全RAMの上限ではない。
+
+D1性能調査に基づき、snippet selectorは全retrieved passageを走査したうえで、実表示内に収まる
+unitのNFKC/ASCII小文字化に全query wordが含まれない場合だけ、そのpassageのcanonical解析を省略する。
+これはcanonical occurrenceの原文被覆契約から導かれる必要条件であり、substring一致をexact word一致として
+採用する規則ではない。条件を満たすunitは従来どおりcanonical occurrenceで判定し、unit長とtie-breakを維持する。
+候補のtruncate、cache上限、deadline、Analyzer/ranking profileの変更は行わない。
+`lexical-performance.test.ts`は専用Worker内だけでphase observerを有効化し、通常Workerとの対照測定を行う。
+診断値はtest専用の観測であり、production protocolや検索判断の入力にはしない。
+
+検証入口は`pnpm build`後の`pnpm verify:search-target`。Node生成indexを固定し、Nodeと3ブラウザーで
+全30query・native trace・fusion・両passage ID・snippetとcold/warmを比較する。nativeの最下位桁差は
+環境間だけを分けて記録し、channel順位・RRF contribution・最終出力と同一環境cold/warmは完全一致を要求する。
+実corpusを要する3 browser suiteはこの入口で準備して実行し、通常browser suiteからは分離する。
+`test/fixtures/search/packaged/`はminified module Workerと実dialogの隔離結合用である。
+P-labelの意味判定とD1・production移行の人間判断は、機械試験の成功だけで代行しない。
 
 ### This Layer Owns
 

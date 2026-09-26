@@ -1,5 +1,6 @@
 import { playwright } from '@vitest/browser-playwright';
 import { defineConfig } from 'vitest/config';
+import { searchTargetServer } from './scripts/testing/search-target-server.js';
 import {
   resolveBrowserTestBrowsers,
   webkitBrowserTestShards,
@@ -9,6 +10,16 @@ const browserTestBrowsers = resolveBrowserTestBrowsers(
   process.env['ROUAULT_BROWSER_TEST_BROWSERS'],
   process.env['CI'] === 'true',
 );
+// 実corpus artifactを要するD1結合試験はverify:search-targetで準備して実行する。
+const targetVerificationExcludes =
+  process.env['ROUAULT_SEARCH_TARGET_VERIFY'] === '1'
+    ? []
+    : [
+        'test/browser/lexical-target.test.ts',
+        'test/browser/lexical-recovery.test.ts',
+        'test/browser/lexical-packaged-ui.test.ts',
+        'test/browser/lexical-performance.test.ts',
+      ];
 
 const browserTestInstances = browserTestBrowsers
   .filter((browser) => browser !== 'webkit')
@@ -36,12 +47,13 @@ const createBrowserTestProject = (
   }[],
   groupOrder?: number,
 ) => ({
+  plugins: [searchTargetServer()],
   // Worker内の遅延importでも実行途中の依存再最適化・reloadを発生させない。
   optimizeDeps: { include: ['@libraz/suzume', 'minisearch'] },
   test: {
     name,
     include: [...include],
-    ...(exclude.length > 0 ? { exclude: [...exclude] } : {}),
+    exclude: [...exclude, ...targetVerificationExcludes],
     setupFiles: ['test/browser/setup.ts'],
     isolate: true,
     testTimeout: 10_000,

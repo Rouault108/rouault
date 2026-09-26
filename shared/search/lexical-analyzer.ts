@@ -1,4 +1,5 @@
 import { Suzume } from '@libraz/suzume';
+import { beginLexicalPhase, endLexicalPhase } from './lexical-performance.js';
 
 export {
   ANALYZER_POLICY_ID,
@@ -29,6 +30,7 @@ export interface LexicalAnalysis {
 }
 export interface LexicalAnalyzer {
   analyze(input: string): LexicalAnalysis;
+  memoryBytes(): number;
   dispose(): void;
 }
 const japanese = /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}]/u;
@@ -36,6 +38,7 @@ const lower = (value: string): string => value.replace(/[A-Z]/gu, (c) => c.toLow
 
 /** 空白を越える合成はないため、空白境界で区切って接頭辞NFKCの負荷を抑える。 */
 export function mapNfkc(input: string): { text: string; spans: SourceSpan[] } {
+  const phaseStart = beginLexicalPhase();
   let text = '';
   const spans: SourceSpan[] = [];
   for (const match of input.matchAll(/\s+|\S+/gu)) {
@@ -74,6 +77,7 @@ export function mapNfkc(input: string): { text: string; spans: SourceSpan[] } {
   }
   if (text !== input.normalize('NFKC') || text.length !== spans.length)
     throw new Error('NFKC offset invariant');
+  endLexicalPhase('nfkc-offset-map', phaseStart, { utf16: input.length });
   return { text, spans };
 }
 
@@ -103,6 +107,7 @@ export function analyzeCanonical(
   input: string,
   provider: Pick<Suzume, 'analyzeWithNormalizedText'>,
 ): LexicalAnalysis {
+  const phaseStart = beginLexicalPhase();
   const mapped = mapNfkc(input);
   let prepared = '';
   const preparedSpans: SourceSpan[] = [];
@@ -125,7 +130,9 @@ export function analyzeCanonical(
       wordOccurrences.push(occurrence(input, run, preparedSpans.slice(base, base + run.length)));
       continue;
     }
+    const providerStart = beginLexicalPhase();
     const result = provider.analyzeWithNormalizedText(run);
+    endLexicalPhase('suzume-provider', providerStart, { utf16: run.length });
     if (result.normalizedText !== run) throw new Error('Provider additional normalization');
     let previousEnd = 0;
     for (const token of result.morphemes) {
@@ -183,6 +190,7 @@ export function analyzeCanonical(
   }
   const wordOccurrenceTokens = wordOccurrences.map((item) => item.surface);
   const gramOccurrenceTokens = gramOccurrences.map((item) => item.surface);
+  endLexicalPhase('canonical-analysis', phaseStart, { utf16: input.length });
   return {
     normalized,
     normalizedSpans,
@@ -205,6 +213,9 @@ export async function createCanonicalAnalyzer(verifiedWasmPath: string): Promise
   }
   let disposed = false;
   return {
+    memoryBytes() {
+      return disposed ? 0 : provider.wasmMemoryBytes();
+    },
     analyze(input) {
       if (disposed) throw new Error('Analyzer disposed');
       return analyzeCanonical(input, provider);

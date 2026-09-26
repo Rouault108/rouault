@@ -1,0 +1,130 @@
+{
+  "rankingProfileId": "rouault-search-v3",
+  "analyzerPolicyId": "rouault-lexical-v3",
+  "mechanisms": ["explore-exact-title-tier", "snippet-visible-unit-cooccurrence"],
+  "engine": {
+    "name": "minisearch",
+    "comparisonVersion": "7.2.0",
+    "native": {
+      "combineWith": "OR",
+      "fields": "one field per channel",
+      "bm25": {
+        "k": 1.2,
+        "b": 0.7,
+        "d": 0.5
+      },
+      "weights": {
+        "fuzzy": 0.45,
+        "prefix": 0.375
+      },
+      "prefix": "Gram:false. Word:last token only AND (contains Han/Hiragana/Katakana OR matches /^[a-z0-9]{2,}$/)",
+      "fuzzy": "Gram:false. Word:distance1 iff /^[a-z0-9]{4,}$/ else false",
+      "otherDefaults": "unchanged official7.2.0 defaults bound by engine artifact hashes"
+    },
+    "indexAdapter": {
+      "idField": "id",
+      "storeFields": [],
+      "tokenize": "empty=>[]; otherwise split U+001F",
+      "processTerm": "identity",
+      "documentFields": [
+        "titleWord",
+        "titleGram",
+        "descriptionWord",
+        "descriptionGram",
+        "bodyWord",
+        "bodyGram",
+        "pathWord",
+        "keywordWord",
+        "tagWord"
+      ],
+      "passageFields": [
+        "passageWord",
+        "passageGram",
+        "currentHeadingWord",
+        "currentHeadingGram",
+        "ancestorHeadingWord",
+        "ancestorHeadingGram"
+      ]
+    }
+  },
+  "fusion": {
+    "rrfK": 60,
+    "contribution": "channelWeight/(60+oneBasedChannelRank)",
+    "navigateChannels": [
+      ["titleWord", 8],
+      ["pathWord", 6],
+      ["keywordWord", 4],
+      ["descriptionWord", 3],
+      ["bodyWord", 2],
+      ["titleGram", 1],
+      ["descriptionGram", 1],
+      ["bodyGram", 1]
+    ],
+    "explorePassageChannels": [
+      ["passageWord", 8],
+      ["passageGram", 4],
+      ["currentHeadingWord", 3],
+      ["currentHeadingGram", 1],
+      ["ancestorHeadingWord", 1],
+      ["ancestorHeadingGram", 1]
+    ],
+    "exploreMetadataChannels": [
+      ["titleWord", 2],
+      ["titleGram", 1],
+      ["keywordWord", 1],
+      ["tagWord", 1]
+    ],
+    "documentScore": "navigate=sum document channel RRF; explore=sum metadata RRF + maximum single passage RRF for document",
+    "rankingBestPassage": "maximum passage fusion; tie lower source order; navigate has no selected passage",
+    "nativeTieBreak": "native score descending, canonical pathname UTF16-code-unit ascending, passage source order ascending for passage channel"
+  },
+  "ordering": {
+    "normalizeTitleAndQuery": "NFKC, ASCII A-Z lowercasing, collapse /\\s+/gu to one U+0020, trim",
+    "navigate": "title exact tier0 / prefix tier1 / other tier2, then fusion descending, canonical pathname UTF16-code-unit ascending; no date ordering",
+    "explore": "full title exact tier0 / all others tier1, then fusion descending, Date.parse(date) descending, canonical pathname UTF16-code-unit ascending; no prefix promotion",
+    "dateEdge": "preserve baseline: Date.parse(date)||-Infinity; NaN difference falls through to canonical comparator",
+    "tagFilter": "existing q.tags AND/OR filter unchanged; do not inject documents outside retrieved set"
+  },
+  "snippetSelection": {
+    "mode": "explore only",
+    "candidateSet": "Only originally retrieved passages for the same document; canonical distinct queryWord terms; if fewer than2 distinct query words retain baseline",
+    "display": "Generate each candidate actual snippet with unchanged240cp first-exact-occurrence window and existing segments. Do not move, extend, merge, normalize, or rerender window to fit a preferred unit.",
+    "units": "Partition original passage into matches of /[^。！？!?\\r\\n]+[。！？!?]?/gu. Terminal punctuation included. CR/LF delimit units, not included. ASCII period and semicolon do not delimit. Source passage end terminates last unit. Whitespace is retained; lengths are original Unicode code points.",
+    "evidence": "A unit qualifies iff all its original UTF16 range lies inside unchanged displayed snippet range, and it contains at least one complete exact canonical word occurrence of every distinct queryWord. Count each query word once; prefix/fuzzy/gram/substrings inside longer canonical tokens do not count. Do not infer semantic sentence boundaries.",
+    "score": "For each passage with any qualifying unit, unitCost=minimum original-code-point length among qualifying units. Choose snippet passage by unitCost ascending, original passage RRF fusion descending, source order ascending, passage ID UTF16 code-unit ascending. No absolute start-position term or token-span term. If no passage qualifies retain original baseline best passage/description/null path.",
+    "ranking": "Document order, native/fusion score and rankingBestPassageId remain baseline; only snippetPassageId may change. Original passage content/boundary unchanged; units are observations, not new index passages."
+  },
+  "snippetWindow": {
+    "maxCodePoints": 240,
+    "leadingContextCodePoints": 120,
+    "exactRule": "existing first exact normalized word/gram substring occurrence centered with120cp context, edge-clamped; no new centering on units",
+    "normalization": "mapNfkc original-span mapping plus ASCII lowercase",
+    "highlights": "original-text segments from verified exact normalized substring ranges; merge overlaps; no unproven fuzzy highlight",
+    "metadataOnly": "no body best passage => description snippet; empty description=>null; no body-match, no passage-store solely for metadata candidate, no Catalog/degraded attribution",
+    "singleTermOrNoQualifyingUnit": "original ranking best passage then existing description/null branch; no new fallback analyzer"
+  },
+  "ownership": {
+    "rankingBestPassageId": "document ranking evidence only; never overwritten by snippet selection",
+    "snippetPassageId": "snippet selection evidence only; never feeds fusion/document ordering",
+    "lexicalOffsets": "shared canonical Analyzer owns normalized-to-original offsets",
+    "displayWindow": "one shared pure snippet-window/segments function used by selector eligibility and rendered output",
+    "orchestration": "Worker loads/verifies/cancels and runs domain owners; UI renders typed segments only"
+  },
+  "compatibility": {
+    "rankingProfileId": "rouault-search-v3",
+    "ruleDigest": "SHA256 of UTF8 JSON.stringify(this config object) without newline, keys in stored JSON order; stored as exactRulesSha256 outside config",
+    "requiredChecks": [
+      "schemaVersion",
+      "buildId and artifact reference consistency",
+      "engine and engineVersion",
+      "indexOptionsId",
+      "analyzerPolicyId",
+      "provider release/data/config and artifact hashes",
+      "rankingProfileId and exactRulesSha256",
+      "document/passage index and passage-store paths/content hashes"
+    ],
+    "changedMeaning": "Old rouault-search-v2 does not name this profile. Worker evidence must distinguish rankingBestPassageId from snippetPassageId. Do not silently interpret one as the other.",
+    "schemaAndIndexOptionsAssignment": "production schemaVersion/indexOptionsId and formal engine adoption remain Stage0 completion items; exact compared config and digest fixed here",
+    "mismatch": "lexical unavailable via already approved C-A semantics; no alternate analyzer on same index"
+  }
+}

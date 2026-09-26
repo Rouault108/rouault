@@ -1,0 +1,670 @@
+{
+  "provenance": [
+    {
+      "file": "a2/queries.json",
+      "sha256": "ce64af6c84716ed5cc554944ffcf783e44d6b3461c2cfd8317bfcfe954d501c3"
+    },
+    {
+      "file": "a2/passage-labels.json",
+      "sha256": "ed3c5416b46d2cd910961a91d542a790cf6c7959bd3f42fa9d046e22ad2bc1ab"
+    },
+    {
+      "file": "a2/documents.json",
+      "sha256": "a4786add18e26b89bbc0644ab5ed1c23b013d4133d11502bef57d00ee28fd983"
+    }
+  ],
+  "queries": [
+    {
+      "id": "Q-001",
+      "q": "C#仕様読解と実装理解",
+      "mode": "navigate",
+      "tags": [],
+      "tagMode": "and",
+      "sort": "relevance",
+      "critical": true,
+      "expectedRanks": [
+        {
+          "canonical": "/notes/program/csharp/",
+          "maxRank": 1
+        }
+      ],
+      "allowedSet": null
+    },
+    {
+      "id": "Q-002",
+      "q": "C#とは何か",
+      "mode": "navigate",
+      "tags": [],
+      "tagMode": "and",
+      "sort": "relevance",
+      "critical": true,
+      "expectedRanks": [
+        {
+          "canonical": "/notes/program/csharp/what-is-csharp/",
+          "maxRank": 1
+        }
+      ],
+      "allowedSet": null
+    },
+    {
+      "id": "Q-003",
+      "q": "ソースコードから実行まで",
+      "mode": "navigate",
+      "tags": [],
+      "tagMode": "and",
+      "sort": "relevance",
+      "critical": true,
+      "expectedRanks": [
+        {
+          "canonical": "/notes/program/csharp/source-code-to-execution/",
+          "maxRank": 1
+        }
+      ],
+      "allowedSet": null
+    },
+    {
+      "id": "Q-004",
+      "q": "言語バージョン・ビルド文脈・互換性",
+      "mode": "navigate",
+      "tags": [],
+      "tagMode": "and",
+      "sort": "relevance",
+      "critical": true,
+      "expectedRanks": [
+        {
+          "canonical": "/notes/program/csharp/language-version-build-context-compatibility/",
+          "maxRank": 1
+        }
+      ],
+      "allowedSet": null
+    },
+    {
+      "id": "Q-005",
+      "q": "宣言、修飾子、メンバー分類",
+      "mode": "navigate",
+      "tags": [],
+      "tagMode": "and",
+      "sort": "relevance",
+      "critical": true,
+      "expectedRanks": [
+        {
+          "canonical": "/notes/program/csharp/declarations-modifiers-members/",
+          "maxRank": 1
+        }
+      ],
+      "allowedSet": null
+    },
+    {
+      "id": "Q-006",
+      "q": "型の全体像",
+      "mode": "navigate",
+      "tags": [],
+      "tagMode": "and",
+      "sort": "relevance",
+      "critical": true,
+      "expectedRanks": [
+        {
+          "canonical": "/notes/program/csharp/types-overview/",
+          "maxRank": 1
+        }
+      ],
+      "allowedSet": null
+    },
+    {
+      "id": "Q-007",
+      "q": "値型",
+      "mode": "navigate",
+      "tags": [],
+      "tagMode": "and",
+      "sort": "relevance",
+      "critical": true,
+      "expectedRanks": [
+        {
+          "canonical": "/notes/program/csharp/value-types/",
+          "maxRank": 1
+        }
+      ],
+      "allowedSet": null
+    },
+    {
+      "id": "Q-008",
+      "q": "岩波文庫",
+      "mode": "navigate",
+      "tags": [],
+      "tagMode": "and",
+      "sort": "relevance",
+      "critical": true,
+      "expectedRanks": [
+        {
+          "canonical": "/notes/library/collection/%E5%B2%A9%E6%B3%A2%E6%96%87%E5%BA%AB/",
+          "maxRank": 1
+        }
+      ],
+      "allowedSet": null
+    },
+    {
+      "id": "Q-009",
+      "q": "ちくま文庫",
+      "mode": "navigate",
+      "tags": [],
+      "tagMode": "and",
+      "sort": "relevance",
+      "critical": true,
+      "expectedRanks": [
+        {
+          "canonical": "/notes/library/collection/%E3%81%A1%E3%81%8F%E3%81%BE%E6%96%87%E5%BA%AB/",
+          "maxRank": 1
+        }
+      ],
+      "allowedSet": null
+    },
+    {
+      "id": "Q-010",
+      "q": "ソースコードから",
+      "mode": "navigate",
+      "tags": [],
+      "tagMode": "and",
+      "sort": "relevance",
+      "critical": true,
+      "expectedRanks": [
+        {
+          "canonical": "/notes/program/csharp/source-code-to-execution/",
+          "maxRank": 1
+        }
+      ],
+      "allowedSet": null
+    },
+    {
+      "id": "Q-011",
+      "q": "source-code-to-execution",
+      "mode": "navigate",
+      "tags": [],
+      "tagMode": "and",
+      "sort": "relevance",
+      "critical": false,
+      "expectedRanks": [
+        {
+          "canonical": "/notes/program/csharp/source-code-to-execution/",
+          "maxRank": 3
+        }
+      ],
+      "allowedSet": null
+    },
+    {
+      "id": "Q-012",
+      "q": "LangVersion",
+      "mode": "explore",
+      "tags": [],
+      "tagMode": "and",
+      "sort": "relevance",
+      "critical": false,
+      "expectedRanks": [
+        {
+          "canonical": "/notes/program/csharp/language-version-build-context-compatibility/",
+          "maxRank": 3
+        }
+      ],
+      "allowedSet": null
+    },
+    {
+      "id": "Q-013",
+      "q": "ECMA-334",
+      "mode": "explore",
+      "tags": [],
+      "tagMode": "and",
+      "sort": "relevance",
+      "critical": false,
+      "expectedRanks": [
+        {
+          "canonical": "/notes/program/csharp/what-is-csharp/",
+          "maxRank": 3
+        }
+      ],
+      "allowedSet": null
+    },
+    {
+      "id": "Q-014",
+      "q": "ハンナ・アレント",
+      "mode": "explore",
+      "tags": [],
+      "tagMode": "and",
+      "sort": "relevance",
+      "critical": false,
+      "expectedRanks": [
+        {
+          "canonical": "/notes/library/collection/%E3%81%A1%E3%81%8F%E3%81%BE%E5%AD%A6%E8%8A%B8%E6%96%87%E5%BA%AB/",
+          "maxRank": 1
+        }
+      ],
+      "allowedSet": null
+    },
+    {
+      "id": "Q-015",
+      "q": "9784297102913",
+      "mode": "explore",
+      "tags": [],
+      "tagMode": "and",
+      "sort": "relevance",
+      "critical": false,
+      "expectedRanks": [
+        {
+          "canonical": "/notes/library/collection/%E8%A8%88%E7%AE%97%E6%A9%9F%E7%A7%91%E5%AD%A6%E3%83%BB%E3%82%BD%E3%83%95%E3%83%88%E3%82%A6%E3%82%A7%E3%82%A2%E9%96%8B%E7%99%BA%E9%96%A2%E9%80%A3%E6%9B%B8%E7%B1%8D/",
+          "maxRank": 1
+        }
+      ],
+      "allowedSet": null
+    },
+    {
+      "id": "Q-016",
+      "q": "メタデータ",
+      "mode": "explore",
+      "tags": [],
+      "tagMode": "and",
+      "sort": "relevance",
+      "critical": false,
+      "expectedRanks": [
+        {
+          "canonical": "/notes/program/csharp/source-code-to-execution/",
+          "maxRank": 5
+        }
+      ],
+      "allowedSet": null
+    },
+    {
+      "id": "Q-017",
+      "q": "boxing コピー",
+      "mode": "explore",
+      "tags": [],
+      "tagMode": "and",
+      "sort": "relevance",
+      "critical": false,
+      "expectedRanks": [
+        {
+          "canonical": "/notes/program/csharp/value-types/",
+          "maxRank": 3
+        }
+      ],
+      "allowedSet": null
+    },
+    {
+      "id": "Q-018",
+      "q": "人間の判断 ハンナ",
+      "mode": "explore",
+      "tags": [],
+      "tagMode": "and",
+      "sort": "relevance",
+      "critical": false,
+      "expectedRanks": [
+        {
+          "canonical": "/notes/library/collection/%E3%81%A1%E3%81%8F%E3%81%BE%E5%AD%A6%E8%8A%B8%E6%96%87%E5%BA%AB/",
+          "maxRank": 3
+        }
+      ],
+      "allowedSet": null
+    },
+    {
+      "id": "Q-019",
+      "q": "文字コード技術入門",
+      "mode": "explore",
+      "tags": [],
+      "tagMode": "and",
+      "sort": "relevance",
+      "critical": false,
+      "expectedRanks": [
+        {
+          "canonical": "/notes/library/collection/%E8%A8%88%E7%AE%97%E6%A9%9F%E7%A7%91%E5%AD%A6%E3%83%BB%E3%82%BD%E3%83%95%E3%83%88%E3%82%A6%E3%82%A7%E3%82%A2%E9%96%8B%E7%99%BA%E9%96%A2%E9%80%A3%E6%9B%B8%E7%B1%8D/",
+          "maxRank": 3
+        }
+      ],
+      "allowedSet": null
+    },
+    {
+      "id": "Q-020",
+      "q": "コード技術",
+      "mode": "explore",
+      "tags": [],
+      "tagMode": "and",
+      "sort": "relevance",
+      "critical": false,
+      "expectedRanks": [
+        {
+          "canonical": "/notes/library/collection/%E8%A8%88%E7%AE%97%E6%A9%9F%E7%A7%91%E5%AD%A6%E3%83%BB%E3%82%BD%E3%83%95%E3%83%88%E3%82%A6%E3%82%A7%E3%82%A2%E9%96%8B%E7%99%BA%E9%96%A2%E9%80%A3%E6%9B%B8%E7%B1%8D/",
+          "maxRank": 5
+        }
+      ],
+      "allowedSet": null
+    },
+    {
+      "id": "Q-021",
+      "q": "型",
+      "mode": "navigate",
+      "tags": [],
+      "tagMode": "and",
+      "sort": "relevance",
+      "critical": false,
+      "expectedRanks": [
+        {
+          "canonical": "/notes/program/csharp/types-overview/",
+          "maxRank": 3
+        },
+        {
+          "canonical": "/notes/program/csharp/value-types/",
+          "maxRank": 5
+        }
+      ],
+      "allowedSet": null
+    },
+    {
+      "id": "Q-022",
+      "q": "C# 値型",
+      "mode": "explore",
+      "tags": [],
+      "tagMode": "and",
+      "sort": "relevance",
+      "critical": false,
+      "expectedRanks": [
+        {
+          "canonical": "/notes/program/csharp/value-types/",
+          "maxRank": 3
+        }
+      ],
+      "allowedSet": null
+    },
+    {
+      "id": "Q-023",
+      "q": "LangVersiox",
+      "mode": "explore",
+      "tags": [],
+      "tagMode": "and",
+      "sort": "relevance",
+      "critical": false,
+      "expectedRanks": [
+        {
+          "canonical": "/notes/program/csharp/language-version-build-context-compatibility/",
+          "maxRank": 5
+        }
+      ],
+      "allowedSet": null
+    },
+    {
+      "id": "Q-024",
+      "q": "岩波",
+      "mode": "navigate",
+      "tags": [],
+      "tagMode": "and",
+      "sort": "relevance",
+      "critical": false,
+      "expectedRanks": [
+        {
+          "canonical": "/notes/library/collection/%E5%B2%A9%E6%B3%A2%E3%82%B8%E3%83%A5%E3%83%8B%E3%82%A2%E6%96%B0%E6%9B%B8/",
+          "maxRank": 10
+        },
+        {
+          "canonical": "/notes/library/collection/%E5%B2%A9%E6%B3%A2%E6%96%87%E5%BA%AB/",
+          "maxRank": 10
+        },
+        {
+          "canonical": "/notes/library/collection/%E5%B2%A9%E6%B3%A2%E6%96%B0%E6%9B%B8/",
+          "maxRank": 10
+        },
+        {
+          "canonical": "/notes/library/collection/%E5%B2%A9%E6%B3%A2%E7%8F%BE%E4%BB%A3%E5%85%A8%E6%9B%B8/",
+          "maxRank": 10
+        },
+        {
+          "canonical": "/notes/library/collection/%E5%B2%A9%E6%B3%A2%E7%8F%BE%E4%BB%A3%E6%96%87%E5%BA%AB/",
+          "maxRank": 10
+        }
+      ],
+      "allowedSet": null
+    },
+    {
+      "id": "Q-025",
+      "q": "資本論",
+      "mode": "explore",
+      "tags": [
+        "Collection"
+      ],
+      "tagMode": "and",
+      "sort": "relevance",
+      "critical": false,
+      "expectedRanks": [],
+      "allowedSet": {
+        "canonical": [
+          "/notes/library/collection/%E3%81%A1%E3%81%8F%E3%81%BE%E5%AD%A6%E8%8A%B8%E6%96%87%E5%BA%AB/",
+          "/notes/library/collection/%E8%AC%9B%E8%AB%87%E7%A4%BE%E5%AD%A6%E8%A1%93%E6%96%87%E5%BA%AB/",
+          "/notes/library/collection/%E5%B2%A9%E6%B3%A2%E6%96%87%E5%BA%AB/",
+          "/notes/library/collection/%E5%B2%A9%E6%B3%A2%E6%96%B0%E6%9B%B8/"
+        ],
+        "maxRank": 3,
+        "minHits": 1
+      }
+    },
+    {
+      "id": "Q-026",
+      "q": "科学の考え方",
+      "mode": "explore",
+      "tags": [],
+      "tagMode": "and",
+      "sort": "relevance",
+      "critical": false,
+      "expectedRanks": [
+        {
+          "canonical": "/notes/library/collection/%E5%B2%A9%E6%B3%A2%E3%82%B8%E3%83%A5%E3%83%8B%E3%82%A2%E6%96%B0%E6%9B%B8/",
+          "maxRank": 3
+        }
+      ],
+      "allowedSet": null
+    },
+    {
+      "id": "Q-027",
+      "q": "値型",
+      "mode": "explore",
+      "tags": [],
+      "tagMode": "and",
+      "sort": "relevance",
+      "critical": false,
+      "expectedRanks": [
+        {
+          "canonical": "/notes/program/csharp/value-types/",
+          "maxRank": 3
+        }
+      ],
+      "allowedSet": null
+    },
+    {
+      "id": "Q-028",
+      "q": "global.json",
+      "mode": "explore",
+      "tags": [],
+      "tagMode": "and",
+      "sort": "relevance",
+      "critical": false,
+      "expectedRanks": [
+        {
+          "canonical": "/notes/program/csharp/language-version-build-context-compatibility/",
+          "maxRank": 3
+        }
+      ],
+      "allowedSet": null
+    },
+    {
+      "id": "Q-029",
+      "q": "岩波ジュニア新書",
+      "mode": "explore",
+      "tags": [],
+      "tagMode": "and",
+      "sort": "relevance",
+      "critical": false,
+      "expectedRanks": [
+        {
+          "canonical": "/notes/library/collection/%E5%B2%A9%E6%B3%A2%E3%82%B8%E3%83%A5%E3%83%8B%E3%82%A2%E6%96%B0%E6%9B%B8/",
+          "maxRank": 3
+        }
+      ],
+      "allowedSet": null
+    },
+    {
+      "id": "Q-030",
+      "q": "人間の判断",
+      "mode": "explore",
+      "tags": [],
+      "tagMode": "and",
+      "sort": "relevance",
+      "critical": false,
+      "expectedRanks": [
+        {
+          "canonical": "/notes/library/collection/%E3%81%A1%E3%81%8F%E3%81%BE%E5%AD%A6%E8%8A%B8%E6%96%87%E5%BA%AB/",
+          "maxRank": 3
+        }
+      ],
+      "allowedSet": null
+    }
+  ],
+  "labels": [
+    {
+      "id": "P-001",
+      "queryId": "Q-015",
+      "documentId": "D-021",
+      "canonicalPathname": "/notes/library/collection/%E8%A8%88%E7%AE%97%E6%A9%9F%E7%A7%91%E5%AD%A6%E3%83%BB%E3%82%BD%E3%83%95%E3%83%88%E3%82%A6%E3%82%A7%E3%82%A2%E9%96%8B%E7%99%BA%E9%96%A2%E9%80%A3%E6%9B%B8%E7%B1%8D/",
+      "source": "「計算機科学・情報学の基礎」の表、ISBN 9784297102913の書籍行（HTML UTF-16 offset 36572）",
+      "htmlPath": "dist\\notes\\library\\collection\\計算機科学・ソフトウェア開発関連書籍\\index.html",
+      "htmlSha256": "410d5ad95e4b065d042789fb5a5f3e474124039e1113caf2b12626b6e1eecaf6",
+      "expectation": "同一書籍行に属するISBN 9784297102913と「プログラマのための文字コード技術入門」を同じsnippetに含む。別行の書名との結合は不可。改訂新版表記・改行を含む全文一致は要求しない。",
+      "required": true,
+      "status": "adopted",
+      "verification": {
+        "target": "対象documentのbest passageとSearchResponse snippet segments",
+        "criterion": "同一書籍行に属するISBN 9784297102913と「プログラマのための文字コード技術入門」を同じsnippetに含む。別行の書名との結合は不可。改訂新版表記・改行を含む全文一致は要求しない。 共通snippet契約を満たす。",
+        "environment": "固定corpus、Stage 2の実検索実装およびNode/browser fixture"
+      },
+      "approval": {
+        "recordVersion": "r0.6",
+        "checkpoint": "B",
+        "recordedAt": "2026-09-18T11:47:55.086Z",
+        "userResponse": "P-001〜P-005採用、P-006はdescription fallbackを正式明文化する前提で採用",
+        "condition": "なし"
+      }
+    },
+    {
+      "id": "P-002",
+      "queryId": "Q-018",
+      "documentId": "D-008",
+      "canonicalPathname": "/notes/library/collection/%E3%81%A1%E3%81%8F%E3%81%BE%E5%AD%A6%E8%8A%B8%E6%96%87%E5%BA%AB/",
+      "source": "蔵書表の「人間の判断／ハンナ・アレント／志水速雄」の行（HTML UTF-16 offset 35390）",
+      "htmlPath": "dist\\notes\\library\\collection\\ちくま学芸文庫\\index.html",
+      "htmlSha256": "5ddca922bfa94ed26d5bd7714621124cc3a1ecdd08a2183177720306db9e6eaf",
+      "expectation": "同じ書籍行を含むtable由来passage。snippetに「人間の判断」と「ハンナ・アレント」の両方を含む。「責任と判断」の行だけでは代用不可。",
+      "required": true,
+      "status": "adopted",
+      "verification": {
+        "target": "対象documentのbest passageとSearchResponse snippet segments",
+        "criterion": "同じ書籍行を含むtable由来passage。snippetに「人間の判断」と「ハンナ・アレント」の両方を含む。「責任と判断」の行だけでは代用不可。 共通snippet契約を満たす。",
+        "environment": "固定corpus、Stage 2の実検索実装およびNode/browser fixture"
+      },
+      "approval": {
+        "recordVersion": "r0.6",
+        "checkpoint": "B",
+        "recordedAt": "2026-09-18T11:47:55.086Z",
+        "userResponse": "P-001〜P-005採用、P-006はdescription fallbackを正式明文化する前提で採用",
+        "condition": "なし"
+      }
+    },
+    {
+      "id": "P-003",
+      "queryId": "Q-017",
+      "documentId": "D-007",
+      "canonicalPathname": "/notes/program/csharp/value-types/",
+      "source": "導入の「最後にコピー、boxing…」段落（HTML UTF-16 offset 27897）、または§6.6「値型のコストモデル」の関連段落",
+      "htmlPath": "dist\\notes\\program\\csharp\\value-types\\index.html",
+      "htmlSha256": "eb7446716d5dc6c57520b1b4e855a234943d17068ee08c27f58416b3c54742f9",
+      "expectation": "コピーとboxingを含み、値型のコピー／boxingとコストモデルの関係を説明する意味的に同等なpassageを許容。導入および§6.6の原文を根拠とし、section番号そのものは判定条件にしない。離れたblockを結合しない。",
+      "required": true,
+      "status": "adopted",
+      "verification": {
+        "target": "対象documentのbest passageとSearchResponse snippet segments",
+        "criterion": "コピーとboxingを含み、値型のコピー／boxingとコストモデルの関係を説明する意味的に同等なpassageを許容。導入および§6.6の原文を根拠とし、section番号そのものは判定条件にしない。離れたblockを結合しない。 共通snippet契約を満たす。",
+        "environment": "固定corpus、Stage 2の実検索実装およびNode/browser fixture"
+      },
+      "approval": {
+        "recordVersion": "r0.6",
+        "checkpoint": "B",
+        "recordedAt": "2026-09-18T11:47:55.086Z",
+        "userResponse": "P-001〜P-005採用、P-006はdescription fallbackを正式明文化する前提で採用",
+        "condition": "なし"
+      }
+    },
+    {
+      "id": "P-004",
+      "queryId": "Q-028",
+      "documentId": "D-004",
+      "canonicalPathname": "/notes/program/csharp/language-version-build-context-compatibility/",
+      "source": "§3.1「さらにSDK選択はglobal.jsonによって制御できる」段落（HTML UTF-16 offset 38535）",
+      "htmlPath": "dist\\notes\\program\\csharp\\language-version-build-context-compatibility\\index.html",
+      "htmlSha256": "377f78371cbdf091c09897f68c254e7c12b87438a66ad9802c5ba1a5b3f27f37",
+      "expectation": "global.jsonが.NET SDK選択を制御し、TFM／LangVersionとは異なる軸であることを説明するpassage。snippetにはglobal.jsonとSDK選択を含める。section番号は判定条件にしない。",
+      "required": true,
+      "status": "adopted",
+      "verification": {
+        "target": "対象documentのbest passageとSearchResponse snippet segments",
+        "criterion": "global.jsonが.NET SDK選択を制御し、TFM／LangVersionとは異なる軸であることを説明するpassage。snippetにはglobal.jsonとSDK選択を含める。section番号は判定条件にしない。 共通snippet契約を満たす。",
+        "environment": "固定corpus、Stage 2の実検索実装およびNode/browser fixture"
+      },
+      "approval": {
+        "recordVersion": "r0.6",
+        "checkpoint": "B",
+        "recordedAt": "2026-09-18T11:47:55.086Z",
+        "userResponse": "P-001〜P-005採用、P-006はdescription fallbackを正式明文化する前提で採用",
+        "condition": "なし"
+      }
+    },
+    {
+      "id": "P-005",
+      "queryId": "Q-026",
+      "documentId": "D-013",
+      "canonicalPathname": "/notes/library/collection/%E5%B2%A9%E6%B3%A2%E3%82%B8%E3%83%A5%E3%83%8B%E3%82%A2%E6%96%B0%E6%9B%B8/",
+      "source": "唯一の書籍行「科学の考え方・学び方／池内了／272」（HTML UTF-16 offset 35237）",
+      "htmlPath": "dist\\notes\\library\\collection\\岩波ジュニア新書\\index.html",
+      "htmlSha256": "49c164bf1b057ba1b955c78f54f5355b81f3531238cd958134b7866dd4bd077c",
+      "expectation": "同一書籍行の「科学の考え方・学び方」と「池内了」をsnippetに含む。別行との結合は不可。",
+      "required": true,
+      "status": "adopted",
+      "verification": {
+        "target": "対象documentのbest passageとSearchResponse snippet segments",
+        "criterion": "同一書籍行の「科学の考え方・学び方」と「池内了」をsnippetに含む。別行との結合は不可。 共通snippet契約を満たす。",
+        "environment": "固定corpus、Stage 2の実検索実装およびNode/browser fixture"
+      },
+      "approval": {
+        "recordVersion": "r0.6",
+        "checkpoint": "B",
+        "recordedAt": "2026-09-18T11:47:55.086Z",
+        "userResponse": "P-001〜P-005採用、P-006はdescription fallbackを正式明文化する前提で採用",
+        "condition": "なし"
+      }
+    },
+    {
+      "id": "P-006",
+      "queryId": "Q-029",
+      "documentId": "D-013",
+      "canonicalPathname": "/notes/library/collection/%E5%B2%A9%E6%B3%A2%E3%82%B8%E3%83%A5%E3%83%8B%E3%82%A2%E6%96%B0%E6%9B%B8/",
+      "source": "title「岩波ジュニア新書」、description「岩波ジュニア新書の蔵書一覧」。本文には当該語なし",
+      "htmlPath": "dist\\notes\\library\\collection\\岩波ジュニア新書\\index.html",
+      "htmlSha256": "49c164bf1b057ba1b955c78f54f5355b81f3531238cd958134b7866dd4bd077c",
+      "expectation": "exploreでbestPassageIdがなくdocument metadata一致のみの場合、document description由来snippetを返す。description空ならnull。本実例は「岩波ジュニア新書の蔵書一覧」。body-matchとして扱わず、この候補のためだけにpassage-storeを取得しない。正常分岐なのでCatalog fallbackやdegradedの理由にしない。",
+      "required": true,
+      "status": "adopted",
+      "verification": {
+        "target": "対象documentのbest passageとSearchResponse snippet segments",
+        "criterion": "exploreでbestPassageIdがなくdocument metadata一致のみの場合、document description由来snippetを返す。description空ならnull。本実例は「岩波ジュニア新書の蔵書一覧」。body-matchとして扱わず、この候補のためだけにpassage-storeを取得しない。正常分岐なのでCatalog fallbackやdegradedの理由にしない。 共通snippet契約を満たす。",
+        "environment": "固定corpus、Stage 2の実検索実装およびNode/browser fixture"
+      },
+      "approval": {
+        "recordVersion": "r0.6",
+        "checkpoint": "B",
+        "recordedAt": "2026-09-18T11:47:55.086Z",
+        "userResponse": "P-001〜P-005採用、P-006はdescription fallbackを正式明文化する前提で採用",
+        "condition": "本Recordの契約明文化で充足。Step 9でChange Planへ反映する。"
+      }
+    }
+  ]
+}
