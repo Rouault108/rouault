@@ -1,11 +1,11 @@
-import { finalizeDiagnostics } from '../../diagnostics.js';
+import { finalizeCatalogDiagnostics } from '../../diagnostics.js';
 import { buildSearchRenderHref } from '../../../../shared/search/document-url.js';
 import type { SiteUrlContext } from '../../../../shared/site/site-url-context.js';
 import { computeReasons } from '../../ranking/scoring.js';
 import type {
   ExploreSearchResponse,
   NavigateSearchResponse,
-  SearchCandidate,
+  CatalogCandidate,
   SearchCountMap,
   SearchDiagnostics,
   SearchRequest,
@@ -17,7 +17,8 @@ import type {
   RankingAndSortingStageOutput,
 } from '../stage-types.js';
 
-function buildCountMap(items: readonly SearchCandidate[]): SearchCountMap {
+/** runtimeのQ（query一致）/ F（tag適用後）集合だけを数える。SSR投影の件数は扱わない。 */
+function buildCatalogQueryTagCounts(items: readonly CatalogCandidate[]): SearchCountMap {
   const counts = new Map<string, number>();
 
   for (const item of items) {
@@ -32,7 +33,7 @@ function buildCountMap(items: readonly SearchCandidate[]): SearchCountMap {
 }
 
 function toResultItem(
-  candidate: SearchCandidate,
+  candidate: CatalogCandidate,
   queryTokens: readonly string[],
   selectedTags: readonly string[],
   siteUrlContext: SiteUrlContext,
@@ -83,7 +84,7 @@ export function runCountsAndDiagnosticsStage(
   input: RankingAndSortingStageOutput,
   options: { readonly siteUrlContext: SiteUrlContext },
 ): CountsAndDiagnosticsStageOutput {
-  const diagnosticsResult = finalizeDiagnostics(input.diagnostics, input.batches);
+  const diagnosticsResult = finalizeCatalogDiagnostics(input.diagnostics, input.batches);
   const items = input.sortedCandidates.map((candidate) =>
     toResultItem(candidate, input.preparedQuery.tokens, input.request.tags, options.siteUrlContext),
   );
@@ -102,8 +103,8 @@ export function runCountsAndDiagnosticsStage(
           items,
           total: input.sortedCandidates.length,
           rankingProfileId: DEFAULT_SEARCH_RANKING_PROFILE_ID,
-          tagCounts: buildCountMap(input.filteredCandidates),
-          allTagCounts: buildCountMap(input.queryMatchedCandidates),
+          tagCounts: buildCatalogQueryTagCounts(input.filteredCandidates),
+          allTagCounts: buildCatalogQueryTagCounts(input.queryMatchedCandidates),
           diagnostics: diagnosticsResult,
         } satisfies ExploreSearchResponse);
 

@@ -79,12 +79,16 @@ Production deployでは、次のruntime artifactがactual deployment URLで配�
 
 - `/search-catalog.json`
 - `/assets/internal-document-routes.json`
-- `/pagefind/pagefind.js`
-- `/pagefind/pagefind-entry.json`
+- `/search/manifest.json`と参照先のhash付きdocument/passage index、store、WASM/config
+- 同じ配布集合のSuzume / MiniSearch LICENSE
+
+移行中のPagefind build資産と既存HTTP検証はStage 6 Delete Gateまで残す。
+`/pagefind/pagefind.js` / `/pagefind/pagefind-entry.json`は旧buildの残存検証対象であり、
+現行検索runtimeのsourceではない。既存HTTP jobのpassだけでlexical artifact配信確認を代替しない。
 
 `ROUAULT_BASE_PATH`が空でない環境では、確認URLにbase pathを含める。たとえば`ROUAULT_BASE_PATH=/docs`なら`/docs/search-catalog.json`を確認する。
 
-`search-catalog.json`はtop-level array形式であり、`{ "items": [...] }`形式ではない。Production deployではempty catalogと`canonicalPathname`重複を正常扱いしない。Pagefind indexが存在しても、`search-catalog.json`が欠落するとRouaultの検索UIは正常動作しない。
+`search-catalog.json`はtop-level array形式であり、`{ "items": [...] }`形式ではない。Production buildではempty catalogと`canonicalPathname`重複を正常扱いしない。正常検索はlexicalのみを使い、Catalog欠落はlexical障害時のfallbackを不能にする。
 
 `assets/internal-document-routes.json`はHTML metaから参照されるroute manifestであり、検索catalogの`canonicalPathname` allowlistとしても使われる。`ROUAULT_SITE_ORIGIN`と`ROUAULT_BASE_PATH`は、route manifest、HTML meta、production assertionの整合性に必要である。
 

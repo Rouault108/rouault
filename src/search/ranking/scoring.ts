@@ -1,17 +1,11 @@
 import { normalizeSearchQuery } from '../../../shared/search/query-preprocessor.js';
 import type {
-  SearchCandidate,
-  SearchFeatureScores,
+  CatalogCandidate,
+  CatalogFeatureScores,
   SearchFieldKind,
   SearchMode,
   SearchReason,
-  SearchSourceKind,
 } from '../../../shared/search/search-types.js';
-
-const SOURCE_RELIABILITY: Record<SearchSourceKind, number> = {
-  lexical: 1,
-  catalog: 0.6,
-};
 
 const DAY_MS = 86_400_000;
 const FRESHNESS_WINDOW_DAYS = 3650;
@@ -62,11 +56,11 @@ function buildFreshnessScore(epochMs: number | null, nowUtcMs: number): number {
 }
 
 export function extractFeatureScores(
-  candidate: SearchCandidate,
+  candidate: CatalogCandidate,
   queryTokens: readonly string[],
   normalizedQuery: string,
   nowUtcMs: number,
-): SearchFeatureScores {
+): CatalogFeatureScores {
   const normalizedTitle = normalizeSearchQuery(candidate.title);
   const titleExactScore = normalizedQuery.length > 0 && normalizedTitle === normalizedQuery ? 1 : 0;
   const titlePrefixScore =
@@ -82,11 +76,11 @@ export function extractFeatureScores(
           (token) => fieldTokenMatch(token, candidate.fieldTokens.titleTokens) > 0,
         ).length / queryTokenCount;
 
-  const bodyScore =
+  const descriptionScore =
     queryTokenCount === 0
       ? 0
       : uniqueQueryTokens.reduce(
-          (sum, token) => sum + fieldTokenMatch(token, candidate.fieldTokens.bodyTokens),
+          (sum, token) => sum + fieldTokenMatch(token, candidate.fieldTokens.descriptionTokens),
           0,
         ) / queryTokenCount;
 
@@ -106,16 +100,12 @@ export function extractFeatureScores(
           0,
         ) / queryTokenCount;
 
-  const sourceReliabilityScore = Math.max(
-    ...candidate.matchedSources.map((source) => SOURCE_RELIABILITY[source]),
-    0,
-  );
   const freshnessScore = buildFreshnessScore(candidate.date.epochMs, nowUtcMs);
   const matchEvidenceScore = Math.max(
     titleExactScore,
     titlePrefixScore,
     titleTokenCoverageScore,
-    bodyScore,
+    descriptionScore,
     pathScore,
     keywordScore,
   );
@@ -124,17 +114,16 @@ export function extractFeatureScores(
     titleExactScore,
     titlePrefixScore,
     titleTokenCoverageScore: clampScore(titleTokenCoverageScore),
-    bodyScore: clampScore(bodyScore),
+    descriptionScore: clampScore(descriptionScore),
     pathScore: clampScore(pathScore),
     keywordScore: clampScore(keywordScore),
     freshnessScore,
-    sourceReliabilityScore,
     matchEvidenceScore,
   };
 }
 
 export function computeMatchedTokens(
-  candidate: SearchCandidate,
+  candidate: CatalogCandidate,
   queryTokens: readonly string[],
 ): string[] {
   const matched = new Set<string>();
@@ -143,7 +132,7 @@ export function computeMatchedTokens(
     const normalizedToken = token.toLocaleLowerCase('ja');
     if (
       fieldTokenMatch(normalizedToken, candidate.fieldTokens.titleTokens) > 0 ||
-      fieldTokenMatch(normalizedToken, candidate.fieldTokens.bodyTokens) > 0 ||
+      fieldTokenMatch(normalizedToken, candidate.fieldTokens.descriptionTokens) > 0 ||
       fieldTokenMatch(normalizedToken, candidate.fieldTokens.pathTokens) > 0 ||
       fieldTokenMatch(normalizedToken, candidate.fieldTokens.keywordTokens) > 0
     ) {
@@ -155,7 +144,7 @@ export function computeMatchedTokens(
 }
 
 export function computeMatchedFields(
-  candidate: SearchCandidate,
+  candidate: CatalogCandidate,
   queryTokens: readonly string[],
   selectedTags: readonly string[],
 ): SearchFieldKind[] {
@@ -167,7 +156,7 @@ export function computeMatchedFields(
     if (fieldTokenMatch(normalizedToken, candidate.fieldTokens.titleTokens) > 0) {
       matchedFields.push('title');
     }
-    if (fieldTokenMatch(normalizedToken, candidate.fieldTokens.bodyTokens) > 0) {
+    if (fieldTokenMatch(normalizedToken, candidate.fieldTokens.descriptionTokens) > 0) {
       matchedFields.push('body');
     }
     if (fieldTokenMatch(normalizedToken, candidate.fieldTokens.pathTokens) > 0) {
@@ -186,32 +175,33 @@ export function computeMatchedFields(
 }
 
 export function computeReasons(
-  candidate: SearchCandidate,
+  candidate: CatalogCandidate,
   queryTokens: readonly string[],
   selectedTags: readonly string[],
 ): SearchReason[] {
   const reasons: SearchReason[] = [];
   const { featureScores } = candidate;
 
-  const source = candidate.matchedSources[0];
+  const source = 'catalog' as const;
 
   if (featureScores.titleExactScore > 0) {
-    reasons.push({ kind: 'title-exact', tokens: [...queryTokens], ...(source ? { source } : {}) });
+    reasons.push({ kind: 'title-exact', tokens: [...queryTokens], source });
   } else if (featureScores.titlePrefixScore > 0) {
-    reasons.push({ kind: 'title-prefix', tokens: [...queryTokens], ...(source ? { source } : {}) });
+    reasons.push({ kind: 'title-prefix', tokens: [...queryTokens], source });
   } else if (featureScores.titleTokenCoverageScore > 0) {
     reasons.push({
       kind: 'title-token-coverage',
       tokens: [...computeMatchedTokens(candidate, queryTokens)],
-      ...(source ? { source } : {}),
+      source,
     });
   }
 
-  if (featureScores.bodyScore > 0) {
+  if (featureScores.descriptionScore > 0) {
+    // 採用済みCatalog reason互換。descriptionの照合であり、本文取得の証拠ではない。
     reasons.push({
       kind: 'body-match',
       tokens: [...computeMatchedTokens(candidate, queryTokens)],
-      ...(source ? { source } : {}),
+      source,
     });
   }
 
@@ -219,7 +209,7 @@ export function computeReasons(
     reasons.push({
       kind: 'path-match',
       tokens: [...computeMatchedTokens(candidate, queryTokens)],
-      ...(source ? { source } : {}),
+      source,
     });
   }
 
@@ -227,7 +217,7 @@ export function computeReasons(
     reasons.push({
       kind: 'keyword-match',
       tokens: [...computeMatchedTokens(candidate, queryTokens)],
-      ...(source ? { source } : {}),
+      source,
     });
   }
 
@@ -235,49 +225,46 @@ export function computeReasons(
     reasons.push({ kind: 'tag-filter-match', tokens: [...selectedTags] });
   }
 
-  if (
-    candidate.matchedSources.includes('catalog') &&
-    !candidate.matchedSources.includes('lexical') &&
-    candidate.snippet !== null
-  ) {
+  if (candidate.snippet !== null) {
     reasons.push({ kind: 'catalog-fallback', source: 'catalog' });
   }
 
   return reasons;
 }
 
-export function computeSearchScore(featureScores: SearchFeatureScores, mode: SearchMode): number {
+export function computeSearchScore(featureScores: CatalogFeatureScores, mode: SearchMode): number {
+  // Catalog単独の既存数値を保持する定数項。source間の信頼度評価やtie-breakには使わない。
   const weights =
     mode === 'navigate'
       ? {
           titleExact: 3,
           titlePrefix: 2,
           titleCoverage: 1.5,
-          body: 0.8,
+          description: 0.8,
           path: 1.8,
           keyword: 1.2,
           freshness: 0.1,
-          sourceReliability: 0.8,
+          catalogBase: 0.6 * 0.8,
         }
       : {
           titleExact: 2,
           titlePrefix: 1.2,
           titleCoverage: 1.8,
-          body: 1.8,
+          description: 1.8,
           path: 0.8,
           keyword: 0.8,
           freshness: 0.4,
-          sourceReliability: 0.6,
+          catalogBase: 0.6 * 0.6,
         };
 
   return (
     featureScores.titleExactScore * weights.titleExact +
     featureScores.titlePrefixScore * weights.titlePrefix +
     featureScores.titleTokenCoverageScore * weights.titleCoverage +
-    featureScores.bodyScore * weights.body +
+    featureScores.descriptionScore * weights.description +
     featureScores.pathScore * weights.path +
     featureScores.keywordScore * weights.keyword +
     featureScores.freshnessScore * weights.freshness +
-    featureScores.sourceReliabilityScore * weights.sourceReliability
+    weights.catalogBase
   );
 }

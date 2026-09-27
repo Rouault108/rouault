@@ -1,15 +1,15 @@
 import type {
-  SearchCandidate,
+  CatalogCandidate,
   SearchMode,
   SearchSortMode,
 } from '../../../shared/search/search-types.js';
 import { computeSearchScore } from './scoring.js';
 
 export function stableSortCandidates(
-  candidates: readonly SearchCandidate[],
+  candidates: readonly CatalogCandidate[],
   mode: SearchMode,
   sort: SearchSortMode,
-): SearchCandidate[] {
+): CatalogCandidate[] {
   return [...candidates].sort((left, right) => {
     if (sort === 'date-desc') {
       const dateOrder = (right.date.epochMs ?? -1) - (left.date.epochMs ?? -1);
@@ -41,12 +41,6 @@ export function stableSortCandidates(
       right.featureScores.matchEvidenceScore - left.featureScores.matchEvidenceScore;
     if (evidenceOrder !== 0) {
       return evidenceOrder;
-    }
-
-    const sourceOrder =
-      right.featureScores.sourceReliabilityScore - left.featureScores.sourceReliabilityScore;
-    if (sourceOrder !== 0) {
-      return sourceOrder;
     }
 
     const dateOrder = (right.date.epochMs ?? -1) - (left.date.epochMs ?? -1);

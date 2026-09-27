@@ -1,13 +1,15 @@
-import type { SearchCandidate, SearchSourceBatch } from '../../../../shared/search/search-types.js';
+import type { CatalogCandidate, CatalogBatch } from '../../../../shared/search/search-types.js';
 import type { CandidateMergeStageOutput, CandidateValidationStageOutput } from '../stage-types.js';
 
 function mergeFieldTokens(
-  left: SearchCandidate,
-  right: SearchCandidate,
-): SearchCandidate['fieldTokens'] {
+  left: CatalogCandidate,
+  right: CatalogCandidate,
+): CatalogCandidate['fieldTokens'] {
   return {
     titleTokens: [...new Set([...left.fieldTokens.titleTokens, ...right.fieldTokens.titleTokens])],
-    bodyTokens: [...new Set([...left.fieldTokens.bodyTokens, ...right.fieldTokens.bodyTokens])],
+    descriptionTokens: [
+      ...new Set([...left.fieldTokens.descriptionTokens, ...right.fieldTokens.descriptionTokens]),
+    ],
     pathTokens: [...new Set([...left.fieldTokens.pathTokens, ...right.fieldTokens.pathTokens])],
     keywordTokens: [
       ...new Set([...left.fieldTokens.keywordTokens, ...right.fieldTokens.keywordTokens]),
@@ -15,15 +17,12 @@ function mergeFieldTokens(
   };
 }
 
-function snippetMatchCount(candidate: SearchCandidate): number {
+function snippetMatchCount(candidate: CatalogCandidate): number {
   return candidate.snippet?.segments.filter((segment) => segment.matched).length ?? 0;
 }
 
-function mergeCandidates(
-  batches: readonly SearchSourceBatch[],
-  _diagnostics: CandidateValidationStageOutput['diagnostics'],
-): SearchCandidate[] {
-  const merged = new Map<string, SearchCandidate>();
+function mergeCandidates(batches: readonly CatalogBatch[]): CatalogCandidate[] {
+  const merged = new Map<string, CatalogCandidate>();
 
   for (const batch of batches) {
     if (batch.status !== 'active') {
@@ -38,23 +37,13 @@ function mergeCandidates(
       }
 
       const preferredDescription =
-        existing.matchedSources.includes('lexical') && !candidate.matchedSources.includes('lexical')
+        existing.description.length >= candidate.description.length
           ? existing.description
-          : candidate.matchedSources.includes('lexical') &&
-              !existing.matchedSources.includes('lexical')
-            ? candidate.description
-            : existing.description.length >= candidate.description.length
-              ? existing.description
-              : candidate.description;
+          : candidate.description;
       const preferredSnippet =
-        existing.matchedSources.includes('lexical') && !candidate.matchedSources.includes('lexical')
+        snippetMatchCount(existing) >= snippetMatchCount(candidate)
           ? existing.snippet
-          : candidate.matchedSources.includes('lexical') &&
-              !existing.matchedSources.includes('lexical')
-            ? candidate.snippet
-            : snippetMatchCount(existing) >= snippetMatchCount(candidate)
-              ? existing.snippet
-              : candidate.snippet;
+          : candidate.snippet;
       const preferredDate =
         (existing.date.epochMs ?? -1) >= (candidate.date.epochMs ?? -1)
           ? existing.date
@@ -75,14 +64,9 @@ function mergeCandidates(
           left.localeCompare(right, 'ja'),
         ),
         snippet: preferredSnippet,
-        matchedSources: [...new Set([...existing.matchedSources, ...candidate.matchedSources])],
         fieldTokens: mergeFieldTokens(existing, candidate),
         featureScores: {
           ...existing.featureScores,
-          sourceReliabilityScore: Math.max(
-            existing.featureScores.sourceReliabilityScore,
-            candidate.featureScores.sourceReliabilityScore,
-          ),
           matchEvidenceScore: Math.max(
             existing.featureScores.matchEvidenceScore,
             candidate.featureScores.matchEvidenceScore,
@@ -100,6 +84,6 @@ export function runCandidateMergeStage(
 ): CandidateMergeStageOutput {
   return {
     ...input,
-    mergedCandidates: mergeCandidates(input.batches, input.diagnostics),
+    mergedCandidates: mergeCandidates(input.batches),
   };
 }

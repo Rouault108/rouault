@@ -105,15 +105,15 @@ export interface SearchReason {
   source?: SearchSourceKind;
 }
 
-export interface SearchFeatureScores {
+export interface CatalogFeatureScores {
   titleExactScore: number;
   titlePrefixScore: number;
   titleTokenCoverageScore: number;
-  bodyScore: number;
+  descriptionScore: number;
   pathScore: number;
   keywordScore: number;
   freshnessScore: number;
-  sourceReliabilityScore: number;
+
   matchEvidenceScore: number;
 }
 
@@ -124,7 +124,7 @@ export interface SearchFieldTokens {
   keywordTokens: string[];
 }
 
-export interface SearchCandidate {
+export interface CatalogCandidate {
   canonicalPathname: SearchCanonicalPathname;
   pathLabel: string;
   title: string;
@@ -132,28 +132,26 @@ export interface SearchCandidate {
   date: SearchDateValue;
   tags: string[];
   snippet: SearchSnippet | null;
-  matchedSources: SearchSourceKind[];
   matchedFields: SearchFieldKind[];
   matchedTokens: string[];
-  featureScores: SearchFeatureScores;
-  fieldTokens: SearchFieldTokens;
+  featureScores: CatalogFeatureScores;
+  fieldTokens: CatalogFieldTokens;
 }
 
-export interface SearchSourceCapabilities {
-  providesBodyEvidence: boolean;
-  providesCountMap: boolean;
-  supportsTagPrefilter: boolean;
-  supportsNativeAndSemantics: boolean;
-  supportsNativeDateDescSort: boolean;
+/** 本文やpassageを持たないCatalog metadata専用の照合列。 */
+export interface CatalogFieldTokens {
+  titleTokens: string[];
+  descriptionTokens: string[];
+  pathTokens: string[];
+  keywordTokens: string[];
 }
 
-export interface SearchSourceBatch {
-  source: SearchSourceKind;
+export interface CatalogBatch {
+  source: 'catalog';
   status: 'active' | 'failed';
   failure?: SearchFailureKind;
-  capabilities: SearchSourceCapabilities;
-  candidates: SearchCandidate[];
-  countMap?: SearchCountMap | null;
+
+  candidates: CatalogCandidate[];
 }
 
 export interface SearchDiagnosticIssue {

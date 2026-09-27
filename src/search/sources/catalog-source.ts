@@ -1,4 +1,4 @@
-import { createFieldTokens } from '../../../shared/search/field-tokenizers.js';
+import { createCatalogFieldTokens } from '../../../shared/search/field-tokenizers.js';
 import {
   addFailure,
   addIssue,
@@ -16,15 +16,7 @@ import type {
   SearchCatalogItem,
   SearchCatalogLoadError,
 } from '../../../shared/search/search-catalog.js';
-import type { SearchCandidate, SearchSourceBatch } from '../../../shared/search/search-types.js';
-
-const catalogCapabilities = {
-  providesBodyEvidence: false,
-  providesCountMap: false,
-  supportsTagPrefilter: false,
-  supportsNativeAndSemantics: false,
-  supportsNativeDateDescSort: false,
-} as const;
+import type { CatalogCandidate, CatalogBatch } from '../../../shared/search/search-types.js';
 
 function normalizeString(value: unknown): string {
   return typeof value === 'string' ? value.trim() : '';
@@ -74,16 +66,15 @@ function emptyFeatureScores() {
     titleExactScore: 0,
     titlePrefixScore: 0,
     titleTokenCoverageScore: 0,
-    bodyScore: 0,
+    descriptionScore: 0,
     pathScore: 0,
     keywordScore: 0,
     freshnessScore: 0,
-    sourceReliabilityScore: 0.6,
     matchEvidenceScore: 0,
   } as const;
 }
 
-function handleCatalogFailure(error: unknown, diagnostics: MutableDiagnostics): SearchSourceBatch {
+function handleCatalogFailure(error: unknown, diagnostics: MutableDiagnostics): CatalogBatch {
   const failure =
     error instanceof Error &&
     'code' in error &&
@@ -102,7 +93,6 @@ function handleCatalogFailure(error: unknown, diagnostics: MutableDiagnostics): 
     source: 'catalog',
     status: 'failed',
     failure,
-    capabilities: catalogCapabilities,
     candidates: [],
   };
 }
@@ -111,7 +101,7 @@ export async function loadCatalogSourceBatch(input: {
   loadSearchCatalog: (diagnostics: MutableDiagnostics) => Promise<readonly SearchCatalogItem[]>;
   diagnostics: MutableDiagnostics;
   signal?: AbortSignal | undefined;
-}): Promise<SearchSourceBatch> {
+}): Promise<CatalogBatch> {
   let items: readonly SearchCatalogItem[];
 
   throwIfAborted(input.signal);
@@ -131,7 +121,7 @@ export async function loadCatalogSourceBatch(input: {
   throwIfAborted(input.signal);
 
   let droppedCount = 0;
-  const candidates: SearchCandidate[] = [];
+  const candidates: CatalogCandidate[] = [];
 
   for (const [index, item] of items.entries()) {
     if (index % 64 === 0) {
@@ -181,14 +171,13 @@ export async function loadCatalogSourceBatch(input: {
       date: normalizeDateValue(normalizeString(item.date)),
       tags,
       snippet: snippetFromDescription(description),
-      matchedSources: ['catalog'],
       matchedFields: [],
       matchedTokens: [],
       featureScores: { ...emptyFeatureScores() },
-      fieldTokens: createFieldTokens({
+      fieldTokens: createCatalogFieldTokens({
         canonicalPathname,
         title,
-        body: description,
+        description,
         keywords: [...keywords, ...tags],
       }),
     });
@@ -210,7 +199,6 @@ export async function loadCatalogSourceBatch(input: {
   return {
     source: 'catalog',
     status: 'active',
-    capabilities: catalogCapabilities,
     candidates,
   };
 }

@@ -51,7 +51,9 @@ function toEpochMs(value: string): number | null {
   return Number.isFinite(epochMs) ? epochMs : null;
 }
 
-function buildCountMapFromTags(tagLists: readonly (readonly string[])[]): Record<string, number> {
+function buildStaticProjectionTagCounts(
+  tagLists: readonly (readonly string[])[],
+): Record<string, number> {
   const counts = new Map<string, number>();
 
   for (const tags of tagLists) {
@@ -123,13 +125,14 @@ export function buildStaticExploreResponse(
     ];
   });
 
+  // SSRは渡されたpublication projectionの集計。query評価やruntime Q/F集合を代行しない。
   return {
     mode: 'explore',
     items,
     total: items.length,
     rankingProfileId: 'rouault-search-v3',
-    tagCounts: buildCountMapFromTags(items.map((item) => item.tags)),
-    allTagCounts: buildCountMapFromTags(items.map((item) => item.tags)),
+    tagCounts: buildStaticProjectionTagCounts(items.map((item) => item.tags)),
+    allTagCounts: buildStaticProjectionTagCounts(items.map((item) => item.tags)),
     diagnostics: input.diagnostics ?? buildDefaultDiagnostics(input.activeSources ?? ['catalog']),
   };
 }

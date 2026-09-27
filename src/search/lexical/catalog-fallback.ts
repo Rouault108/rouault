@@ -12,7 +12,7 @@ import { createSearchArtifactUrlResolver } from '../../../shared/search/search-a
 import { createSearchJsonParseDiagnosticSink } from '../../../shared/search/search-diagnostics.js';
 import type { LexicalContext } from '../../../shared/search/lexical-protocol.js';
 import type { SearchRequest, SearchResponse } from '../../../shared/search/search-types.js';
-import { finalizeDiagnostics } from '../diagnostics.js';
+import { finalizeCatalogDiagnostics } from '../diagnostics.js';
 import { buildEmptySearchResponse } from '../core/stages/counts-and-diagnostics.js';
 
 /** Catalogの既存metadata意味論を単独実行し、Pagefind loaderを生成・起動しない。 */
@@ -44,7 +44,7 @@ export function createCatalogFallback(
     if (!validated.activeBatches.length)
       return buildEmptySearchResponse(
         request,
-        finalizeDiagnostics(validated.diagnostics, validated.batches),
+        finalizeCatalogDiagnostics(validated.diagnostics, validated.batches),
       );
     const ranked = runRankingAndSortingStage(runCandidateMergeStage(validated));
     const result = runCountsAndDiagnosticsStage(ranked, { siteUrlContext: context }).response;

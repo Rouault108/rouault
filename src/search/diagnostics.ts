@@ -5,7 +5,7 @@ import type {
   SearchDiagnosticStage,
   SearchDiagnostics,
   SearchFailureKind,
-  SearchSourceBatch,
+  CatalogBatch,
   SearchSourceKind,
 } from '../../shared/search/search-types.js';
 
@@ -127,9 +127,9 @@ export function addIssue(diagnostics: MutableDiagnostics, issue: SearchIssueInpu
   diagnostics.issues = diagnostics.issues.sort(compareIssues).slice(0, 100);
 }
 
-export function finalizeDiagnostics(
+export function finalizeCatalogDiagnostics(
   diagnostics: MutableDiagnostics,
-  batches: readonly SearchSourceBatch[],
+  batches: readonly CatalogBatch[],
 ): SearchDiagnostics {
   const activeSources = SOURCE_ORDER.filter((source) =>
     batches.some((batch) => batch.source === source && batch.status === 'active'),

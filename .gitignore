@@ -5,6 +5,7 @@
 dist
 node_modules
 test-results
+test/browser/__screenshots__/
 playwright-report
 
 custom-elements.json

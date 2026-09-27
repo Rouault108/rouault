@@ -44,7 +44,7 @@ SuzumeとMiniSearchのLICENSEも同じ静的資産集合に含める。
 現在のfinal HTMLを読み、`.generated/search-foundation/`だけへ生成して、再生成の決定性とloadを検証する。
 Stage 1基盤は実装済みであり、Stage 4でproduction build / runtimeへ接続する。
 
-### Stage 4のproduction target（C1確認待ち）
+### Stage 4のproduction target（C1承認済み）
 
 `src/search/lexical/`は採用済み`rouault-search-v3`のWorker、ranking/snippet、main lifetime、
 response、Catalog fallbackを所有する。`shared/search/lexical-ranking-profile.json`のconfig digestは
@@ -59,6 +59,21 @@ failure payloadの`message`には公開例外文ではなく`fetch` / `validate`
 public型の正本は`shared/search/search-types.ts`。sourceは`lexical | catalog`、profileは`rouault-search-v3`。
 `src/search/core/search-core.ts`は新coreへ接続し、正常時のPagefind/Catalog federationと旧core再採点を行わない。
 Catalog用旧query/ranking stagesは単独fallback内に限定する。旧build資産・dependencyはC1後のDelete Gateまで保持する。
+
+### Stage 5のCatalog残存契約
+
+`CatalogCandidate` / `CatalogBatch`はCatalog専用であり、lexical候補やsource間の優先度を扱わない。
+Catalogはtitle/description/path/keywords/tagsのmetadataだけを照合し、本文やpassageを取得しない。
+description照合の旧reason名`body-match`は45の既存Catalog reason維持契約に従って保持する。
+これはlexicalのpassage一致証拠とは異なる。UI側で本文一致へ再解釈しない。
+
+sourceReliabilityによる候補評価・tie-breakは終了する。単独Catalogの既存score数値と順位を
+変えないよう、従来全候補で同値だった加算値だけを固定のCatalog定数項として保持する。
+
+SSRの`buildStaticExploreResponse`はcallerから渡されたpublication projectionだけを集計する。
+query評価やruntimeのQ/F集合を生成せず、`tagCounts`と`allTagCounts`は同じ静的集合を数える。
+runtimeはquery一致集合Qから`allTagCounts`、tag演算後の集合Fから`tagCounts`を生成する。
+静的responseへ`catalog-fallback`を付けず、runtime fallbackのsource diagnosticsと混同しない。
 
 artifact/body 15秒、Worker init/search各30秒、store 15秒、lexical全体45秒、Catalog 15秒を有限deadlineとする。
 timerの遅延があっても期限後のartifact bodyを採用しない。storeのみ失敗した場合は順位・score・countsを維持し、

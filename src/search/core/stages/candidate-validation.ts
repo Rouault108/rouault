@@ -1,15 +1,12 @@
 import { addIssue, createCandidateRef } from '../../diagnostics.js';
 import { normalizeSearchCanonicalPathname } from '../../../../shared/search/document-url.js';
-import type { SearchSourceBatch } from '../../../../shared/search/search-types.js';
-import type {
-  CandidateValidationStageOutput,
-  SourceFederationStageOutput,
-} from '../stage-types.js';
+import type { CatalogBatch } from '../../../../shared/search/search-types.js';
+import type { CandidateValidationStageOutput, CatalogLoadStageOutput } from '../stage-types.js';
 
 function validateBatch(
-  batch: SearchSourceBatch,
-  diagnostics: SourceFederationStageOutput['diagnostics'],
-): SearchSourceBatch {
+  batch: CatalogBatch,
+  diagnostics: CatalogLoadStageOutput['diagnostics'],
+): CatalogBatch {
   if (batch.status !== 'active') {
     return batch;
   }
@@ -43,7 +40,7 @@ function validateBatch(
 }
 
 export function runCandidateValidationStage(
-  input: SourceFederationStageOutput,
+  input: CatalogLoadStageOutput,
 ): CandidateValidationStageOutput {
   const batches = input.batches.map((batch) => validateBatch(batch, input.diagnostics));
 

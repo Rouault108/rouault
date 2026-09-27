@@ -27,7 +27,7 @@ README・AGENTS・実装の内容が衝突した場合は、次の優先順位�
 **Rouault**は、個人的なノートを閲覧するための専用 Webアプリケーションです。  
 主目的は、一般的なドキュメントサイトを作ることではなく、**「没入して読む」ことに適した静かなUIを構築すること** にあります。
 
-現行実装は、Eleventyによる静的生成を基盤とし、semanticな静的HTMLをbaselineに、build-time SSR、必要箇所に限定したLitによるclient hydration、Markdownベースのノート管理、Pagefindによる検索を中核に構成されています。
+現行実装は、Eleventyによる静的生成を基盤とし、semanticな静的HTMLをbaselineに、build-time SSR、必要箇所に限定したLitによるclient hydration、Markdownベースのノート管理、MiniSearch / SuzumeによるWorker検索を中核に構成されています。
 
 Rouaultを実装・修正する際は、常に次の問いを優先してください。
 
@@ -114,7 +114,7 @@ Rouaultは長期保守性のためにownership boundaryを重視します。
 - 対話的UI: 必要箇所に限定したLit
 - 言語: TypeScript
 - ビルド時 SSR: `@lit-labs/ssr`
-- 検索: Pagefind
+- 検索: MiniSearch / Suzume（Worker）、障害時のみCatalog fallback
 - コードハイライト: Shiki
 - 数式: KaTeX
 - コンテンツ処理: Velite + Markdown変換パイプライン

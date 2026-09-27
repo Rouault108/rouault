@@ -6,7 +6,7 @@
 - Decision ID: D-STATIC-HEADER-AS-AUTHORITATIVE-CONTRACT
 - Source of truth: static HTML header projection, post-hydrate static controllers, header CSS, header E2E contracts
 - Applies to: static HTML header, corpus switcher, theme switcher, search trigger, TOC trigger, no-JS fallback, hydrated header behavior
-- Non-goals: Lit island restoration, legacy `ui-*` component restoration, router semantics, Pagefind ranking, TOC controller redesign, sidebar controller redesign, UI system redesign
+- Non-goals: Lit island restoration, legacy `ui-*` component restoration, router semantics, search ranking, TOC controller redesign, sidebar controller redesign, UI system redesign
 
 ## 2. Decision Record
 
@@ -63,7 +63,7 @@ Header search triggerは、旧`ui-search-trigger`の完全復元ではなく、�
 ### This Layer Must Not Own
 
 - Router URL正規化。正本は`docs/contracts/router.md`と`docs/contracts/note-navigation.md`。
-- Search ranking、Pagefind index、search source integration。正本は`docs/contracts/search.md`。
+- Search ranking、search index、search source integration。正本は`docs/contracts/search.md`。
 - TOC controllerの基本state machine。正本は`docs/contracts/reading-chrome.md`。
 - Sidebar controllerの基本state machine。正本は`docs/contracts/sidebar-state.md`。
 - Hydration triggerの正本。正本は`docs/contracts/hydration.md`。

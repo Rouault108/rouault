@@ -1,12 +1,12 @@
 import type { MutableDiagnostics } from '../diagnostics.js';
 import type { PreparedSearchQuery } from '../../../shared/search/query-preprocessor.js';
 import type {
-  SearchCandidate,
+  CatalogCandidate,
   SearchDiagnostics,
   SearchDialogEventContract,
   SearchRequest,
   SearchResponse,
-  SearchSourceBatch,
+  CatalogBatch,
 } from '../../../shared/search/search-types.js';
 
 export interface QueryPreparationStageOutput {
@@ -16,22 +16,22 @@ export interface QueryPreparationStageOutput {
   nowUtcMs: number;
 }
 
-export interface SourceFederationStageOutput extends QueryPreparationStageOutput {
-  batches: SearchSourceBatch[];
+export interface CatalogLoadStageOutput extends QueryPreparationStageOutput {
+  batches: CatalogBatch[];
 }
 
-export interface CandidateValidationStageOutput extends SourceFederationStageOutput {
-  activeBatches: SearchSourceBatch[];
+export interface CandidateValidationStageOutput extends CatalogLoadStageOutput {
+  activeBatches: CatalogBatch[];
 }
 
 export interface CandidateMergeStageOutput extends CandidateValidationStageOutput {
-  mergedCandidates: SearchCandidate[];
+  mergedCandidates: CatalogCandidate[];
 }
 
 export interface RankingAndSortingStageOutput extends CandidateMergeStageOutput {
-  queryMatchedCandidates: SearchCandidate[];
-  filteredCandidates: SearchCandidate[];
-  sortedCandidates: SearchCandidate[];
+  queryMatchedCandidates: CatalogCandidate[];
+  filteredCandidates: CatalogCandidate[];
+  sortedCandidates: CatalogCandidate[];
 }
 
 export interface CountsAndDiagnosticsStageOutput extends RankingAndSortingStageOutput {

@@ -5,7 +5,7 @@
 ## Core Types
 
 - `LexicalCandidate`: Workerの採用済みrank順候補。typed evidenceに`rankingBestPassageId`と`snippetPassageId`を独立して保持する。
-- `SearchCandidate`: Catalog fallback内のmetadata候補。lexical結果の再採点には使わない。
+- `CatalogCandidate`: Catalog fallback内のmetadata候補。lexical結果の再採点には使わない。`CatalogFieldTokens`はtitle/description/path/keywordだけを持ち、本文やpassageを受け取らない。
 - `SearchResponse`: queryに対する最終応答。results、counts、diagnostics、degraded stateを持つ。
 - `SearchSnippet`: UIへ渡せる安全な構造化snippet。生HTMLではない。
 - `SearchCountMap`: tag、source、filterに対応する件数情報。

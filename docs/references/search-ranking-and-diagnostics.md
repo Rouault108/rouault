@@ -32,5 +32,8 @@ lexicalではtyped evidenceから確認できるtitle-exact/title-prefix/body-ma
 証明できないtitle-token-coverage/path-match/keyword-matchは省略する。
 `catalog-fallback`はlexical経路では付けず、成功したCatalog fallback itemにだけ付与する。
 Catalogの旧metadata照合・score helperはfallback内部に限定し、新profileのfusionと混ぜない。
+Catalogのdescription照合は内部型で`descriptionTokens` / `descriptionScore`と表す。
+既存Catalog reason builder互換の`body-match`は維持するが、本文取得やlexical passage一致を意味しない。
+source間の信頼度比較はなく、従来Catalog scoreの全候補共通加算だけを定数として保持する。
 
 診断issueはUI文言ではない。UIやreturn-to-reading adapterは検索のscoreやsource判断を再定義しない。

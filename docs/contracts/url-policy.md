@@ -5,7 +5,7 @@
 - Type: Normative
 - Source of truth: `shared/url/`、`shared/search/`、`build/content/generated-document-route-set.ts`、URL policy tests
 - Applies to: RouaultのURL分類、trailing slash方針、navigation URL、search URL、generated document route、fetch target、Permanent URLとの境界
-- Non-goals: 公開URL変更、redirect設計、canonical link方針、Pagefind URL設計、note slug規則、corpus key/tag encoding規則
+- Non-goals: 公開URL変更、redirect設計、canonical link方針、search artifact URL設計、note slug規則、corpus key/tag encoding規則
 
 このContractは既存URL挙動を明文化する横断Contractであり、実装済みURLのcanonicalやnormalizationを変更しない。
 

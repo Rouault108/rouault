@@ -4,7 +4,7 @@ import {
   extractFeatureScores,
 } from '../../ranking/scoring.js';
 import { stableSortCandidates } from '../../ranking/stable-sort.js';
-import type { SearchCandidate } from '../../../../shared/search/search-types.js';
+import type { CatalogCandidate } from '../../../../shared/search/search-types.js';
 import type { CandidateMergeStageOutput, RankingAndSortingStageOutput } from '../stage-types.js';
 
 function hasAllTags(itemTags: readonly string[], tags: readonly string[]): boolean {
@@ -16,10 +16,10 @@ function hasAnyTags(itemTags: readonly string[], tags: readonly string[]): boole
 }
 
 function applyTagFilter(
-  items: readonly SearchCandidate[],
+  items: readonly CatalogCandidate[],
   tags: readonly string[],
   tagMode: CandidateMergeStageOutput['request']['tagMode'],
-): SearchCandidate[] {
+): CatalogCandidate[] {
   if (tags.length === 0) {
     return [...items];
   }
@@ -29,7 +29,7 @@ function applyTagFilter(
   );
 }
 
-function isQueryMatch(candidate: SearchCandidate, normalizedQuery: string): boolean {
+function isQueryMatch(candidate: CatalogCandidate, normalizedQuery: string): boolean {
   if (normalizedQuery.length === 0) {
     return true;
   }

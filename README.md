@@ -3,7 +3,7 @@
 Rouaultは個人的なノートを静かに読むためのWebアプリケーションです。  
 一般的なドキュメントサイトやナレッジベースではなく、Markdownで蓄積した内容を**落ち着いて通読すること**を優先して設計しています。
 
-現行実装は、Eleventyによる静的生成を基盤とし、semanticな静的HTMLをbaselineに、build-time SSR、必要箇所に限定したLitによるclient hydration、Pagefindによる検索、VeliteとMarkdown変換パイプラインによるコンテンツ管理を組み合わせています。
+現行実装は、Eleventyによる静的生成を基盤とし、semanticな静的HTMLをbaselineに、build-time SSR、必要箇所に限定したLitによるclient hydration、MiniSearchとSuzumeを使うWorker検索、VeliteとMarkdown変換パイプラインによるコンテンツ管理を組み合わせています。
 
 ## このリポジトリの正本
 
@@ -22,7 +22,7 @@ Rouaultは次を中核とする個人向け読書アプリです。
 
 - Markdownノートを静かに通読できること
 - サイドバーとTOCから文書内外を移動できること
-- Pagefindで全文検索できること
+- MiniSearchで全文検索できること
 - no-JSでも情報構造と主要導線が成立すること
 - 必要な対話部分だけを段階的にenhanceすること
 
@@ -35,7 +35,7 @@ Rouaultは次を中核とする個人向け読書アプリです。
 - 言語: TypeScript
 - ビルド時SSR: `@lit-labs/ssr`
 - コンテンツ処理: Velite + Markdown変換パイプライン
-- 検索: Pagefind
+- 検索: MiniSearch / Suzume（Worker）、障害時のみCatalog fallback
 - コードハイライト: Shiki
 - 数式: KaTeX
 - テスト: Vitest（Node / SSR / Browser Mode）/ Playwright
@@ -141,7 +141,7 @@ pnpm sync:link-cards        # link card metadataを同期
 4. Lit SSRを適用する
 5. navigation artifactを出力する
 6. search artifactを出力する
-7. Pagefind indexを生成する
+7. Pagefind indexを生成する（移行中のbuild資産。runtimeでは使用せず、Stage 6 Delete Gateまで保持）
 
 production条件つきのビルド入口は`pnpm build:production`です。通常ビルドに加えて、production向け環境を設定し、生成後にCSS、font、site URL、HTML、search artifactのassertionを実行します。
 
