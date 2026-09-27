@@ -82,9 +82,8 @@ Production deployでは、次のruntime artifactがactual deployment URLで配�
 - `/search/manifest.json`と参照先のhash付きdocument/passage index、store、WASM/config
 - 同じ配布集合のSuzume / MiniSearch LICENSE
 
-移行中のPagefind build資産と既存HTTP検証はStage 6 Delete Gateまで残す。
-`/pagefind/pagefind.js` / `/pagefind/pagefind-entry.json`は旧buildの残存検証対象であり、
-現行検索runtimeのsourceではない。既存HTTP jobのpassだけでlexical artifact配信確認を代替しない。
+HTTP検証はmanifest参照先のContent-Type、byte数、SHA-256を確認する。
+LICENSEの同梱とindex/schema/publication整合はproduction build assertionが確認する。
 
 `ROUAULT_BASE_PATH`が空でない環境では、確認URLにbase pathを含める。たとえば`ROUAULT_BASE_PATH=/docs`なら`/docs/search-catalog.json`を確認する。
 
@@ -96,8 +95,8 @@ Deploy後の`verify-production-deployment` jobは、deploy jobのsuccess / skipp
 
 - `search-catalog.json`: JSONとして妥当なContent-Type
 - route manifest: `application/json`を含むContent-Type
-- `pagefind/pagefind.js`: JavaScript Content-Type
-- `pagefind/pagefind-entry.json`: `application/json`を含むContent-Type
+- lexical manifest / index / store / config: `application/json`
+- provider WASM: `application/wasm`
 
 手元で確認する場合は、actual deployment URLを指定して次を実行する。
 

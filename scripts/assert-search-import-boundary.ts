@@ -279,10 +279,10 @@ export const findSearchImportBoundaryViolations = (): Promise<string[]> => {
   );
   if (
     !devSearchArtifactMiddlewareText.includes('resolveSearchCatalogUrl') ||
-    !devSearchArtifactMiddlewareText.includes('resolvePagefindBaseUrl')
+    !devSearchArtifactMiddlewareText.includes('createStaticDirectoryMiddleware')
   ) {
     violations.push(
-      'search import boundary violation: build/dev/dev-search-artifact-middleware.ts: dev Search catalog and Pagefind assets must share SearchArtifactUrlResolver path helpers',
+      'search import boundary violation: build/dev/dev-search-artifact-middleware.ts: dev Catalog must use its URL resolver and lexical assets must use the static directory owner',
     );
   }
 

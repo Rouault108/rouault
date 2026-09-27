@@ -15,7 +15,7 @@ import type { SearchRequest, SearchResponse } from '../../../shared/search/searc
 import { finalizeCatalogDiagnostics } from '../diagnostics.js';
 import { buildEmptySearchResponse } from '../core/stages/counts-and-diagnostics.js';
 
-/** Catalogの既存metadata意味論を単独実行し、Pagefind loaderを生成・起動しない。 */
+/** Catalogの既存metadata意味論を単独実行し、lexical retrievalと常時結合しない。 */
 export function createCatalogFallback(
   context: LexicalContext,
   isInternal: (path: string) => boolean,

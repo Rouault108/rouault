@@ -117,13 +117,6 @@ export interface CatalogFeatureScores {
   matchEvidenceScore: number;
 }
 
-export interface SearchFieldTokens {
-  titleTokens: string[];
-  bodyTokens: string[];
-  pathTokens: string[];
-  keywordTokens: string[];
-}
-
 export interface CatalogCandidate {
   canonicalPathname: SearchCanonicalPathname;
   pathLabel: string;

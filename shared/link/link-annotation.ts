@@ -117,7 +117,6 @@ export const isDefaultInternalResourcePathname = (pathname: string): boolean =>
   pathname.startsWith('/content-assets/') ||
   pathname.startsWith('/example-assets/') ||
   pathname.startsWith('/client-assets/') ||
-  pathname.startsWith('/pagefind/') ||
   pathname.startsWith('/__router/') ||
   pathname === '/favicon.ico' ||
   pathname === '/robots.txt' ||

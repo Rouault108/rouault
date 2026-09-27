@@ -2,7 +2,9 @@
 from __future__ import annotations
 
 import json
+import hashlib
 import os
+import re
 import sys
 import urllib.error
 import urllib.parse
@@ -30,7 +32,7 @@ def fetch(url: str) -> tuple[int, str, bytes]:
         return error.code, error.headers.get("content-type", ""), error.read()
 
 
-def assert_json_artifact(url: str, *, require_array: bool = False, require_non_empty: bool = False) -> None:
+def assert_json_artifact(url: str, *, require_array: bool = False, require_non_empty: bool = False) -> object:
     status, content_type, body = fetch(url)
     if status != 200:
         raise AssertionError(f"{url}: expected HTTP 200, got {status}")
@@ -41,22 +43,34 @@ def assert_json_artifact(url: str, *, require_array: bool = False, require_non_e
         raise AssertionError(f"{url}: expected top-level JSON array")
     if require_non_empty and isinstance(payload, list) and len(payload) == 0:
         raise AssertionError(f"{url}: expected non-empty JSON array")
+    return payload
 
 
-def assert_javascript_artifact(url: str) -> None:
+def assert_lexical_descriptor(origin: str, base_path: str, descriptor: object) -> str:
+    if not isinstance(descriptor, dict):
+        raise AssertionError("expected lexical artifact descriptor")
+    pathname = descriptor.get("path")
+    digest = descriptor.get("sha256")
+    size = descriptor.get("bytes")
+    # manifestの任意URLを取得せず、同じ配信先のhash付き検索資産だけを検査する。
+    if (not isinstance(pathname, str) or
+            re.fullmatch(r"/search/[A-Za-z0-9_-]+\.[0-9a-f]{64}\.(json|wasm)", pathname) is None or
+            not isinstance(digest, str) or re.fullmatch(r"[0-9a-f]{64}", digest) is None or
+            type(size) is not int or size <= 0 or f".{digest}." not in pathname):
+        raise AssertionError("invalid lexical artifact descriptor")
+    url = join_url(origin, base_path, pathname)
     status, content_type, body = fetch(url)
     if status != 200:
         raise AssertionError(f"{url}: expected HTTP 200, got {status}")
     normalized = content_type.split(";", 1)[0].strip().lower()
-    if normalized not in {
-        "text/javascript",
-        "application/javascript",
-        "text/ecmascript",
-        "application/ecmascript",
-    }:
-        raise AssertionError(f"{url}: expected JavaScript Content-Type, got {content_type!r}")
-    if len(body) == 0:
-        raise AssertionError(f"{url}: expected non-empty body")
+    expected_type = "application/wasm" if pathname.endswith(".wasm") else "application/json"
+    if normalized != expected_type:
+        raise AssertionError(f"{url}: expected {expected_type}, got {content_type!r}")
+    if len(body) != size or hashlib.sha256(body).hexdigest() != digest:
+        raise AssertionError(f"{url}: artifact byte identity mismatch")
+    if pathname.endswith(".json"):
+        json.loads(body.decode("utf-8"))
+    return url
 
 
 def main() -> int:
@@ -74,14 +88,16 @@ def main() -> int:
     artifacts = {
         "search_catalog": join_url(origin, base_path, "/search-catalog.json"),
         "route_manifest": join_url(origin, base_path, "/assets/internal-document-routes.json"),
-        "pagefind_js": join_url(origin, base_path, "/pagefind/pagefind.js"),
-        "pagefind_entry": join_url(origin, base_path, "/pagefind/pagefind-entry.json"),
+        "lexical_manifest": join_url(origin, base_path, "/search/manifest.json"),
     }
 
     assert_json_artifact(artifacts["search_catalog"], require_array=True, require_non_empty=True)
     assert_json_artifact(artifacts["route_manifest"])
-    assert_javascript_artifact(artifacts["pagefind_js"])
-    assert_json_artifact(artifacts["pagefind_entry"])
+    manifest = assert_json_artifact(artifacts["lexical_manifest"])
+    if not isinstance(manifest, dict) or manifest.get("schemaVersion") != 2:
+        raise AssertionError("invalid lexical manifest schema")
+    for key in ("documentIndex", "passageIndex", "passageStore", "providerArtifact", "providerConfig"):
+        artifacts[key] = assert_lexical_descriptor(origin, base_path, manifest.get(key))
 
     print("Production runtime artifacts are reachable over HTTP:")
     for url in artifacts.values():

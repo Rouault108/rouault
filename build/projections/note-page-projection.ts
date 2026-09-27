@@ -6,15 +6,11 @@ import type {
   BreadcrumbItem,
   NoteNavigationModel,
 } from '../../shared/navigation/navigation-types.js';
-import type { PagefindDocumentData } from '../../build/search/build-pagefind-document-data.js';
 import type { NoteStatus } from '../../src/types/article-status.js';
 import type { NoteContentKind } from '../../shared/note/note-kind.js';
 import { resolveEffectiveNoteChromeProfile } from '../../shared/note/note-chrome-profile.js';
 import { resolveNoteChromePolicy } from '../../shared/note/note-chrome-policy.js';
-import {
-  resolveEffectiveNotePublicationPolicy,
-  shouldRenderArticleHeaderTags,
-} from '../../shared/note/note-publication-policy.js';
+import { shouldRenderArticleHeaderTags } from '../../shared/note/note-publication-policy.js';
 import type { TocPresence } from '../../shared/note/toc-presence.js';
 import type {
   TocChromeProjection,
@@ -52,7 +48,6 @@ export type NotePageTocHeading = TocHeading;
 export interface NotePageProjectionInput {
   note: IntrinsicNote;
   navigation: NoteNavigationModel;
-  pagefindDocument: PagefindDocumentData;
 }
 
 export interface NotePageSidebarProjection {
@@ -81,16 +76,6 @@ export interface NotePageArticleHeaderProjection {
   genres: string[];
 }
 
-export interface NotePagePagefindProjection {
-  sortDate: string;
-  title: string;
-  tokenizedTitle: string;
-  description: string;
-  tokenizedDescription: string;
-  date: string;
-  tags: string[];
-}
-
 export interface NotePageProjection {
   noteKind: NoteContentKind;
   noteShellSidebarPresence: 'present' | 'absent';
@@ -100,7 +85,6 @@ export interface NotePageProjection {
   sidebar?: NotePageSidebarProjection | null;
   toc: NotePageTocProjection;
   articleHeader: NotePageArticleHeaderProjection;
-  pagefind: NotePagePagefindProjection | null;
 }
 
 function toSafeDataId(slug: string): string {
@@ -264,7 +248,6 @@ export function buildNotePageProjection(input: NotePageProjectionInput): NotePag
   const noteKind = input.note.kind;
   const chromeProfile = resolveEffectiveNoteChromeProfile(noteKind, input.note.chromeProfile);
   const chromePolicy = resolveNoteChromePolicy(chromeProfile);
-  const publicationPolicy = resolveEffectiveNotePublicationPolicy(input.note);
   const showSidebar = chromePolicy.sidebar;
   const slug = typeof input.note.slug === 'string' ? input.note.slug : '';
   const dataIdBase = toSafeDataId(slug.length > 0 ? slug : 'note');
@@ -408,17 +391,6 @@ export function buildNotePageProjection(input: NotePageProjectionInput): NotePag
         : {}),
       genres,
     },
-    pagefind: publicationPolicy.pagefind
-      ? {
-          sortDate: input.pagefindDocument.sortDate,
-          title: input.pagefindDocument.title,
-          tokenizedTitle: input.pagefindDocument.tokenizedTitle,
-          description: input.pagefindDocument.description,
-          tokenizedDescription: input.pagefindDocument.tokenizedDescription,
-          date: input.pagefindDocument.date,
-          tags: input.pagefindDocument.tags,
-        }
-      : null,
   };
 
   validateNoteHydrationBudget(input.note, projection);

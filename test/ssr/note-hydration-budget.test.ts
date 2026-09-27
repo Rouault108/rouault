@@ -7,7 +7,6 @@ import {
   buildNotePageProjection,
   type NotePageProjection,
 } from '../../build/projections/note-page-projection.js';
-import { buildPagefindDocumentData } from '../../build/search/build-pagefind-document-data.js';
 import { NoteLayout } from '../../src/layouts/NoteLayout.11ty.js';
 import type { NoteHydrationBudgetProfileName } from '../../src/types/note-hydration-budget-profile.js';
 
@@ -74,18 +73,9 @@ const buildHydrationBudgetNotePageProjection = (note: IntrinsicNote): NotePagePr
     notes,
   });
 
-  const pagefindDocument = buildPagefindDocumentData({
-    title: typeof note.title === 'string' ? note.title : undefined,
-    description: typeof note.description === 'string' ? note.description : undefined,
-    date: typeof note.date === 'string' ? note.date : undefined,
-    updated: typeof note.updated === 'string' ? note.updated : undefined,
-    tags: Array.isArray(note.genre) ? note.genre : undefined,
-  });
-
   return buildNotePageProjection({
     note,
     navigation,
-    pagefindDocument,
   });
 };
 

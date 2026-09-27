@@ -159,8 +159,6 @@ export class BaseLayout {
     const noteChromePolicy = resolveNoteChromePolicy(
       resolveEffectiveNoteChromeProfile(data.note?.kind, data.note?.chromeProfile),
     );
-    const isNotePage = data.note !== undefined;
-    const shouldIgnorePagefind = isNotePage && (data.notePage?.pagefind ?? null) === null;
     const corpora = createCorpusNavigationProjectionPayload(
       buildCorpusNavigation(data.corpusPages ?? []),
     );
@@ -212,13 +210,6 @@ export class BaseLayout {
         { name: 'content', value: String(INTERNAL_DOCUMENT_ROUTE_MANIFEST_VERSION) },
       ])}>`,
     ].join('\n  ');
-    const bodyAttributes = serializeHtmlAttributes([
-      {
-        name: 'data-pagefind-ignore',
-        value: shouldIgnorePagefind,
-        kind: 'boolean',
-      },
-    ]);
     const skipLinkAttributes = serializeHtmlAttributes([
       { name: 'class', value: 'skip-link' },
       { name: 'href', value: SKIP_LINK_HREF },
@@ -306,7 +297,7 @@ export class BaseLayout {
   ${clientStyleLinks}
   <script type="module"${serializeHtmlAttributes([{ name: 'src', value: clientScriptSrc }])}></script>
 </head>
-<body${bodyAttributes}>
+<body>
   <a${skipLinkAttributes}>${escapeHtmlText(SKIP_LINK_LABEL)}</a>
   <div${appShellRootAttributes}>
     <span

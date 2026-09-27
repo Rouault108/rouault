@@ -56,7 +56,6 @@ export default defineConfig({
     timeout: 120 * 1000,
     env: {
       ...toPlaywrightEnv(process.env),
-      ROUAULT_SKIP_PAGEFIND: '1',
       NODE_OPTIONS: withNodeOption(process.env['NODE_OPTIONS'], '--max-old-space-size=4096'),
     },
   },

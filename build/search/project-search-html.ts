@@ -58,7 +58,6 @@ function excluded(node: Element): boolean {
     excludedTags.has(node.tagName) ||
     attribute(node, 'hidden') !== undefined ||
     attribute(node, 'aria-hidden')?.toLowerCase() === 'true' ||
-    attribute(node, 'data-pagefind-ignore') !== undefined ||
     attribute(node, 'data-search-exclude') !== undefined
   );
 }

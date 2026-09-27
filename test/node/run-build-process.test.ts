@@ -363,7 +363,6 @@ describe('run-build process helper', () => {
         'apply-lit-ssr',
         'emit-navigation-artifacts',
         'emit-search-artifacts',
-        'build-pagefind',
       ]);
 
       for (const step of tsxSteps) {

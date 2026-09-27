@@ -3,7 +3,6 @@ import { parseFragment, type DefaultTreeAdapterMap } from 'parse5';
 
 import { buildNoteNavigationModel } from '../../build/navigation/index.js';
 import { buildNotePageProjection } from '../../build/projections/note-page-projection.js';
-import { buildPagefindDocumentData } from '../../build/search/build-pagefind-document-data.js';
 import type { IntrinsicNote } from '../../build/data/notes.js';
 import { NoteLayout } from '../../src/layouts/NoteLayout.11ty.js';
 
@@ -130,13 +129,6 @@ const createProjection = () => {
   return buildNotePageProjection({
     note,
     navigation: buildNoteNavigationModel({ currentNote: note, notes: [note] }),
-    pagefindDocument: buildPagefindDocumentData({
-      title: note.title,
-      description: undefined,
-      date: undefined,
-      updated: undefined,
-      tags: ['testing'],
-    }),
   });
 };
 

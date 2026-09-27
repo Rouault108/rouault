@@ -141,7 +141,6 @@ pnpm sync:link-cards        # link card metadataを同期
 4. Lit SSRを適用する
 5. navigation artifactを出力する
 6. search artifactを出力する
-7. Pagefind indexを生成する（移行中のbuild資産。runtimeでは使用せず、Stage 6 Delete Gateまで保持）
 
 production条件つきのビルド入口は`pnpm build:production`です。通常ビルドに加えて、production向け環境を設定し、生成後にCSS、font、site URL、HTML、search artifactのassertionを実行します。
 

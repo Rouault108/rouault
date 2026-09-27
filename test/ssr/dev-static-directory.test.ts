@@ -77,33 +77,33 @@ describe('dev-static-directory', () => {
 
   it('route prefix 配下の静的ファイルパスを解決すること', () => {
     const resolved = resolveStaticFilePath(
-      '/pagefind/pagefind.js',
-      '/pagefind/',
-      '/tmp/rouault/dist/pagefind',
+      '/search/worker.js',
+      '/search/',
+      '/tmp/rouault/dist/search',
     );
 
-    expect(resolved).toBe(path.resolve('/tmp/rouault/dist/pagefind', 'pagefind.js'));
+    expect(resolved).toBe(path.resolve('/tmp/rouault/dist/search', 'worker.js'));
   });
 
   it('route prefix からのパストラバーサルを拒否すること', () => {
     const resolved = resolveStaticFilePath(
-      '/pagefind/../secret.txt',
-      '/pagefind/',
-      '/tmp/rouault/dist/pagefind',
+      '/search/../secret.txt',
+      '/search/',
+      '/tmp/rouault/dist/search',
     );
 
     expect(resolved).toBeNull();
   });
 
-  it('対象ディレクトリ内の pagefind アセットを返すこと', async () => {
-    const rootDirectory = await mkdtemp(path.join(tmpdir(), 'rouault-pagefind-'));
+  it('対象ディレクトリ内の search アセットを返すこと', async () => {
+    const rootDirectory = await mkdtemp(path.join(tmpdir(), 'rouault-search-'));
     temporaryDirectories.push(rootDirectory);
-    await writeFile(path.join(rootDirectory, 'pagefind.js'), 'export const ok = true;\n', 'utf8');
+    await writeFile(path.join(rootDirectory, 'worker.js'), 'export const ok = true;\n', 'utf8');
 
-    const middleware = createStaticDirectoryMiddleware('/pagefind/', rootDirectory);
+    const middleware = createStaticDirectoryMiddleware('/search/', rootDirectory);
     const request = {
       method: 'GET',
-      url: '/pagefind/pagefind.js',
+      url: '/search/worker.js',
     } satisfies Partial<IncomingMessage>;
     const { response, state } = createMockResponse();
     let nextCalled = false;
@@ -120,14 +120,14 @@ describe('dev-static-directory', () => {
   });
 
   it('存在しないファイルは次の middleware へ渡すこと', async () => {
-    const rootDirectory = await mkdtemp(path.join(tmpdir(), 'rouault-pagefind-'));
+    const rootDirectory = await mkdtemp(path.join(tmpdir(), 'rouault-search-'));
     temporaryDirectories.push(rootDirectory);
     await mkdir(path.join(rootDirectory, 'fragments'), { recursive: true });
 
-    const middleware = createStaticDirectoryMiddleware('/pagefind/', rootDirectory);
+    const middleware = createStaticDirectoryMiddleware('/search/', rootDirectory);
     const request = {
       method: 'GET',
-      url: '/pagefind/missing.js',
+      url: '/search/missing.js',
     } satisfies Partial<IncomingMessage>;
     const { response, state } = createMockResponse();
     let nextCalled = false;

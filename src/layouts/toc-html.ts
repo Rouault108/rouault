@@ -149,7 +149,7 @@ export const renderMobileStaticTocNavHtml = (toc: TocChromeProjection): string =
     { name: 'data-layout-toc-mobile-static-nav', value: true, kind: 'boolean' },
     { name: 'data-toc-hydration', value: 'static' },
     { name: 'data-density-tier', value: densityTier },
-    { name: 'data-pagefind-ignore', value: true, kind: 'boolean' },
+    { name: 'data-search-exclude', value: true, kind: 'boolean' },
   ]);
 
   return `

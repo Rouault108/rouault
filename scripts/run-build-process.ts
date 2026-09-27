@@ -177,10 +177,6 @@ export const RUN_BUILD_STEPS = defineRunBuildSteps([
     label: 'emit-search-artifacts',
     pnpmArgs: ['exec', 'tsx', 'scripts/emit-search-artifacts.ts'],
   },
-  {
-    label: 'build-pagefind',
-    pnpmArgs: ['exec', 'tsx', 'scripts/build-pagefind.ts'],
-  },
 ] as const satisfies readonly RunBuildStep[]);
 
 export const PRODUCTION_BUILD_PNPM_ARGS = defineProductionBuildPnpmArgs([

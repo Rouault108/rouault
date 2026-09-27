@@ -47,8 +47,6 @@ const requireElement = (element: Parse5Element | undefined, label: string): Pars
   return element;
 };
 
-const getBodyTag = (html: string): string => html.match(/<body[^>]*>/u)?.[0] ?? '';
-
 const enumerateScriptBlocks = (
   html: string,
 ): readonly { readonly attributes: string; readonly body: string; readonly index: number }[] => {
@@ -278,7 +276,6 @@ describe('BaseLayout', () => {
           heading: 'Reader Note',
           genres: [],
         },
-        pagefind: null,
       },
       note: {
         slug: 'reader-note',
@@ -348,7 +345,6 @@ describe('BaseLayout', () => {
           heading: 'Reader with TOC',
           genres: [],
         },
-        pagefind: null,
       },
     });
 
@@ -362,119 +358,6 @@ describe('BaseLayout', () => {
     expect(rendered.match(/<header\b[^>]*data-layout-header[^>]*>/u)?.[0] ?? '').toContain(
       'data-toc-trigger-reserved',
     );
-  });
-
-  it('body pagefind ignore は notePage.pagefind を正本にすること', () => {
-    const rendered = new BaseLayout().render({
-      buildMetadata: TEST_BUILD_METADATA,
-      siteUrlContext: TEST_SITE_URL_CONTEXT,
-      content: '<article>Fixture</article>',
-      note: {
-        slug: 'fixture-reader',
-        title: 'Fixture Reader',
-        permalink: '/notes/fixture-reader',
-        noteKind: 'leaf',
-        kind: 'reader',
-      },
-      notePage: {
-        noteKind: 'reader',
-        noteShellSidebarPresence: 'absent',
-        tocPresence: 'absent',
-        showSidebar: false,
-        contentHtml: '<article>Fixture</article>',
-        toc: {
-          sourceId: 'toc-source-fixture-reader',
-          runtimeId: 'toc-source-fixture-reader',
-          ownerId: 'toc-owner-fixture-reader',
-          scopeId: 'note-toc',
-          headings: [],
-          capabilities: {
-            activeTracking: false,
-            dynamicScopes: false,
-            mobilePanel: false,
-          },
-          contentRootId: 'note-content-fixture-reader',
-          homeHref: '/',
-          shouldHydrate: false,
-        },
-        articleHeader: {
-          heading: 'Fixture Reader',
-          genres: [],
-        },
-        pagefind: null,
-      },
-    });
-
-    expect(getBodyTag(rendered)).toContain('data-pagefind-ignore');
-  });
-
-  it('note data があるのに notePage projection がない場合は body を Pagefind 除外にすること', () => {
-    const rendered = new BaseLayout().render({
-      buildMetadata: TEST_BUILD_METADATA,
-      siteUrlContext: TEST_SITE_URL_CONTEXT,
-      content: '<article>Broken note input</article>',
-      note: {
-        slug: 'broken-note-input',
-        title: 'Broken note input',
-        permalink: '/notes/broken-note-input',
-        noteKind: 'leaf',
-        kind: 'reader',
-      },
-    });
-
-    expect(getBodyTag(rendered)).toContain('data-pagefind-ignore');
-  });
-
-  it('notePage.pagefind がある場合は body に Pagefind 除外を出さないこと', () => {
-    const rendered = new BaseLayout().render({
-      buildMetadata: TEST_BUILD_METADATA,
-      siteUrlContext: TEST_SITE_URL_CONTEXT,
-      content: '<article>Reader</article>',
-      note: {
-        slug: 'reader',
-        title: 'Reader',
-        permalink: '/notes/reader',
-        noteKind: 'leaf',
-        kind: 'reader',
-      },
-      notePage: {
-        noteKind: 'reader',
-        noteShellSidebarPresence: 'absent',
-        tocPresence: 'absent',
-        showSidebar: false,
-        contentHtml: '<article>Reader</article>',
-        toc: {
-          sourceId: 'toc-source-reader',
-          runtimeId: 'toc-source-reader',
-          ownerId: 'toc-owner-reader',
-          scopeId: 'note-toc',
-          headings: [],
-          capabilities: {
-            activeTracking: false,
-            dynamicScopes: false,
-            mobilePanel: false,
-          },
-          contentRootId: 'note-content-reader',
-          homeHref: '/',
-          shouldHydrate: false,
-        },
-        articleHeader: {
-          heading: 'Reader',
-          genres: [],
-        },
-        pagefind: {
-          sortDate: '2026-04-25',
-          title: 'Reader',
-          tokenizedTitle: 'Reader',
-          description: '',
-          tokenizedDescription: '',
-          date: '2026-04-25',
-          tags: [],
-        },
-      },
-    });
-
-    expect(getBodyTag(rendered)).not.toContain('data-pagefind-ignore');
   });
 
   it('testing note でも chromeProfile=reader なら header に sidebar-enabled を出力すること', () => {
@@ -680,7 +563,6 @@ describe('BaseLayout', () => {
           heading: 'Plain',
           genres: [],
         },
-        pagefind: null,
       },
     });
 

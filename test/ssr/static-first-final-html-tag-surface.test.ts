@@ -4,7 +4,6 @@ import { parseFragment, type DefaultTreeAdapterMap } from 'parse5';
 import { STATIC_FIRST_REMOVED_OR_REDUCED_LEGACY_TAGS } from '../../build/content/static-first-removed-or-reduced-tags.js';
 import { buildNoteNavigationModel } from '../../build/navigation/index.js';
 import { buildNotePageProjection } from '../../build/projections/note-page-projection.js';
-import { buildPagefindDocumentData } from '../../build/search/build-pagefind-document-data.js';
 import type { CorpusPageEntry } from '../../src/data/corpusPages.js';
 import type { CorporaOverviewData } from '../../src/data/corporaOverview.js';
 import { NoteLayout } from '../../src/layouts/NoteLayout.11ty.js';
@@ -162,13 +161,6 @@ const renderTestLocalNoteHtml = (): string => {
   const notePage = buildNotePageProjection({
     note,
     navigation: buildNoteNavigationModel({ currentNote: note, notes: [note] }),
-    pagefindDocument: buildPagefindDocumentData({
-      title: note.title,
-      description: 'test-local representative final HTML',
-      date: '2024-01-01',
-      updated: '2024-01-01',
-      tags: ['test-local'],
-    }),
   });
 
   return new NoteLayout().render({ notePage });

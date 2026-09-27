@@ -5,7 +5,6 @@
  * Velite が生成した各ノートにつき1つの HTML ページを出力する。
  */
 
-import { buildPagefindDocumentData } from '../build/search/build-pagefind-document-data.js';
 import {
   buildNotePageProjection,
   type NotePageProjection,
@@ -50,18 +49,10 @@ export class NotePages {
             currentNote: note,
             notes: Array.isArray(data.notes) ? data.notes : [],
           });
-          const pagefindDocument = buildPagefindDocumentData({
-            title: note.title,
-            description: typeof note.description === 'string' ? note.description : undefined,
-            date: typeof note.date === 'string' ? note.date : undefined,
-            updated: typeof note.updated === 'string' ? note.updated : undefined,
-            tags: Array.isArray(note.genre) ? note.genre : undefined,
-          });
 
           return buildNotePageProjection({
             note,
             navigation,
-            pagefindDocument,
           });
         },
       },

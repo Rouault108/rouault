@@ -71,36 +71,23 @@ const createFixtureRepo = async (
     readonly basePath?: string;
     readonly catalog?: unknown;
     readonly manifest?: unknown;
-    readonly pagefindJs?: string;
-    readonly pagefindEntry?: string;
   } = {},
 ): Promise<string> => {
   const repoRoot = await mkdtemp(path.join(tmpdir(), 'rouault-search-artifacts-'));
   const distRoot = path.join(repoRoot, 'dist');
   await mkdir(path.join(distRoot, 'assets'), { recursive: true });
-  await mkdir(path.join(distRoot, 'pagefind'), { recursive: true });
 
   await writeJson(path.join(distRoot, 'search-catalog.json'), options.catalog ?? expectedItems);
   await writeJson(
     path.join(distRoot, 'assets', 'internal-document-routes.json'),
     options.manifest ?? createRouteManifest(options.basePath ?? ''),
   );
-  await writeFile(
-    path.join(distRoot, 'pagefind', 'pagefind.js'),
-    options.pagefindJs ?? 'export const filters = async () => ({});',
-    'utf8',
-  );
-  await writeFile(
-    path.join(distRoot, 'pagefind', 'pagefind-entry.json'),
-    options.pagefindEntry ?? '{"version":1}',
-    'utf8',
-  );
 
   return repoRoot;
 };
 
 describe('production search artifact assertion', () => {
-  it('search catalog、route manifest、Pagefind artifact の正常系を検査すること', async () => {
+  it('search catalog、route manifest の正常系を検査すること', async () => {
     const repoRoot = await createFixtureRepo();
     try {
       await withProductionSiteEnv({ siteOrigin }, async () => {
@@ -408,69 +395,6 @@ describe('production search artifact assertion', () => {
           );
         },
         message: /route manifest site URL context mismatch/,
-      },
-    ];
-
-    for (const testCase of cases) {
-      const repoRoot = await createFixtureRepo();
-      try {
-        await testCase.prepare(repoRoot);
-        await withProductionSiteEnv({ siteOrigin }, async () => {
-          await expect(
-            assertProductionSearchArtifacts({ repoRoot, expectedItemsForTestOnly: expectedItems }),
-          ).rejects.toThrow(testCase.message);
-        });
-      } finally {
-        await rm(repoRoot, { recursive: true, force: true });
-      }
-    }
-  });
-
-  it('Pagefind entry の invalid JSON を失敗させること', async () => {
-    const repoRoot = await createFixtureRepo({ pagefindEntry: '{' });
-    try {
-      await withProductionSiteEnv({ siteOrigin }, async () => {
-        await expect(
-          assertProductionSearchArtifacts({ repoRoot, expectedItemsForTestOnly: expectedItems }),
-        ).rejects.toThrow(/Pagefind entry JSON is invalid/);
-      });
-    } finally {
-      await rm(repoRoot, { recursive: true, force: true });
-    }
-  });
-
-  it('Pagefind artifact の欠落と空ファイルを失敗させること', async () => {
-    const cases: readonly {
-      readonly prepare: (repoRoot: string) => Promise<void>;
-      readonly message: RegExp;
-    }[] = [
-      {
-        prepare: async (repoRoot) => {
-          await unlink(path.join(repoRoot, 'dist', 'pagefind', 'pagefind.js'));
-        },
-        message: /Pagefind module is missing/,
-      },
-      {
-        prepare: async (repoRoot) => {
-          await writeFile(path.join(repoRoot, 'dist', 'pagefind', 'pagefind.js'), '', 'utf8');
-        },
-        message: /Pagefind module is empty/,
-      },
-      {
-        prepare: async (repoRoot) => {
-          await unlink(path.join(repoRoot, 'dist', 'pagefind', 'pagefind-entry.json'));
-        },
-        message: /Pagefind entry is missing/,
-      },
-      {
-        prepare: async (repoRoot) => {
-          await writeFile(
-            path.join(repoRoot, 'dist', 'pagefind', 'pagefind-entry.json'),
-            '',
-            'utf8',
-          );
-        },
-        message: /Pagefind entry is empty/,
       },
     ];
 

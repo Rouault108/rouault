@@ -270,7 +270,7 @@ READMEやAGENTSに個別Contractの完全な一覧を重複管理しないでく
 
 ```powershell
 pnpm dev                    # Eleventy dev server
-pnpm build                  # client / images / Eleventy / Lit SSR / navigation/search artifacts / Pagefind
+pnpm build                  # client / images / Eleventy / Lit SSR / navigation/search artifacts
 pnpm build:production       # production条件と成果物assertionを含むビルド入口
 pnpm build:client           # client bundleのみ生成
 pnpm build:images           # 画像生成
@@ -299,7 +299,7 @@ pnpm sync:link-cards        # link card metadataを同期
 
 `package.json`の`scripts`をコマンド構成の正本とします。
 
-通常ビルドは、client bundle、画像生成、Eleventy、Lit SSR、navigation artifact、search artifact、Pagefind indexの順に進みます。build-time契約を変更する場合は、この順序に依存したテストの有無を確認してください。
+通常ビルドは、client bundle、画像生成、Eleventy、Lit SSR、navigation artifact、search artifactの順に進みます。build-time契約を変更する場合は、この順序に依存したテストの有無を確認してください。
 
 `pnpm build:production`のbuild labelは、明示された`ROUAULT_BUILD_LABEL`、`GITHUB_SHA`の先頭7文字、`production local`の順で解決されます。明示指定を必須と仮定せず、実装事実は`scripts/run-production-build.ts`を正本としてください。
 

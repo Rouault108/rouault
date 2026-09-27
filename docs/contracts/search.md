@@ -19,7 +19,7 @@ metadata・HTML欠落とcanonical重複はbuild failure、空本文は有効なd
 
 passageは外側のparagraph / list / blockquote / table / preごとに抽出し、見出しを別metadataにする。
 800 Unicode code pointsを上限として改行、空白、hard splitの順に分割し、overlapは設けない。
-操作用・明示除外subtreeを除き、画像altと数式TeXは一度だけ採用する。
+操作用・`data-search-exclude`の明示除外subtreeを除き、画像altと数式TeXは一度だけ採用する。
 `shared/search/lexical-analyzer.ts`はSuzume 0.9.11 / S-Nを使う
 `rouault-lexical-v3`の正本である。NFKCの原文UTF-16被覆範囲を保持し、ASCII小文字化、
 camelCase境界、word出現列と日本語exact 2-gram出現列を生成する。query列だけをdedupeする。
@@ -259,3 +259,10 @@ P-labelの意味判定とD1・production移行の人間判断は、機械試験�
 - `canonicalPathname`と`SearchStateUrl`が混同されていない。
 - Snippetが生HTMLとしてUI境界へ渡されない。
 - 検索失敗時に縮退diagnosticsが観測できる。
+
+## 旧経路の終了
+
+Pagefind dependency / CLI / loader / metadata / HTML hook / cache ruleは終了した。
+公開対象の正本は`NotePublicationPolicy.search`であり、HTML属性から公開可否を決めない。
+本文抽出の明示除外は`data-search-exclude`を使用する。
+production buildはCatalog / route manifest検証とlexical descriptor / schema / publication / Node load検証を行う。

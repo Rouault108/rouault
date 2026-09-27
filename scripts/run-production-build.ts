@@ -19,11 +19,6 @@ import {
 
 const distDir = path.resolve(process.cwd(), 'dist');
 
-if (process.env['ROUAULT_SKIP_PAGEFIND'] === '1') {
-  console.error('[production-build] ROUAULT_SKIP_PAGEFIND=1 is not allowed for production builds.');
-  process.exit(1);
-}
-
 await rm(distDir, { recursive: true, force: true });
 
 const resolveEntrypointBuildLabel = (): string => {

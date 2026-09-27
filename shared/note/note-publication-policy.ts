@@ -5,7 +5,6 @@ export interface NotePublicationPolicy {
   readonly home: boolean;
   readonly tags: boolean;
   readonly corpora: boolean;
-  readonly pagefind: boolean;
 }
 
 export interface NotePublicationPolicyInput {
@@ -18,7 +17,6 @@ const READER_POLICY: NotePublicationPolicy = {
   home: true,
   tags: true,
   corpora: true,
-  pagefind: true,
 };
 
 export const NON_PUBLIC_NOTE_PUBLICATION_POLICY: NotePublicationPolicy = {
@@ -26,7 +24,6 @@ export const NON_PUBLIC_NOTE_PUBLICATION_POLICY: NotePublicationPolicy = {
   home: false,
   tags: false,
   corpora: false,
-  pagefind: false,
 };
 
 export const resolveNotePublicationPolicy = (kind: unknown): NotePublicationPolicy => {

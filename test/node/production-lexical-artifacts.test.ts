@@ -31,11 +31,23 @@ it('final HTMLから生成したproduction artifactを検証し、世代・bytes
     await writeFile(output.manifestPath, JSON.stringify({ ...output.manifest, schemaVersion: 1 }));
     await expect(assertProductionLexicalArtifacts(root)).rejects.toThrow('compatibility');
     await writeFile(output.manifestPath, JSON.stringify(output.manifest));
-    const documentFile = join(root, output.manifest.documentIndex.path.slice(1));
-    const original = await readFile(documentFile);
-    await writeFile(documentFile, '{}');
-    await expect(assertProductionLexicalArtifacts(root)).rejects.toThrow('bytes/hash');
-    await writeFile(documentFile, original);
+    for (const descriptor of [
+      output.manifest.documentIndex,
+      output.manifest.passageIndex,
+      output.manifest.passageStore,
+      output.manifest.providerArtifact,
+      output.manifest.providerConfig,
+    ]) {
+      const artifactFile = join(root, descriptor.path.slice(1));
+      const original = await readFile(artifactFile);
+      await rm(artifactFile);
+      await expect(assertProductionLexicalArtifacts(root)).rejects.toThrow('ENOENT');
+      for (const corrupt of ['', '{}']) {
+        await writeFile(artifactFile, corrupt);
+        await expect(assertProductionLexicalArtifacts(root)).rejects.toThrow('bytes/hash');
+      }
+      await writeFile(artifactFile, original);
+    }
     await writeFile(join(root, 'search-catalog.json'), JSON.stringify(catalog.slice(1)));
     await expect(assertProductionLexicalArtifacts(root)).rejects.toThrow('publication set');
   } finally {

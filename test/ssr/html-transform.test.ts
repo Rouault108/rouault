@@ -82,7 +82,7 @@ describe('transformHtmlWithLitSsr', () => {
     const html = `<!doctype html>
       <html lang="ja">
         <head>
-          <meta name="pagefind:metadata:genre" content="music">
+          <meta name="test:metadata:genre" content="music">
         </head>
         <body>
           <main id="main-content">
@@ -102,7 +102,7 @@ describe('transformHtmlWithLitSsr', () => {
       collectDocumentStylesForTags: () => [],
     });
 
-    expect(transformed).toContain('pagefind:metadata:genre');
+    expect(transformed).toContain('test:metadata:genre');
     expect(transformed).toContain('<article data-static="keep">残したい要素</article>');
     expect(transformed).toContain('data-hydration-key="search-page-enhancer"');
     expect(transformed).toContain(

@@ -1,10 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { createInternalDocumentRouteSet } from '../../shared/navigation/internal-document-route-set.js';
-import {
-  createSearchArtifactUrlResolver,
-  resolveSearchCatalogUrl,
-} from '../../shared/search/search-artifact-url.js';
+import { createSearchArtifactUrlResolver } from '../../shared/search/search-artifact-url.js';
 import { loadSearchCatalog, SearchCatalogLoadError } from '../../shared/search/search-catalog.js';
 import { createSearchJsonParseDiagnosticSink } from '../../shared/search/search-diagnostics.js';
 import type { SearchFetchResponse } from '../../shared/search/search-loaders.js';
@@ -32,7 +29,7 @@ const createResponse = (options: {
 });
 
 describe('search production artifacts', () => {
-  it('resolver が basePath 付きの search / Pagefind artifact URL を解決すること', () => {
+  it('resolver が basePath 付きの Catalog artifact URL を解決すること', () => {
     const rootContext = createSiteUrlContext({ siteOrigin: 'https://example.com' });
     const nestedContext = createSiteUrlContext({
       siteOrigin: 'https://example.com',
@@ -41,18 +38,8 @@ describe('search production artifacts', () => {
     const rootResolver = createSearchArtifactUrlResolver({ siteUrlContext: rootContext });
     const nestedResolver = createSearchArtifactUrlResolver({ siteUrlContext: nestedContext });
 
-    expect(resolveSearchCatalogUrl(rootContext)).to.equal('/search-catalog.json');
-    expect(resolveSearchCatalogUrl(nestedContext)).to.equal('/foo/search-catalog.json');
-    expect(rootResolver.resolvePagefindAssetUrl('pagefind.js')).to.equal('/pagefind/pagefind.js');
-    expect(rootResolver.resolvePagefindAssetUrl('pagefind-entry.json')).to.equal(
-      '/pagefind/pagefind-entry.json',
-    );
-    expect(nestedResolver.resolvePagefindAssetUrl('pagefind.js')).to.equal(
-      '/foo/pagefind/pagefind.js',
-    );
-    expect(nestedResolver.resolvePagefindAssetUrl('pagefind-entry.json')).to.equal(
-      '/foo/pagefind/pagefind-entry.json',
-    );
+    expect(rootResolver.resolveSearchCatalogUrl()).to.equal('/search-catalog.json');
+    expect(nestedResolver.resolveSearchCatalogUrl()).to.equal('/foo/search-catalog.json');
   });
 
   it('top-level array の search catalog を mock fetch から読み込むこと', async () => {

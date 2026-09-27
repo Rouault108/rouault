@@ -83,7 +83,7 @@ They do not load CSS through `ui-check-entry.ts` or a module script. This keeps 
 
 - The Vite dev server keeps the repository root as the root, so the workbench entry URL is `/tools/ui-check/`.
 - Case pages do not load case-specific CSS bundles or individual component CSS files.
-- The workbench does not import `src/client.ts` and does not connect to router, search, Pagefind, navigation artifacts, permalink, note source root, or publication surfaces.
+- The workbench does not import `src/client.ts` and does not connect to router, search, navigation artifacts, permalink, note source root, or publication surfaces.
 - `tools/ui-check/**/*.ts` belongs to `tsconfig.node.json` because this directory mixes browser entry files with Node-oriented config and Playwright helper code.
 - TypeScript imports in this area should use relative paths rather than the `@` alias. Relative TypeScript module imports should use `.js` extensions; Vite asset imports should keep their real extension.
 - Playwright assertions in `tools/ui-check/playwright/screenshot.spec.ts` are operational smoke checks for the workbench surface. They are not contract tests, CI acceptance criteria, screenshot regression baselines.

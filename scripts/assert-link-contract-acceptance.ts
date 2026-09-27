@@ -56,11 +56,7 @@ forbidPattern(
   /createDefaultPagefindLoader\b/u,
   'Pagefind loader authority must not be imported or re-exported from the public SearchCore entry point',
 );
-forbidPattern(
-  'src/search/sources/pagefind-source.ts',
-  /createDefaultPagefindLoader\b/u,
-  'Pagefind loader authority must live in shared/search/search-loaders.ts only',
-);
+
 forbidPattern(
   'src/client/post-hydrate/search-page-enhancer.ts',
   /createSearchCore(?:FromSiteContext)?\b/u,
@@ -81,10 +77,10 @@ requireContains(
   'sanitizeScoreSource',
   'score directive src must be validated by media URL safety',
 );
-requireContains(
+forbidPattern(
   'shared/search/search-loaders.ts',
-  'export const createDefaultPagefindLoader',
-  'Pagefind loader authority must be defined in shared/search/search-loaders.ts',
+  /createDefaultPagefindLoader/u,
+  'Retired loader must not remain',
 );
 requireContains(
   'scripts/assert-search-import-boundary.ts',
@@ -109,8 +105,8 @@ forbidPattern(
 );
 requireContains(
   'build/dev/dev-search-artifact-middleware.ts',
-  'resolvePagefindBaseUrl',
-  'dev Search artifact middleware must serve Pagefind assets through the Search artifact URL resolver',
+  'createStaticDirectoryMiddleware',
+  'dev lexical artifacts must use the static directory owner',
 );
 requireContains(
   'build/dev/dev-search-artifact-middleware.ts',

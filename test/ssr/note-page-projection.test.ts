@@ -6,7 +6,6 @@ import {
   type NotePageProjection,
 } from '../../build/projections/note-page-projection.js';
 import type { IntrinsicNote } from '../../build/data/notes.js';
-import { buildPagefindDocumentData } from '../../build/search/build-pagefind-document-data.js';
 
 type NoteFixture = Partial<IntrinsicNote> &
   Pick<
@@ -37,76 +36,14 @@ const buildProjection = (
     currentNote: note,
     notes: normalizedNotes,
   });
-  const pagefindDocument = buildPagefindDocumentData({
-    title: typeof note.title === 'string' ? note.title : undefined,
-    description: typeof note.description === 'string' ? note.description : undefined,
-    date: typeof note.date === 'string' ? note.date : undefined,
-    updated: typeof note.updated === 'string' ? note.updated : undefined,
-    tags: Array.isArray(note.genre) ? note.genre : undefined,
-  });
 
   return buildNotePageProjection({
     note,
     navigation,
-    pagefindDocument,
   });
 };
 
 describe('buildNotePageProjection', () => {
-  it('Pagefind 用の payload を構築すること', () => {
-    const projection = buildProjection({
-      rawSlug: 'music/jazz',
-      slug: 'music/jazz',
-      permalink: '/notes/music/jazz',
-      noteKind: 'leaf',
-      sortIndex: 0,
-      tocHeadings: [],
-      tocCapabilities: {
-        activeTracking: false,
-        dynamicScopes: false,
-        mobilePanel: false,
-      },
-      tocCapabilitySource: 'inferred',
-      kind: 'reader',
-      title: 'ジャズ理論の基礎',
-      description: '即興と和声のメモ',
-      date: '2026-01-01',
-      updated: '2026-02-10',
-      genre: ['music', 'jazz'],
-    });
-
-    expect(projection.pagefind).toEqual({
-      sortDate: '2026-02-10',
-      title: 'ジャズ理論の基礎',
-      tokenizedTitle: 'ジャズ 理論 の 基礎',
-      description: '即興と和声のメモ',
-      tokenizedDescription: '即興 と 和声 の メモ',
-      date: '2026-02-10',
-      tags: ['music', 'jazz'],
-    });
-  });
-
-  it('日付未設定時は Pagefind sort を 0000-00-00 にすること', () => {
-    const projection = buildProjection({
-      rawSlug: 'untitled',
-      slug: 'untitled',
-      permalink: '/notes/untitled',
-      noteKind: 'leaf',
-      sortIndex: 0,
-      tocHeadings: [],
-      tocCapabilities: {
-        activeTracking: false,
-        dynamicScopes: false,
-        mobilePanel: false,
-      },
-      tocCapabilitySource: 'inferred',
-      kind: 'reader',
-      title: '日付なし',
-    });
-
-    expect(projection.pagefind?.sortDate).toBe('0000-00-00');
-  });
-
   it('articleHeader の published に ISO 日時を渡しても YYYY-MM-DD に正規化すること', () => {
     const projection = buildProjection({
       rawSlug: 'music/published-iso',
@@ -418,11 +355,10 @@ describe('buildNotePageProjection', () => {
 
     expect(projection.articleHeader.genres).toEqual(['testing']);
     expect(projection.contentHtml).toContain('preview-profile="reader"');
-    expect(projection.pagefind).not.toBeNull();
     expect(projection.showSidebar).toBe(true);
   });
 
-  it('testing note かつ chromeProfile=plain では reader sidebar と Pagefind を抑止すること', () => {
+  it('testing note かつ chromeProfile=plain では reader sidebar を抑止すること', () => {
     const projection = buildProjection({
       rawSlug: 'testing/example',
       slug: 'testing/example',
@@ -442,7 +378,6 @@ describe('buildNotePageProjection', () => {
     });
 
     expect(projection.contentHtml).toContain('preview-profile="demo"');
-    expect(projection.pagefind).toBeNull();
     expect(projection.showSidebar).toBe(false);
     expect(projection.sidebar).toBeUndefined();
     expect(projection.noteShellSidebarPresence).toBe('absent');
@@ -467,7 +402,6 @@ describe('buildNotePageProjection', () => {
       content: '<p>fixture</p>',
     });
 
-    expect(projection.pagefind).toBeNull();
     expect(projection.showSidebar).toBe(true);
     expect(projection.noteShellSidebarPresence).toBe('present');
   });
@@ -495,7 +429,7 @@ describe('buildNotePageProjection', () => {
     expect(projection.articleHeader.genres).toEqual([]);
   });
 
-  it('excludeFromPublicationSurfaces=true の reader fixture は Pagefind 除外と article-header tags 表示を両立すること', () => {
+  it('excludeFromPublicationSurfaces=true の reader fixture でも article-header tags を表示すること', () => {
     const projection = buildProjection({
       rawSlug: 'e2e/article-header-link-decoration',
       slug: 'e2e/article-header-link-decoration',
@@ -516,7 +450,6 @@ describe('buildNotePageProjection', () => {
       content: '<h2 id="toc-link-anchor">TOC Link Anchor</h2>',
     });
 
-    expect(projection.pagefind).toBeNull();
     expect(projection.articleHeader.genres).toEqual(['ui', 'layout']);
     expect(projection.showSidebar).toBe(false);
   });

@@ -36,7 +36,7 @@ describe('final HTML search projection', () => {
       <pre><code> a  b\n c</code><button>copy</button></pre>
       <script>bad</script><style>bad</style><template>bad</template>
       <span hidden>bad</span><span aria-hidden="true">bad</span>
-      <span data-pagefind-ignore>bad</span><span data-search-exclude>bad</span>
+      <span data-search-exclude>bad</span>
       <svg aria-hidden="true"><text>bad</text></svg><input value="bad"><select><option>bad</option></select>
       <textarea>bad</textarea></main><footer>outside</footer>`);
     expect(result.passages.map((p) => p.text)).toEqual(['文字&画像\n次', ' a  b\n c']);
@@ -56,7 +56,7 @@ describe('final HTML search projection', () => {
     '<button><svg><text>操作</text></svg></button>',
     '<svg aria-hidden="true"><text>操作</text></svg>',
     '<svg hidden><text>操作</text></svg>',
-    '<svg data-pagefind-ignore><text>操作</text></svg>',
+    '<svg data-search-exclude><text>操作</text></svg>',
     '<svg data-search-exclude><text>操作</text></svg>',
     '<span data-search-exclude><svg><text>操作</text></svg></span>',
   ])('既存の除外条件でSVG操作アイコンを除外する: %s', (icon) => {
@@ -113,9 +113,9 @@ describe('final HTML search projection', () => {
     expect(splitSearchPassage(`${'a'.repeat(600)}\n${'b'.repeat(250)}`)[0]?.length).toBe(601);
   });
 
-  it('Pagefind属性から中立除外属性への置換でprojectionが変わらない', () => {
-    expect(surface('<p data-pagefind-body>本文<span data-pagefind-ignore>操作</span></p>')).toEqual(
-      surface('<p>本文<span data-search-exclude>操作</span></p>'),
+  it('中立除外属性は任意のsubtreeに適用できる', () => {
+    expect(surface('<p>本文<span data-search-exclude><em>操作</em>除外</span></p>')).toEqual(
+      surface('<p>本文</p>'),
     );
   });
 });

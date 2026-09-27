@@ -4,7 +4,6 @@ import path from 'node:path';
 
 import { describe, expect, it } from 'vitest';
 
-import { buildPagefindDocumentData } from '../../build/search/build-pagefind-document-data.js';
 import {
   buildStaticExploreResponse,
   buildStaticSearchState,
@@ -13,25 +12,6 @@ import { buildSearchCatalog } from '../../build/search/build-search-catalog.js';
 import { emitSearchArtifacts } from '../../build/search/emit-search-artifacts.js';
 
 describe('search build helpers', () => {
-  it('Pagefind 補助索引用データを構築すること', () => {
-    expect(
-      buildPagefindDocumentData({
-        title: 'ジャズ理論の基礎',
-        description: '即興と和声のメモ',
-        updated: '2026-02-10',
-        tags: ['music', 'jazz'],
-      }),
-    ).toEqual({
-      title: 'ジャズ理論の基礎',
-      tokenizedTitle: 'ジャズ 理論 の 基礎',
-      description: '即興と和声のメモ',
-      tokenizedDescription: '即興 と 和声 の メモ',
-      date: '2026-02-10',
-      sortDate: '2026-02-10',
-      tags: ['music', 'jazz'],
-    });
-  });
-
   it('静的 explore response を shared helper で構築すること', () => {
     const state = buildStaticSearchState({
       tags: ['music'],

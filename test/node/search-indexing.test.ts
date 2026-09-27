@@ -1,19 +1,19 @@
 import { describe, expect, it } from 'vitest';
 
-import { createFieldTokens, tokenizePath } from '../../build/search/indexing/field-tokenizers.js';
+import { createCatalogFieldTokens, tokenizePath } from '../../shared/search/field-tokenizers.js';
 import { buildCatalogKeywords } from '../../build/search/indexing/catalog-keywords.js';
 
 describe('search-indexing', () => {
-  it('field tokenizers は title/body/path/keyword を決定的に分解すること', () => {
-    const fieldTokens = createFieldTokens({
+  it('Catalog tokenizer は title/description/path/keyword を決定的に分解すること', () => {
+    const fieldTokens = createCatalogFieldTokens({
       canonicalPathname: '/notes/music/jazz-theory/',
       title: 'ジャズ理論の基礎',
-      body: '即興と和声のメモ',
+      description: '即興と和声のメモ',
       keywords: ['music', 'jazz'],
     });
 
     expect(fieldTokens.titleTokens).to.deep.equal(['ジャズ', '理論', 'の', '基礎']);
-    expect(fieldTokens.bodyTokens).to.include.members(['即興', 'と', '和声', 'メモ']);
+    expect(fieldTokens.descriptionTokens).to.include.members(['即興', 'と', '和声', 'メモ']);
     expect(fieldTokens.pathTokens).to.deep.equal(['notes', 'music', 'jazz', 'theory']);
     expect(fieldTokens.keywordTokens).to.deep.equal(['music', 'jazz']);
   });

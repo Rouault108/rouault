@@ -13,10 +13,7 @@ import {
   toInternalDocumentRouteSet,
 } from '../shared/navigation/internal-document-route-manifest.js';
 import { resolveInternalDocumentRouteManifestPathname } from '../shared/navigation/internal-document-route-manifest-path.js';
-import {
-  createSearchArtifactUrlResolver,
-  resolveSearchCatalogUrl,
-} from '../shared/search/search-artifact-url.js';
+import { resolveSearchCatalogUrl } from '../shared/search/search-artifact-url.js';
 import type { SearchCatalogItem } from '../shared/search/search-catalog.js';
 import {
   createSearchJsonParseDiagnosticSink,
@@ -33,11 +30,7 @@ export interface AssertProductionSearchArtifactsOptions {
   readonly loadNotesForTestOnly?: () => readonly SearchCatalogSourceNote[];
 }
 
-type SearchArtifactName =
-  | 'search catalog'
-  | 'route manifest'
-  | 'Pagefind module'
-  | 'Pagefind entry';
+type SearchArtifactName = 'search catalog' | 'route manifest';
 
 const DIST_DIR = 'dist';
 
@@ -302,7 +295,6 @@ export async function assertProductionSearchArtifacts(
   }
 
   const siteUrlContext = resolveProductionSiteUrlContext();
-  const resolver = createSearchArtifactUrlResolver({ siteUrlContext });
   const searchCatalogPath = resolveArtifactPathFromPublicPathname({
     repoRoot,
     siteUrlContext,
@@ -315,19 +307,6 @@ export async function assertProductionSearchArtifacts(
     publicPathname: resolveInternalDocumentRouteManifestPathname(siteUrlContext),
     artifactName: 'route manifest',
   });
-  const pagefindModulePath = resolveArtifactPathFromPublicPathname({
-    repoRoot,
-    siteUrlContext,
-    publicPathname: resolver.resolvePagefindAssetUrl('pagefind.js'),
-    artifactName: 'Pagefind module',
-  });
-  const pagefindEntryPath = resolveArtifactPathFromPublicPathname({
-    repoRoot,
-    siteUrlContext,
-    publicPathname: resolver.resolvePagefindAssetUrl('pagefind-entry.json'),
-    artifactName: 'Pagefind entry',
-  });
-
   const searchCatalogText = readRequiredTextFile({
     repoRoot,
     filePath: searchCatalogPath,
@@ -394,23 +373,6 @@ export async function assertProductionSearchArtifacts(
   }
 
   assertPayloadMatches({ actualItems, expectedItems });
-
-  readRequiredTextFile({
-    repoRoot,
-    filePath: pagefindModulePath,
-    artifactName: 'Pagefind module',
-  });
-  const pagefindEntryText = readRequiredTextFile({
-    repoRoot,
-    filePath: pagefindEntryPath,
-    artifactName: 'Pagefind entry',
-  });
-  parseRequiredJson({
-    repoRoot,
-    filePath: pagefindEntryPath,
-    artifactName: 'Pagefind entry',
-    text: pagefindEntryText,
-  });
 }
 
 if (isDirectExecution()) {

@@ -89,15 +89,7 @@ const createProjection = (
       updated: '2026-02-01',
       genres: ['music'],
     },
-    pagefind: {
-      sortDate: '2026-02-01',
-      title: '見出し',
-      tokenizedTitle: '',
-      description: '要約',
-      tokenizedDescription: '',
-      date: '2026-02-01',
-      tags: ['music'],
-    },
+
     ...rest,
   };
 };
@@ -139,9 +131,6 @@ describe('NoteLayout', () => {
     expect(rendered).not.toContain('data-app-shell-sidebar-overlay-layer');
     expect(rendered).toContain('data-hydration-scope="note-content"');
     expect(rendered).toContain('data-hydration-scope="note-toc"');
-    expect(rendered).toContain('data-pagefind-sort="date:2026-02-01"');
-    expect(rendered).toContain('<span data-pagefind-weight="10">見出し</span>');
-    expect(rendered).not.toContain('<span data-pagefind-weight="8">見出し</span>');
     expect(rendered).toContain('<header class="article-header" data-article-header>');
     expect(rendered).toContain('<h1 class="article-header__heading">見出し</h1>');
     expect(rendered.match(/aria-current="page"/gu)?.length ?? 0).toBeGreaterThanOrEqual(1);
@@ -162,8 +151,7 @@ describe('NoteLayout', () => {
     const tocNav = tocRoot
       ? findElement(
           tocRoot,
-          (element) =>
-            element.tagName === 'nav' && getAttribute(element, 'class') === 'layout-toc',
+          (element) => element.tagName === 'nav' && getAttribute(element, 'class') === 'layout-toc',
         )
       : null;
 
@@ -360,7 +348,7 @@ describe('NoteLayout', () => {
     expect(rendered).not.toContain('javascript:alert(1)');
   });
 
-  it('sidebar と Pagefind が無効な projection では対応マークアップを出さないこと', () => {
+  it('sidebar が無効な projection では対応マークアップを出さないこと', () => {
     const layout = new NoteLayout();
     const rendered = layout.render({
       notePage: createProjection({
@@ -368,13 +356,11 @@ describe('NoteLayout', () => {
         noteShellSidebarPresence: 'absent',
         showSidebar: false,
         sidebar: null,
-        pagefind: null,
       }),
     });
 
     expect(rendered).not.toContain('<layout-sidebar');
     expect(rendered).not.toContain('data-pagefind-body');
-    expect(rendered).not.toContain('data-pagefind-sort=');
     expect(rendered).not.toContain('id="sidebar-source-note"');
   });
 });

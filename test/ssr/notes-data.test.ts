@@ -431,14 +431,12 @@ describe('publication surface policy', () => {
     expect(isNoteVisibleInSurface(fixtureReaderNote, 'home')).toBe(false);
     expect(isNoteVisibleInSurface(fixtureReaderNote, 'tags')).toBe(false);
     expect(isNoteVisibleInSurface(fixtureReaderNote, 'corpora')).toBe(false);
-    expect(isNoteVisibleInSurface(fixtureReaderNote, 'pagefind')).toBe(false);
 
     expect(resolveEffectiveNotePublicationPolicy(fixtureReaderNote)).toEqual({
       search: false,
       home: false,
       tags: false,
       corpora: false,
-      pagefind: false,
     });
   });
 });
