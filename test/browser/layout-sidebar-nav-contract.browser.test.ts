@@ -1,5 +1,6 @@
 import { html } from 'lit/static-html.js';
 import { describe, expect, it } from 'vitest';
+import { userEvent } from 'vitest/browser';
 import { fixture } from './harness/browser-fixture.js';
 
 import { ensureMainCssLoaded } from './helpers/load-main-css.js';
@@ -106,7 +107,20 @@ describe('layout-sidebar-nav paint contract', () => {
 
     it(`${theme} theme で current branch は非 hover surface を持たず indicator contrast を満たすこと`, async () => {
       await withDocumentTheme(theme, async () => {
-        const { surface, shellNav, branchControl } = await renderSurface();
+        const { surface, shellNav, branchControl, currentLink } = await renderSurface();
+        // 実ポインターと CSS 遷移の途中状態に依存せず、hover 解除後の描画を検証する。
+        await userEvent.hover(branchControl);
+        expect(branchControl.matches(':hover')).toBe(true);
+        await expect
+          .poll(() => resolvePseudoColor(branchControl, '::before', 'background-color').a)
+          .toBeGreaterThan(0.001);
+        await userEvent.hover(currentLink);
+        expect(branchControl.matches(':hover')).toBe(false);
+        await expect
+          .poll(() => resolvePseudoColor(branchControl, '::before', 'background-color').a, {
+            message: 'current branch base surface raw alpha',
+          })
+          .toBeLessThanOrEqual(0.001);
         const shellBackground = resolvePaintedElementBackground(shellNav, surface);
         const branchSurface = resolvePseudoColor(branchControl, '::before', 'background-color');
         expect(branchSurface.a, 'current branch base surface raw alpha').to.be.lessThanOrEqual(
