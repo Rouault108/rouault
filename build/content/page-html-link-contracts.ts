@@ -248,7 +248,7 @@ const validateKindHrefShape = (
     if (classified.kind !== kind) {
       fail(
         options.sourceLabel,
-        `link kind does not match classified href: expected ${classified.kind}, got ${kind}`,
+        `link kind does not match classified href "${href}" (surface ${surface}): expected ${classified.kind}, got ${kind}`,
       );
     }
     return;

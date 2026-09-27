@@ -35,7 +35,7 @@ export function createLexicalSearchCore(options: {
   return {
     async search(
       input: SearchRequest,
-      execution: { signal?: AbortSignal } = {},
+      execution: { signal?: AbortSignal | undefined } = {},
     ): Promise<LexicalSearchResponse> {
       if (disposed) throw new DOMException('Disposed search core', 'AbortError');
       execution.signal?.throwIfAborted();

@@ -2,10 +2,22 @@ import path from 'node:path';
 import { defineConfig } from 'vite';
 import { STATIC_ASSETS_ROOT_ABSOLUTE_PATH } from './build/assets/static-font-assets.js';
 import { resolveProductionBuildMetadata } from './build/metadata/build-metadata.js';
+import { resolveDevelopmentSiteUrlContext } from './build/site/site-url-context.js';
 
 const buildMetadata = resolveProductionBuildMetadata();
 
 export default defineConfig({
+  base: `${resolveDevelopmentSiteUrlContext().basePath}/`,
+  worker: {
+    format: 'es',
+    rollupOptions: {
+      output: {
+        entryFileNames: 'client-assets/[name]-[hash].js',
+        chunkFileNames: 'client-assets/[name]-[hash].js',
+        assetFileNames: 'client-assets/[name]-[hash][extname]',
+      },
+    },
+  },
   define: {
     __ROUAULT_BUILD_ID__: JSON.stringify(buildMetadata.buildId),
     __ROUAULT_BUILD_LABEL__: JSON.stringify(buildMetadata.buildLabel),

@@ -87,7 +87,7 @@ const searchResponse: StaticExploreSearchResponse = {
     },
   ],
   total: 1,
-  rankingProfileId: 'rouault-search-v1',
+  rankingProfileId: 'rouault-search-v3',
   diagnostics: {
     degraded: false,
     activeSources: ['catalog'],

@@ -127,7 +127,7 @@ export function buildStaticExploreResponse(
     mode: 'explore',
     items,
     total: items.length,
-    rankingProfileId: 'rouault-search-v1',
+    rankingProfileId: 'rouault-search-v3',
     tagCounts: buildCountMapFromTags(items.map((item) => item.tags)),
     allTagCounts: buildCountMapFromTags(items.map((item) => item.tags)),
     diagnostics: input.diagnostics ?? buildDefaultDiagnostics(input.activeSources ?? ['catalog']),

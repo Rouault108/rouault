@@ -219,24 +219,36 @@ describe('eleventy config', () => {
     }
   });
 
-  it('eleventy.after で _headers と _redirects を dist にコピーすること', async () => {
-    const distDir = path.resolve(process.cwd(), 'dist');
-    await rm(distDir, { recursive: true, force: true });
-    await mkdir(distDir, { recursive: true });
-
-    try {
-      const { config, afterHooks } = createConfigCapture();
-      const moduleUrl = new URL('../../eleventy.config.ts', import.meta.url).href;
-      const { default: configureEleventy } = (await import(moduleUrl)) as EleventyConfigModule;
-      configureEleventy(config as unknown as UserConfig);
-
-      expect(afterHooks).toHaveLength(1);
-      await afterHooks[0]?.();
-
-      expect(existsSync(path.join(distDir, '_redirects'))).toBe(true);
-      expect(existsSync(path.join(distDir, '_headers'))).toBe(true);
-    } finally {
+  it.each(['', '/nested'])(
+    'eleventy.after は配信prefix %s にcache policyを合わせること',
+    async (basePath) => {
+      vi.stubEnv('ROUAULT_BASE_PATH', basePath);
+      const distDir = path.resolve(process.cwd(), 'dist');
       await rm(distDir, { recursive: true, force: true });
-    }
-  });
+      await mkdir(distDir, { recursive: true });
+
+      try {
+        const { config, afterHooks } = createConfigCapture();
+        const moduleUrl = new URL('../../eleventy.config.ts', import.meta.url).href;
+        const { default: configureEleventy } = (await import(moduleUrl)) as EleventyConfigModule;
+        configureEleventy(config as unknown as UserConfig);
+
+        expect(afterHooks).toHaveLength(1);
+        await afterHooks[0]?.();
+
+        expect(existsSync(path.join(distDir, '_redirects'))).toBe(true);
+        expect(existsSync(path.join(distDir, '_headers'))).toBe(true);
+        const headers = readFileSync(path.join(distDir, '_headers'), 'utf8').replace(/\r\n/g, '\n');
+        expect(headers).toContain(
+          `${basePath}/search/manifest.json\n  Cache-Control: public, max-age=0, must-revalidate`,
+        );
+        expect(headers).toContain(
+          `${basePath}/search/document.*\n  Cache-Control: public, max-age=31536000, immutable`,
+        );
+      } finally {
+        vi.unstubAllEnvs();
+        await rm(distDir, { recursive: true, force: true });
+      }
+    },
+  );
 });

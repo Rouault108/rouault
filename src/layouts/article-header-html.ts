@@ -1,4 +1,5 @@
 import type { NotePageProjection } from '../../build/projections/note-page-projection.js';
+import type { SiteUrlContext } from '../../shared/site/site-url-context.js';
 import {
   getArticleHeaderStatusPresentation,
   normalizeArticleHeaderBreadcrumbs,
@@ -99,7 +100,7 @@ const renderPrimaryMetadata = (articleHeader: ArticleHeaderProjection): string =
   `.trim();
 };
 
-const renderTags = (genres: readonly string[]): string => {
+const renderTags = (genres: readonly string[], basePath: string): string => {
   const items = genres
     .map((genre) => {
       const normalizedGenre = normalizeArticleHeaderTag(genre);
@@ -107,7 +108,7 @@ const renderTags = (genres: readonly string[]): string => {
         return '';
       }
 
-      const href = toArticleHeaderTagHref(normalizedGenre);
+      const href = basePath + toArticleHeaderTagHref(normalizedGenre);
       return `
         <li class="article-header__tag-item">
           <a
@@ -224,6 +225,7 @@ export const renderArticleHeaderHtml = (
   options: {
     readonly idContext?: StaticRenderIdContext;
     readonly sourceLinkMode?: ArticleHeaderSourceLinkMode;
+    readonly siteUrlContext?: SiteUrlContext;
   } = {},
 ): string => {
   const idContext = options.idContext ?? createStaticRenderIdContext('layout:article-header');
@@ -235,7 +237,7 @@ export const renderArticleHeaderHtml = (
       ${renderStatus(articleHeader.status)}
       <h1 class="article-header__heading">${escapeHtmlText(articleHeader.heading)}</h1>
       ${renderPrimaryMetadata(articleHeader)}
-      ${renderTags(articleHeader.genres)}
+      ${renderTags(articleHeader.genres, options.siteUrlContext?.basePath ?? '')}
       ${renderSecondaryMetadata(articleHeader, sourceLinkMode)}
     </header>
   `.trim();

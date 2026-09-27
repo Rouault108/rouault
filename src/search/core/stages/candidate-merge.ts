@@ -38,21 +38,19 @@ function mergeCandidates(
       }
 
       const preferredDescription =
-        existing.matchedSources.includes('pagefind') &&
-        !candidate.matchedSources.includes('pagefind')
+        existing.matchedSources.includes('lexical') && !candidate.matchedSources.includes('lexical')
           ? existing.description
-          : candidate.matchedSources.includes('pagefind') &&
-              !existing.matchedSources.includes('pagefind')
+          : candidate.matchedSources.includes('lexical') &&
+              !existing.matchedSources.includes('lexical')
             ? candidate.description
             : existing.description.length >= candidate.description.length
               ? existing.description
               : candidate.description;
       const preferredSnippet =
-        existing.matchedSources.includes('pagefind') &&
-        !candidate.matchedSources.includes('pagefind')
+        existing.matchedSources.includes('lexical') && !candidate.matchedSources.includes('lexical')
           ? existing.snippet
-          : candidate.matchedSources.includes('pagefind') &&
-              !existing.matchedSources.includes('pagefind')
+          : candidate.matchedSources.includes('lexical') &&
+              !existing.matchedSources.includes('lexical')
             ? candidate.snippet
             : snippetMatchCount(existing) >= snippetMatchCount(candidate)
               ? existing.snippet

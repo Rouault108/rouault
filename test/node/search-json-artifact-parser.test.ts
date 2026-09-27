@@ -37,6 +37,42 @@ const createDiagnosticRecorder = () => {
 
 const isInternalDocumentPathname = (pathname: string): boolean => pathname.startsWith('/notes/');
 
+it('旧profile/sourceを拒否し、final lexical diagnosticsを受け入れること', () => {
+  const value = {
+    mode: 'explore',
+    items: [],
+    total: 0,
+    tagCounts: {},
+    allTagCounts: {},
+    rankingProfileId: 'rouault-search-v3',
+    diagnostics: {
+      degraded: true,
+      activeSources: ['lexical'],
+      failures: ['lexical-timeout'],
+      issues: [
+        {
+          code: 'lexical-snippet-unavailable',
+          severity: 'warn',
+          stage: 'fetch',
+          source: 'lexical',
+          count: 1,
+        },
+      ],
+    },
+  };
+  const parse = (input: unknown) =>
+    parseStaticExploreSearchResponseJson({
+      value: input,
+      isInternalDocumentPathname,
+      diagnostics: createDiagnosticRecorder().diagnostics,
+    });
+  expect(parse(value).ok).toBe(true);
+  expect(parse({ ...value, rankingProfileId: 'rouault-search-v1' }).ok).toBe(false);
+  expect(
+    parse({ ...value, diagnostics: { ...value.diagnostics, activeSources: ['pagefind'] } }).ok,
+  ).toBe(false);
+});
+
 describe('search-json-artifact-parser', () => {
   it('catalog schema failure reason と artifactSource を固定すること', () => {
     const recorder = createDiagnosticRecorder();
@@ -83,7 +119,7 @@ describe('search-json-artifact-parser', () => {
           },
         ],
         total: 3,
-        rankingProfileId: 'rouault-search-v1',
+        rankingProfileId: 'rouault-search-v3',
         tagCounts: { stale: 99 },
         allTagCounts: { stale: 10, other: 1 },
         diagnostics: {

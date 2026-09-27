@@ -3,6 +3,7 @@ import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import type { Connect } from 'vite';
+import { createStaticDirectoryMiddleware } from './dev-static-directory.js';
 
 import { renderSearchCatalogArtifact } from '../search/emit-search-artifacts.js';
 import type { SourceNote } from '../../src/data/notes.js';
@@ -48,6 +49,10 @@ export const createDevelopmentSearchArtifactMiddleware = (
   const pagefindBaseUrl = resolvePagefindBaseUrl(options.siteUrlContext);
   const pagefindDirectory =
     options.pagefindDirectory ?? path.resolve(process.cwd(), 'dist', 'pagefind');
+  const lexicalAssets = createStaticDirectoryMiddleware(
+    `${options.siteUrlContext.basePath}/search/`,
+    path.resolve('dist/search'),
+  );
 
   return async (
     request: IncomingMessage,
@@ -84,6 +89,11 @@ export const createDevelopmentSearchArtifactMiddleware = (
       return;
     }
 
+    if (requestUrl.pathname.startsWith(`${options.siteUrlContext.basePath}/search/`)) {
+      sendNoStore(response);
+      lexicalAssets(request, response, next);
+      return;
+    }
     const relativePagefindAssetPath = safePagefindAssetPath(pagefindBaseUrl, requestUrl.pathname);
     if (relativePagefindAssetPath === null) {
       next();

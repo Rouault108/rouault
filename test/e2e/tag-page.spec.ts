@@ -162,7 +162,7 @@ test.describe('Tag Page', () => {
       )
       .toEqual({
         pathname: '/search/',
-        q: 'target',
+        q: 'Target',
         tags: ['Programming'],
       });
     await expect(page.locator('#main-content h1').first()).toHaveText('検索');

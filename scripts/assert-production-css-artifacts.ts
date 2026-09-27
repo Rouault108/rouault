@@ -2,6 +2,8 @@ import { readFileSync } from 'node:fs';
 import { readdir } from 'node:fs/promises';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
+import { resolveDevelopmentSiteUrlContext } from '../build/site/site-url-context.js';
+import { stripBasePathFromPathname } from '../shared/url/normalize-rouault-url.js';
 
 import postcss, { type Rule } from 'postcss';
 
@@ -122,7 +124,8 @@ const normalizeAssetPath = (href: string): string | null => {
     return null;
   }
 
-  return withoutQuery.replace(/^\/+/, '');
+  const { basePath } = resolveDevelopmentSiteUrlContext();
+  return stripBasePathFromPathname(withoutQuery, basePath).replace(/^\/+/, '');
 };
 
 export const collectProductionHtmlReachableCssAssets = async (

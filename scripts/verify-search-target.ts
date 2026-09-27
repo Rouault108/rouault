@@ -7,7 +7,7 @@ import { parseMainMessage } from '../shared/search/lexical-protocol.js';
 import { lexicalResponse } from '../src/search/lexical/response.js';
 import golden from '../test/fixtures/search/adopted-golden.json' with { type: 'json' };
 
-const root = resolve('.generated/search-foundation');
+const root = resolve(process.argv[2] ?? '.generated/search-foundation');
 const context = { siteOrigin: 'http://localhost', basePath: '' };
 const fetcher: ArtifactFetch = async (url, init) => {
   init.signal?.throwIfAborted();
@@ -90,7 +90,10 @@ try {
     results,
     labels,
   };
-  await writeFile(join(root, 'target-verification.json'), JSON.stringify(report, null, 2) + '\n');
+  await writeFile(
+    process.argv[3] ?? join(root, 'target-verification.json'),
+    JSON.stringify(report, null, 2) + '\n',
+  );
   console.log(
     JSON.stringify(
       {

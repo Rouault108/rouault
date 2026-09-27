@@ -3,6 +3,8 @@ import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 
 import { collectProductionHtmlReachableCssAssets } from './assert-production-css-artifacts.js';
+import { resolveDevelopmentSiteUrlContext } from '../build/site/site-url-context.js';
+import { stripBasePathFromPathname } from '../shared/url/normalize-rouault-url.js';
 
 interface ProductionFontAssetAssertionResult {
   readonly reachableCssAssets: string[];
@@ -15,7 +17,10 @@ const CSS_URL_RE = /url\(\s*(?:"([^"]*)"|'([^']*)'|([^'")]*?))\s*\)/giu;
 
 const normalizeNotoSansJpFontPathname = (rawUrl: string): string | null => {
   const trimmedUrl = rawUrl.trim();
-  const pathname = (trimmedUrl.split('#', 1)[0] ?? '').split('?', 1)[0] ?? '';
+  const pathname = stripBasePathFromPathname(
+    (trimmedUrl.split('#', 1)[0] ?? '').split('?', 1)[0] ?? '',
+    resolveDevelopmentSiteUrlContext().basePath,
+  );
   if (
     pathname.startsWith(NOTO_SANS_JP_FONT_PATHNAME_PREFIX) &&
     pathname.endsWith('.woff2') &&

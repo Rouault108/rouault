@@ -1,677 +1,203 @@
-import { describe, expect, it } from 'vitest';
-
+import { describe, expect, it, vi } from 'vitest';
+import { createSearchCore } from '../../src/search/search-core.js';
+import { createCatalogFallback } from '../../src/search/lexical/catalog-fallback.js';
 import {
-  createSearchCore,
-  type PagefindApi,
-  type SearchCore,
-  type SearchCoreDependencies,
-} from '../../src/search/search-core.js';
-import { createAbortError } from '../../src/search/abort.js';
-import type { SearchCatalogItem } from '../../shared/search/search-catalog.js';
-import type { SearchCatalogFetcher } from '../../shared/search/search-loaders.js';
+  LexicalFailure,
+  type LexicalCandidate,
+  type LexicalResult,
+} from '../../shared/search/lexical-protocol.js';
+import type { SearchRequest } from '../../shared/search/search-types.js';
 import { createSearchCanonicalPathname } from '../../shared/search/document-url.js';
 import { createSearchArtifactUrlResolver } from '../../shared/search/search-artifact-url.js';
 import { DEFAULT_SITE_URL_CONTEXT } from '../../shared/site/site-url-context.js';
-import type {
-  SearchImportBoundaryContract,
-  SearchRequest,
-} from '../../shared/search/search-types.js';
 
-const canonicalPathname = (pathname: string): SearchCatalogItem['canonicalPathname'] => {
-  const canonical = createSearchCanonicalPathname({ pathname });
-  if (!canonical.ok) {
-    throw new Error(`Invalid test canonical pathname: ${pathname}`);
-  }
-  return canonical.canonicalPathname;
+const context = { ...DEFAULT_SITE_URL_CONTEXT, basePath: '/nested' };
+const request: SearchRequest = {
+  mode: 'explore',
+  q: '  LangVersion  ',
+  tags: [],
+  tagMode: 'or',
+  sort: 'relevance',
 };
-
-const testSearchCoreDefaults = {
-  runtimeEnvironment: 'test',
-  siteUrlContext: DEFAULT_SITE_URL_CONTEXT,
-  artifactUrlResolver: createSearchArtifactUrlResolver({
-    siteUrlContext: DEFAULT_SITE_URL_CONTEXT,
-  }),
-  isInternalDocumentPathname: (pathname: string) => pathname.startsWith('/'),
-} as const satisfies Pick<
-  Extract<SearchCoreDependencies, { readonly runtimeEnvironment: 'test' }>,
-  'runtimeEnvironment' | 'siteUrlContext' | 'artifactUrlResolver' | 'isInternalDocumentPathname'
->;
-
-const createCatalogFetcher =
-  (
-    options: {
-      readonly items?: readonly SearchCatalogItem[];
-      readonly error?: Error;
-      readonly onFetch?: () => void;
-    } = {},
-  ): SearchCatalogFetcher =>
-  async () => {
-    options.onFetch?.();
-    if (options.error) {
-      throw options.error;
-    }
-    const items = options.items ?? [];
-    return {
-      ok: true,
-      status: 200,
-      type: 'basic',
-      redirected: false,
-      headers: { get: (_name: string) => 'application/json; charset=utf-8' },
-      json: async () => items,
-      text: async () => JSON.stringify(items),
-    };
-  };
-
-const createTestSearchCore = (dependencies: {
-  readonly loadPagefind?: Extract<
-    SearchCoreDependencies,
-    { readonly runtimeEnvironment: 'test' }
-  >['testOnlyLoadPagefind'];
-  readonly catalogItems?: readonly SearchCatalogItem[];
-  readonly catalogError?: Error;
-  readonly onCatalogFetch?: () => void;
-  readonly now?: () => number;
-}): SearchCore =>
-  createSearchCore({
-    ...testSearchCoreDefaults,
-    ...(dependencies.loadPagefind ? { testOnlyLoadPagefind: dependencies.loadPagefind } : {}),
-    testOnlySearchCatalogFetcher: createCatalogFetcher({
-      ...(dependencies.catalogItems !== undefined ? { items: dependencies.catalogItems } : {}),
-      ...(dependencies.catalogError !== undefined ? { error: dependencies.catalogError } : {}),
-      ...(dependencies.onCatalogFetch !== undefined
-        ? { onFetch: dependencies.onCatalogFetch }
-        : {}),
-    }),
-    ...(dependencies.now ? { now: dependencies.now } : {}),
-  });
-
-describe('search-core', () => {
-  it('search import boundary contract uses the return-to-reading adapter event', () => {
-    const contract = {
-      edgeId: 'search-return-to-reading-via-adapter',
-      forbidsDirectRouterImport: true,
-      adapterEventName: 'rouault-search:return-to-reading',
-    } satisfies SearchImportBoundaryContract;
-
-    expect(contract.adapterEventName).to.equal('rouault-search:return-to-reading');
-  });
-
-  const catalogItems: SearchCatalogItem[] = [
+const candidate = (id: string, tags: string[] = []): LexicalCandidate => ({
+  id,
+  canonicalPathname: `/notes/${id}/`,
+  title: id,
+  date: null,
+  tags,
+  description: '',
+  snippet: null,
+  source: 'none',
+  bodyMatch: false,
+  degraded: false,
+  issues: [],
+  evidence: {
+    fusionScore: 1,
+    rankingBestPassageId: null,
+    snippetPassageId: null,
+    exactTitle: false,
+    titlePrefix: false,
+  },
+});
+const result = (candidates: LexicalCandidate[] = []): LexicalResult => ({
+  candidates,
+  queryTokens: ['lang', 'version'],
+  traceSha256: 'a'.repeat(64),
+  metrics: {},
+});
+const canonical = createSearchCanonicalPathname({ pathname: '/notes/catalog/' });
+if (!canonical.ok) throw new Error('Fixture');
+const catalog = createCatalogFallback(
+  context,
+  () => true,
+  async () => [
     {
-      title: '交響曲第9番 ニ短調',
-      canonicalPathname: canonicalPathname('/notes/music/classical/beethoven/symphony-9/'),
-      description: 'ベートーヴェンの交響曲分析メモ',
-      date: '2026-03-10',
-      keywords: ['music', 'classical', 'symphony', '交響曲'],
-      tags: ['music', 'classical'],
+      canonicalPathname: canonical.canonicalPathname,
+      title: 'LangVersion',
+      description: 'Catalog metadata',
+      tags: ['x'],
     },
-    {
-      title: 'ジャズ理論の基礎',
-      canonicalPathname: canonicalPathname('/notes/music/jazz/jazz-theory/'),
-      description: 'ジャズ音楽の基本理論',
-      date: '2026-02-01',
-      keywords: ['music', 'jazz', '理論'],
-      tags: ['music', 'jazz'],
-    },
-    {
-      title: 'ロジック入門',
-      canonicalPathname: canonicalPathname('/notes/philosophy/logic/'),
-      description: '形式論理の入門メモ',
-      date: '2025-12-24',
-      keywords: ['logic', 'philosophy'],
-      tags: ['philosophy'],
-    },
-  ];
-
-  function createPagefindApi(): PagefindApi {
-    return {
-      filters() {
-        return Promise.resolve({});
-      },
-      search(term) {
-        const normalizedTerm = term ?? '';
-        const shouldIncludeClassical = normalizedTerm === '' || normalizedTerm.includes('交響曲');
-        const shouldIncludeJazz = normalizedTerm === '' || normalizedTerm.includes('ジャズ');
-
-        return Promise.resolve({
-          results: [
-            ...(shouldIncludeClassical
-              ? [
-                  {
-                    data() {
-                      return Promise.resolve({
-                        url: '/notes/music/classical/beethoven/symphony-9/',
-                        excerpt: '<mark>交響曲</mark>第9番 ニ短調',
-                        meta: {
-                          title: '交響曲第9番 ニ短調',
-                          description: 'ベートーヴェンの交響曲分析メモ',
-                          date: '2026-03-10',
-                          genre: 'music,classical',
-                        },
-                      });
-                    },
-                  },
-                ]
-              : []),
-            ...(shouldIncludeJazz
-              ? [
-                  {
-                    data() {
-                      return Promise.resolve({
-                        url: '/notes/music/jazz/jazz-theory/',
-                        excerpt: '<mark>ジャズ</mark>理論の基礎',
-                        meta: {
-                          title: 'ジャズ理論の基礎',
-                          description: 'ジャズ音楽の基本理論',
-                          date: '2026-02-01',
-                          genre: 'music,jazz',
-                        },
-                      });
-                    },
-                  },
-                ]
-              : []),
-          ],
-          unfilteredResultCount: 2,
-          totalFilters: {
-            genre: {
-              music: 2,
-              classical: 1,
-              jazz: 1,
-            },
-          },
-        });
-      },
-    };
-  }
-
-  const navigateMusicRequest = {
-    mode: 'navigate',
-    q: 'music',
-    tags: [],
-    tagMode: 'or',
-    sort: 'relevance',
-  } satisfies SearchRequest;
-
-  it('explore モードで query 集合と tag 集合の件数を分けて返すこと', async () => {
-    const core = createTestSearchCore({
-      loadPagefind: () => Promise.resolve(createPagefindApi()),
-      catalogItems,
-      now: () => Date.parse('2026-03-23T00:00:00Z'),
-    });
-
-    const response = await core.search({
-      mode: 'explore',
-      q: '',
-      tags: ['music'],
-      tagMode: 'or',
-      sort: 'relevance',
-    });
-
-    expect(response.mode).to.equal('explore');
-    if (response.mode !== 'explore') {
-      throw new Error('mode is not explore');
-    }
-    expect(response.items.map((item) => item.title)).to.deep.equal([
-      '交響曲第9番 ニ短調',
-      'ジャズ理論の基礎',
-    ]);
-    expect(response.tagCounts).to.deep.equal({
-      classical: 1,
-      jazz: 1,
-      music: 2,
-    });
-    expect(response.allTagCounts).to.deep.equal({
-      classical: 1,
-      jazz: 1,
-      music: 2,
-      philosophy: 1,
-    });
+  ],
+);
+function setup(
+  search = vi.fn(async (_request: SearchRequest, _signal: AbortSignal) => result()),
+  fallback = vi.fn(catalog),
+) {
+  const dispose = vi.fn();
+  const core = createSearchCore({
+    runtimeEnvironment: 'test',
+    siteUrlContext: context,
+    artifactUrlResolver: createSearchArtifactUrlResolver({ siteUrlContext: context }),
+    isInternalDocumentPathname: (path) => path.startsWith('/notes/'),
+    testOnlyClient: { search, dispose },
+    testOnlyCatalog: fallback,
   });
+  return { core, search, dispose, fallback };
+}
 
-  it('and 条件は core の後段フィルターで保証すること', async () => {
-    const core = createTestSearchCore({
-      loadPagefind: () => Promise.resolve(createPagefindApi()),
-      catalogItems,
-      now: () => Date.parse('2026-03-23T00:00:00Z'),
-    });
-
-    const response = await core.search({
-      mode: 'explore',
-      q: '',
-      tags: ['music', 'classical'],
-      tagMode: 'and',
-      sort: 'relevance',
-    });
-
-    expect(response.mode).to.equal('explore');
-    expect(response.items.map((item) => item.title)).to.deep.equal(['交響曲第9番 ニ短調']);
+describe('production search core cutover contract', () => {
+  it('passes raw camelCase to the Worker and never federates normal lexical results', async () => {
+    const state = setup(vi.fn(async () => result([candidate('first'), candidate('LangVersion')])));
+    const response = await state.core.search(request);
+    expect(state.search.mock.calls[0]?.[0].q).toBe('LangVersion');
+    expect(response.rankingProfileId).toBe('rouault-search-v3');
+    expect(response.items.map((item) => item.title)).toEqual(['first', 'LangVersion']);
+    expect(response.items[0]?.renderHref).toBe('/nested/notes/first/');
+    expect(response.diagnostics.activeSources).toEqual(['lexical']);
+    expect(state.fallback).not.toHaveBeenCalled();
+    state.core.dispose?.();
+    expect(state.dispose).toHaveBeenCalledOnce();
   });
-
-  it('navigate モードは結果を 20 件に制限すること', async () => {
-    const manyCatalogItems = Array.from({ length: 25 }, (_, index) => ({
-      title: `note-${index.toString()}`,
-      canonicalPathname: canonicalPathname(`/notes/note-${index.toString()}/`),
-      description: '検索用メモ',
-      date: '2026-03-01',
-      keywords: ['note'],
-      tags: ['memo'],
-    })) satisfies SearchCatalogItem[];
-
-    const core = createTestSearchCore({
-      loadPagefind: () => Promise.reject(new Error('missing pagefind')),
-      catalogItems: manyCatalogItems,
-      now: () => Date.parse('2026-03-23T00:00:00Z'),
-    });
-
-    const response = await core.search({
-      mode: 'navigate',
-      q: 'note',
-      tags: [],
-      tagMode: 'or',
-      sort: 'relevance',
-    });
-
-    expect(response.mode).to.equal('navigate');
-    expect(response.items).to.have.length(20);
-    expect(response.total).to.equal(25);
+  it('empty query without tags loads no source; normal zero never falls back', async () => {
+    const state = setup();
+    expect((await state.core.search({ ...request, q: '' })).diagnostics.activeSources).toEqual([]);
+    expect(state.search).not.toHaveBeenCalled();
+    expect((await state.core.search(request)).total).toBe(0);
+    expect(state.fallback).not.toHaveBeenCalled();
   });
-
-  it('runtime 検索は /notes/testing/ のような path 名特例で結果を捨てないこと', async () => {
-    const core = createTestSearchCore({
-      loadPagefind: () =>
-        Promise.resolve({
-          filters() {
-            return Promise.resolve({});
-          },
-          search() {
-            return Promise.resolve({
-              results: [
-                {
-                  data() {
-                    return Promise.resolve({
-                      url: '/notes/testing/interactive/',
-                      excerpt: '<mark>ジャズ</mark> testing note',
-                      meta: {
-                        title: 'Testing Jazz Fixture',
-                        description: 'ジャズ向け internal testing note',
-                        date: '2026-03-20',
-                        genre: 'testing,jazz',
-                      },
-                    });
-                  },
-                },
-                {
-                  data() {
-                    return Promise.resolve({
-                      url: '/notes/music/jazz/jazz-theory/',
-                      excerpt: '<mark>ジャズ</mark>理論の基礎',
-                      meta: {
-                        title: 'ジャズ理論の基礎',
-                        description: 'ジャズ音楽の基本理論',
-                        date: '2026-02-01',
-                        genre: 'music,jazz',
-                      },
-                    });
-                  },
-                },
-              ],
-              unfilteredResultCount: 2,
-              totalFilters: {
-                genre: {
-                  testing: 1,
-                  music: 1,
-                  jazz: 1,
-                },
-              },
-            });
-          },
-        }),
-      catalogItems: [
-        ...catalogItems,
-        {
-          title: 'Testing Jazz Fixture',
-          canonicalPathname: canonicalPathname('/notes/testing/interactive/'),
-          description: 'ジャズ向け internal testing note',
-          date: '2026-03-20',
-          keywords: ['testing', 'ジャズ'],
-          tags: ['testing', 'jazz'],
-        },
-      ],
-      now: () => Date.parse('2026-03-23T00:00:00Z'),
-    });
-
-    const response = await core.search({
-      mode: 'explore',
-      q: 'ジャズ',
-      tags: [],
-      tagMode: 'or',
-      sort: 'relevance',
-    });
-
-    expect(response.mode).to.equal('explore');
+  it('keeps Q/F counts and AND/OR separate and applies limit after total', async () => {
+    const data = Array.from({ length: 25 }, (_, n) =>
+      candidate(`n${n}`, n === 0 ? ['x', 'y'] : ['x']),
+    );
+    const state = setup(vi.fn(async () => result(data)));
+    const all = await state.core.search({ ...request, mode: 'navigate' });
+    expect(all.total).toBe(25);
+    expect(all.items).toHaveLength(20);
+    const filtered = await state.core.search({ ...request, tags: ['x', 'y'], tagMode: 'and' });
+    expect(filtered.total).toBe(1);
+    expect(filtered.mode === 'explore' && filtered.allTagCounts).toEqual({ x: 25, y: 1 });
+    expect(filtered.mode === 'explore' && filtered.tagCounts).toEqual({ x: 1, y: 1 });
+    expect((await state.core.search({ ...request, tags: ['x', 'y'] })).total).toBe(25);
+  });
+  it('allows empty-query tag metadata and no pathname special case', async () => {
+    const state = setup(vi.fn(async () => result([candidate('testing', ['x'])])));
+    const response = await state.core.search({ ...request, q: '', tags: ['x'] });
+    expect(response.items[0]?.canonicalPathname).toBe('/notes/testing/');
+    expect(state.fallback).not.toHaveBeenCalled();
+  });
+  it('retains valid epoch zero and puts unknown dates last', async () => {
+    const data = [
+      candidate('unknown'),
+      { ...candidate('zero'), date: '1970-01-01' },
+      { ...candidate('new'), date: '2026-01-01' },
+    ];
+    const state = setup(vi.fn(async () => result(data)));
     expect(
-      response.items.some((item) => item.canonicalPathname.startsWith('/notes/testing/')),
-    ).to.equal(true);
-    expect(response.items.map((item) => item.title)).to.include('Testing Jazz Fixture');
+      (await state.core.search({ ...request, sort: 'date-desc' })).items.map((item) => item.title),
+    ).toEqual(['new', 'zero', 'unknown']);
   });
-
-  it('全 source 失敗時は all-sources-failed を返すこと', async () => {
-    const core = createTestSearchCore({
-      loadPagefind: () => Promise.reject(new Error('missing pagefind')),
-      catalogError: new Error('missing catalog'),
-    });
-
-    const response = await core.search({
-      mode: 'explore',
-      q: 'test',
-      tags: [],
-      tagMode: 'or',
-      sort: 'relevance',
-    });
-
-    expect(response.mode).to.equal('explore');
-    expect(response.items).to.deep.equal([]);
-    expect(response.diagnostics.failures).to.deep.equal([
+  it.each(['lexical-load-failed', 'lexical-search-failed', 'lexical-timeout'] as const)(
+    'falls back only on %s',
+    async (kind) => {
+      const state = setup(
+        vi.fn(async () => {
+          throw new LexicalFailure(kind, 'fetch', 'Fixture');
+        }),
+      );
+      const response = await state.core.search(request);
+      expect(state.fallback).toHaveBeenCalledOnce();
+      expect(response.diagnostics.activeSources).toEqual(['catalog']);
+      expect(response.diagnostics.failures).toEqual([kind]);
+      expect(response.items[0]?.title).toBe('LangVersion');
+      expect(response.items[0]?.reasons).toContainEqual({
+        kind: 'catalog-fallback',
+        source: 'catalog',
+      });
+    },
+  );
+  it('reports both sources failed without pretending to return normal zero', async () => {
+    const state = setup(
+      vi.fn(async () => {
+        throw new LexicalFailure('lexical-load-failed', 'fetch', 'Fixture');
+      }),
+      vi.fn(async () => {
+        throw new Error('Catalog');
+      }),
+    );
+    const response = await state.core.search(request);
+    expect(response.diagnostics.failures).toEqual([
+      'lexical-load-failed',
       'catalog-fetch-failed',
-      'pagefind-load-failed',
       'all-sources-failed',
     ]);
-    expect(response.diagnostics.degraded).to.equal(true);
+    expect(response.diagnostics.activeSources).toEqual([]);
   });
-
-  it('abort 済み signal では source loader を呼ばないこと', async () => {
-    const controller = new AbortController();
+  it('already-aborted caller invokes neither source', async () => {
+    const state = setup(),
+      controller = new AbortController();
     controller.abort();
-    let pagefindLoadCount = 0;
-    let catalogLoadCount = 0;
-    const core = createTestSearchCore({
-      loadPagefind: () => {
-        pagefindLoadCount += 1;
-        return Promise.resolve(createPagefindApi());
-      },
-      catalogItems,
-      onCatalogFetch: () => {
-        catalogLoadCount += 1;
-      },
+    await expect(state.core.search(request, { signal: controller.signal })).rejects.toMatchObject({
+      name: 'AbortError',
     });
-
-    await expect(
-      core.search(
-        {
-          mode: 'explore',
-          q: 'music',
-          tags: [],
-          tagMode: 'or',
-          sort: 'relevance',
-        },
-        { signal: controller.signal },
-      ),
-    ).rejects.toMatchObject({ name: 'AbortError' });
-
-    expect(pagefindLoadCount).to.equal(0);
-    expect(catalogLoadCount).to.equal(0);
+    expect(state.search).not.toHaveBeenCalled();
+    expect(state.fallback).not.toHaveBeenCalled();
   });
-
-  it('Pagefind loader 失敗を永続メモ化せず次回検索で再試行すること', async () => {
-    let pagefindLoadCount = 0;
-    const core = createTestSearchCore({
-      loadPagefind: () => {
-        pagefindLoadCount += 1;
-        if (pagefindLoadCount === 1) {
-          return Promise.reject(new Error('temporary pagefind failure'));
-        }
-
-        return Promise.resolve(createPagefindApi());
-      },
-      catalogItems,
-    });
-
-    await core.search({
-      mode: 'navigate',
-      q: 'ジャズ',
-      tags: [],
-      tagMode: 'or',
-      sort: 'relevance',
-    });
-    await core.search({
-      mode: 'navigate',
-      q: 'ジャズ',
-      tags: [],
-      tagMode: 'or',
-      sort: 'relevance',
-    });
-
-    expect(pagefindLoadCount).to.equal(2);
-  });
-
-  it('Pagefind result.data() の通常 reject は source failure に分類し catalog fallback を返すこと', async () => {
-    const core = createTestSearchCore({
-      loadPagefind: () =>
-        Promise.resolve({
-          filters() {
-            return Promise.resolve({});
-          },
-          search() {
-            return Promise.resolve({
-              results: [
-                {
-                  data() {
-                    return Promise.reject(new Error('data failed'));
-                  },
-                },
-              ],
-              unfilteredResultCount: 1,
-              totalFilters: {},
-            });
-          },
-        }),
-      catalogItems,
-    });
-
-    const response = await core.search({
-      mode: 'navigate',
-      q: 'ジャズ',
-      tags: [],
-      tagMode: 'or',
-      sort: 'relevance',
-    });
-
-    expect(response.items.map((item) => item.title)).to.include('ジャズ理論の基礎');
-    expect(response.diagnostics.failures).to.include('pagefind-search-failed');
-  });
-
-  it('source が AbortError を投げた場合は diagnostics に変換しないこと', async () => {
-    const core = createTestSearchCore({
-      loadPagefind: () => Promise.reject(createAbortError()),
-      catalogItems,
-    });
-
-    await expect(core.search(navigateMusicRequest)).rejects.toMatchObject({ name: 'AbortError' });
-  });
-
-  it('Pagefind load の catch 時に abort 済みなら通常 failure へ変換しないこと', async () => {
+  it('caller abort during lexical failure does not become fallback diagnostics', async () => {
     const controller = new AbortController();
-    const core = createTestSearchCore({
-      loadPagefind: () => {
+    const state = setup(
+      vi.fn(async () => {
         controller.abort();
-        return Promise.reject(new Error('late load failure'));
-      },
-      catalogItems,
-    });
-
-    await expect(
-      core.search(navigateMusicRequest, { signal: controller.signal }),
-    ).rejects.toMatchObject({
+        throw new Error('Interrupted');
+      }),
+    );
+    await expect(state.core.search(request, { signal: controller.signal })).rejects.toMatchObject({
       name: 'AbortError',
     });
+    expect(state.fallback).not.toHaveBeenCalled();
   });
-
-  it('Pagefind search の catch 時に abort 済みなら通常 failure へ変換しないこと', async () => {
+  it('caller abort during Catalog failure cannot commit a degraded response', async () => {
     const controller = new AbortController();
-    const core = createTestSearchCore({
-      loadPagefind: () =>
-        Promise.resolve({
-          filters() {
-            return Promise.resolve({});
-          },
-          search() {
-            controller.abort();
-            return Promise.reject(new Error('late search failure'));
-          },
-        }),
-      catalogItems,
-    });
-
-    await expect(
-      core.search(navigateMusicRequest, { signal: controller.signal }),
-    ).rejects.toMatchObject({
-      name: 'AbortError',
-    });
-  });
-
-  it('Pagefind result.data() の AbortError は pagefind-search-failed に変換しないこと', async () => {
-    const core = createTestSearchCore({
-      loadPagefind: () =>
-        Promise.resolve({
-          filters() {
-            return Promise.resolve({});
-          },
-          search() {
-            return Promise.resolve({
-              results: [
-                {
-                  data() {
-                    return Promise.reject(createAbortError());
-                  },
-                },
-              ],
-              unfilteredResultCount: 1,
-              totalFilters: {},
-            });
-          },
-        }),
-      catalogItems,
-    });
-
-    await expect(core.search(navigateMusicRequest)).rejects.toMatchObject({ name: 'AbortError' });
-  });
-
-  it('Pagefind result.data() の catch 時に abort 済みなら通常 failure へ変換しないこと', async () => {
-    const controller = new AbortController();
-    const core = createTestSearchCore({
-      loadPagefind: () =>
-        Promise.resolve({
-          filters() {
-            return Promise.resolve({});
-          },
-          search() {
-            return Promise.resolve({
-              results: [
-                {
-                  data() {
-                    controller.abort();
-                    return Promise.reject(new Error('late data failure'));
-                  },
-                },
-              ],
-              unfilteredResultCount: 1,
-              totalFilters: {},
-            });
-          },
-        }),
-      catalogItems,
-    });
-
-    await expect(
-      core.search(navigateMusicRequest, { signal: controller.signal }),
-    ).rejects.toMatchObject({
-      name: 'AbortError',
-    });
-  });
-
-  it('Pagefind candidate 正規化中の abort では SearchResponse を返さないこと', async () => {
-    const controller = new AbortController();
-    const rawResult = {
-      get url() {
+    const state = setup(
+      vi.fn(async () => {
+        throw new LexicalFailure('lexical-load-failed', 'fetch', 'Fixture');
+      }),
+      vi.fn(async () => {
         controller.abort();
-        return '/notes/music/jazz/jazz-theory/';
-      },
-      excerpt: '<mark>ジャズ</mark>理論の基礎',
-      meta: {
-        title: 'ジャズ理論の基礎',
-        description: 'ジャズ音楽の基本理論',
-        date: '2026-02-01',
-        genre: 'music,jazz',
-      },
-    };
-    const core = createTestSearchCore({
-      loadPagefind: () =>
-        Promise.resolve({
-          filters() {
-            return Promise.resolve({});
-          },
-          search() {
-            return Promise.resolve({
-              results: [
-                {
-                  data() {
-                    return Promise.resolve(rawResult);
-                  },
-                },
-              ],
-              unfilteredResultCount: 1,
-              totalFilters: {},
-            });
-          },
-        }),
-      catalogItems,
-    });
-
-    await expect(
-      core.search(navigateMusicRequest, { signal: controller.signal }),
-    ).rejects.toMatchObject({
+        throw new Error('Interrupted');
+      }),
+    );
+    await expect(state.core.search(request, { signal: controller.signal })).rejects.toMatchObject({
       name: 'AbortError',
     });
-  });
-
-  it('catalog load の catch 時に abort 済みなら通常 failure へ変換しないこと', async () => {
-    const controller = new AbortController();
-    const core = createTestSearchCore({
-      loadPagefind: () => Promise.resolve(createPagefindApi()),
-      catalogError: new Error('late catalog failure'),
-      onCatalogFetch: () => {
-        controller.abort();
-      },
-    });
-
-    await expect(
-      core.search(navigateMusicRequest, { signal: controller.signal }),
-    ).rejects.toMatchObject({
-      name: 'AbortError',
-    });
-  });
-
-  it('通常 source failure diagnostics は維持すること', async () => {
-    const core = createTestSearchCore({
-      loadPagefind: () =>
-        Promise.resolve({
-          filters() {
-            return Promise.resolve({});
-          },
-          search() {
-            return Promise.reject(new Error('pagefind search failed'));
-          },
-        }),
-      catalogError: new Error('catalog failed'),
-    });
-
-    const response = await core.search(navigateMusicRequest);
-
-    expect(response.diagnostics.failures).to.deep.equal([
-      'catalog-fetch-failed',
-      'pagefind-search-failed',
-      'all-sources-failed',
-    ]);
   });
 });

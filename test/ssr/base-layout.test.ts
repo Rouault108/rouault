@@ -74,6 +74,16 @@ const TEST_SITE_URL_CONTEXT = loadSiteUrlContextData({
 });
 
 describe('BaseLayout', () => {
+  it('basePath付き共通shellは検索footerとhashリンクの分類を維持すること', () => {
+    const rendered = new BaseLayout().render({
+      content: '<p>本文</p>',
+      page: { url: '/search/' },
+      buildMetadata: TEST_BUILD_METADATA,
+      siteUrlContext: { ...TEST_SITE_URL_CONTEXT, basePath: '/nested' },
+    });
+    expect(rendered).toContain('href="/nested/search/"');
+    expect(rendered).toContain('href="/nested/about/"');
+  });
   it('buildMetadata missing では render-time hard fail すること', () => {
     expect(() =>
       new BaseLayout().render({

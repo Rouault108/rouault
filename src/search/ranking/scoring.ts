@@ -9,7 +9,7 @@ import type {
 } from '../../../shared/search/search-types.js';
 
 const SOURCE_RELIABILITY: Record<SearchSourceKind, number> = {
-  pagefind: 1,
+  lexical: 1,
   catalog: 0.6,
 };
 
@@ -237,7 +237,7 @@ export function computeReasons(
 
   if (
     candidate.matchedSources.includes('catalog') &&
-    !candidate.matchedSources.includes('pagefind') &&
+    !candidate.matchedSources.includes('lexical') &&
     candidate.snippet !== null
   ) {
     reasons.push({ kind: 'catalog-fallback', source: 'catalog' });

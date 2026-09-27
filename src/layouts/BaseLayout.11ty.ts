@@ -179,7 +179,10 @@ export class BaseLayout {
     const idContext = createStaticRenderIdContext(
       data.page?.url ? `shell:${data.page.url}` : `shell:${title}`,
     );
-    const footerHtml = renderDefaultLayoutFooterHtml(buildMetadata.buildLabel, { idContext });
+    const footerHtml = renderDefaultLayoutFooterHtml(buildMetadata.buildLabel, {
+      idContext,
+      siteUrlContext,
+    });
     const themeBootstrapScript = buildThemeDocumentBootstrapScript();
     const themeChromeBootstrapScript = buildThemeChromeBootstrapScript();
     const routeManifestUrl = resolveInternalDocumentRouteManifestUrl({

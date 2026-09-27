@@ -224,10 +224,10 @@ export const findSearchImportBoundaryViolations = (): Promise<string[]> => {
       'search import boundary violation: src/search/bootstrap.ts: unavailable reason must use shared/search/search-unavailable-reason.ts',
     );
   }
-  const pagefindSourceText = readFileSync('src/search/sources/pagefind-source.ts', 'utf8');
-  if (/createDefaultPagefindLoader\b/u.test(pagefindSourceText)) {
+  const productionCoreText = readFileSync('src/search/core/search-core.ts', 'utf8');
+  if (/Pagefind|runSourceFederationStage|runRankingAndSortingStage/u.test(productionCoreText)) {
     violations.push(
-      'search import boundary violation: src/search/sources/pagefind-source.ts: Pagefind loader authority must live in shared/search/search-loaders.ts only',
+      'search import boundary violation: production core must delegate lexical ranking to the Worker and must not federate legacy sources',
     );
   }
   const searchCoreEntrypointText = readFileSync('src/search/search-core.ts', 'utf8');

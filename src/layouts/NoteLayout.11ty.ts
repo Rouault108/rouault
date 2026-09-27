@@ -179,7 +179,7 @@ export class NoteLayout {
         }
         <article${article}>
           ${notePage.pagefind ? renderPagefindMetadata(notePage.pagefind) : ''}
-          ${renderArticleHeaderHtml(notePage.articleHeader, { idContext, sourceLinkMode })}
+          ${renderArticleHeaderHtml(notePage.articleHeader, { idContext, sourceLinkMode, ...(data.siteUrlContext ? { siteUrlContext: data.siteUrlContext } : {}) })}
           <div${serializeHtmlAttributes([
             { name: 'id', value: notePage.toc.contentRootId },
             { name: 'class', value: 'prose' },

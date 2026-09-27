@@ -9,6 +9,29 @@ const siteUrlContext = {
 };
 
 describe('generated page link classification context', () => {
+  it('basePath付きabout/searchでもhash導線とdocument分類が成立すること', () => {
+    const nested = { ...siteUrlContext, basePath: '/nested' };
+    const context = buildGeneratedPageLinkClassificationContext(
+      { page: { url: '/about/' } },
+      nested,
+    );
+    expect(() =>
+      classifyLinkHref({
+        href: '#main-content',
+        siteUrlContext: nested,
+        currentUrl: context.currentUrl,
+        routeClassificationMode: context.routeClassificationMode,
+      }),
+    ).not.toThrow();
+    expect(
+      classifyLinkHref({
+        href: '/nested/search/',
+        siteUrlContext: nested,
+        currentUrl: context.currentUrl,
+        routeClassificationMode: context.routeClassificationMode,
+      }).kind,
+    ).toBe('internal-document');
+  });
   it('page / note / navigation data から currentUrl と routeSet を構築すること', () => {
     const context = buildGeneratedPageLinkClassificationContext(
       {

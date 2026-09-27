@@ -31,10 +31,18 @@ export const applyBasePathToRenderHref = (options: {
   return `${publicPathname}${options.search ?? ''}${options.hash ?? ''}`;
 };
 
-export const normalizeRouaultUrl = (url: URL): URL => {
+export const normalizeRouaultUrl = (url: URL, siteUrlContext?: SiteUrlContext): URL => {
   const normalized = new URL(url.toString());
   sanitizeRouaultSearchParams(normalized);
-  normalized.pathname = normalizeRouaultPathname(normalized.pathname);
+  // canonical routeのslash規則は公開prefixを除いたpathnameへ適用する。
+  const basePath =
+    siteUrlContext &&
+    normalized.origin === siteUrlContext.siteOrigin &&
+    isPathnameInsideBasePath(normalized.pathname, siteUrlContext.basePath)
+      ? siteUrlContext.basePath
+      : '';
+  normalized.pathname =
+    basePath + normalizeRouaultPathname(stripBasePathFromPathname(normalized.pathname, basePath));
   return normalized;
 };
 
@@ -47,7 +55,7 @@ export const normalizeCurrentUrlForLinkClassification = (options: {
     options.currentUrl === options.siteUrlContext.siteOrigin
       ? `${options.siteUrlContext.siteOrigin}/`
       : options.currentUrl;
-  const current = normalizeRouaultUrl(new URL(raw));
+  const current = normalizeRouaultUrl(new URL(raw), options.siteUrlContext);
   if (current.origin !== options.siteUrlContext.siteOrigin) {
     throw new Error('invalid-current-url');
   }

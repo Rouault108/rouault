@@ -8,6 +8,13 @@ import {
 } from '../../src/components/not-found/not-found-page.js';
 
 describe('buildNotFoundPageMarkup', () => {
+  it('basePath配下の検索・サイト情報への導線を維持すること', () => {
+    const rendered = buildNotFoundPageMarkup({
+      siteUrlContext: { siteOrigin: 'https://example.com', basePath: '/nested' },
+    });
+    expect(rendered).toContain('href="/nested/search/"');
+    expect(rendered).toContain('href="/nested/about/"');
+  });
   it('404 fallback の基本構造と導線を出力すること', () => {
     const rendered = buildNotFoundPageMarkup();
 

@@ -1,5 +1,6 @@
 import { escapeHtmlAttribute, escapeHtmlText } from './html-output.js';
 import { buildLayoutFooterOptions, type FooterRenderOptions } from './footer-options.js';
+import type { SiteUrlContext } from '../../shared/site/site-url-context.js';
 import {
   createStaticRenderIdContext,
   type StaticRenderIdContext,
@@ -247,19 +248,27 @@ export const renderFooterHtml = (
 
 export const renderDefaultLayoutFooterHtml = (
   buildLabel: string,
-  options: { readonly idContext?: StaticRenderIdContext } = {},
-): string =>
-  renderFooterHtml({
-    ...buildLayoutFooterOptions({
-      footerId: undefined,
-      siteEyebrow: undefined,
-      siteName: undefined,
-      siteUrl: undefined,
-      siteDescription: undefined,
-      copyrightText: undefined,
-      buildLabel,
-      navLabel: undefined,
-      linksJson: undefined,
-    }),
+  options: {
+    readonly idContext?: StaticRenderIdContext;
+    readonly siteUrlContext?: SiteUrlContext;
+  } = {},
+): string => {
+  const footer = buildLayoutFooterOptions({
+    footerId: undefined,
+    siteEyebrow: undefined,
+    siteName: undefined,
+    siteUrl: undefined,
+    siteDescription: undefined,
+    copyrightText: undefined,
+    buildLabel,
+    navLabel: undefined,
+    linksJson: undefined,
+  });
+  const prefix = options.siteUrlContext?.basePath ?? '';
+  return renderFooterHtml({
+    ...footer,
+    meta: { ...footer.meta, siteUrl: `${prefix}${footer.meta.siteUrl ?? '/'}` },
+    links: (footer.links ?? []).map((link) => ({ ...link, href: `${prefix}${link.href}` })),
     ...(options.idContext ? { idContext: options.idContext } : {}),
   });
+};

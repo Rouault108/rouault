@@ -21,7 +21,7 @@ const STAGE_ORDER: SearchDiagnosticStage[] = [
 
 const SEVERITY_ORDER: SearchDiagnosticSeverity[] = ['error', 'warn', 'info'];
 
-const SOURCE_ORDER: SearchSourceKind[] = ['pagefind', 'catalog'];
+const SOURCE_ORDER: SearchSourceKind[] = ['lexical', 'catalog'];
 
 export interface MutableDiagnostics {
   failures: SearchFailureKind[];

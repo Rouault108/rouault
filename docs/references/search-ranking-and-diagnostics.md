@@ -1,46 +1,36 @@
 # Search Ranking and Diagnostics Reference
 
-この文書はrankingとdiagnosticsの詳細参照である。検索責務境界の正本は`docs/contracts/search.md`とする。
+意味論の正本は`docs/contracts/search.md`、exact profileは`shared/search/lexical-ranking-profile.json`。
 
 ## Ranking Profile
 
-- `rouault-search-v1`をranking profileの互換単位とする。
-- `navigate`は直接到達性、title/path 一致、source reliabilityを強く見る。
-- `explore`は本文一致、tag、関連候補、match evidenceを比較しやすくする。
+`rouault-search-v3` / `rouault-lexical-v3` / Suzume 0.9.11 S-Nを固定する。
+Node生成indexをWorkerがloadし、各channelのMiniSearch順位をRRF60と固定weightで統合する。
+navigateはexact title → prefix → others、exploreはexact title → others。explore prefix昇格はない。
+main coreはURL検証・Q/F tag counts・AND/OR・date-desc・limit・responseを所有し、lexical再採点を行わない。
 
-## Score Fields
+## Passage Owners
 
-- `sourceReliabilityScore`: sourceの信頼度。
-- `matchEvidenceScore`: queryと候補の一致根拠。
-- `titleScore`: title一致。
-- `pathScore`: path / label一致。
-- `bodyScore`: 本文一致。
-- `tagScore`: tag filterとの一致。
-- `recencyScore`: 必要な場合だけ使う補助特徴量。
+`rankingBestPassageId`はdocument fusionへの寄与、`snippetPassageId`は表示選択を所有する。
+2語以上のexploreでは取得済みpassageの実表示240cp windowに全文が収まる句読点/改行unitを判定する。
+全query word canonical exact共起 → 最小unit長 → passage fusion → source order → passage ID。
+該当unitなしは従来ranking best、metadata-onlyはdescription/null。snippetからdocument scoreへ逆流しない。
+unit surfaceの必要条件が偽ならcanonical解析を省略できるが、substring一致だけで採用してはならない。
 
-## Stage Order
+## Failure / Diagnostics
 
-1. query normalization
-2. source retrieval
-3. candidate validation
-4. canonical URL normalization
-5. candidate merge
-6. score calculation
-7. stable sort
-8. response shaping
-9. diagnostic aggregation
+最終union型は`shared/search/search-types.ts`、Worker failure subsetは`lexical-protocol.ts`を正本とする。
 
-## Diagnostic Issue Codes
+- `lexical-load-failed` / `lexical-search-failed` / `lexical-worker-failed` / `lexical-timeout` / `lexical-analyzer-unavailable`: Worker終了、単独Catalog fallback。
+- `catalog-fetch-failed` / `catalog-normalize-failed`: Catalog失敗。両source不成立は`all-sources-failed`。
+- storeのみ失敗は`lexical-snippet-unavailable` issueとdegraded。lexical順位・countsを保持する。
+- Abort/staleはfailureへ変換せず結果をcommitしない。
 
-- `search-source-pagefind-failed`
-- `catalog-unavailable`
-- `invalid-candidate`
-- `invalid-url`
-- `duplicate-candidate`
-- `snippet-dropped`
-- `source-timeout`
-- `degraded-results`
-- `return-to-reading-adapter-missing`
+## SearchReason
 
-Issue codeはUI文言ではない。UIはdiagnosticsを表示材料として扱い、検索意味論を再定義しない。
-Return-to-readingに関するissue codeはadapter接続の診断であり、ranking profileやcandidate mergeのscoreへ影響させない。
+lexicalではtyped evidenceから確認できるtitle-exact/title-prefix/body-matchと選択済みtag-filter-matchだけを付ける。
+証明できないtitle-token-coverage/path-match/keyword-matchは省略する。
+`catalog-fallback`はlexical経路では付けず、成功したCatalog fallback itemにだけ付与する。
+Catalogの旧metadata照合・score helperはfallback内部に限定し、新profileのfusionと混ぜない。
+
+診断issueはUI文言ではない。UIやreturn-to-reading adapterは検索のscoreやsource判断を再定義しない。

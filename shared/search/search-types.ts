@@ -1,6 +1,6 @@
 export type SearchMode = 'navigate' | 'explore';
 
-export type SearchSourceKind = 'pagefind' | 'catalog';
+export type SearchSourceKind = 'lexical' | 'catalog';
 
 export type SearchReturnToReadingEventName = 'rouault-search:return-to-reading';
 
@@ -15,9 +15,7 @@ export type SearchTagMode = 'or' | 'and';
 export type SearchSortMode = 'relevance' | 'date-desc';
 
 export type SearchFailureKind =
-  | 'pagefind-load-failed'
-  | 'pagefind-search-failed'
-  | 'pagefind-filter-read-failed'
+  | import('./lexical-protocol.js').WorkerFailureKind
   | 'catalog-fetch-failed'
   | 'catalog-normalize-failed'
   | 'all-sources-failed';
@@ -42,6 +40,7 @@ export type SearchDiagnosticIssueCode =
   | 'catalog-path-url-mismatch'
   | 'invalid-catalog-item'
   | 'source-degraded'
+  | 'lexical-snippet-unavailable'
   | 'source-failed';
 
 import type { SearchCanonicalPathname, SearchRenderHref } from './document-url.js';
@@ -49,7 +48,7 @@ export type { SearchCanonicalPathname, SearchRenderHref } from './document-url.j
 
 export type SearchStateUrl = string;
 
-export type SearchRankingProfileId = 'rouault-search-v1';
+export type SearchRankingProfileId = 'rouault-search-v3';
 
 export type SearchTokenizerPolicyId = 'ja-word-v1' | 'generic-whitespace-v1';
 

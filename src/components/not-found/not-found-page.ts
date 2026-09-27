@@ -1,4 +1,6 @@
 import { escapeHtmlText, serializeHtmlAttributes } from '../../../src/layouts/html-output.js';
+import type { SiteUrlContext } from '../../../shared/site/site-url-context.js';
+import { applyBasePathToRenderHref } from '../../../shared/url/normalize-rouault-url.js';
 
 export const SEARCH_PAGE_HREF = '/search/';
 export const ABOUT_PAGE_HREF = '/about/';
@@ -11,6 +13,7 @@ export const NOT_FOUND_PAGE_META_DESCRIPTION =
 
 export interface BuildNotFoundPageMarkupOptions {
   requestedPath?: string;
+  siteUrlContext?: SiteUrlContext;
 }
 
 const renderRequestedPath = (requestedPath: string): string => {
@@ -32,6 +35,13 @@ const renderRequestedPath = (requestedPath: string): string => {
 };
 
 export const buildNotFoundPageMarkup = (options: BuildNotFoundPageMarkupOptions = {}): string => {
+  const href = (canonicalPathname: string): string =>
+    options.siteUrlContext
+      ? applyBasePathToRenderHref({
+          pathname: canonicalPathname,
+          siteUrlContext: options.siteUrlContext,
+        })
+      : canonicalPathname;
   const requestedPath = options.requestedPath?.trim() ?? '';
   const hostAttributes = serializeHtmlAttributes([
     { name: 'data-not-found-page', value: true, kind: 'boolean' },
@@ -220,13 +230,13 @@ export const buildNotFoundPageMarkup = (options: BuildNotFoundPageMarkupOptions 
       <nav class="not-found-page-fallback__actions" aria-label="404 navigation">
         <a
           class="not-found-page-fallback__link not-found-page-fallback__link--primary"
-          href="${SEARCH_PAGE_HREF}"
+          href="${href(SEARCH_PAGE_HREF)}"
           data-link-kind="internal-document"
           data-link-surface="control"
         >
           検索ページへ
         </a>
-        <a class="not-found-page-fallback__link" href="${ABOUT_PAGE_HREF}" data-link-kind="internal-document" data-link-surface="control">
+        <a class="not-found-page-fallback__link" href="${href(ABOUT_PAGE_HREF)}" data-link-kind="internal-document" data-link-surface="control">
           このサイトについて
         </a>
       </nav>

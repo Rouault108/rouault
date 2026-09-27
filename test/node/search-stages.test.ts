@@ -8,7 +8,7 @@ import {
 } from '../../src/search/core/stages/counts-and-diagnostics.js';
 import { runQueryPreparationStage } from '../../src/search/core/stages/query-preparation.js';
 import { runRankingAndSortingStage } from '../../src/search/core/stages/ranking-and-sorting.js';
-import { runSourceFederationStage } from '../../src/search/core/stages/source-federation.js';
+
 import {
   createSearchCanonicalPathname,
   type SearchCanonicalPathname,
@@ -95,37 +95,6 @@ describe('search-stages', () => {
     expect(output.preparedQuery.tokens).to.deep.equal(['rouault', 'search']);
   });
 
-  it('source-federation stage は source batch を統合すること', async () => {
-    const prepared = runQueryPreparationStage({
-      request: {
-        mode: 'explore',
-        q: 'router',
-        tags: [],
-        tagMode: 'or',
-        sort: 'relevance',
-      },
-      nowUtcMs: 123,
-    });
-
-    const result = await runSourceFederationStage({
-      ...prepared,
-      loadPagefind: () =>
-        Promise.resolve({
-          filters: () => Promise.resolve({}),
-          search: () =>
-            Promise.resolve({
-              results: [],
-              unfilteredResultCount: 0,
-              totalFilters: { genre: {} },
-            }),
-        }),
-      loadSearchCatalog: () => Promise.resolve([]),
-      siteUrlContext: DEFAULT_SITE_URL_CONTEXT,
-    });
-
-    expect(result.batches.map((batch) => batch.source)).to.deep.equal(['pagefind', 'catalog']);
-  });
-
   it('candidate-validation stage は source 横断の URL 不変条件だけを担うこと', () => {
     const prepared = runQueryPreparationStage({
       request: {
@@ -182,7 +151,7 @@ describe('search-stages', () => {
       ...prepared,
       batches: [
         {
-          source: 'pagefind',
+          source: 'catalog',
           status: 'active',
           capabilities: {
             providesBodyEvidence: true,
@@ -195,7 +164,7 @@ describe('search-stages', () => {
             createCandidate({
               canonicalPathname: canonicalPathname('/notes/router/'),
               title: 'Router 設計メモ',
-              matchedSources: ['pagefind'],
+              matchedSources: ['catalog'],
               description: 'Pagefind description',
             }),
           ],
@@ -226,7 +195,7 @@ describe('search-stages', () => {
     const merged = runCandidateMergeStage(validated);
 
     expect(merged.mergedCandidates).to.have.length(1);
-    expect(merged.mergedCandidates[0]?.matchedSources).to.deep.equal(['pagefind', 'catalog']);
+    expect(merged.mergedCandidates[0]?.matchedSources).to.deep.equal(['catalog']);
     expect(merged.mergedCandidates[0]?.description).to.equal('Pagefind description');
   });
 

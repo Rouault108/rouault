@@ -3,6 +3,7 @@ import {
   NOT_FOUND_PAGE_META_DESCRIPTION,
   NOT_FOUND_PAGE_TITLE,
 } from '@/components/not-found/not-found-page';
+import type { SiteUrlContext } from '../shared/site/site-url-context.js';
 
 export class NotFoundPageTemplate {
   data() {
@@ -14,8 +15,8 @@ export class NotFoundPageTemplate {
     };
   }
 
-  render() {
-    return buildNotFoundPageMarkup();
+  render(data: { siteUrlContext: SiteUrlContext }) {
+    return buildNotFoundPageMarkup({ siteUrlContext: data.siteUrlContext });
   }
 }
 

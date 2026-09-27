@@ -75,7 +75,7 @@ const validPayload = (overrides: Record<string, unknown> = {}) => ({
   mode: 'explore',
   items: [validItem()],
   total: 1,
-  rankingProfileId: 'rouault-search-v1',
+  rankingProfileId: 'rouault-search-v3',
   tagCounts: { alpha: 1 },
   allTagCounts: { alpha: 1, beta: 3 },
   diagnostics: validDiagnostics,

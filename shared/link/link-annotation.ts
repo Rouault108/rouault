@@ -227,7 +227,7 @@ export const classifyLinkHref = (
       'currentUrl must be a same-origin absolute URL inside SiteUrlContext.basePath.',
     );
   }
-  const resolved = normalizeRouaultUrl(new URL(sanitizedHref, base));
+  const resolved = normalizeRouaultUrl(new URL(sanitizedHref, base), options.siteUrlContext);
   if (resolved.protocol === 'mailto:' || resolved.protocol === 'tel:')
     return annotation({
       rawHref: options.href,

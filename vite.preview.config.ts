@@ -1,5 +1,6 @@
 import { defineConfig, type Connect, type ViteDevServer } from 'vite';
 import { resolveTrailingSlashRewrite } from './shared/navigation/trailing-slash-rewrite.js';
+import { resolveDevelopmentSiteUrlContext } from './build/site/site-url-context.js';
 
 const registerTrailingSlashRewrite = (server: ViteDevServer): void => {
   const middleware: Connect.NextHandleFunction = (req, _res, next) => {
@@ -22,6 +23,7 @@ const registerTrailingSlashRewrite = (server: ViteDevServer): void => {
 };
 
 export default defineConfig({
+  base: `${resolveDevelopmentSiteUrlContext().basePath}/`,
   appType: 'mpa',
   plugins: [
     {

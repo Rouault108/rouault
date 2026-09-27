@@ -16,7 +16,7 @@ const staticResponse: ExploreSearchResponse = {
   mode: 'explore',
   items: [],
   total: 0,
-  rankingProfileId: 'rouault-search-v1',
+  rankingProfileId: 'rouault-search-v3',
   diagnostics: {
     degraded: false,
     activeSources: ['catalog'],
@@ -169,7 +169,7 @@ describe('search-page-enhancer', () => {
     queryInput.value = 'Router';
     queryInput.dispatchEvent(new Event('input', { bubbles: true }));
     expect(queryClear?.hidden).to.equal(false);
-    expect(location.search).to.contain('q=router');
+    expect(location.search).to.contain('q=Router');
 
     musicCheckbox.checked = true;
     musicCheckbox.dispatchEvent(new Event('change', { bubbles: true }));
@@ -269,7 +269,11 @@ describe('search-page-enhancer', () => {
     expect(page?.querySelector<HTMLInputElement>('[data-search-query-input]')?.disabled).to.equal(
       true,
     );
-    expect(page?.querySelector<HTMLElement>('[data-search-choice-menu="sort"] summary')?.getAttribute('aria-disabled')).to.equal('true');
+    expect(
+      page
+        ?.querySelector<HTMLElement>('[data-search-choice-menu="sort"] summary')
+        ?.getAttribute('aria-disabled'),
+    ).to.equal('true');
     expect(page?.querySelector<HTMLInputElement>('[data-search-sort-value]')?.disabled).to.equal(
       false,
     );
@@ -374,7 +378,7 @@ describe('search-page-enhancer', () => {
       query.value = 'Router';
       query.dispatchEvent(new Event('input', { bubbles: true }));
       expect(query.value).to.equal('Router');
-      expect(new URL(location.href).searchParams.get('q')).to.equal('router');
+      expect(new URL(location.href).searchParams.get('q')).to.equal('Router');
       expect(replaceCount).to.equal(1);
       expect(requests).to.have.length(0);
       await waitForDebounce();
@@ -397,7 +401,7 @@ describe('search-page-enhancer', () => {
         { q: 'Router', tags: [], tagMode: 'or', sort: 'relevance' },
         context,
       ),
-    ).to.equal('/base/search/?q=router');
+    ).to.equal('/base/search/?q=Router');
     expect(
       buildSearchPageHistoryHref(
         { q: '', tags: ['music'], tagMode: 'or', sort: 'relevance' },
@@ -566,13 +570,19 @@ describe('search-page-enhancer', () => {
     ).to.equal(true);
   });
 
-  it('canonical state 比較は query と tag の表記差を吸収すること', () => {
+  it('state比較はtrimとtag表記差を吸収し、queryの大小文字を区別すること', () => {
     expect(
       areSearchStatesCanonicallyEqual(
         { q: ' Router ', tags: [' Music ', 'jazz'], tagMode: 'or', sort: 'relevance' },
-        { q: 'router', tags: ['JAZZ', 'music', 'music'], tagMode: 'or', sort: 'relevance' },
+        { q: 'Router', tags: ['JAZZ', 'music', 'music'], tagMode: 'or', sort: 'relevance' },
       ),
     ).to.equal(true);
+    expect(
+      areSearchStatesCanonicallyEqual(
+        { q: 'LangVersion', tags: [], tagMode: 'or', sort: 'relevance' },
+        { q: 'langversion', tags: [], tagMode: 'or', sort: 'relevance' },
+      ),
+    ).to.equal(false);
   });
 
   it('新しい検索と dispose で in-flight を abort し、stale result を破棄すること', async () => {

@@ -169,13 +169,13 @@ const validateReasons = (value: unknown): SearchReason[] | null => {
       return null;
     }
     const source = reason['source'];
-    if (source !== undefined && source !== 'catalog' && source !== 'pagefind') {
+    if (source !== undefined && source !== 'catalog' && source !== 'lexical') {
       return null;
     }
     reasons.push({
       kind: reason['kind'],
       ...(tokens !== undefined ? { tokens } : {}),
-      ...(source === 'catalog' || source === 'pagefind' ? { source } : {}),
+      ...(source === 'catalog' || source === 'lexical' ? { source } : {}),
     });
   }
 
@@ -205,6 +205,7 @@ const SEARCH_DIAGNOSTIC_ISSUE_CODES = [
   'catalog-path-url-mismatch',
   'invalid-catalog-item',
   'source-degraded',
+  'lexical-snippet-unavailable',
   'source-failed',
 ] as const satisfies readonly SearchDiagnosticIssueCode[];
 
@@ -224,12 +225,14 @@ const SEARCH_DIAGNOSTIC_STAGES = [
   'navigate',
 ] as const satisfies readonly SearchDiagnosticStage[];
 
-const SEARCH_SOURCE_KINDS = ['pagefind', 'catalog'] as const satisfies readonly SearchSourceKind[];
+const SEARCH_SOURCE_KINDS = ['lexical', 'catalog'] as const satisfies readonly SearchSourceKind[];
 
 const SEARCH_FAILURE_KINDS = [
-  'pagefind-load-failed',
-  'pagefind-search-failed',
-  'pagefind-filter-read-failed',
+  'lexical-load-failed',
+  'lexical-worker-failed',
+  'lexical-timeout',
+  'lexical-analyzer-unavailable',
+  'lexical-search-failed',
   'catalog-fetch-failed',
   'catalog-normalize-failed',
   'all-sources-failed',
@@ -494,7 +497,7 @@ export const parseStaticExploreSearchResponseJson = (options: {
     return { ok: false, reason: 'invalid-static-response-total' };
   }
 
-  if (options.value['rankingProfileId'] !== 'rouault-search-v1') {
+  if (options.value['rankingProfileId'] !== 'rouault-search-v3') {
     options.diagnostics.addIssue({
       code: 'invalid-static-response-schema',
       artifactSource: 'static-explore-response-json',
@@ -693,7 +696,7 @@ export const parseStaticExploreSearchResponseJson = (options: {
     mode: 'explore',
     items,
     total: items.length,
-    rankingProfileId: 'rouault-search-v1',
+    rankingProfileId: 'rouault-search-v3',
     tagCounts: shouldUseRawCountMaps ? (rawTagCounts ?? fallbackCountMap) : fallbackCountMap,
     allTagCounts: shouldUseRawCountMaps ? (rawAllTagCounts ?? fallbackCountMap) : fallbackCountMap,
     diagnostics,

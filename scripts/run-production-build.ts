@@ -9,6 +9,7 @@ import { assertProductionCssArtifacts } from './assert-production-css-artifacts.
 import { assertProductionFontAssets } from './assert-production-font-assets.js';
 import { assertProductionHtmlContracts } from './assert-production-html-contracts.js';
 import { assertProductionSearchArtifacts } from './assert-production-search-artifacts.js';
+import { assertProductionLexicalArtifacts } from './assert-production-lexical-artifacts.js';
 import { assertProductionSiteUrlContext } from './assert-production-site-url-context.js';
 import {
   createPnpmInvocation,
@@ -153,6 +154,7 @@ try {
   await assertProductionSiteUrlContext();
   await assertProductionHtmlContracts();
   await assertProductionSearchArtifacts();
+  await assertProductionLexicalArtifacts();
 } catch (error) {
   console.error(
     '[production-build] production artifact assertion failed:',

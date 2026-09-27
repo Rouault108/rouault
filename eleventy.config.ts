@@ -1,5 +1,5 @@
 import path from 'node:path';
-import { copyFile } from 'node:fs/promises';
+import { copyFile, readFile, writeFile } from 'node:fs/promises';
 import type { UserConfig } from '@11ty/eleventy';
 import EleventyVitePlugin from '@11ty/eleventy-plugin-vite';
 import type { Connect, ViteDevServer } from 'vite';
@@ -15,6 +15,7 @@ import { createDevelopmentRouterArtifactMiddleware } from './build/dev/dev-route
 import { createDevelopmentInternalDocumentRouteManifestMiddleware } from './build/dev/dev-internal-document-route-manifest-middleware.js';
 import { createDevelopmentHtmlSiteUrlContextMiddleware } from './build/dev/dev-html-site-url-context-middleware.js';
 import { createDevelopmentSearchArtifactMiddleware } from './build/dev/dev-search-artifact-middleware.js';
+import { emitLexicalSite } from './build/search/emit-lexical-site.js';
 import { NOTO_SANS_JP_FONT_DIR_REPO_PATH } from './build/assets/static-font-assets.js';
 import { buildProductionInternalDocumentRouteSet } from './build/navigation/internal-document-routes.js';
 import { devBuildMetadata } from './build/dev/dev-build-metadata.js';
@@ -137,9 +138,12 @@ const registerDevelopmentSearchArtifacts = (server: ViteDevServer): void => {
 
 const copyStaticHostingArtifacts = async (): Promise<void> => {
   const distDir = path.resolve(process.cwd(), 'dist');
+  const { basePath } = resolveDevelopmentSiteUrlContext();
+  const headers = await readFile(path.resolve(process.cwd(), '_headers'), 'utf8');
 
   await Promise.all([
-    copyFile(path.resolve(process.cwd(), '_headers'), path.join(distDir, '_headers')),
+    // 配信pathとcache policyを同じbasePathに揃える。header値は変更しない。
+    writeFile(path.join(distDir, '_headers'), headers.replace(/^\//gm, `${basePath}/`)),
     copyFile(path.resolve(process.cwd(), '_redirects'), path.join(distDir, '_redirects')),
   ]);
 };
@@ -226,11 +230,15 @@ export default function configureEleventy(eleventyConfig: UserConfig) {
 
   eleventyConfig.on('eleventy.after', async () => {
     await copyStaticHostingArtifacts();
+    if (isServing)
+      await emitLexicalSite({ notes: loadNotesData(), outputDir: path.resolve('dist') });
   });
 
   if (isServing) {
     eleventyConfig.addPlugin(EleventyVitePlugin, {
       viteOptions: {
+        // 遅延Worker起動時の依存再最適化によるdocument reloadを防ぐ。
+        optimizeDeps: { include: ['@libraz/suzume', 'minisearch'] },
         clearScreen: false,
         plugins: [
           {

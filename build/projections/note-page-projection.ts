@@ -326,6 +326,7 @@ export function buildNotePageProjection(input: NotePageProjectionInput): NotePag
   const stateScopeId = DEFAULT_SIDEBAR_STATE_SCOPE_ID;
   const sidebarNavHtml = showSidebar
     ? renderNoteSidebarNav(input.navigation.sidebarRows, {
+        basePath: siteUrlContext.basePath,
         ariaLabel: 'ノートナビゲーション',
         sidebarId,
         topologyRevision: input.navigation.topologyRevision,
@@ -380,13 +381,18 @@ export function buildNotePageProjection(input: NotePageProjectionInput): NotePag
       headings,
       capabilities: tocCapabilities,
       contentRootId,
-      homeHref: '/',
+      homeHref: `${siteUrlContext.basePath}/`,
       shouldHydrate: shouldHydrateToc,
     },
     articleHeader: {
       heading: typeof input.note.title === 'string' ? input.note.title : '',
       ...(input.navigation.breadcrumbs.length > 0
-        ? { breadcrumbs: input.navigation.breadcrumbs }
+        ? {
+            breadcrumbs: input.navigation.breadcrumbs.map((item) => ({
+              ...item,
+              ...(item.href ? { href: `${siteUrlContext.basePath}${item.href}` } : {}),
+            })),
+          }
         : {}),
       ...(normalizedPublished !== null ? { published: normalizedPublished } : {}),
       ...(normalizedCreated !== null ? { created: normalizedCreated } : {}),

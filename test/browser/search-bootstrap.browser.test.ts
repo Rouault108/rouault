@@ -33,19 +33,17 @@ const createTestSearchCore = () =>
       siteUrlContext: DEFAULT_SITE_URL_CONTEXT,
     }),
     isInternalDocumentPathname: (pathname: string) => pathname.startsWith('/'),
-    testOnlyLoadPagefind: async () => ({
-      filters: async () => ({}),
-      search: async () => ({ results: [], unfilteredResultCount: 0 }),
-    }),
-    testOnlySearchCatalogFetcher: async () => ({
-      ok: true,
-      status: 200,
-      type: 'basic',
-      redirected: false,
-      headers: { get: (_name: string) => 'application/json; charset=utf-8' },
-      json: async () => [],
-      text: async () => '[]',
-    }),
+    testOnlyClient: {
+      search: async () => ({
+        candidates: [],
+        queryTokens: [],
+        traceSha256: 'a'.repeat(64),
+        metrics: {},
+      }),
+      dispose: () => {
+        /* fixtureにWorker資源はない */
+      },
+    },
   });
 
 const createTestRouteManifestState = () => ({
@@ -156,7 +154,7 @@ describe('search-bootstrap', () => {
           },
         ],
         total: 1,
-        rankingProfileId: 'rouault-search-v1',
+        rankingProfileId: 'rouault-search-v3',
         diagnostics: {
           degraded: false,
           activeSources: ['catalog'],
@@ -282,7 +280,7 @@ describe('search-bootstrap', () => {
           },
         ],
         total: 1,
-        rankingProfileId: 'rouault-search-v1',
+        rankingProfileId: 'rouault-search-v3',
         diagnostics: {
           degraded: false,
           activeSources: ['catalog'],
@@ -442,7 +440,7 @@ describe('search-bootstrap', () => {
       mode: 'navigate',
       items: [],
       total: 0,
-      rankingProfileId: 'rouault-search-v1',
+      rankingProfileId: 'rouault-search-v3',
       diagnostics: {
         degraded: false,
         activeSources: [],

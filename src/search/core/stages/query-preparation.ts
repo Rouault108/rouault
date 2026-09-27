@@ -1,7 +1,9 @@
 import { createDiagnostics } from '../../diagnostics.js';
-import { prepareSearchQuery } from '../../../../shared/search/query-preprocessor.js';
 import {
+  prepareSearchQuery,
   normalizeSearchQuery,
+} from '../../../../shared/search/query-preprocessor.js';
+import {
   normalizeSearchSort,
   normalizeSearchTags,
   normalizeSearchTagMode,

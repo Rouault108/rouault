@@ -1,7 +1,15 @@
 import { loadHomeData, type HomePageData } from './data/home.js';
-import { escapeHtmlText, serializeHtmlAttributes } from './layouts/html-output.js';
+import {
+  escapeHtmlAttribute,
+  escapeHtmlText,
+  serializeHtmlAttributes,
+} from './layouts/html-output.js';
+
+import type { SiteUrlContext } from '../shared/site/site-url-context.js';
+import { applyBasePathToRenderHref } from '../shared/url/normalize-rouault-url.js';
 
 interface HomePageTemplateData {
+  siteUrlContext?: SiteUrlContext;
   home?: HomePageData;
 }
 
@@ -13,11 +21,14 @@ const renderTime = (value: string | null): string =>
 const renderGenres = (genres: readonly string[]): string =>
   genres.length > 0 ? genres.map((genre) => escapeHtmlText(genre)).join(' / ') : '—';
 
-const renderHomeEntry = (entry: HomePageData['notes'][number]): string => `
+const renderHomeEntry = (
+  entry: HomePageData['notes'][number],
+  href: (pathname: string) => string,
+): string => `
   <li class="home-feed-item">
     <a${serializeHtmlAttributes([
       { name: 'class', value: 'home-entry' },
-      { name: 'href', value: entry.permalink },
+      { name: 'href', value: href(entry.permalink) },
       { name: 'data-link-kind', value: 'internal-document' },
       { name: 'data-link-surface', value: 'card' },
     ])}>
@@ -42,6 +53,10 @@ export class HomePageTemplate {
   }
 
   render(data: HomePageTemplateData) {
+    const href = (pathname: string): string =>
+      data.siteUrlContext
+        ? applyBasePathToRenderHref({ pathname, siteUrlContext: data.siteUrlContext })
+        : pathname;
     const home = data.home ?? loadHomeData();
     const visibleNoteCount = home.notes.length.toLocaleString('ja-JP');
     const publicNoteCount = home.publicNoteCount.toLocaleString('ja-JP');
@@ -60,11 +75,11 @@ export class HomePageTemplate {
             ])}>
               <span class="home-meta-item">最終更新 ${latestUpdatedDate}</span>
               <span class="home-meta-separator" aria-hidden="true">・</span>
-              <a class="home-meta-link link-text link-text--muted" href="/corpora/" data-link-kind="internal-document" data-link-surface="metadata">コーパスから辿る</a>
+              <a class="home-meta-link link-text link-text--muted" href="${escapeHtmlAttribute(href('/corpora/'))}" data-link-kind="internal-document" data-link-surface="metadata">コーパスから辿る</a>
               <span class="home-meta-separator" aria-hidden="true">・</span>
-              <a class="home-meta-link link-text link-text--muted" href="/search/" data-link-kind="internal-document" data-link-surface="metadata">検索する</a>
+              <a class="home-meta-link link-text link-text--muted" href="${escapeHtmlAttribute(href('/search/'))}" data-link-kind="internal-document" data-link-surface="metadata">検索する</a>
               <span class="home-meta-separator" aria-hidden="true">・</span>
-              <a class="home-meta-link link-text link-text--muted" href="/about/" data-link-kind="internal-document" data-link-surface="metadata">このサイトについて</a>
+              <a class="home-meta-link link-text link-text--muted" href="${escapeHtmlAttribute(href('/about/'))}" data-link-kind="internal-document" data-link-surface="metadata">このサイトについて</a>
             </p>
           </header>
 
@@ -77,7 +92,7 @@ export class HomePageTemplate {
               home.notes.length > 0
                 ? `
                 <ol class="home-feed-list">
-                  ${home.notes.map((entry) => renderHomeEntry(entry)).join('')}
+                  ${home.notes.map((entry) => renderHomeEntry(entry, href)).join('')}
                 </ol>
               `
                 : '<p class="home-empty">公開ノートはまだありません。</p>'

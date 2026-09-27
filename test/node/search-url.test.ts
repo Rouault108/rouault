@@ -15,9 +15,10 @@ import {
 } from '../../shared/search/search-url.js';
 
 describe('search-url', () => {
-  it('検索クエリを NFKC + ASCII lowercase で正規化すること', () => {
-    expect(normalizeSearchQuery('  Rouault   Search  ')).to.equal('rouault search');
-    expect(normalizeSearchQuery('ＡＢＣ　１２３')).to.equal('abc 123');
+  it('URL層はtrimだけを行いcanonical Analyzerへ元の文字境界を渡すこと', () => {
+    expect(normalizeSearchQuery('  Rouault   Search  ')).to.equal('Rouault   Search');
+    expect(normalizeSearchQuery('ＡＢＣ　１２３')).to.equal('ＡＢＣ　１２３');
+    expect(normalizeSearchQuery(' LangVersion ')).to.equal('LangVersion');
     expect(normalizeSearchQuery('   ')).to.equal('');
   });
 
@@ -44,7 +45,7 @@ describe('search-url', () => {
     );
 
     expect(state).to.deep.equal({
-      q: 'rouault search',
+      q: 'Rouault Search',
       tags: ['jazz', 'music'],
       tagMode: 'and',
       sort: 'date-desc',
@@ -70,7 +71,7 @@ describe('search-url', () => {
         tagMode: 'and',
         sort: 'date-desc',
       }),
-    ).to.equal('/search/?q=rouault+search&tag=jazz&tag=music&tagMode=and&sort=date-desc');
+    ).to.equal('/search/?q=Rouault+Search&tag=jazz&tag=music&tagMode=and&sort=date-desc');
     expect(
       buildSearchStateUrl({
         q: '',
@@ -104,7 +105,7 @@ describe('search-url', () => {
   it('SearchStateUrl の正規化は /search のみを対象にすること', () => {
     expect(
       normalizeSearchStateUrl('https://example.com/search/?q=Rouault%20Search&tag=music#hash'),
-    ).to.equal('/search/?q=rouault+search&tag=music');
+    ).to.equal('/search/?q=Rouault+Search&tag=music');
     expect(normalizeSearchStateUrl('https://example.com/tags/music/')).to.equal('/tags/music/');
     expect(normalizeSearchStateUrl('/tags/music/')).to.equal('/tags/music/');
     expect(normalizeSearchStateUrl('/tags/music')).to.equal('/search/');

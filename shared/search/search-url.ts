@@ -1,4 +1,3 @@
-import { normalizeSearchQuery as normalizePreparedSearchQuery } from './query-preprocessor.js';
 import type { SearchSortMode, SearchState, SearchStateUrl, SearchTagMode } from './search-types.js';
 
 export type { SearchSortMode, SearchState, SearchTagMode } from './search-types.js';
@@ -40,7 +39,8 @@ function parseSearchStateUrl(input: string | URL): ParsedSearchStateUrl {
 }
 
 export function normalizeSearchQuery(value: string): string {
-  return normalizePreparedSearchQuery(value);
+  // lexicalのcamelCase境界を失わない。Catalogの正規化はfallback owner内だけで行う。
+  return value.trim();
 }
 
 export function normalizeSearchSort(value: string): SearchSortMode {

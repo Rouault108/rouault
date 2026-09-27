@@ -3,7 +3,7 @@
 ## 1. Status
 
 - Type: Normative
-- Source of truth: `src/search/`、Pagefind integration、search tests
+- Source of truth: `shared/search/`、`src/search/lexical/`、build projection、search tests
 - Applies to: 検索意味論、責務境界、URL状態、縮退diagnostics
 - Non-goals: UI componentの視覚表現、詳細型一覧、ranking score詳細
 
@@ -42,10 +42,9 @@ SuzumeとMiniSearchのLICENSEも同じ静的資産集合に含める。
 
 検証入口は通常の`pnpm build`後の`pnpm verify:search-foundation`。
 現在のfinal HTMLを読み、`.generated/search-foundation/`だけへ生成して、再生成の決定性とloadを検証する。
-Stage 1基盤は実装済みである。production build / runtimeへの接続は未実施であり、
-以下のPagefind契約は切替まで有効である。
+Stage 1基盤は実装済みであり、Stage 4でproduction build / runtimeへ接続する。
 
-### Stage 2の直接target（production未接続）
+### Stage 4のproduction target（C1確認待ち）
 
 `src/search/lexical/`は採用済み`rouault-search-v3`のWorker、ranking/snippet、main lifetime、
 response、Catalog fallbackを所有する。`shared/search/lexical-ranking-profile.json`のconfig digestは
@@ -55,8 +54,11 @@ response、Catalog fallbackを所有する。`shared/search/lexical-ranking-prof
 
 protocol 1は全messageのgeneration/requestId/identityを検証し、終了済みrequest・旧generationはcommitしない。
 failure payloadの`message`には公開例外文ではなく`fetch` / `validate` / `normalize` / `rank`の固定stageだけを格納する。
-最終failure型・issueは`shared/search/lexical-response.ts`、wire型は`lexical-protocol.ts`に置く。
-旧Pagefind public型への統合はStage 4で行い、Stage 2ではproduction入口から新targetを呼ばない。
+最終failure型・issueは`shared/search/search-types.ts`、wire型は`lexical-protocol.ts`に置く。
+`lexical-response.ts`はpublic response型を再exportする。
+public型の正本は`shared/search/search-types.ts`。sourceは`lexical | catalog`、profileは`rouault-search-v3`。
+`src/search/core/search-core.ts`は新coreへ接続し、正常時のPagefind/Catalog federationと旧core再採点を行わない。
+Catalog用旧query/ranking stagesは単独fallback内に限定する。旧build資産・dependencyはC1後のDelete Gateまで保持する。
 
 artifact/body 15秒、Worker init/search各30秒、store 15秒、lexical全体45秒、Catalog 15秒を有限deadlineとする。
 timerの遅延があっても期限後のartifact bodyを採用しない。storeのみ失敗した場合は順位・score・countsを維持し、
@@ -86,7 +88,7 @@ P-labelの意味判定とD1・production移行の人間判断は、機械試験�
 
 - 検索コア、検索ソース層、UI層の分離。
 - `navigate` / `explore`の意味論。
-- Pagefindとcatalogの役割分担。
+- Worker lexical検索と単独Catalog fallbackの役割分担。
 - `canonicalPathname`と`SearchStateUrl`の区別。
 - Snippetの安全境界。
 - 検索失敗時の縮退運転とdiagnostics。
@@ -106,7 +108,7 @@ P-labelの意味判定とD1・production移行の人間判断は、機械試験�
 - User query。
 - Tag filter。
 - Search mode。
-- Pagefind source。
+- Lexical Worker source。
 - Catalog source。
 
 ### Outputs
@@ -128,6 +130,7 @@ P-labelの意味判定とD1・production移行の人間判断は、機械試験�
 - `canonicalPathname` / `SearchCanonicalPathname`はdocument重複判定と結果識別に使う。
 - `SearchStateUrl`は検索画面のquery / filter / mode stateを表す。
 - SearchStateUrl、SearchCanonicalPathname、SearchRenderHrefは分離して扱う。
+- URL/UI層のquery処理はtrimのみ。camelCaseを保持し、NFKC/word/gramはWorkerの共有Analyzerに委ねる。
 - SearchCanonicalPathnameは検索結果のdocument重複判定・結果識別用canonicalである。
 - SearchCanonicalPathnameはSearchStateUrlではなく、note permalinkでもない。
 - どのrouteを検索対象documentとして採用するかは、検索index生成・内部document判定側の責務である。
@@ -169,8 +172,8 @@ P-labelの意味判定とD1・production移行の人間判断は、機械試験�
 
 ## 5. Failure Semantics
 
-- Pagefindが使えない場合、可能ならcatalogで縮退する。
-- Catalogが欠落した場合、Pagefindの範囲で検索を継続できる。
+- Lexical failure時だけCatalogで縮退する。正常0件・metadata-only一致ではCatalogを起動しない。
+- Catalogも失敗した場合は`all-sources-failed`。caller Abort/staleではfallbackせずcommitもしない。
 - 不正候補、URL正規化失敗、source欠落はdiagnosticsとして観測可能にする。
 - Degraded diagnosticsはUI表示の材料であり、UIは独自に検索意味論を再計算しない。
 
@@ -178,7 +181,9 @@ P-labelの意味判定とD1・production移行の人間判断は、機械試験�
 
 ### Build-time
 
-- Pagefind indexとcatalogを生成する。
+- final HTML完成後にNodeでdocument/passage index、store、provider/config、LICENSE、manifestとCatalogを生成する。
+- devもEleventy出力後に同じ生成ownerを使い、queryごとのserver検索を持たない。
+- hash付きassetはimmutable、manifest/Catalogは再検証可能とし、basePathを一度だけ付与する。
 
 ### SSR
 

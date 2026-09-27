@@ -1,5 +1,6 @@
 import path from 'node:path';
 import { readFile } from 'node:fs/promises';
+import { resolveDevelopmentSiteUrlContext } from '../site/site-url-context.js';
 
 export interface ClientBundleData {
   scriptSrc: string;
@@ -17,7 +18,8 @@ const MANIFEST_PATH = path.resolve(process.cwd(), '.generated/client/.vite/manif
 const MANIFEST_SCRIPT_KEY = 'src/client.ts';
 const MANIFEST_STYLE_KEY = 'src/assets/css/main.css';
 
-const toPublicPath = (assetPath: string): string => `/${assetPath.replace(/^\/+/, '')}`;
+const toPublicPath = (assetPath: string): string =>
+  `${resolveDevelopmentSiteUrlContext().basePath}/${assetPath.replace(/^\/+/, '')}`;
 
 const collectStyleSrcs = (
   scriptEntry: ViteManifestEntry | undefined,

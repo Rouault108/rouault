@@ -417,6 +417,7 @@ export function initSearchUnavailable(
 }
 
 export function resetSearchBootstrapForTest(): void {
+  initializedSearchCore?.dispose?.();
   cleanupSearchQueryRuntime?.();
   cleanupSearchQueryRuntime = null;
   bootstrapListenerController?.abort();

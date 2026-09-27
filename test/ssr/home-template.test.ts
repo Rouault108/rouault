@@ -47,6 +47,28 @@ const textContent = (node: ParentLike): string =>
     .join('');
 
 describe('HomePageTemplate', () => {
+  it('basePath付き検索導線と本文リンクを出力すること', () => {
+    const rendered = new HomePageTemplate().render({
+      siteUrlContext: { siteOrigin: 'https://example.com', basePath: '/nested' },
+      home: {
+        publicNoteCount: 1,
+        latestUpdatedDate: null,
+        notes: [
+          {
+            title: 'Note',
+            permalink: '/notes/example/',
+            renderHref: '/nested/notes/example/',
+            summary: '',
+            date: null,
+            pathLabel: 'example',
+            genres: [],
+          },
+        ],
+      },
+    });
+    expect(rendered).toContain('href="/nested/search/"');
+    expect(rendered).toContain('href="/nested/notes/example/"');
+  });
   it('静かなトップページの静的マークアップを描画すること', () => {
     const template = new HomePageTemplate();
     const rendered = template.render({

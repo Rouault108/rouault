@@ -7,6 +7,33 @@
 /pagefind/*
   Cache-Control: public, max-age=31536000, immutable
 
+/search/manifest.json
+  Cache-Control: public, max-age=0, must-revalidate
+
+/search-catalog.json
+  Cache-Control: public, max-age=0, must-revalidate
+
+/search/document.*
+  Cache-Control: public, max-age=31536000, immutable
+
+/search/passage.*
+  Cache-Control: public, max-age=31536000, immutable
+
+/search/store.*
+  Cache-Control: public, max-age=31536000, immutable
+
+/search/suzume.*
+  Cache-Control: public, max-age=31536000, immutable
+
+/search/provider-config.*
+  Cache-Control: public, max-age=31536000, immutable
+
+/search/suzume-LICENSE.*
+  Cache-Control: public, max-age=31536000, immutable
+
+/search/minisearch-LICENSE.*
+  Cache-Control: public, max-age=31536000, immutable
+
 /*.html
   Cache-Control: public, max-age=0, must-revalidate
 

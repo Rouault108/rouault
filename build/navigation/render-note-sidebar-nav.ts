@@ -19,15 +19,20 @@ const renderDisclosureIcon = (): string =>
 const renderRows = (
   rows: readonly SidebarNavRow[],
   groupIdPrefix: SidebarGroupIdPrefix,
+  basePath: string,
 ): string => {
   if (rows.length === 0) {
     throw new Error('[navigation] present sidebar nav must contain at least one row.');
   }
 
-  return `<ul>${rows.map((row) => renderRow(row, groupIdPrefix)).join('')}</ul>`;
+  return `<ul>${rows.map((row) => renderRow(row, groupIdPrefix, basePath)).join('')}</ul>`;
 };
 
-const renderRow = (row: SidebarNavRow, groupIdPrefix: SidebarGroupIdPrefix): string => {
+const renderRow = (
+  row: SidebarNavRow,
+  groupIdPrefix: SidebarGroupIdPrefix,
+  basePath: string,
+): string => {
   const baseAttributes = [
     `data-node-id="${escapeHtml(row.id)}"`,
     `data-node-kind="${escapeHtml(row.kind)}"`,
@@ -47,7 +52,7 @@ const renderRow = (row: SidebarNavRow, groupIdPrefix: SidebarGroupIdPrefix): str
     const currentAttribute = row.isCurrent ? ' aria-current="page"' : '';
     return [
       `<li ${baseAttributes}>`,
-      `<a data-sidebar-nav-control data-sidebar-nav-link href="${escapeHtml(href)}" data-link-kind="internal-document" data-link-surface="navigation"${currentAttribute}>`,
+      `<a data-sidebar-nav-control data-sidebar-nav-link href="${escapeHtml(basePath + href)}" data-link-kind="internal-document" data-link-surface="navigation"${currentAttribute}>`,
       `<span data-sidebar-nav-label>${escapeHtml(row.label)}</span>`,
       `</a>`,
       `</li>`,
@@ -64,7 +69,7 @@ const renderRow = (row: SidebarNavRow, groupIdPrefix: SidebarGroupIdPrefix): str
     `<span data-sidebar-nav-label>${escapeHtml(row.label)}</span>`,
     renderDisclosureIcon(),
     `</summary>`,
-    `<ul id="${escapeHtml(groupId)}">${row.children.map((child) => renderRow(child, groupIdPrefix)).join('')}</ul>`,
+    `<ul id="${escapeHtml(groupId)}">${row.children.map((child) => renderRow(child, groupIdPrefix, basePath)).join('')}</ul>`,
     `</details>`,
     `</li>`,
   ].join('');
@@ -74,6 +79,7 @@ export const renderNoteSidebarNav = (
   rows: readonly SidebarNavRow[],
   options: {
     ariaLabel?: string;
+    basePath?: string;
     sidebarId: string;
     topologyRevision: string;
     groupIdPrefix: SidebarGroupIdPrefix;
@@ -85,5 +91,5 @@ export const renderNoteSidebarNav = (
     throw new Error('[navigation] renderNoteSidebarNav requires a non-empty sidebarId.');
   }
 
-  return `<nav data-sidebar-nav aria-label="${escapeHtml(ariaLabel)}" data-sidebar-id="${escapeHtml(sidebarId)}" data-topology-revision="${escapeHtml(options.topologyRevision)}">${renderRows(rows, options.groupIdPrefix)}</nav>`;
+  return `<nav data-sidebar-nav aria-label="${escapeHtml(ariaLabel)}" data-sidebar-id="${escapeHtml(sidebarId)}" data-topology-revision="${escapeHtml(options.topologyRevision)}">${renderRows(rows, options.groupIdPrefix, options.basePath ?? '')}</nav>`;
 };
