@@ -49,16 +49,16 @@ const paths = (page: Page) =>
       basePath,
     );
 
-test('production entry preserves all 30 queries without normal Pagefind or Catalog queries', async ({
-  page,
-}) => {
-  test.setTimeout(120000);
-  const requests: string[] = [];
-  page.on('request', (request) => requests.push(new URL(request.url()).pathname));
-  await ready(page);
-  for (const query of golden.queries) {
+// query ごとに独立した期限と browser context を持たせ、前の query の所要時間を累積させない。
+for (const query of golden.queries) {
+  test(`production entry preserves ${query.id} without normal Pagefind or Catalog queries`, async ({
+    page,
+  }) => {
+    const requests: string[] = [];
+    page.on('request', (request) => requests.push(new URL(request.url()).pathname));
     const expected = expectedPaths(query.id);
     if (query.mode === 'navigate') {
+      await ready(page);
       const actual = await page.evaluate(
         (q) =>
           new Promise<string[]>((resolve, reject) => {
@@ -104,31 +104,36 @@ test('production entry preserves all 30 queries without normal Pagefind or Catal
       await ready(page, `/search/?${params}`);
       await expect.poll(() => paths(page), { message: query.id, timeout: 15000 }).toEqual(expected);
     }
-  }
-  expect(
-    requests.filter((path) => path.includes('/pagefind/') || path.endsWith('/search-catalog.json')),
-  ).toEqual([]);
-  expect(requests.some((path) => path.endsWith('/search/manifest.json'))).toBe(true);
-  expect(requests.some((path) => /\/search\/suzume\..*\.wasm$/u.test(path))).toBe(true);
-});
+    expect(
+      requests.filter(
+        (path) => path.includes('/pagefind/') || path.endsWith('/search-catalog.json'),
+      ),
+    ).toEqual([]);
+    expect(requests.some((path) => path.endsWith('/search/manifest.json'))).toBe(true);
+    expect(requests.some((path) => /\/search\/suzume\..*\.wasm$/u.test(path))).toBe(true);
+  });
+}
 
-test('production failure invokes Catalog; store-only failure preserves lexical document order', async ({
-  page,
-}) => {
+test('production failure invokes Catalog', async ({ page }) => {
   await page.route('**/search/manifest.json', (route) => route.fulfill({ status: 404, body: '' }));
   const catalog = page.waitForRequest('**/search-catalog.json');
   // Catalogは本文語を検索しない。実Catalog titleにある語でfallbackを観測する。
   await ready(page, `/search/?q=${encodeURIComponent('言語バージョン・ビルド文脈・互換性')}`);
   await catalog;
-  await expect(page.locator('a.result-link').first()).toBeVisible();
-  await page.unroute('**/search/manifest.json');
+  await expect(page.locator('a.result-link').first()).toBeVisible({ timeout: 15000 });
+});
+
+test('store-only failure preserves lexical document order', async ({ page }) => {
   await page.route('**/search/store.*', (route) => route.fulfill({ status: 404, body: '' }));
+  const store = page.waitForRequest('**/search/store.*');
   const requests: string[] = [];
   page.on('request', (request) => requests.push(new URL(request.url()).pathname));
   const query = golden.queries.find((query) => query.id === 'Q-017');
   if (!query) throw new Error('Fixture');
   await ready(page, `/search/?q=${encodeURIComponent(query.q)}`);
-  await expect.poll(() => paths(page)).toEqual(expectedPaths(query.id));
+  await store;
+  // 正常検索と同じ待機予算で、cold Worker の結果と store-only 縮退を検証する。
+  await expect.poll(() => paths(page), { timeout: 15000 }).toEqual(expectedPaths(query.id));
   expect(
     requests.filter((path) => path.endsWith('/search-catalog.json') || path.includes('/pagefind/')),
   ).toEqual([]);
