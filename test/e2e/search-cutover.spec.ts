@@ -51,7 +51,7 @@ const paths = (page: Page) =>
 
 // query ごとに独立した期限と browser context を持たせ、前の query の所要時間を累積させない。
 for (const query of golden.queries) {
-  test(`production entry preserves ${query.id} without normal Pagefind or Catalog queries`, async ({
+  test(`search entry preserves ${query.id} without normal Pagefind or Catalog queries`, async ({
     page,
   }) => {
     const requests: string[] = [];
@@ -114,7 +114,7 @@ for (const query of golden.queries) {
   });
 }
 
-test('production failure invokes Catalog', async ({ page }) => {
+test('search failure invokes Catalog', async ({ page }) => {
   await page.route('**/search/manifest.json', (route) => route.fulfill({ status: 404, body: '' }));
   const catalog = page.waitForRequest('**/search-catalog.json');
   // Catalogは本文語を検索しない。実Catalog titleにある語でfallbackを観測する。
