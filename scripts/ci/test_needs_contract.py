@@ -493,6 +493,17 @@ class ValidateRequiredNeedsTest(unittest.TestCase):
 
 
 class ValidateDeploymentNeedsTest(unittest.TestCase):
+    def test_main_push_build_true_rejects_failed_deploy(self) -> None:
+        needs = {
+            "detect-changes": detect(True, False, True),
+            "ci-required": job("success"),
+            "deploy-production": job("failure"),
+        }
+        env = {"GITHUB_EVENT_NAME": "push", "GITHUB_REF": "refs/heads/main"}
+
+        with patch.dict("os.environ", with_needs(needs, env), clear=True):
+            self.assertEqual(validate_deployment_needs.main(), 1)
+
     def test_main_push_build_true_requires_deploy_success(self) -> None:
         needs = {
             "detect-changes": detect(True, False, True),

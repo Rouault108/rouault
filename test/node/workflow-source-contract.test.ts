@@ -1,12 +1,53 @@
 import { describe, expect, it } from 'vitest';
-import { mkdir, mkdtemp, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, readFile, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
+import { runInNewContext } from 'node:vm';
 
-import { assertWorkflowSourceContract } from '../../scripts/ci/assert-workflow-source-contract.js';
+import {
+  assertWorkflowSourceContract,
+  collectWorkflowUses,
+} from '../../scripts/ci/assert-workflow-source-contract.js';
 
 const actionName = 'actions/example';
 const reviewedCommitSha = '0123456789abcdef0123456789abcdef01234567';
+
+const repositoryWorkflowPath = '.github/workflows/ci-cd.yml';
+const writeMutatedWorkflow = async (mutate: (source: string) => string) => {
+  const root = await mkdtemp(path.join(os.tmpdir(), 'rouault-workflow-mutation-'));
+  const workflowPath = path.join(root, 'ci-cd.yml');
+  const source = await readFile(repositoryWorkflowPath, 'utf8');
+  const mutated = mutate(source);
+  expect(mutated).not.toBe(source);
+  await writeFile(workflowPath, mutated, 'utf8');
+  return { workflowPath };
+};
+
+const jobSteps = (source: string, job: string): readonly string[] => {
+  const jobSource = new RegExp(`^  ${job}:[\\s\\S]*?(?=^  [\\w-]+:|(?![\\s\\S]))`, 'mu').exec(
+    source,
+  )?.[0];
+  return (
+    jobSource
+      ?.split(/^ {4}steps:\r?\n/mu)[1]
+      ?.split(/^ {6}- /mu)
+      .slice(1) ?? []
+  );
+};
+
+const conditionHolds = (step: string, state: Readonly<Record<string, string>>): boolean => {
+  const condition = /^ {8}if: \$\{\{ (.*) \}\}$/mu.exec(step)?.[1] ?? '';
+  expect(condition).toContain('always()');
+  const expression = condition
+    .replace(/always\(\)/gu, 'true')
+    .replace(/(?:needs|steps)\.[\w.-]+/gu, (key) => {
+      expect(state[key], key).toBeDefined();
+      return JSON.stringify(state[key]);
+    });
+  const result: unknown = runInNewContext(expression, {}, { timeout: 100 });
+  expect(typeof result).toBe('boolean');
+  return result === true;
+};
 
 const writeWorkflowContractFixture = async (options: {
   readonly workflowUses?: string;
@@ -25,6 +66,7 @@ const writeWorkflowContractFixture = async (options: {
   readonly evidenceWorkflowUsesSha?: string;
   readonly readmeWorkflowUsesSha?: string;
   readonly deploymentDocsSource?: string;
+  readonly actionStepSource?: string;
 }) => {
   const root = await mkdtemp(path.join(os.tmpdir(), 'rouault-workflow-contract-'));
   const workflowPath = path.join(root, 'ci-cd.yml');
@@ -179,15 +221,29 @@ const writeWorkflowContractFixture = async (options: {
         ];
 
   await mkdir(snapshotDirectory, { recursive: true });
+  // binding fixtureでも実際のorchestration契約を満たし、Actionだけをlocal fixtureへ置き換える。
+  const repositoryWorkflow = await readFile('.github/workflows/ci-cd.yml', 'utf8');
+  const orchestrationJobs = [
+    'test-e2e-production',
+    'test-e2e-dev',
+    'verify-production-deployment',
+  ].map((job) => {
+    const source = new RegExp(`^  ${job}:[\\s\\S]*?(?=^  [\\w-]+:|(?![\\s\\S]))`, 'mu').exec(
+      repositoryWorkflow,
+    )?.[0];
+    if (source === undefined) throw new Error(`missing fixture job ${job}`);
+    return source.replace(/uses: /gu, 'uses: ./');
+  });
   await writeFile(
     workflowPath,
     [
       'jobs:',
       '  test:',
       '    steps:',
-      `      - uses: ${workflowUses}`,
+      options.actionStepSource ?? `      - uses: ${workflowUses}`,
       options.extraRun ? `      - run: ${options.extraRun}` : '',
       ...workflowDeploySteps,
+      ...orchestrationJobs,
       '',
     ].join('\n'),
     'utf8',
@@ -335,6 +391,265 @@ const writeWorkflowContractFixture = async (options: {
 };
 
 describe('workflow source contract', () => {
+  it('documents the implemented production build label resolution order', async () => {
+    const docs = await readFile('docs/guides/operations/deployment.md', 'utf8');
+    const section = docs.split('## Production Build Label')[1]?.split('\n## ')[0] ?? '';
+    const build = await readFile('scripts/run-production-build.ts', 'utf8');
+    expect(section).toContain('1. 明示された空でない`ROUAULT_BUILD_LABEL`');
+    expect(section).toContain('2. 空でない`GITHUB_SHA`の先頭7文字');
+    expect(section).toContain('3. `production local`');
+    expect(section).toContain('人間向け診断ラベル');
+    expect(section).toContain('`buildId`の代替ではない');
+    expect(section).toContain('`${GITHUB_SHA::7}`');
+    expect(section).not.toContain('未指定の場合、production buildは契約違反として失敗する');
+    expect(section).not.toContain('fallbackを使わない');
+    expect(build.indexOf("process.env['ROUAULT_BUILD_LABEL']")).toBeLessThan(
+      build.indexOf("process.env['GITHUB_SHA']"),
+    );
+    expect(build).toContain('return githubSha.slice(0, 7);');
+    expect(build).toContain("return 'production local';");
+    const workflow = await readFile(repositoryWorkflowPath, 'utf8');
+    expect(workflow).toContain('ROUAULT_BUILD_LABEL=${GITHUB_SHA::7}');
+  });
+
+  it('collects reordered, quoted, commented and local uses without reading block scalar text', () => {
+    const coordinate = `${actionName}@${reviewedCommitSha}`;
+    const source = [
+      `      - uses: ${coordinate}`,
+      '      - id: first',
+      `        uses: '${coordinate}' # reviewed`,
+      '      - name: named',
+      `        uses: "${coordinate}" # reviewed`,
+      '      - uses: ./local/action # local',
+      '      - run: |',
+      '          uses: ignored/action@v1',
+      '      - name: another',
+      `        uses: ${coordinate} # reviewed`,
+    ].join('\n');
+    expect(collectWorkflowUses(source)).toEqual([
+      coordinate,
+      coordinate,
+      coordinate,
+      './local/action',
+      coordinate,
+    ]);
+  });
+
+  it.each([
+    ['dash', '- uses: VALUE'],
+    ['id-first', '- id: first\n        uses: VALUE'],
+    ['name-first', '- name: named\n        uses: VALUE'],
+    ['single-quote', "- id: quoted\n        uses: 'VALUE' # reviewed"],
+    ['double-quote', '- name: quoted\n        uses: "VALUE" # reviewed'],
+  ])('validates full SHA and reviewed binding for %s scalars', async (_name, template) => {
+    for (const [sha, error] of [
+      ['v1.0.0', /full SHA pin/u],
+      ['1111111111111111111111111111111111111111', /missing matching reviewed evidence/u],
+    ] as const) {
+      const fixture = await writeWorkflowContractFixture({
+        actionStepSource: `      ${template.replace('VALUE', `${actionName}@${sha}`)}`,
+      });
+      await expect(assertWorkflowSourceContract(fixture)).rejects.toThrow(error);
+    }
+    const fixture = await writeWorkflowContractFixture({
+      actionStepSource: `      ${template.replace('VALUE', `${actionName}@${reviewedCommitSha}`)}`,
+    });
+    await expect(assertWorkflowSourceContract(fixture)).resolves.toBeDefined();
+  });
+
+  it.each([
+    'upload-r2-attempt-artifact',
+    'upload-media-delivery-attempt-artifact',
+    'upload-pages-deploy-diagnostic-artifact',
+    'upload-release-state-artifact',
+    'download-release-state',
+  ])('rejects tags and SHA drift in the formerly missed %s step', async (id) => {
+    for (const [replacement, error] of [
+      ['v1', /full SHA pin/u],
+      ['1111111111111111111111111111111111111111', /workflow unique external action count/u],
+    ] as const) {
+      const fixture = await writeMutatedWorkflow((source) =>
+        source.replace(
+          new RegExp(`(- id: ${id}\\r?\\n[\\s\\S]*?uses: [^@\\r\\n]+@)[0-9a-f]{40}`, 'u'),
+          `$1${replacement}`,
+        ),
+      );
+      await expect(assertWorkflowSourceContract(fixture)).rejects.toThrow(error);
+    }
+  });
+
+  it('keeps local action references out of external binding validation', async () => {
+    const fixture = await writeWorkflowContractFixture({
+      actionStepSource: `      - uses: ${actionName}@${reviewedCommitSha}\n      - id: local\n        uses: './local/action' # no external SHA`,
+    });
+    const report = await assertWorkflowSourceContract(fixture);
+    expect(report.workflowUses).toContain('./local/action');
+    expect(report.actionEvidence).toHaveLength(1);
+  });
+
+  it.each([
+    ['no-deploy', 'false', 'skipped', 'skipped', 'skipped', 'skipped', undefined],
+    [
+      'deployed',
+      'true',
+      'success',
+      'success',
+      'success',
+      'success',
+      'record-runtime-verification-success',
+    ],
+    [
+      'HTTP failure',
+      'true',
+      'success',
+      'success',
+      'success',
+      'failure',
+      'record-runtime-verification-failure',
+    ],
+    [
+      'deploy failure with evidence',
+      'true',
+      'failure',
+      'success',
+      'success',
+      'skipped',
+      'record-deploy-failure-state',
+    ],
+    [
+      'deploy skipped with evidence',
+      'true',
+      'skipped',
+      'success',
+      'success',
+      'skipped',
+      'record-deploy-failure-state',
+    ],
+    [
+      'deploy failure without artifact',
+      'true',
+      'failure',
+      'skipped',
+      'skipped',
+      'skipped',
+      'record-release-state-resolution-failed',
+    ],
+    [
+      'deploy skipped without artifact',
+      'true',
+      'skipped',
+      'skipped',
+      'skipped',
+      'skipped',
+      'record-release-state-resolution-failed',
+    ],
+    [
+      'download failure',
+      'true',
+      'success',
+      'failure',
+      'skipped',
+      'skipped',
+      'record-release-state-resolution-failed',
+    ],
+    [
+      'digest mismatch',
+      'true',
+      'success',
+      'success',
+      'failure',
+      'skipped',
+      'record-release-state-resolution-failed',
+    ],
+  ])(
+    'selects one evidence branch for %s even after an earlier failure',
+    async (_name, build, deploy, download, digest, runtime, expectedRecord) => {
+      const steps = jobSteps(
+        await readFile(repositoryWorkflowPath, 'utf8'),
+        'verify-production-deployment',
+      );
+      const state: Record<string, string> = {
+        'needs.detect-changes.outputs.build': build,
+        'needs.deploy-production.result': deploy,
+        'needs.deploy-production.outputs.release-state-artifact-id':
+          download === 'skipped' ? '' : '123',
+        'steps.download-release-state.outcome': download,
+        'steps.verify-release-state-digest.outcome': digest,
+        'steps.verify-runtime-artifacts.outcome': runtime,
+      };
+      const records = steps.filter((step) => step.startsWith('id: record-'));
+      const active = records.filter((step) => conditionHolds(step, state));
+      expect(active.map((step) => /^id: (.*)$/mu.exec(step)?.[1]?.trim())).toEqual(
+        expectedRecord ? [expectedRecord] : [],
+      );
+      const runtimeStep =
+        steps.find((step) => step.startsWith('id: verify-runtime-artifacts')) ?? '';
+      expect(conditionHolds(runtimeStep, state)).toBe(
+        build === 'true' && deploy === 'success' && download === 'success' && digest === 'success',
+      );
+      for (const record of records) {
+        const id = /^id: (.*)$/mu.exec(record)?.[1]?.trim() ?? '';
+        state[`steps.${id}.outcome`] = id === expectedRecord ? 'success' : 'skipped';
+      }
+      const upload =
+        steps.find((step) => step.includes('name: rouault-release-verification-state')) ?? '';
+      expect(conditionHolds(upload, state)).toBe(expectedRecord !== undefined);
+      if (build === 'false') {
+        for (const step of steps.slice(2, -1)) expect(conditionHolds(step, state)).toBe(false);
+      }
+    },
+  );
+
+  it.each([
+    [
+      "always() && needs.detect-changes.outputs.build == 'true'",
+      "needs.detect-changes.outputs.build == 'true'",
+      /evidence steps/u,
+    ],
+    ['digest-mismatch: error', 'digest-mismatch: warn', /fail closed/u],
+    ['hashlib.sha256(raw).hexdigest() != expected', 'False', /SHA-256 must be checked/u],
+    [
+      "steps.verify-runtime-artifacts.outcome != 'success'",
+      "steps.verify-runtime-artifacts.outcome == 'success'",
+      /mutually exclusive/u,
+    ],
+    ['test "$DEPLOYMENT_VALIDATION_OUTCOME" = "success"', 'true', /final deployment enforcement/u],
+    ['test "$RUNTIME_VERIFICATION_OUTCOME" = "success"', 'true', /final deployment enforcement/u],
+  ])('rejects deployment evidence or enforcement regression: %s', async (before, after, error) => {
+    const fixture = await writeMutatedWorkflow((source) => source.replace(before, after));
+    await expect(assertWorkflowSourceContract(fixture)).rejects.toThrow(error);
+  });
+
+  it.each(['production', 'dev'])(
+    'preserves only failed %s Playwright diagnostics',
+    async (target) => {
+      const steps = jobSteps(await readFile(repositoryWorkflowPath, 'utf8'), `test-e2e-${target}`);
+      const upload =
+        steps.find((step) => step.includes(`name: rouault-e2e-${target}-diagnostics`)) ?? '';
+      for (const outcome of ['success', 'failure', 'skipped', 'cancelled']) {
+        expect(conditionHolds(upload, { [`steps.playwright-${target}.outcome`]: outcome })).toBe(
+          outcome === 'failure',
+        );
+      }
+      for (const [before, after] of [
+        [`always() && steps.playwright-${target}.outcome == 'failure'`, 'failure()'],
+        ['retention-days: 7', 'retention-days: 30'],
+        ['            test-results/', '            test-results/\n            .env'],
+        [`id: playwright-${target}`, `id: playwright-${target}\n        continue-on-error: true`],
+        ['if-no-files-found: warn', 'if-no-files-found: error'],
+      ]) {
+        const fixture = await writeMutatedWorkflow((source) => {
+          const job = new RegExp(
+            `(^  test-e2e-${target}:[\\s\\S]*?)(?=^  [\\w-]+:|(?![\\s\\S]))`,
+            'mu',
+          );
+          return source.replace(job, (section) => section.replace(before ?? '', after ?? ''));
+        });
+        await expect(assertWorkflowSourceContract(fixture)).rejects.toThrow(/E2E diagnostics/u);
+      }
+    },
+  );
+
   it('pins external actions to reviewed Node 24 commit snapshots', async () => {
     const report = await assertWorkflowSourceContract();
 
@@ -342,6 +657,13 @@ describe('workflow source contract', () => {
     expect(report.actionEvidence.every((evidence) => evidence.runsUsing === 'node24')).toBe(true);
     expect(report.workflowPath).toBe('.github/workflows/ci-cd.yml');
     expect(report.wranglerVersion).toBe('4.100.0');
+    expect(report.workflowUses).toHaveLength(46);
+    const source = await readFile('.github/workflows/ci-cd.yml', 'utf8');
+    expect(source.match(/^[\t ]*(?:-[\t ]+)?uses:/gmu)).toHaveLength(46);
+    const reviewed = new Set(
+      report.actionEvidence.map((item) => `${item.actionName}@${item.reviewedCommitSha}`),
+    );
+    expect(report.workflowUses.every((use) => reviewed.has(use))).toBe(true);
   });
 
   it('rejects Node.js 20 Action runtime snapshots', async () => {

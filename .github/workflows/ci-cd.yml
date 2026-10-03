@@ -186,7 +186,19 @@ jobs:
       - run: corepack enable
       - run: pnpm install --frozen-lockfile
       - run: pnpm exec playwright install --with-deps
-      - run: pnpm run test:e2e:production
+      - id: playwright-production
+        run: pnpm run test:e2e:production
+      - name: preserve production E2E diagnostics
+        if: ${{ always() && steps.playwright-production.outcome == 'failure' }}
+        continue-on-error: true
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: rouault-e2e-production-diagnostics
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 7
+          if-no-files-found: warn
 
   test-e2e-dev:
     name: test-e2e-dev
@@ -209,7 +221,19 @@ jobs:
       - run: corepack enable
       - run: pnpm install --frozen-lockfile
       - run: pnpm exec playwright install --with-deps chromium
-      - run: pnpm run test:e2e:dev
+      - id: playwright-dev
+        run: pnpm run test:e2e:dev
+      - name: preserve dev E2E diagnostics
+        if: ${{ always() && steps.playwright-dev.outcome == 'failure' }}
+        continue-on-error: true
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: rouault-e2e-dev-diagnostics
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 7
+          if-no-files-found: warn
 
   build-production:
     name: build-production
@@ -415,29 +439,51 @@ jobs:
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
       - name: validate deployment result
+        id: validate-deployment-result
+        continue-on-error: true
         env:
           NEEDS_JSON: ${{ toJson(needs) }}
           GITHUB_EVENT_NAME: ${{ github.event_name }}
           GITHUB_REF: ${{ github.ref }}
         run: python3 scripts/ci/validate_deployment_needs.py
       - uses: pnpm/action-setup@0e279bb959325dab635dd2c09392533439d90093
+        if: ${{ always() && needs.detect-changes.outputs.build == 'true' }}
       - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e
+        if: ${{ always() && needs.detect-changes.outputs.build == 'true' }}
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: pnpm
       - run: corepack enable
+        if: ${{ always() && needs.detect-changes.outputs.build == 'true' }}
       - run: pnpm install --frozen-lockfile
+        if: ${{ always() && needs.detect-changes.outputs.build == 'true' }}
       - id: download-release-state
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
-        if: ${{ needs.deploy-production.outputs.release-state-artifact-id != '' }}
+        if: ${{ always() && needs.detect-changes.outputs.build == 'true' && needs.deploy-production.outputs.release-state-artifact-id != '' }}
         continue-on-error: true
         with:
           artifact-ids: ${{ needs.deploy-production.outputs.release-state-artifact-id }}
           path: .generated/deployment
           digest-mismatch: error
+      - id: verify-release-state-digest
+        if: ${{ always() && needs.detect-changes.outputs.build == 'true' && steps.download-release-state.outcome == 'success' }}
+        continue-on-error: true
+        env:
+          EXPECTED_RELEASE_STATE_SHA256: ${{ needs.deploy-production.outputs.release-state-sha256 }}
+        run: |
+          python3 - <<'PY'
+          import hashlib
+          import os
+          from pathlib import Path
+
+          raw = Path('.generated/deployment/release-attempt-final.json').read_bytes()
+          expected = os.environ.get('EXPECTED_RELEASE_STATE_SHA256', '').strip()
+          if expected and hashlib.sha256(raw).hexdigest() != expected:
+              raise SystemExit('release state SHA-256 mismatch')
+          PY
       - id: verify-runtime-artifacts
         name: verify production runtime artifacts over HTTP
-        if: ${{ needs.deploy-production.result == 'success' && steps.download-release-state.outcome == 'success' }}
+        if: ${{ always() && needs.detect-changes.outputs.build == 'true' && needs.deploy-production.result == 'success' && steps.download-release-state.outcome == 'success' && steps.verify-release-state-digest.outcome == 'success' }}
         continue-on-error: true
         env:
           ACTUAL_DEPLOYMENT_URL: ${{ needs.deploy-production.outputs.deployment-url }}
@@ -445,34 +491,43 @@ jobs:
           ROUAULT_BASE_PATH: ${{ vars.ROUAULT_BASE_PATH }}
         run: python3 scripts/ci/verify_production_artifacts_http.py
       - id: record-runtime-verification-success
-        if: ${{ needs.deploy-production.result == 'success' && steps.download-release-state.outcome == 'success' && steps.verify-runtime-artifacts.outcome == 'success' }}
+        if: ${{ always() && needs.detect-changes.outputs.build == 'true' && needs.deploy-production.result == 'success' && steps.download-release-state.outcome == 'success' && steps.verify-release-state-digest.outcome == 'success' && steps.verify-runtime-artifacts.outcome == 'success' }}
         env:
           EXPECTED_RELEASE_STATE_SHA256: ${{ needs.deploy-production.outputs.release-state-sha256 }}
           RUNTIME_VERIFICATION_STATUS: verified-by-production-runtime-artifacts
         run: pnpm exec tsx scripts/deploy/record-runtime-verification.ts
       - id: record-runtime-verification-failure
-        if: ${{ needs.deploy-production.result == 'success' && steps.download-release-state.outcome == 'success' && steps.verify-runtime-artifacts.outcome != 'success' }}
+        if: ${{ always() && needs.detect-changes.outputs.build == 'true' && needs.deploy-production.result == 'success' && steps.download-release-state.outcome == 'success' && steps.verify-release-state-digest.outcome == 'success' && steps.verify-runtime-artifacts.outcome != 'success' }}
         env:
           EXPECTED_RELEASE_STATE_SHA256: ${{ needs.deploy-production.outputs.release-state-sha256 }}
           RUNTIME_VERIFICATION_STATUS: verification-failed
         run: pnpm exec tsx scripts/deploy/record-runtime-verification.ts
       - id: record-deploy-failure-state
-        if: ${{ needs.deploy-production.result != 'success' && steps.download-release-state.outcome == 'success' }}
+        if: ${{ always() && needs.detect-changes.outputs.build == 'true' && needs.deploy-production.result != 'success' && steps.download-release-state.outcome == 'success' && steps.verify-release-state-digest.outcome == 'success' }}
         env:
           EXPECTED_RELEASE_STATE_SHA256: ${{ needs.deploy-production.outputs.release-state-sha256 }}
           RUNTIME_VERIFICATION_STATUS: verification-failed
         run: pnpm exec tsx scripts/deploy/record-runtime-verification.ts
       - id: record-release-state-resolution-failed
-        if: ${{ steps.download-release-state.outcome != 'success' }}
+        if: ${{ always() && needs.detect-changes.outputs.build == 'true' && (steps.download-release-state.outcome != 'success' || steps.verify-release-state-digest.outcome != 'success') }}
         env:
+          EXPECTED_RELEASE_STATE_SHA256: ${{ needs.deploy-production.outputs.release-state-sha256 }}
           RUNTIME_VERIFICATION_STATUS: release-state-resolution-failed
         run: pnpm exec tsx scripts/deploy/record-runtime-verification.ts
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
-        if: ${{ steps.record-runtime-verification-success.outcome == 'success' || steps.record-runtime-verification-failure.outcome == 'success' || steps.record-deploy-failure-state.outcome == 'success' || steps.record-release-state-resolution-failed.outcome == 'success' }}
+        if: ${{ always() && needs.detect-changes.outputs.build == 'true' && (steps.record-runtime-verification-success.outcome == 'success' || steps.record-runtime-verification-failure.outcome == 'success' || steps.record-deploy-failure-state.outcome == 'success' || steps.record-release-state-resolution-failed.outcome == 'success') }}
         with:
           name: rouault-release-verification-state
           path: .generated/deployment/release-verification-final.json
           include-hidden-files: true
-      - name: enforce production runtime verification
-        if: ${{ needs.deploy-production.result == 'success' }}
-        run: test "${{ steps.verify-runtime-artifacts.outcome }}" = "success"
+      - name: enforce production deployment verification
+        if: ${{ always() }}
+        env:
+          DEPLOYMENT_VALIDATION_OUTCOME: ${{ steps.validate-deployment-result.outcome }}
+          DEPLOYMENT_RESULT: ${{ needs.deploy-production.result }}
+          RUNTIME_VERIFICATION_OUTCOME: ${{ steps.verify-runtime-artifacts.outcome }}
+        run: |
+          test "$DEPLOYMENT_VALIDATION_OUTCOME" = "success"
+          if [ "$DEPLOYMENT_RESULT" = "success" ]; then
+            test "$RUNTIME_VERIFICATION_OUTCOME" = "success"
+          fi

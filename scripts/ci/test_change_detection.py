@@ -211,10 +211,49 @@ class ChangedFilesTest(unittest.TestCase):
             "diff",
             "-z",
             "--name-only",
+            "--no-renames",
             "base-sha",
             "head-sha",
             text=False,
         )
+
+    def test_rename_paths_preserve_both_responsibilities(self) -> None:
+        cases = [
+            ("src/old.ts", "docs/new.md", False, True, True),
+            ("src/old.ts", "content/new.md", True, True, True),
+            ("content/old.md", "docs/new.md", True, False, True),
+            ("docs/old.md", "content/new.md", True, False, True),
+        ]
+        for old_path, new_path, content, app, build in cases:
+            with self.subTest(old_path=old_path, new_path=new_path):
+                raw = f"{old_path}\0{new_path}\0".encode("utf-8")
+                with patch.object(change_detection, "run_git", return_value=raw):
+                    files = changed_files("base-sha", "head-sha")
+                self.assertEqual(files, sorted([old_path, new_path]))
+                self.assertEqual(
+                    classification_outputs(classify_files(files)),
+                    {"content": content, "app": app, "build": build},
+                )
+
+    def test_add_delete_and_unicode_paths_keep_null_delimited_contract(self) -> None:
+        cases = [
+            (["docs/added.md", "docs/deleted.md"], False, False, False),
+            (["content/added.md", "content/deleted.md"], True, False, True),
+            (["src/added.ts", "src/deleted.ts"], False, True, True),
+            (["_headers", "_redirects"], False, False, True),
+            (["unknown.file"], False, True, True),
+            (["src/日本語 file.ts", "content/空白 ノート.md"], True, True, True),
+        ]
+        for paths, content, app, build in cases:
+            with self.subTest(paths=paths):
+                raw = ("\0".join(paths) + "\0").encode("utf-8")
+                with patch.object(change_detection, "run_git", return_value=raw):
+                    files = changed_files("base-sha", "head-sha")
+                self.assertEqual(files, sorted(paths))
+                self.assertEqual(
+                    classification_outputs(classify_files(files)),
+                    {"content": content, "app": app, "build": build},
+                )
 
 
 class EntryPointAvailabilityTest(unittest.TestCase):

@@ -121,15 +121,19 @@ console.log(
 
 ## Production Build Label
 
-`pnpm build:production`はproduction build metadataとして`ROUAULT_BUILD_LABEL`を必須とする。未指定の場合、production buildは契約違反として失敗する。
+`pnpm build:production`は、`scripts/run-production-build.ts`でbuild labelを次の順序で解決する。
 
-ローカルでproduction buildを直接実行する場合は、成果物の由来を説明できる値を指定する。通常はGit commitの短縮SHAを用いる。
+1. 明示された空でない`ROUAULT_BUILD_LABEL`
+2. 空でない`GITHUB_SHA`の先頭7文字
+3. `production local`
+
+ローカルでproduction buildを直接実行する場合もlabelの明示は必須ではない。成果物の由来を示す場合は、Git commitの短縮SHAなどを指定できる。
 
 ```bash
 ROUAULT_BUILD_LABEL="$(git rev-parse --short HEAD)" pnpm build:production
 ```
 
-`ROUAULT_BUILD_LABEL`はbuild artifactの人間向け診断ラベルであり、`buildId`の代替ではない。production buildでは、曖昧な`local` / `unknown` fallbackを使わない。
+`ROUAULT_BUILD_LABEL`はbuild artifactの人間向け診断ラベルであり、`buildId`の代替ではない。
 
 GitHub Actionsでは`${GITHUB_SHA::7}`を`ROUAULT_BUILD_LABEL`として設定する。
 

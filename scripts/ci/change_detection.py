@@ -171,7 +171,9 @@ def ensure_object_available(rev: str) -> bool:
 
 
 def changed_files(base_sha: str, head_sha: str) -> list[str]:
-    raw = run_git("diff", "-z", "--name-only", base_sha, head_sha, text=False)
+    raw = run_git(
+        "diff", "-z", "--name-only", "--no-renames", base_sha, head_sha, text=False
+    )
     assert isinstance(raw, (bytes, bytearray))
     files = [
         chunk.decode("utf-8", errors="replace") for chunk in raw.split(b"\0") if chunk

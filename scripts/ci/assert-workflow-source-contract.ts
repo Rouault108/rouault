@@ -51,7 +51,7 @@ const DEFAULT_DEPLOYMENT_DOCS_PATH = path.join(
 const DEV_DEPENDENCIES_FIELD = 'devDependencies';
 const WRANGLER_FIELD = 'wrangler';
 const SHA_PIN_PATTERN = /^[a-z0-9-]+\/[a-z0-9_.-]+@[0-9a-f]{40}$/u;
-const ACTION_USES_PATTERN = /^\s*-\s+uses:\s+([^\s#]+)\s*$/gmu;
+const ACTION_USES_PATTERN = /^[\t ]*(?:-[\t ]+)?uses:[\t ]*(.*)$/gmu;
 const FIXED_PACKAGE_VERSION_PATTERN = /^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/u;
 
 interface ActionEvidence {
@@ -102,8 +102,199 @@ const assertCondition = (condition: boolean, message: string): void => {
   }
 };
 
-const collectWorkflowUses = (workflowSource: string): readonly string[] =>
-  [...workflowSource.matchAll(ACTION_USES_PATTERN)].map((match) => match[1] ?? '');
+export const collectWorkflowUses = (workflowSource: string): readonly string[] => {
+  const uses: string[] = [];
+  // runのblock scalar内にある文字列をAction参照として誤認しない。
+  let blockIndent: number | undefined;
+  for (const line of workflowSource.split(/\r?\n/u)) {
+    if (!line.trim() || line.trimStart().startsWith('#')) continue;
+    const indent = /^[\t ]*/u.exec(line)?.[0].length ?? 0;
+    if (blockIndent !== undefined) {
+      if (indent > blockIndent) continue;
+      blockIndent = undefined;
+    }
+    if (/^[\t ]*(?:-[\t ]+)?[^:]+:[\t ]*[|>][+-]?[1-9]?[\t ]*(?:#.*)?$/u.test(line)) {
+      blockIndent = indent + (line.trimStart().startsWith('- ') ? 2 : 0);
+      continue;
+    }
+    const match = [...line.matchAll(ACTION_USES_PATTERN)][0];
+    if (match === undefined) continue;
+    const scalar = match[1]?.trim() ?? '';
+    const coordinate = /^(?:'([^']*)'|"([^"\\]*)"|([^\s'"#]+))(?:\s+#.*)?\s*$/u.exec(scalar);
+    assertCondition(coordinate !== null, `unsupported uses scalar: ${scalar}`);
+    uses.push(coordinate?.[1] ?? coordinate?.[2] ?? coordinate?.[3] ?? '');
+  }
+  return uses;
+};
+
+const workflowJobSteps = (source: string, job: string): readonly string[] => {
+  const jobSource = new RegExp(
+    `^  ${escapeRegExp(job)}:[\\s\\S]*?(?=^  [\\w-]+:|(?![\\s\\S]))`,
+    'mu',
+  ).exec(source)?.[0];
+  assertCondition(jobSource !== undefined, `workflow must contain ${job}`);
+  return (
+    (jobSource ?? '')
+      .split(/^ {4}steps:\r?\n/mu)[1]
+      ?.split(/^ {6}- /mu)
+      .slice(1) ?? []
+  );
+};
+
+const stepField = (step: string, field: string): string =>
+  new RegExp(`^(?:        )?${escapeRegExp(field)}: (.*)$`, 'mu').exec(step)?.[1]?.trim() ?? '';
+
+const stepCondition = (step: string): string =>
+  stepField(step, 'if')
+    .replace(/^\$\{\{\s*|\s*\}\}$/gu, '')
+    .replace(/\s+/gu, ' ')
+    .trim();
+
+const requiredStep = (steps: readonly string[], field: string, value: string): string => {
+  const matches = steps.filter((step) => stepField(step, field) === value);
+  assertCondition(matches.length === 1, `workflow must contain one ${field}: ${value}`);
+  return matches[0] ?? '';
+};
+
+const assertDeploymentVerificationContract = (source: string): void => {
+  const steps = workflowJobSteps(source, 'verify-production-deployment');
+  const validation = requiredStep(steps, 'id', 'validate-deployment-result');
+  const enforcement = requiredStep(steps, 'name', 'enforce production deployment verification');
+  const buildGuard = "always() && needs.detect-changes.outputs.build == 'true'";
+  const downloaded = "steps.download-release-state.outcome == 'success'";
+  const resolved = `${downloaded} && steps.verify-release-state-digest.outcome == 'success'`;
+  const deployed = "needs.deploy-production.result == 'success'";
+  const runtimeSuccess = "steps.verify-runtime-artifacts.outcome == 'success'";
+  assertCondition(
+    stepField(validation, 'continue-on-error') === 'true' &&
+      stepField(validation, 'run') === 'python3 scripts/ci/validate_deployment_needs.py',
+    'deployment validator must preserve its outcome for final enforcement',
+  );
+  assertCondition(
+    steps.indexOf(validation) === 1,
+    'deployment validator must precede evidence collection',
+  );
+  for (const step of steps.slice(2, -1)) {
+    assertCondition(
+      stepCondition(step) === buildGuard || stepCondition(step).startsWith(`${buildGuard} && `),
+      'deployment evidence steps must be reachable after failure and skipped for build=false',
+    );
+  }
+  const download = requiredStep(steps, 'id', 'download-release-state');
+  assertCondition(
+    stepCondition(download) ===
+      `${buildGuard} && needs.deploy-production.outputs.release-state-artifact-id != ''` &&
+      stepField(download, 'continue-on-error') === 'true' &&
+      download.includes('digest-mismatch: error') &&
+      download.includes(
+        'artifact-ids: ${{ needs.deploy-production.outputs.release-state-artifact-id }}',
+      ),
+    'release state download must require an artifact ID and fail closed on digest mismatch',
+  );
+  const digest = requiredStep(steps, 'id', 'verify-release-state-digest');
+  assertCondition(
+    stepCondition(digest) === `${buildGuard} && ${downloaded}` &&
+      stepField(digest, 'continue-on-error') === 'true' &&
+      digest.includes("Path('.generated/deployment/release-attempt-final.json').read_bytes()") &&
+      digest.includes('hashlib.sha256(raw).hexdigest() != expected') &&
+      digest.includes("raise SystemExit('release state SHA-256 mismatch')") &&
+      digest.includes(
+        'EXPECTED_RELEASE_STATE_SHA256: ${{ needs.deploy-production.outputs.release-state-sha256 }}',
+      ),
+    'release state SHA-256 must be checked before runtime verification and recording',
+  );
+  const runtime = requiredStep(steps, 'id', 'verify-runtime-artifacts');
+  assertCondition(
+    stepCondition(runtime) === `${buildGuard} && ${deployed} && ${resolved}` &&
+      stepField(runtime, 'continue-on-error') === 'true' &&
+      stepField(runtime, 'run') === 'python3 scripts/ci/verify_production_artifacts_http.py' &&
+      steps.indexOf(download) < steps.indexOf(digest) &&
+      steps.indexOf(digest) < steps.indexOf(runtime),
+    'HTTP verification must observe failures and run only after deployment and release state resolution succeed',
+  );
+  const records = [
+    [
+      'record-runtime-verification-success',
+      `${buildGuard} && ${deployed} && ${resolved} && ${runtimeSuccess}`,
+      'verified-by-production-runtime-artifacts',
+    ],
+    [
+      'record-runtime-verification-failure',
+      `${buildGuard} && ${deployed} && ${resolved} && steps.verify-runtime-artifacts.outcome != 'success'`,
+      'verification-failed',
+    ],
+    [
+      'record-deploy-failure-state',
+      `${buildGuard} && needs.deploy-production.result != 'success' && ${resolved}`,
+      'verification-failed',
+    ],
+    [
+      'record-release-state-resolution-failed',
+      `${buildGuard} && (steps.download-release-state.outcome != 'success' || steps.verify-release-state-digest.outcome != 'success')`,
+      'release-state-resolution-failed',
+    ],
+  ] as const;
+  for (const [id, condition, status] of records) {
+    const step = requiredStep(steps, 'id', id);
+    assertCondition(
+      stepCondition(step) === condition &&
+        stepField(step, 'run') === 'pnpm exec tsx scripts/deploy/record-runtime-verification.ts' &&
+        step.includes(`RUNTIME_VERIFICATION_STATUS: ${status}`) &&
+        step.includes(
+          'EXPECTED_RELEASE_STATE_SHA256: ${{ needs.deploy-production.outputs.release-state-sha256 }}',
+        ) &&
+        stepField(step, 'continue-on-error') !== 'true' &&
+        steps.indexOf(runtime) < steps.indexOf(step),
+      `deployment record branch ${id} must be mutually exclusive and preserve SHA validation`,
+    );
+  }
+  const upload =
+    steps.find((step) => step.includes('name: rouault-release-verification-state')) ?? '';
+  assertCondition(
+    stepCondition(upload) ===
+      `${buildGuard} && (${records.map(([id]) => `steps.${id}.outcome == 'success'`).join(' || ')})` &&
+      upload.includes('path: .generated/deployment/release-verification-final.json') &&
+      records.every(([id]) => steps.indexOf(requiredStep(steps, 'id', id)) < steps.indexOf(upload)),
+    'verification state upload must require a successful record branch',
+  );
+  assertCondition(
+    steps.at(-1) === enforcement &&
+      stepCondition(enforcement) === 'always()' &&
+      stepField(enforcement, 'continue-on-error') !== 'true' &&
+      enforcement.includes(
+        'DEPLOYMENT_VALIDATION_OUTCOME: ${{ steps.validate-deployment-result.outcome }}',
+      ) &&
+      enforcement.includes('DEPLOYMENT_RESULT: ${{ needs.deploy-production.result }}') &&
+      enforcement.includes(
+        'RUNTIME_VERIFICATION_OUTCOME: ${{ steps.verify-runtime-artifacts.outcome }}',
+      ) &&
+      enforcement.includes('test "$DEPLOYMENT_VALIDATION_OUTCOME" = "success"') &&
+      enforcement.includes('if [ "$DEPLOYMENT_RESULT" = "success" ]; then') &&
+      enforcement.includes('test "$RUNTIME_VERIFICATION_OUTCOME" = "success"'),
+    'final deployment enforcement must always require validator success and deployed runtime success',
+  );
+};
+
+const assertE2EDiagnosticsContract = (source: string): void => {
+  for (const target of ['production', 'dev']) {
+    const steps = workflowJobSteps(source, `test-e2e-${target}`);
+    const test = requiredStep(steps, 'id', `playwright-${target}`);
+    const upload = requiredStep(steps, 'name', `preserve ${target} E2E diagnostics`);
+    assertCondition(
+      stepField(test, 'run') === `pnpm run test:e2e:${target}` &&
+        stepField(test, 'continue-on-error') !== 'true' &&
+        stepCondition(upload) === `always() && steps.playwright-${target}.outcome == 'failure'` &&
+        steps.indexOf(test) < steps.indexOf(upload) &&
+        stepField(upload, 'continue-on-error') === 'true' &&
+        /^(?:\.\/)?actions\/upload-artifact@/u.test(collectWorkflowUses(upload)[0] ?? '') &&
+        upload.includes(`          name: rouault-e2e-${target}-diagnostics`) &&
+        /^ {10}path: \|\r?\n {12}playwright-report\/\r?\n {12}test-results\/\r?\n {10}retention-days: 7\r?\n {10}if-no-files-found: warn\s*$/u.test(
+          upload.slice(upload.indexOf('          path: |')),
+        ),
+      `${target} E2E diagnostics must preserve test failure and upload only the two diagnostic directories for seven days`,
+    );
+  }
+};
 
 const readStringField = (
   evidence: Record<string, unknown>,
@@ -428,14 +619,6 @@ const assertReleaseStateWorkflowContract = (workflowSource: string, workflowPath
     `${workflowPath} verify job must download release state by deploy job artifact-id output`,
   );
   assertCondition(
-    /id:\s*download-release-state[\s\S]{0,260}continue-on-error:\s*true/u.test(workflowSource),
-    `${workflowPath} verify job must preserve release state resolution failures as state`,
-  );
-  assertCondition(
-    /id:\s*download-release-state[\s\S]{0,360}digest-mismatch:\s*error/u.test(workflowSource),
-    `${workflowPath} verify job must fail closed on release state artifact digest mismatch`,
-  );
-  assertCondition(
     workflowSource.includes(
       'EXPECTED_RELEASE_STATE_SHA256: ${{ needs.deploy-production.outputs.release-state-sha256 }}',
     ),
@@ -543,6 +726,8 @@ export const assertWorkflowSourceContract = async (
   );
   assertWorkflowDeploymentOrder(workflowSource, workflowPath);
   assertReleaseStateWorkflowContract(workflowSource, workflowPath);
+  assertDeploymentVerificationContract(workflowSource);
+  assertE2EDiagnosticsContract(workflowSource);
 
   const externalUses = workflowUses.filter((use) => !use.startsWith('./'));
   for (const use of externalUses) {
