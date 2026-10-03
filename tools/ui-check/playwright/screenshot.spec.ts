@@ -132,6 +132,6 @@ test('renders generated search controls operational smoke surface', async ({ pag
   await expect(page.locator('details.filter-details')).toHaveCount(1);
   await expect(page.locator('details.filter-details')).toHaveAttribute('open', '');
   await expect(page.locator('[data-search-page-result-count]')).toHaveText(
-    `${searchPageFixture.initialResponse.total.toString()}件の結果`,
+    `${searchPageFixture.initialResponse.total.toString()} 件の結果`,
   );
 });

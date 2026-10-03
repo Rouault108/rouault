@@ -15,6 +15,7 @@
 - `corpusKey`の意味。
 - `/corpora/{corpusKey}/`のURL契約。
 - `/corpora/`がコーパス索引であること。
+- Searchの[Static Explore](search.md)は本索引への通常anchorのみを持ち、索引を複製しない。No-JS保証は[横断契約](static-first-and-no-js.md)を参照する。
 - corpus一覧の対象と非対象。
 - corpora surface対象ノート数としての`noteCount`。
 - header corpus switcherの責務境界。

@@ -16,6 +16,7 @@ Guide、ADR、component文書はこの文書を上書きしてはならない。
 - WCAG 2.2のtarget size、focus appearanceなど実装可能な項目は積極的に採用する。
 - Semantic HTMLを優先し、ARIAはsemantic HTMLを補う場合に限る。
 - no-JS baselineとstatic-firstの情報構造を弱めてはならない。
+- 両者の能力境界は[横断契約](../contracts/static-first-and-no-js.md)に従う。JS必須capability成立前・初期化不能時は実行不能controlを操作可能UIとして提示せず、視覚表示・sequential focus・支援技術への露出を揃える。通常anchorとSSR情報構造を保持する。
 
 ## 3. Requirements
 

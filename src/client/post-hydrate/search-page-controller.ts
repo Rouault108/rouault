@@ -1,6 +1,5 @@
 import { renderStaticIconHtml } from '../../../shared/icons/render-static-icon-html.js';
 import { createSearchJsonParseDiagnosticSink } from '../../../shared/search/search-diagnostics.js';
-import { validateInlineStaticExploreSearchResponse } from '../../../shared/search/inline-static-explore-response-validator.js';
 import { parseStaticExploreSearchResponseJson } from '../../../shared/search/search-json-artifact-parser.js';
 import {
   buildUrlForSearchState,
@@ -44,6 +43,8 @@ const DYNAMIC_SEARCH_CONTROL_SELECTOR = [
   '[data-search-query-clear]',
   '[data-search-tag-checkbox]',
   '[data-search-selected-tag-remove]',
+  '[data-search-filter-input]',
+  '[data-search-filter-clear]',
 ].join(',');
 
 const searchChoiceLabels = {
@@ -71,8 +72,8 @@ export type SearchPageControllerState =
   | {
       readonly kind: 'ready';
       readonly siteUrlContext: SiteUrlContext;
-      readonly bootstrapState: SearchBootstrapState | null;
-      readonly searchRuntime: SearchCore | null;
+      readonly bootstrapState: Extract<SearchBootstrapState, { readonly status: 'ready' }>;
+      readonly searchRuntime: SearchCore;
     }
   | {
       readonly kind: 'site-url-context-unavailable';
@@ -467,29 +468,6 @@ const createSearchPageEmptyState = (document: Document, state: SearchState): HTM
   return section;
 };
 
-const createSearchPageUnavailableState = (
-  document: Document,
-  descriptionText: string,
-): HTMLElement => {
-  const section = document.createElement('section');
-  section.className = 'empty-hint';
-  section.dataset['emptyState'] = '';
-  section.dataset['searchEmptyState'] = '';
-  section.dataset['emptyVariant'] = 'error';
-  const message = document.createElement('div');
-  message.className = 'empty-hint__message';
-  message.dataset['announce'] = 'off';
-  const heading = document.createElement('h2');
-  heading.className = 'empty-hint__heading';
-  heading.textContent = '検索を利用できません';
-  const description = document.createElement('p');
-  description.className = 'empty-hint__description';
-  description.textContent = descriptionText;
-  message.append(heading, description);
-  section.append(message);
-  return section;
-};
-
 const createSearchPageResultExcerpt = (
   document: Document,
   item: SearchPageRenderableItem,
@@ -622,7 +600,23 @@ export class SearchPageController {
       { once: true },
     );
 
-    const siteUrlContext = this.dependencies.siteUrlContextProvider(this.page.ownerDocument);
+    this.setDynamicSearchControlsDisabled(true);
+    let siteUrlContext: SiteUrlContext | null;
+    let bootstrapState: SearchBootstrapState | null;
+    let searchRuntime: SearchCore | null;
+    try {
+      siteUrlContext = this.dependencies.siteUrlContextProvider(this.page.ownerDocument);
+      bootstrapState = siteUrlContext ? this.dependencies.bootstrapProvider() : null;
+      searchRuntime = siteUrlContext ? this.dependencies.searchRuntimeProvider() : null;
+    } catch {
+      const message = getSearchPageUnavailableMessage({
+        kind: 'bootstrap',
+        reason: 'search-runtime-unavailable',
+      });
+      this.currentState = { kind: 'bootstrap-unavailable', message };
+      this.showUnavailable(message);
+      return;
+    }
     if (siteUrlContext === null) {
       const message = getSearchPageUnavailableMessage({ kind: 'site-url-context-unavailable' });
       this.currentState = { kind: 'site-url-context-unavailable', message };
@@ -632,33 +626,34 @@ export class SearchPageController {
     }
 
     this.siteUrlContext = siteUrlContext;
-    const bootstrapState = this.dependencies.bootstrapProvider();
-    const searchRuntime = this.dependencies.searchRuntimeProvider();
-    this.searchRuntime = searchRuntime;
-    this.currentState = {
-      kind: 'ready',
-      siteUrlContext,
-      bootstrapState,
-      searchRuntime,
-    };
-    if (this.form === null) {
+    if (bootstrapState?.status !== 'ready' || searchRuntime === null || this.form === null) {
+      const reason =
+        bootstrapState?.status === 'unavailable'
+          ? bootstrapState.reason
+          : 'search-runtime-unavailable';
+      const message = getSearchPageUnavailableMessage({ kind: 'bootstrap', reason });
+      this.currentState = { kind: 'bootstrap-unavailable', message };
+      this.runtimeState = createRuntimeState(parseCurrentSearchState(siteUrlContext));
+      if (this.form) {
+        this.syncFormFromRuntimeState(this.form);
+        this.setDynamicSearchControlsDisabled(true);
+      }
+      this.showUnavailable(message);
+      window.addEventListener('popstate', this.handlePopState, {
+        signal: this.listenerController.signal,
+      });
       return;
     }
+    this.searchRuntime = searchRuntime;
     const urlState = parseCurrentSearchState(siteUrlContext);
     const initialState = readInitialSearchState(this.page);
     const initialResponseValue = parseJsonAttribute(this.page, 'initial-search-response-json');
     const diagnostics = createSearchJsonParseDiagnosticSink({ issues: [] });
-    const parsedInitialResponse =
-      bootstrapState?.status === 'ready'
-        ? parseStaticExploreSearchResponseJson({
-            value: initialResponseValue,
-            diagnostics,
-            isInternalDocumentPathname: bootstrapState.isInternalDocumentPathname,
-          })
-        : validateInlineStaticExploreSearchResponse({
-            value: initialResponseValue,
-            diagnostics,
-          });
+    const parsedInitialResponse = parseStaticExploreSearchResponseJson({
+      value: initialResponseValue,
+      diagnostics,
+      isInternalDocumentPathname: bootstrapState.isInternalDocumentPathname,
+    });
     const adoptedInitialResponse = adoptInitialStaticExploreSearchResponse(parsedInitialResponse);
     const canAdoptInitialResponse =
       initialState !== null &&
@@ -674,40 +669,19 @@ export class SearchPageController {
       this.syncFormFromRuntimeState(this.form);
       syncFilterDomFromForm(this.page, this.form, this.runtimeState);
       this.showStatus(null);
-      if (searchRuntime === null) {
-        const reason =
-          bootstrapState?.status === 'unavailable'
-            ? bootstrapState.reason
-            : 'search-runtime-unavailable';
-        this.showUnavailable(getSearchPageUnavailableMessage({ kind: 'bootstrap', reason }));
-        this.setDynamicSearchControlsDisabled(true);
-      } else {
-        this.setDynamicSearchControlsDisabled(false);
-      }
-    } else if (searchRuntime === null) {
-      const reason =
-        bootstrapState?.status === 'unavailable'
-          ? bootstrapState.reason
-          : 'search-runtime-unavailable';
-      const message = getSearchPageUnavailableMessage({ kind: 'bootstrap', reason });
-      this.currentState = { kind: 'bootstrap-unavailable', message };
-      this.runtimeState = createRuntimeState(urlState);
-      this.syncFormFromRuntimeState(this.form);
-      this.syncHeroFromRuntimeState();
-      this.setDynamicSearchControlsDisabled(true);
-      this.showUnavailable(message);
-      this.renderResultsUnavailable(message);
+      renderSearchPageResults(this.page, this.runtimeState);
     } else {
       this.runtimeState = createRuntimeState(urlState);
       this.syncFormFromRuntimeState(this.form);
       this.syncHeroFromRuntimeState();
-      this.setDynamicSearchControlsDisabled(false);
-      this.runSearchImmediately();
     }
     this.bindReadyListeners(this.form);
     window.addEventListener('popstate', this.handlePopState, {
       signal: this.listenerController.signal,
     });
+    this.currentState = { kind: 'ready', siteUrlContext, bootstrapState, searchRuntime };
+    this.setDynamicSearchControlsDisabled(false);
+    if (!canAdoptInitialResponse) this.runSearchImmediately();
   }
 
   dispose(): void {
@@ -717,6 +691,9 @@ export class SearchPageController {
     this.disposed = true;
     this.cancelPendingSearch();
     this.listenerController.abort();
+    this.showStatus(null);
+    this.setDynamicSearchControlsDisabled(true);
+    this.page.dataset['searchPageCapability'] = 'static';
   }
 
   private readonly handlePopState = (): void => {
@@ -726,32 +703,11 @@ export class SearchPageController {
     const state = parseCurrentSearchState(this.siteUrlContext);
     this.closeAllSearchChoiceMenus();
     if (this.searchRuntime === null) {
-      const reason =
-        this.currentState?.kind === 'ready' &&
-        this.currentState.bootstrapState?.status === 'unavailable'
-          ? this.currentState.bootstrapState.reason
-          : 'search-runtime-unavailable';
-      const message = getSearchPageUnavailableMessage({
-        kind: 'bootstrap',
-        reason,
-      });
-      const canKeepCurrentResults = areSearchStatesCanonicallyEqual(this.toSearchState(), state);
-      if (!canKeepCurrentResults) {
-        this.currentState = { kind: 'bootstrap-unavailable', message };
-        this.runtimeState = createRuntimeState(state);
-      }
+      this.runtimeState = createRuntimeState(state);
       if (this.form) {
         this.syncFormFromRuntimeState(this.form);
-        syncFilterDomFromForm(this.page, this.form, this.runtimeState);
       }
-      this.syncHeroFromRuntimeState();
       this.setDynamicSearchControlsDisabled(true);
-      this.showUnavailable(message);
-      if (!canKeepCurrentResults) {
-        this.renderResultsUnavailable(
-          '検索 runtime が利用できないため、この URL state の結果を復元できません。',
-        );
-      }
       return;
     }
     this.runtimeState = createRuntimeState(state);
@@ -764,16 +720,8 @@ export class SearchPageController {
   };
 
   private showUnavailable(message: string): void {
+    this.page.dataset['searchPageCapability'] = 'unavailable';
     this.showStatus('unavailable', message);
-  }
-
-  private renderResultsUnavailable(message: string): void {
-    this.page
-      .querySelector<HTMLElement>('[data-search-page-results-section]')
-      ?.replaceChildren(createSearchPageUnavailableState(this.page.ownerDocument, message));
-    this.page
-      .querySelector<HTMLElement>('[data-search-page-result-count]')
-      ?.replaceChildren('0件の結果');
   }
 
   private showStatus(variant: SearchPageStatusVariant | null, message = ''): void {
@@ -838,13 +786,13 @@ export class SearchPageController {
       state.tagMode === 'or' &&
       state.sort === 'relevance';
     this.page
-      .querySelector<HTMLElement>('.hero .eyebrow')
+      .querySelector<HTMLElement>('[data-search-page-dynamic-hero] .eyebrow')
       ?.replaceChildren(isTagDefaultView ? 'Tag / Explore' : 'Search / Filter');
     this.page
-      .querySelector<HTMLElement>('.hero h1')
+      .querySelector<HTMLElement>('[data-search-page-dynamic-hero] h1')
       ?.replaceChildren(isTagDefaultView ? `#${state.tags[0] ?? ''}` : '検索');
     this.page
-      .querySelector<HTMLElement>('.hero .description')
+      .querySelector<HTMLElement>('[data-search-page-dynamic-hero] .description')
       ?.replaceChildren(
         isTagDefaultView
           ? 'このタグに属するノートを起点に、検索語や追加タグで探索を広げられます。'
@@ -867,6 +815,7 @@ export class SearchPageController {
 
   private scheduleSearch(): void {
     this.cancelPendingSearch();
+    this.clearCurrentResults();
     this.debounceTimerId = window.setTimeout(() => {
       this.debounceTimerId = undefined;
       this.executeSearch();
@@ -885,12 +834,19 @@ export class SearchPageController {
     const generation = this.searchGeneration;
     const searchAbortController = new AbortController();
     this.activeSearchAbortController = searchAbortController;
+    this.clearCurrentResults();
     this.showStatus('loading');
-    void this.searchRuntime
-      .search(
-        { mode: 'explore', ...this.toSearchState() },
-        { signal: searchAbortController.signal },
-      )
+    const searchRuntime = this.searchRuntime;
+    const request = { mode: 'explore' as const, ...this.toSearchState() };
+    let pending: ReturnType<SearchCore['search']>;
+    try {
+      pending = searchRuntime.search(request, { signal: searchAbortController.signal });
+    } catch {
+      this.activeSearchAbortController = null;
+      this.showRequestError();
+      return;
+    }
+    void pending
       .then((response) => {
         if (
           this.disposed ||
@@ -902,17 +858,22 @@ export class SearchPageController {
         if (response.mode !== 'explore') {
           throw new Error('Search page requires explore search response.');
         }
+        if (response.diagnostics.failures.includes('all-sources-failed')) {
+          this.showRequestError();
+          return;
+        }
         this.applySearchResponse(response);
       })
       .catch((error: unknown) => {
         if (
+          this.disposed ||
           generation !== this.searchGeneration ||
           searchAbortController.signal.aborted ||
           (error instanceof DOMException && error.name === 'AbortError')
         ) {
           return;
         }
-        this.showStatus('error', '検索の読み込みに失敗しました。');
+        this.showRequestError();
       })
       .finally(() => {
         if (
@@ -922,6 +883,19 @@ export class SearchPageController {
           this.activeSearchAbortController = null;
         }
       });
+  }
+
+  private clearCurrentResults(): void {
+    this.page.querySelector<HTMLElement>('[data-search-page-results-section]')?.replaceChildren();
+    this.page.querySelector<HTMLElement>('[data-search-page-result-count]')?.replaceChildren();
+  }
+
+  private showRequestError(): void {
+    this.clearCurrentResults();
+    this.showStatus(
+      'error',
+      '検索の読み込みに失敗しました。検索語や条件を変更して再入力できます。',
+    );
   }
 
   private applySearchResponse(response: ExploreSearchResponse): void {
@@ -973,10 +947,9 @@ export class SearchPageController {
   private openSearchChoiceMenu(details: HTMLDetailsElement): void {
     this.closeOtherSearchChoiceMenus(details);
     details.open = true;
-    details.querySelector<HTMLElement>('[data-static-choice-trigger]')?.setAttribute(
-      'aria-expanded',
-      'true',
-    );
+    details
+      .querySelector<HTMLElement>('[data-static-choice-trigger]')
+      ?.setAttribute('aria-expanded', 'true');
   }
 
   private toggleSearchChoiceMenu(details: HTMLDetailsElement): void {
@@ -1054,22 +1027,28 @@ export class SearchPageController {
         item.disabled = disabled;
       }
     }
-    for (const input of this.page.querySelectorAll<HTMLInputElement>('[data-search-choice-value]')) {
+    for (const input of this.page.querySelectorAll<HTMLInputElement>(
+      '[data-search-choice-value]',
+    )) {
       input.disabled = false;
     }
   }
 
   private focusChoiceItem(details: HTMLDetailsElement, direction: 1 | -1): void {
     this.openSearchChoiceMenu(details);
-    const items = [...details.querySelectorAll<HTMLButtonElement>('[data-static-choice-item]')].filter(
-      (item) => !item.disabled,
-    );
+    const items = [
+      ...details.querySelectorAll<HTMLButtonElement>('[data-static-choice-item]'),
+    ].filter((item) => !item.disabled);
     if (items.length === 0) {
       return;
     }
     const activeIndex = items.findIndex((item) => item === this.page.ownerDocument.activeElement);
     const nextIndex =
-      activeIndex < 0 ? (direction > 0 ? 0 : items.length - 1) : (activeIndex + direction + items.length) % items.length;
+      activeIndex < 0
+        ? direction > 0
+          ? 0
+          : items.length - 1
+        : (activeIndex + direction + items.length) % items.length;
     items[nextIndex]?.focus();
   }
 
@@ -1089,12 +1068,34 @@ export class SearchPageController {
   }
 
   private setDynamicSearchControlsDisabled(disabled: boolean): void {
-    for (const control of this.page.querySelectorAll<
-      HTMLButtonElement | HTMLInputElement
-    >(DYNAMIC_SEARCH_CONTROL_SELECTOR)) {
-      control.disabled = disabled;
+    const activeElement = this.page.ownerDocument.activeElement;
+    const baseline = this.page.querySelector<HTMLElement>('[data-search-page-baseline]');
+    const focusLeavesBaseline =
+      !disabled && activeElement !== null && baseline?.contains(activeElement);
+    if (!disabled) this.page.dataset['searchPageCapability'] = 'ready';
+    if (this.form) this.form.hidden = disabled;
+    if (baseline) baseline.hidden = !disabled;
+    for (const selector of [
+      '[data-search-page-dynamic-hero]',
+      '[data-search-page-results-section]',
+    ]) {
+      const region = this.page.querySelector<HTMLElement>(selector);
+      if (region) region.hidden = disabled;
+    }
+    for (const control of this.page.querySelectorAll<HTMLButtonElement | HTMLInputElement>(
+      DYNAMIC_SEARCH_CONTROL_SELECTOR,
+    )) {
+      control.disabled =
+        disabled ||
+        (control.matches('[data-search-tag-checkbox]') &&
+          control.closest<HTMLElement>('[data-filter-option]')?.dataset['disabled'] === 'true');
     }
     this.setSearchChoiceMenusDisabled(disabled);
+    if (focusLeavesBaseline) {
+      this.form
+        ?.querySelector<HTMLInputElement>('[data-search-query-input]')
+        ?.focus({ preventScroll: true });
+    }
   }
 
   private bindReadyListeners(form: HTMLFormElement): void {
@@ -1139,10 +1140,7 @@ export class SearchPageController {
       'change',
       (event) => {
         const target = event.target;
-        if (
-          !(target instanceof HTMLElement) ||
-          !target.matches('[data-search-tag-checkbox]')
-        ) {
+        if (!(target instanceof HTMLElement) || !target.matches('[data-search-tag-checkbox]')) {
           return;
         }
         const preferredTag =
@@ -1171,7 +1169,10 @@ export class SearchPageController {
           return;
         }
         event.preventDefault();
-        if (trigger.getAttribute('aria-disabled') === 'true' || trigger.dataset['disabled'] === 'true') {
+        if (
+          trigger.getAttribute('aria-disabled') === 'true' ||
+          trigger.dataset['disabled'] === 'true'
+        ) {
           return;
         }
         this.toggleSearchChoiceMenu(details);

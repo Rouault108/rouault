@@ -37,4 +37,6 @@ Static choice menuは、search pageの`tagMode` / `sort`を所有する単一選
 
 ## No-JS
 
-no-JS時、button itemはhidden inputを更新できない。ただしsearch pageは検索・フィルタ機能にJavaScriptを要求しているため、この劣化は許容する。
+No-JS / `static` / `unavailable`ではsummary / item等のuser-operable surfaceを実行可能な検索操作として提示しない。視覚表示、sequential keyboard focus、支援技術への露出を揃える。現行SSRではformをhiddenにして既存primitiveを保持する。hidden inputはform内でenabledのまま`name` / current valueを保持する。
+
+`ready`後だけ既存Interaction契約を利用可能にする。初期state、FormData、SearchState URL、Back / Forward同期を維持する。native select、旧ui-select、別primitive、compatibility shim、新旧並行経路を追加しない。page capabilityとrequest outcomeの正本は[Search Contract](search.md)、横断No-JS原則は[Static-first / No-JS Baseline Contract](static-first-and-no-js.md)。

@@ -85,7 +85,7 @@ const clickSearchResultLink = async (page: Page, title: string): Promise<void> =
   await waitForSearchInputReady(page);
   await waitForRouterDocumentHostReady(page);
   await page
-    .locator('#main-content a.result-link')
+    .locator('[data-search-page-results-section] a.result-link')
     .filter({
       hasText: title,
     })
@@ -106,7 +106,7 @@ test.describe('Tag Page', () => {
     await clickArticleHeaderTag(page, publicTagPagePath);
 
     await expect(page).toHaveURL(publicTagPagePath);
-    await expect(page.locator('#main-content h1').first()).toHaveText('#Programming');
+    await expect(page.locator('[data-search-page-dynamic-hero] h1')).toHaveText('#Programming');
     await expect(page.locator('#main-content')).toContainText(
       'このタグに属するノートを起点に、検索語や追加タグで探索を広げられます。',
     );
@@ -165,7 +165,7 @@ test.describe('Tag Page', () => {
         q: 'Target',
         tags: ['Programming'],
       });
-    await expect(page.locator('#main-content h1').first()).toHaveText('検索');
+    await expect(page.locator('[data-search-page-dynamic-hero] h1')).toHaveText('検索');
   });
 
   test('タグページで追加タグを選ぶと /search/ へ遷移すること', async ({ page }) => {
@@ -189,7 +189,7 @@ test.describe('Tag Page', () => {
         pathname: '/search/',
         tags: ['C#', 'Programming'],
       });
-    await expect(page.locator('#main-content h1').first()).toHaveText('検索');
+    await expect(page.locator('[data-search-page-dynamic-hero] h1')).toHaveText('検索');
   });
 
   test('タグページでタグ演算子や並び順を変えると /search/ へ遷移すること', async ({ page }) => {

@@ -1,5 +1,6 @@
 import type { SearchState, StaticExploreSearchResponse } from '../../shared/search/search-types.js';
 import type { SiteUrlContext } from '../../shared/site/site-url-context.js';
+import type { SearchStaticBaselineProjection } from '../../build/projections/search-static-baseline-projection.js';
 import { buildSearchResultRenderHref } from '../search/normalize-search-result-url.js';
 import { renderStaticIconHtml } from '../../shared/icons/render-static-icon-html.js';
 import {
@@ -256,13 +257,16 @@ const renderResults = (
 };
 
 export const renderSearchPageHtml = (options: {
+  readonly surface:
+    | { readonly kind: 'search'; readonly baseline: SearchStaticBaselineProjection }
+    | { readonly kind: 'tag'; readonly tag: string };
   readonly initialState: SearchState;
   readonly initialResponse: StaticExploreSearchResponse;
   readonly siteUrlContext: SiteUrlContext;
   readonly loading?: boolean;
   readonly idContext?: StaticRenderIdContext;
 }): string => {
-  const { initialState, initialResponse, siteUrlContext, loading = false } = options;
+  const { initialState, initialResponse, siteUrlContext, loading = false, surface } = options;
   const idContext = options.idContext ?? createStaticRenderIdContext('page:search');
   const queryInputId = idContext.reserveId('search-page', 'search-page-query');
   const tagModeLabelId = idContext.reserveId('search-page', 'search-page-tag-mode-label');
@@ -272,6 +276,8 @@ export const renderSearchPageHtml = (options: {
   const sortCurrentId = idContext.reserveId('search-page', 'search-page-sort-current');
   const sortPanelId = idContext.reserveId('search-page', 'search-page-sort-panel');
   const selectedTagsHeadingId = idContext.reserveId('search-page', 'selected-tags-heading');
+  const baselineHeadingId = idContext.reserveId('search-page', 'search-baseline-heading');
+  const baselineTagHeadingId = idContext.reserveId('search-page', 'search-baseline-tags-heading');
   const isTagDefaultView =
     initialState.q.length === 0 &&
     initialState.tags.length === 1 &&
@@ -280,14 +286,13 @@ export const renderSearchPageHtml = (options: {
   const title = isTagDefaultView ? `#${initialState.tags[0] ?? ''}` : '検索';
 
   return `
-    <noscript>
-      <p class="noscript-notice">検索・フィルタ機能にはJavaScriptが必要です。</p>
-    </noscript>
     <section data-hydration-scope="search-page">
       <div
         class="search-page page-shell"
-        aria-label="検索結果"
         data-search-page-root
+        data-search-page-capability="static"
+        data-search-page-surface="${surface.kind}"
+        ${surface.kind === 'tag' ? `data-search-page-baseline-tag="${escapeHtmlAttribute(surface.tag)}"` : ''}
         data-hydration-key="search-page-enhancer"
         ${serializeHtmlAttributes([
           { name: 'initial-search-state-json', value: initialState, kind: 'json' },
@@ -296,7 +301,28 @@ export const renderSearchPageHtml = (options: {
           { name: 'data-hydration-trigger', value: 'initial' },
         ])}
       >
-        <div class="hero">
+        <section data-search-page-baseline aria-labelledby="${baselineHeadingId}">
+          <div class="hero">
+            <p class="eyebrow">${surface.kind === 'search' ? 'Static Explore' : 'Tag / Explore'}</p>
+            <h1 id="${baselineHeadingId}" class="heading">${escapeHtmlText(surface.kind === 'search' ? '検索' : `#${surface.tag}`)}</h1>
+            <p class="description">${
+              surface.kind === 'search'
+                ? '全文検索や複合フィルタにはJavaScriptが必要です。タグやコーパスからノートを辿れます。'
+                : `元のタグ「${escapeHtmlText(surface.tag)}」の静的なノート一覧です。現在のURLの検索条件は適用していません。追加の検索・絞り込みにはJavaScriptが必要です。`
+            }</p>
+          </div>
+          ${
+            surface.kind === 'search'
+              ? `<nav class="search-static-explore" aria-labelledby="${baselineTagHeadingId}">
+                <h2 id="${baselineTagHeadingId}">タグから探す</h2>
+                <ul>${surface.baseline.tags.map(({ label, href, noteCount }) => `<li><a class="link-text" data-link-kind="internal-document" data-link-surface="navigation" href="${escapeHtmlAttribute(href)}">${escapeHtmlText(label)}</a> <span>${String(noteCount)}件</span></li>`).join('')}</ul>
+              </nav>
+              <h2>別の方法で探す</h2>
+              <p><a class="link-text" data-link-kind="internal-document" data-link-surface="navigation" href="${escapeHtmlAttribute(surface.baseline.corporaHref)}">コーパスから探す</a></p>`
+              : `<p>${String(initialResponse.total)}件のノート（元のタグの静的一覧）</p>${renderResults(initialResponse, initialState, siteUrlContext)}`
+          }
+        </section>
+        <div class="hero" data-search-page-dynamic-hero hidden>
           <p class="eyebrow">${isTagDefaultView ? 'Tag / Explore' : 'Search / Filter'}</p>
           <h1 class="heading">${escapeHtmlText(title)}</h1>
           <p class="description">${
@@ -306,7 +332,7 @@ export const renderSearchPageHtml = (options: {
           }</p>
         </div>
 
-        <form class="search-controls" role="search" data-search-page-form>
+        <form class="search-controls" role="search" data-search-page-form hidden>
           <label class="sr-only" for="${queryInputId}">検索</label>
           <div class="search-input-field" data-static-search-field>
             ${renderStaticIconHtml('search', 'search-input-field__icon')}
@@ -402,7 +428,7 @@ export const renderSearchPageHtml = (options: {
         </div>
         <div class="search-page__error" role="status" aria-live="polite" hidden data-search-page-error></div>
         <div class="search-page__unavailable" role="status" aria-live="polite" hidden data-search-page-unavailable></div>
-        <div class="results-section" data-search-page-results-section>${renderResults(initialResponse, initialState, siteUrlContext)}</div>
+        <div class="results-section" data-search-page-results-section hidden></div>
       </div>
     </section>
   `.trim();

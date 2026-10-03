@@ -54,7 +54,11 @@ const findElement = (
   predicate: (element: ElementNode) => boolean,
 ): ElementNode | null => collectElements(node, predicate).at(0) ?? null;
 
-const isDescendantOf = (root: ParentLike, ancestor: ElementNode, descendant: ElementNode): boolean =>
+const isDescendantOf = (
+  root: ParentLike,
+  ancestor: ElementNode,
+  descendant: ElementNode,
+): boolean =>
   collectElements(ancestor, (element) => element === descendant).length > 0 &&
   collectElements(root, (element) => element === ancestor).length > 0;
 
@@ -67,6 +71,7 @@ const searchState: SearchState = {
 
 const renderSearchPageFragment = () => {
   const rendered = renderSearchPageHtml({
+    surface: { kind: 'search', baseline: { tags: [], corporaHref: '/corpora/' } },
     initialState: searchState,
     initialResponse: buildStaticExploreResponse({
       state: searchState,
@@ -143,7 +148,8 @@ describe('search page static choice menu contract', () => {
     for (const menu of menus) {
       const summary = findElement(
         menu,
-        (element) => element.tagName === 'summary' && hasAttribute(element, 'data-static-choice-trigger'),
+        (element) =>
+          element.tagName === 'summary' && hasAttribute(element, 'data-static-choice-trigger'),
       );
       const current = findElement(menu, (element) =>
         hasAttribute(element, 'data-static-choice-current-label'),

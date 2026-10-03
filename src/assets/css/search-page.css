@@ -5,6 +5,15 @@
 .search-page [hidden] {
   display: none !important;
 }
+.search-static-explore ul {
+  display: grid;
+  gap: var(--space-3);
+  padding-inline-start: var(--space-6);
+}
+.search-static-explore li span {
+  color: var(--fg-muted);
+  margin-inline-start: var(--space-2);
+}
 .search-controls {
   display: grid;
   gap: var(--space-4);

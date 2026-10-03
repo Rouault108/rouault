@@ -37,10 +37,14 @@ const expectedPaths = (id: string): string[] => {
 const ready = async (page: Page, path = '/search/') => {
   await page.goto(basePath + path);
   await expect(page.locator('[data-search-page-root]')).toHaveAttribute('data-enhanced', 'true');
+  await expect(page.locator('[data-search-page-root]')).toHaveAttribute(
+    'data-search-page-capability',
+    'ready',
+  );
 };
 const paths = (page: Page) =>
   page
-    .locator('a.result-link')
+    .locator('[data-search-page-results-section] a.result-link')
     .evaluateAll(
       (links, prefix) =>
         links.map((link) =>
@@ -121,6 +125,59 @@ test('production failure invokes Catalog', async ({ page }) => {
   await ready(page, `/search/?q=${encodeURIComponent('言語バージョン・ビルド文脈・互換性')}`);
   await catalog;
   await expect(page.locator('a.result-link').first()).toBeVisible({ timeout: 15000 });
+  await expect(page.locator('[data-search-page-root]')).toHaveAttribute(
+    'data-search-page-capability',
+    'ready',
+  );
+});
+
+test('initial Search / Tag adoption keeps search artifacts lazy without readiness probes', async ({
+  page,
+}) => {
+  const requests: string[] = [];
+  page.on('request', (request) => requests.push(new URL(request.url()).pathname));
+  for (const path of ['/search/', '/tags/Programming/']) {
+    await ready(page, path);
+    await expect(page.locator('[data-search-page-form]')).toBeVisible();
+    expect(
+      requests.filter(
+        (path) =>
+          path.endsWith('/search/manifest.json') ||
+          path.endsWith('/search-catalog.json') ||
+          /\/search\/suzume\..*\.wasm$/u.test(path),
+      ),
+    ).toEqual([]);
+  }
+});
+
+test('all sources failed is a request error and subsequent input can use Catalog', async ({
+  page,
+}) => {
+  await page.route('**/search/manifest.json', (route) => route.fulfill({ status: 404, body: '' }));
+  let catalogRequests = 0;
+  await page.route('**/search-catalog.json', (route) => {
+    catalogRequests += 1;
+    return catalogRequests === 1 ? route.fulfill({ status: 404, body: '' }) : route.continue();
+  });
+  await ready(page, '/search/?q=first');
+  await expect(page.locator('[data-search-page-error]')).toBeVisible();
+  await expect(page.locator('[data-search-page-root]')).toHaveAttribute(
+    'data-search-page-capability',
+    'ready',
+  );
+  await expect(page.locator('[data-search-query-input]')).toBeEnabled();
+  await expect(page.locator('[data-search-page-results-section]')).toBeEmpty();
+  await expect(page.locator('[data-search-page-result-count]')).toBeEmpty();
+  await page.locator('[data-search-query-input]').fill('言語バージョン・ビルド文脈・互換性');
+  await expect(
+    page.locator('[data-search-page-results-section] a.result-link').first(),
+  ).toBeVisible({ timeout: 15000 });
+  await expect(page.locator('[data-search-page-error]')).toBeHidden();
+  await expect(page.locator('[data-search-page-root]')).toHaveAttribute(
+    'data-search-page-capability',
+    'ready',
+  );
+  expect(catalogRequests).toBe(2);
 });
 
 test('store-only failure preserves lexical document order', async ({ page }) => {
@@ -152,22 +209,74 @@ test('real dialog input, close and focus remain responsive after cutover', async
   await expect(input).toBeFocused();
 });
 
-test('static search and tag pages retain no-JS response and final profile', async ({
-  browser,
-  baseURL,
-}) => {
-  const context = await browser.newContext({ javaScriptEnabled: false });
-  const page = await context.newPage();
-  try {
-    await page.goto(`${baseURL}${basePath}/search/`);
-    await expect(page.locator('[data-search-query-input]')).toBeVisible();
+test.describe('No-JS static exploration', () => {
+  test.use({ javaScriptEnabled: false });
+
+  const expectStaticControls = async (page: Page) => {
+    await expect(page.locator('[data-search-page-form]')).toBeHidden();
+    await expect(page.getByRole('searchbox')).toHaveCount(0);
+    for (const selector of [
+      '[data-search-query-input]',
+      '[data-search-filter-input]',
+      '[data-search-choice-menu] summary',
+      '[data-search-selected-tag-remove]',
+    ]) {
+      for (const control of await page.locator(selector).all()) await expect(control).toBeHidden();
+    }
+  };
+
+  test('Search → tag → note uses ordinary anchors with no search controls exposed', async ({
+    page,
+  }) => {
+    await page.goto(basePath + '/search/');
+    await expectStaticControls(page);
+    const baseline = page.locator('[data-search-page-baseline]');
+    await expect(baseline).toContainText('タグやコーパスからノートを辿れます');
     await expect(page.locator('[data-search-page-root]')).toHaveAttribute(
       'initial-search-response-json',
       /rouault-search-v3/u,
     );
-    await page.goto(`${baseURL}${basePath}/tags/Programming/`);
-    await expect(page.locator('a.result-link').first()).toBeVisible();
-  } finally {
-    await context.close();
-  }
+    await baseline.getByRole('link', { name: 'Programming', exact: true }).click();
+    await expectStaticControls(page);
+    const noteLink = page.locator('[data-search-page-baseline] a.result-link').first();
+    await expect(noteLink).toBeVisible();
+    // Chromiumの文書間view transitionがpointerを遮る間は、通常anchorのhit test成立を待つ。
+    await expect
+      .poll(() =>
+        noteLink.evaluate((link) => {
+          const rect = link.getBoundingClientRect();
+          return link.contains(
+            document.elementFromPoint(rect.x + rect.width / 2, rect.y + rect.height / 2),
+          );
+        }),
+      )
+      .toBe(true);
+    await noteLink.click();
+    await expect(page.locator('[data-note-static-surface]')).toBeVisible();
+  });
+
+  test('Search → corpora uses the owner index anchor', async ({ page }) => {
+    await page.goto(basePath + '/search/');
+    await expectStaticControls(page);
+    await page.getByRole('link', { name: 'コーパスから探す', exact: true }).click();
+    await expect(page).toHaveURL(new RegExp(basePath + '/corpora/$', 'u'));
+  });
+
+  test('Tag SSR retains its static note links and hidden enabled choice values', async ({
+    page,
+  }) => {
+    await page.goto(basePath + '/tags/Programming/');
+    await expectStaticControls(page);
+    await expect(page.locator('[data-search-page-baseline] a.result-link').first()).toBeVisible();
+    for (const name of ['tagMode', 'sort']) {
+      await expect(page.locator('input[type="hidden"][name="' + name + '"]')).not.toBeDisabled();
+    }
+    await page.locator('[data-search-page-baseline] a.result-link').first().focus();
+    await page.keyboard.press('Tab');
+    expect(
+      await page
+        .locator('[data-search-page-form]')
+        .evaluate((form) => form.contains(document.activeElement)),
+    ).toBe(false);
+  });
 });

@@ -89,6 +89,7 @@
 ### SSR
 
 - Hydrationなしでも読めるHTMLを出力する。
+- 保証範囲は[Static-first / No-JS Baseline Contract](static-first-and-no-js.md)に従う。JS必須capability成立前の操作面とSSR baseline保持はfeature ownerが扱う。Searchの初期化readyは[Search Contract](search.md)に従い、schedulerはsource probeを所有しない。
 
 ### Client Runtime
 

@@ -85,6 +85,8 @@ Rouaultは長期保守性のためにownership boundaryを重視します。
 
 ### 5. static-first 優先
 
+static-firstはbuild-time static artifactsを公開コンテンツ・URL・主要情報構造の正本とする原則です。No-JS baselineは公開本文の読解・到達・主要navigation・tag / corpusによる静的探索を保証し、全文検索等のfeature parityは要求しません。JS必須capability成立前に実行不能controlを操作可能UIとして提示しないでください。横断契約の正本は`docs/contracts/static-first-and-no-js.md`、Search固有のstate / SSR baselineは`docs/contracts/search.md`です。
+
 現行のRouaultは、**SSG + build-time SSR + client hydration**を基本戦略とします。
 
 - まず静的に成立するHTMLを優先してください。

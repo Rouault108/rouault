@@ -10,24 +10,36 @@
   <body>
     <main>
       <p><a href="../">UI Check Workbench</a></p>
-      <noscript>
-      <p class="noscript-notice">検索・フィルタ機能にはJavaScriptが必要です。</p>
-    </noscript>
-    <section data-hydration-scope="search-page">
+      <section data-hydration-scope="search-page">
       <div
         class="search-page page-shell"
-        aria-label="検索結果"
         data-search-page-root
+        data-search-page-capability="static"
+        data-search-page-surface="search"
+
         data-hydration-key="search-page-enhancer"
          initial-search-state-json="{&quot;q&quot;:&quot;search controls&quot;,&quot;tags&quot;:[&quot;UI&quot;,&quot;静的検査&quot;],&quot;tagMode&quot;:&quot;and&quot;,&quot;sort&quot;:&quot;date-desc&quot;}" initial-search-response-json="{&quot;mode&quot;:&quot;explore&quot;,&quot;items&quot;:[{&quot;canonicalPathname&quot;:&quot;/notes/ui-check/search-controls-renderer/&quot;,&quot;pathLabel&quot;:&quot;notes / ui-check / search-controls-renderer&quot;,&quot;title&quot;:&quot;Search controls renderer fixture&quot;,&quot;description&quot;:&quot;Renderer-derived UI check fixture for the search controls surface.&quot;,&quot;date&quot;:{&quot;epochMs&quot;:1798502400000,&quot;original&quot;:&quot;2027-01-01&quot;},&quot;tags&quot;:[&quot;UI&quot;,&quot;静的検査&quot;],&quot;snippet&quot;:{&quot;segments&quot;:[{&quot;text&quot;:&quot;Renderer-derived &quot;,&quot;matched&quot;:false},{&quot;text&quot;:&quot;search controls&quot;,&quot;matched&quot;:true},{&quot;text&quot;:&quot; fixture for visual inspection.&quot;,&quot;matched&quot;:false}]},&quot;reasons&quot;:[{&quot;kind&quot;:&quot;title-token-coverage&quot;,&quot;tokens&quot;:[&quot;search&quot;,&quot;controls&quot;]}]},{&quot;canonicalPathname&quot;:&quot;/notes/ui-check/filter-details-open-variant/&quot;,&quot;pathLabel&quot;:&quot;notes / ui-check / filter-details-open-variant&quot;,&quot;title&quot;:&quot;Filter details open variant&quot;,&quot;description&quot;:&quot;Stable fixture item that keeps selected tags and filter controls visible.&quot;,&quot;date&quot;:{&quot;epochMs&quot;:1795910400000,&quot;original&quot;:&quot;2026-11-13&quot;},&quot;tags&quot;:[&quot;UI&quot;,&quot;accessibility&quot;],&quot;snippet&quot;:{&quot;segments&quot;:[{&quot;text&quot;:&quot;Stable fixture item with &quot;,&quot;matched&quot;:false},{&quot;text&quot;:&quot;filter&quot;,&quot;matched&quot;:true},{&quot;text&quot;:&quot; controls visible.&quot;,&quot;matched&quot;:false}]},&quot;reasons&quot;:[{&quot;kind&quot;:&quot;tag-filter-match&quot;,&quot;tokens&quot;:[&quot;UI&quot;]}]},{&quot;canonicalPathname&quot;:&quot;/notes/ui-check/static-results-section/&quot;,&quot;pathLabel&quot;:&quot;notes / ui-check / static-results-section&quot;,&quot;title&quot;:&quot;Static results section&quot;,&quot;description&quot;:&quot;Representative result card for deterministic ui-check screenshots.&quot;,&quot;date&quot;:{&quot;epochMs&quot;:1791331200000,&quot;original&quot;:&quot;2026-09-22&quot;},&quot;tags&quot;:[&quot;静的検査&quot;,&quot;renderer&quot;],&quot;snippet&quot;:{&quot;segments&quot;:[{&quot;text&quot;:&quot;Representative result card for &quot;,&quot;matched&quot;:false},{&quot;text&quot;:&quot;deterministic&quot;,&quot;matched&quot;:true},{&quot;text&quot;:&quot; screenshots.&quot;,&quot;matched&quot;:false}]},&quot;reasons&quot;:[{&quot;kind&quot;:&quot;body-match&quot;,&quot;tokens&quot;:[&quot;deterministic&quot;],&quot;source&quot;:&quot;catalog&quot;}]}],&quot;total&quot;:3,&quot;rankingProfileId&quot;:&quot;rouault-search-v3&quot;,&quot;diagnostics&quot;:{&quot;degraded&quot;:false,&quot;activeSources&quot;:[&quot;catalog&quot;],&quot;failures&quot;:[],&quot;issues&quot;:[]},&quot;tagCounts&quot;:{&quot;UI&quot;:2,&quot;静的検査&quot;:2,&quot;accessibility&quot;:1,&quot;renderer&quot;:1},&quot;allTagCounts&quot;:{&quot;UI&quot;:2,&quot;静的検査&quot;:2,&quot;accessibility&quot;:1,&quot;renderer&quot;:1,&quot;Markdown&quot;:0,&quot;navigation&quot;:0}}" data-hydration-capability="interactive" data-hydration-trigger="initial"
       >
-        <div class="hero">
+        <section data-search-page-baseline aria-labelledby="search-baseline-heading">
+          <div class="hero">
+            <p class="eyebrow">Static Explore</p>
+            <h1 id="search-baseline-heading" class="heading">検索</h1>
+            <p class="description">全文検索や複合フィルタにはJavaScriptが必要です。タグやコーパスからノートを辿れます。</p>
+          </div>
+          <nav class="search-static-explore" aria-labelledby="search-baseline-tags-heading">
+                <h2 id="search-baseline-tags-heading">タグから探す</h2>
+                <ul></ul>
+              </nav>
+              <h2>別の方法で探す</h2>
+              <p><a class="link-text" data-link-kind="internal-document" data-link-surface="navigation" href="/corpora/">コーパスから探す</a></p>
+        </section>
+        <div class="hero" data-search-page-dynamic-hero hidden>
           <p class="eyebrow">Search / Filter</p>
           <h1 class="heading">検索</h1>
           <p class="description">タグとキーワードを組み合わせ、複数タグはOR / ANDを切り替えて探索します。</p>
         </div>
 
-        <form class="search-controls" role="search" data-search-page-form>
+        <form class="search-controls" role="search" data-search-page-form hidden>
           <label class="sr-only" for="search-page-query">検索</label>
           <div class="search-input-field" data-static-search-field>
             <span class="search-input-field__icon static-icon" aria-hidden="true"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" data-icon="search"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><path d="m21 21l-4.34-4.34"/><circle cx="11" cy="11" r="8"/></g></svg></span>
@@ -391,42 +403,30 @@
         </div>
         <div class="search-page__error" role="status" aria-live="polite" hidden data-search-page-error></div>
         <div class="search-page__unavailable" role="status" aria-live="polite" hidden data-search-page-unavailable></div>
-        <div class="results-section" data-search-page-results-section><ol class="results-list" data-search-results>
-        <li>
-          <article class="result-card" data-search-result-card>
-            <a class="result-link" href="/notes/ui-check/search-controls-renderer/" data-link-kind="internal-document" data-link-surface="card">
-              <div class="result-path">notes / ui-check / search-controls-renderer</div>
-              <h2 class="result-title">Search controls renderer fixture</h2>
-              <div class="result-meta">更新日: 2027-01-01</div>
-              <p class="result-excerpt">Renderer-derived <mark>search controls</mark> fixture for visual inspection.</p>
-            </a>
-          </article>
-        </li>
-
-        <li>
-          <article class="result-card" data-search-result-card>
-            <a class="result-link" href="/notes/ui-check/filter-details-open-variant/" data-link-kind="internal-document" data-link-surface="card">
-              <div class="result-path">notes / ui-check / filter-details-open-variant</div>
-              <h2 class="result-title">Filter details open variant</h2>
-              <div class="result-meta">更新日: 2026-11-13</div>
-              <p class="result-excerpt">Stable fixture item with <mark>filter</mark> controls visible.</p>
-            </a>
-          </article>
-        </li>
-
-        <li>
-          <article class="result-card" data-search-result-card>
-            <a class="result-link" href="/notes/ui-check/static-results-section/" data-link-kind="internal-document" data-link-surface="card">
-              <div class="result-path">notes / ui-check / static-results-section</div>
-              <h2 class="result-title">Static results section</h2>
-              <div class="result-meta">更新日: 2026-09-22</div>
-              <p class="result-excerpt">Representative result card for <mark>deterministic</mark> screenshots.</p>
-            </a>
-          </article>
-        </li>
-      </ol></div>
+        <div class="results-section" data-search-page-results-section hidden></div>
       </div>
     </section>
     </main>
+    <script type="module">
+      import { enhanceSearchPage } from '/src/client/post-hydrate/search-page-enhancer.ts';
+      import { buildSearchPageHistoryHref } from '/src/client/post-hydrate/search-page-controller.ts';
+      import { searchPageFixture } from '/tools/ui-check/fixtures/search-page-fixture.ts';
+      import { buildSearchResultRenderHref } from '/src/search/normalize-search-result-url.ts';
+      const core = { search: async () => ({
+        ...searchPageFixture.initialResponse,
+        items: searchPageFixture.initialResponse.items.map(item => ({ ...item,
+          renderHref: buildSearchResultRenderHref({ canonicalPathname: item.canonicalPathname,
+            siteUrlContext: searchPageFixture.siteUrlContext }),
+        })),
+      }) };
+      history.replaceState(history.state, '', buildSearchPageHistoryHref(
+        searchPageFixture.initialState, searchPageFixture.siteUrlContext));
+      enhanceSearchPage(document, undefined, {
+        siteUrlContextProvider: () => searchPageFixture.siteUrlContext,
+        bootstrapProvider: () => ({ status: 'ready', searchCore: core,
+          isInternalDocumentPathname: () => true }),
+        searchRuntimeProvider: () => core,
+      });
+    </script>
   </body>
 </html>

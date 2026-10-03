@@ -12,6 +12,7 @@
 ### This Layer Owns
 
 - トップページ`/`の導入文脈。
+- Searchの[Static Explore](search.md)はrecent feedを複製しない。No-JS保証は[横断契約](static-first-and-no-js.md)を参照する。
 - Rouaultの公開ノートを最近の更新から読み始める入口。
 - `HomePageData.notes`を描画する`最近の更新`section。
 - `/corpora/`、`/search/`、`/about/`へのmetadata導線。

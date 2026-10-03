@@ -176,6 +176,7 @@ Search triggerは入力欄ではなく、`/search/` fallbackとdialog triggerの
 - Header search triggerは`open-search-dialog` custom event発火を保証しない。
 - Header search triggerは旧`ui-search-trigger` custom element APIの復元対象ではない。
 - Header search triggerはbuttonではなく、検索ページへのfallback linkを持つanchorとして扱う。
+- No-JSの遷移先`/search/`は[Search Contract](search.md)のStatic Exploreでtag / corpus navigationを提供する。横断保証は[Static-first / No-JS Baseline Contract](static-first-and-no-js.md)。Header / global dialogのinteraction ownerは変更しない。
 - Activationはnative link semanticsとdialog enhancementの両立を前提に、Enter、click、search shortcutを正とする。
 - Space activationは旧button由来のlegacy behaviorであり、静的anchor fallback contractでは復元しない。
 - Space activationを復元しない理由は、anchor semantics、no-JS baseline、TOC trigger / corpus linkと同じlink系contractとの一貫性を保つためである。

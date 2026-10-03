@@ -70,6 +70,7 @@ export class TagPagesTemplate {
     }
 
     return renderSearchPageHtml({
+      surface: { kind: 'tag', tag: tagPage.tag },
       initialState: buildInitialSearchState(tagPage),
       initialResponse: buildInitialSearchResponse(tagPage),
       siteUrlContext: data.siteUrlContext,

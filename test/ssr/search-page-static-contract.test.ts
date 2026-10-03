@@ -76,6 +76,7 @@ describe('renderSearchPageHtml static contract', () => {
       sort: 'date-desc',
     };
     const rendered = renderSearchPageHtml({
+      surface: { kind: 'search', baseline: { tags: [], corporaHref: '/corpora/' } },
       initialState,
       initialResponse: buildStaticExploreResponse({
         state: initialState,
@@ -136,6 +137,7 @@ describe('renderSearchPageHtml static contract', () => {
     const initialResponse = buildStaticExploreResponse({ state: initialState });
 
     const idle = renderSearchPageHtml({
+      surface: { kind: 'search', baseline: { tags: [], corporaHref: '/corpora/' } },
       initialState,
       initialResponse,
       siteUrlContext: DEFAULT_SITE_URL_CONTEXT,
@@ -145,6 +147,7 @@ describe('renderSearchPageHtml static contract', () => {
     expect(idle).toContain('hidden data-search-page-unavailable');
 
     const loading = renderSearchPageHtml({
+      surface: { kind: 'search', baseline: { tags: [], corporaHref: '/corpora/' } },
       initialState,
       initialResponse,
       siteUrlContext: DEFAULT_SITE_URL_CONTEXT,
@@ -197,6 +200,7 @@ describe('renderSearchPageHtml static contract', () => {
     };
 
     const rendered = renderSearchPageHtml({
+      surface: { kind: 'tag', tag: 'router' },
       initialState,
       initialResponse: initialResponseWithSnippet,
       siteUrlContext: createSiteUrlContext({
@@ -218,6 +222,7 @@ describe('renderSearchPageHtml static contract', () => {
       sort: 'relevance',
     };
     const rendered = renderSearchPageHtml({
+      surface: { kind: 'tag', tag: 'router' },
       initialState,
       initialResponse: buildStaticExploreResponse({
         state: initialState,
@@ -264,11 +269,13 @@ describe('renderSearchPageHtml static contract', () => {
       sort: 'relevance',
     };
     const emptyRendered = renderSearchPageHtml({
+      surface: { kind: 'tag', tag: 'unknown' },
       initialState: emptyState,
       initialResponse: buildStaticExploreResponse({ state: emptyState }),
       siteUrlContext: DEFAULT_SITE_URL_CONTEXT,
     });
     const filteredRendered = renderSearchPageHtml({
+      surface: { kind: 'tag', tag: 'unknown' },
       initialState: filteredState,
       initialResponse: buildStaticExploreResponse({ state: filteredState }),
       siteUrlContext: DEFAULT_SITE_URL_CONTEXT,

@@ -159,6 +159,30 @@ P-labelの意味判定とD1・production移行の人間判断は、機械試験�
 
 ## 4. State Model
 
+### Search page capability / request outcome
+
+横断方針は[Static-first / No-JS Baseline Contract](static-first-and-no-js.md)。以下のSearch固有状態は本書が所有する。
+
+- `static`: SSR直後、No-JS、または初期化成立前。SSR baselineを利用できる。
+- `ready`: 有効なSite URL context、ready bootstrap、SearchCore、接続済み検索handlerが成立し、同じcoreへrequestを渡せる。lexical / Catalogの事前検索成功確認を要求しない。
+- `unavailable`: context欠落、bootstrap不成立、core / handler初期化不能。dynamic controlsを操作可能UIとして提示せずSSR baselineを保持する。
+
+query、clear、tag checkbox、selected-tag remove、tag名ローカルfilter / clear、tag-mode / sort choiceは`static / unavailable`で視覚表示・keyboard・支援技術上の実行可能操作面から退避する。Static Choice Menuのenabled hidden input、FormData、URL / history、ready時interactionは[専用契約](static-choice-menu.md)を維持する。
+
+個別requestのlexical成功、Catalog fallback成功、store-only degradation、正常0件、正常空queryはcapability喪失を意味しない。resolved diagnosticsの`all-sources-failed`もrequest errorとして検出し、正常0件と表示しない。rejectionもrequest errorとし、ready controlsを保持して同じcoreへ次queryを送れる。旧dynamic resultsを現在queryの成功結果と表示しない。Abort、stale、dispose後completionはcommitしない。
+
+ready確認用probe、health API、periodic monitoring、自動retry、core / session再生成によるbudget補充は追加しない。valid SSR initial response adoption時の初回検索省略とlazy initializationを維持する。
+
+### SSR baseline identity
+
+- Search SSR文書はStatic Exploreの説明、Tag projection由来のtag anchors、`/corpora/`へのanchorだけをbaselineとする。recent feed、全ノート一覧、corpus索引の複製、query評価 / ranking / snippet / search resultを持ち込まない。
+- Tag SSR文書は元tagのstatic note linksとmetadataを保持する。page全体がJS必須と誤認させるgeneric noscript noticeを出さない。
+- rendererがsurfaceと元tag identityを明示する。baselineは取得済みSSR文書に固定し、pushState / replaceState / 同一document内popstateで交代しない。Search文書がtag URLになってもStatic Explore、Tag A文書が検索 / 別tag URLになっても元Tag A一覧を保持する。
+- baselineのheading、description、landmark、countは元の静的集合を表し、現在URLの検索条件未適用を明示する。dynamic hero / count / error regionと別ownershipで保持する。
+- 新SSR document / DOMの採用時だけbaselineを交代する。dynamic result更新やruntime errorで破壊せず、保持・復帰のためのfetch / Catalog query / artifact loadを追加しない。
+
+`build/projections/search-static-baseline-projection.ts`は`TagPageEntry[]`のlabel / identity、count、orderingをそのまま投影する。hrefは既存`buildTagPageUrl()`とSite URL render helperに委ねる。SearchState由来の`searchHref` / `searchRenderHref`を静的navigationの正本にしない。Home / Corpus / publication ownerは変更しない。
+
 ### Durable State
 
 - Search index。

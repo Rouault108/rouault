@@ -172,6 +172,7 @@ describe('static-first representative final HTML tag surface', () => {
       [
         'search-page',
         renderSearchPageHtml({
+          surface: { kind: 'search', baseline: { tags: [], corporaHref: '/corpora/' } },
           initialState: searchState,
           initialResponse: searchResponse,
           siteUrlContext: DEFAULT_SITE_URL_CONTEXT,

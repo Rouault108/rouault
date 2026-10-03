@@ -330,6 +330,7 @@ const createOpenFilterDetailsVariant = (html: string): string => {
 
 const renderSearchControlsCase = (): string => {
   const renderedSearchPage = renderSearchPageHtml({
+    surface: { kind: 'search', baseline: { tags: [], corporaHref: '/corpora/' } },
     initialState: searchPageFixture.initialState,
     initialResponse: searchPageFixture.initialResponse,
     siteUrlContext: searchPageFixture.siteUrlContext,
@@ -352,6 +353,27 @@ ${generatedComment}
       <p><a href="../">UI Check Workbench</a></p>
       ${openVariant}
     </main>
+    <script type="module">
+      import { enhanceSearchPage } from '/src/client/post-hydrate/search-page-enhancer.ts';
+      import { buildSearchPageHistoryHref } from '/src/client/post-hydrate/search-page-controller.ts';
+      import { searchPageFixture } from '/tools/ui-check/fixtures/search-page-fixture.ts';
+      import { buildSearchResultRenderHref } from '/src/search/normalize-search-result-url.ts';
+      const core = { search: async () => ({
+        ...searchPageFixture.initialResponse,
+        items: searchPageFixture.initialResponse.items.map(item => ({ ...item,
+          renderHref: buildSearchResultRenderHref({ canonicalPathname: item.canonicalPathname,
+            siteUrlContext: searchPageFixture.siteUrlContext }),
+        })),
+      }) };
+      history.replaceState(history.state, '', buildSearchPageHistoryHref(
+        searchPageFixture.initialState, searchPageFixture.siteUrlContext));
+      enhanceSearchPage(document, undefined, {
+        siteUrlContextProvider: () => searchPageFixture.siteUrlContext,
+        bootstrapProvider: () => ({ status: 'ready', searchCore: core,
+          isInternalDocumentPathname: () => true }),
+        searchRuntimeProvider: () => core,
+      });
+    </script>
   </body>
 </html>
 `;
