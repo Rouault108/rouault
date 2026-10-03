@@ -1,32 +1,38 @@
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { extractSingleStaticCssTemplate } from './support/lit-css-contract.js';
+import { readFileSync } from 'node:fs';
 import { hasDeclarationForSelector, hasDeclarationValueIncluding } from './support/css-contract.js';
 
-const css = extractSingleStaticCssTemplate(resolve('src/components/ui/video/video.ts'));
+const css = readFileSync(resolve('src/assets/css/video.css'), 'utf8');
 
 describe('videoの環境設定別CSS契約', () => {
   it('forced colorsでは操作面と字幕をsystem colorで表示すること', () => {
     expect(
-      hasDeclarationForSelector(css, '.floating-bar', 'background', 'Canvas', {
+      hasDeclarationForSelector(css, '[data-video-root] .floating-bar', 'background', 'Canvas', {
         scope: 'forced-colors',
       }),
     ).toBe(true);
     expect(
-      hasDeclarationForSelector(css, '.play-button', 'color', 'CanvasText', {
+      hasDeclarationForSelector(css, '[data-video-root] .play-button', 'color', 'CanvasText', {
         scope: 'forced-colors',
       }),
     ).toBe(true);
     expect(
-      hasDeclarationForSelector(css, '.fullscreen-caption', 'color', 'CanvasText', {
-        scope: 'forced-colors',
-      }),
+      hasDeclarationForSelector(
+        css,
+        '[data-video-root] .fullscreen-caption',
+        'color',
+        'CanvasText',
+        {
+          scope: 'forced-colors',
+        },
+      ),
     ).toBe(true);
   });
 
   it('reduced motionではloading animationを停止すること', () => {
     expect(
-      hasDeclarationForSelector(css, '.loading-spinner', 'animation', 'none', {
+      hasDeclarationForSelector(css, '[data-video-root] .loading-spinner', 'animation', 'none', {
         scope: 'reduced-motion',
       }),
     ).toBe(true);
@@ -34,19 +40,17 @@ describe('videoの環境設定別CSS契約', () => {
 
   it('printではplayerの操作面を非表示にすること', () => {
     expect(
-      hasDeclarationForSelector(css, '.player-shell', 'display', 'none', { scope: 'print' }),
+      hasDeclarationForSelector(css, '[data-video-root] .player-shell', 'display', 'none', {
+        scope: 'print',
+      }),
     ).toBe(true);
   });
 
   it('proseの広幅表示は既存の余白tokenを使うこと', () => {
     expect(
-      hasDeclarationValueIncluding(
-        css,
-        ':host-context(.prose) .root',
-        'margin-inline',
-        '--space-n8',
-        { scope: 'any' },
-      ),
+      hasDeclarationValueIncluding(css, '.prose [data-video-root]', 'margin-inline', '--space-n8', {
+        scope: 'any',
+      }),
     ).toBe(true);
   });
 });

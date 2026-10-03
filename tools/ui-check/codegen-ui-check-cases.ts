@@ -1,3 +1,5 @@
+import { lowerNativeNoteTree } from '../../build/rehype/native-note-lowering.js';
+import { resolveNotePreviewProfile } from '../../build/content/note-content-contracts.js';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -252,6 +254,11 @@ const renderCodeSurfaceFixtureVariant = async (
     };
   }
 
+  lowerNativeNoteTree(tree, {
+    idContext: createStaticRenderIdContext(`ui-check:code-surface:${variant}:native`),
+    previewProfile: resolveNotePreviewProfile('testing'),
+    documentUrl: 'http://localhost/',
+  });
   const ids = collectIds(tree);
   if (new Set(ids).size !== ids.length) {
     throw new Error(`Generated ${variant} code surface contains duplicate IDs.`);

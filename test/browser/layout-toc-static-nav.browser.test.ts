@@ -1,4 +1,3 @@
-import { html } from 'lit/static-html.js';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { fixture } from './harness/browser-fixture.js';
 
@@ -39,7 +38,7 @@ describe('layout-toc static nav browser style contract', () => {
   });
 
   it('SSR layout toc uses readable compact wrapping for inactive and active labels', async () => {
-    const root = await fixture<HTMLElement>(html`
+    const root = await fixture<HTMLElement>(`
       <div class="layout-toc-col" data-density-tier="compact">
         <nav class="layout-toc" data-layout-toc-nav data-density-tier="compact" aria-label="目次">
           <ol class="layout-toc__list">
@@ -102,7 +101,7 @@ describe('layout-toc static nav browser style contract', () => {
   });
 
   it('mobile panel styling hook receives the same density variables', async () => {
-    const panel = await fixture<HTMLElement>(html`
+    const panel = await fixture<HTMLElement>(`
       <div class="layout-toc-mobile-panel" data-layout-toc-mobile-panel data-density-tier="compact">
         <nav
           class="layout-toc layout-toc--mobile"
@@ -129,7 +128,7 @@ describe('layout-toc static nav browser style contract', () => {
   });
 
   it('hidden TOC items inside the layout TOC surface do not render boxes', async () => {
-    const root = await fixture<HTMLElement>(html`
+    const root = await fixture<HTMLElement>(`
       <nav class="layout-toc" data-layout-toc-nav aria-label="目次">
         <ol class="layout-toc__list">
           <li class="layout-toc__item" data-heading-id="visible">

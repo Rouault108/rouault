@@ -25,10 +25,3 @@ declare module '@11ty/eleventy-plugin-vite' {
   const plugin: unknown;
   export default plugin;
 }
-
-declare module 'eslint-plugin-lit-a11y' {
-  import type { ESLint } from 'eslint';
-
-  const plugin: ESLint.Plugin;
-  export default plugin;
-}

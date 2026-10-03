@@ -59,10 +59,10 @@
 - WebKitはHistory API quotaをsession単位で分離するため、内部的にgeneral、URL state、navigation stateの3 projectへ展開し、この順で逐次実行する。内部project名は公開selectionではない。
 - `pnpm run test:browser`は選択されたbrowserの全suiteをone-shotで実行する。
 - `pnpm run test:browser -- <file>`はbrowser selectionを変えず、指定fileだけを所属projectで実行する。
-- Fixture入口は`test/browser/harness/browser-fixture.ts`、cleanup hookは`test/browser/setup.ts`が所有する。Open WC pure helperのdirect importはこの2 fileだけに限定する。
+- Fixture入口は`test/browser/harness/browser-fixture.ts`、cleanup hookは`test/browser/setup.ts`が所有する。fixtureはstring HTMLまたはNodeを受け、documentへmountした実HTMLElementを返す。AbortControllerとcleanupを共通harnessが管理する。
 - Readiness / event utilityは`test/browser/harness/browser-test-utilities.ts`、stylesheet text取得は`test/browser/helpers/fetch-css-text.ts`が所有する。
-- Test APIとassertionは`vitest`から明示importし、templateは`lit/static-html.js`を使用する。
-- Raw HTML fixtureによるparser / custom-element upgrade contractを維持し、形式的にLit templateへ変換しない。
+- Test APIとassertionは`vitest`から明示importする。Lit template、Lit readiness、Open WC testing helpersは使用しない。
+- Raw HTML fixtureによるparser / 非Lit custom-element upgrade contractを維持する。feature-specific readinessは共通fixtureに埋め込まず、対象のobservable stateを待つ。
 - Web Test Runnerは削除済みであり、旧runner固有のconfig、wrapper、command、環境変数をcompatibility surfaceとして残さない。
 - Browser harnessの変更はstatic-first / no-JS baselineを変更しない。SSR、E2Eの責務も移動しない。
 

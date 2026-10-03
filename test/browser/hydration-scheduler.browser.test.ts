@@ -1,4 +1,3 @@
-import { html } from 'lit/static-html.js';
 import { describe, expect, it } from 'vitest';
 import { fixture } from './harness/browser-fixture.js';
 import { waitForCondition } from './harness/browser-test-utilities.js';
@@ -91,8 +90,6 @@ describe('HydrationScheduler', () => {
     ]);
 
     // 本番の静的HTMLと同じHTML parser経路で、未定義Custom Elementを生成する。
-    // LitのTemplateResult経路では、WebKitが要素にnull CustomElementRegistryを
-    // 関連付けたまま保持し、後続のグローバルregistryによるupgrade対象外とする場合がある。
     const root = await fixture<HTMLElement>(`
       <x-hydration-root-scope
       data-hydration-scope="x-hydration-root-scope"
@@ -167,7 +164,7 @@ describe('HydrationScheduler', () => {
       ],
     ]);
 
-    const root = await fixture<HTMLElement>(html`<main></main>`);
+    const root = await fixture<HTMLElement>(`<main></main>`);
     root.innerHTML = `
       <${tag}
         data-hydration-scope="${tag}"
@@ -213,7 +210,7 @@ describe('HydrationScheduler', () => {
       ],
     ]);
 
-    const root = await fixture<HTMLElement>(html`
+    const root = await fixture<HTMLElement>(`
       <section data-hydration-scope="note-content">
         <div
           data-hydration-key="x-hydration-keyed-card"
@@ -256,7 +253,7 @@ describe('HydrationScheduler', () => {
       ],
     ]);
 
-    const root = await fixture<HTMLElement>(html`
+    const root = await fixture<HTMLElement>(`
       <section data-hydration-scope="note-content">
         <div
           data-hydration-key="x-hydration-keyed-preload"
@@ -311,7 +308,7 @@ describe('HydrationScheduler', () => {
       ],
     ]);
 
-    const root = await fixture<HTMLElement>(html`
+    const root = await fixture<HTMLElement>(`
       <div data-hydration-scope="app-shell">
         <x-hydration-shell-header
           data-hydration-capability="interactive"
@@ -387,7 +384,7 @@ describe('HydrationScheduler', () => {
       ],
     ]);
 
-    const root = await fixture<HTMLElement>(html`
+    const root = await fixture<HTMLElement>(`
       <div data-hydration-scope="app-shell">
         <x-hydration-exclude-producer
           data-hydration-capability="interactive"
@@ -431,7 +428,7 @@ describe('HydrationScheduler', () => {
       ],
     ]);
 
-    const root = await fixture<HTMLElement>(html`<main></main>`);
+    const root = await fixture<HTMLElement>(`<main></main>`);
     root.innerHTML = `
       <section data-hydration-scope="note-content">
         <section
@@ -516,7 +513,7 @@ describe('HydrationScheduler', () => {
       ],
     ]);
 
-    const root = await fixture<HTMLElement>(html`<main></main>`);
+    const root = await fixture<HTMLElement>(`<main></main>`);
     root.innerHTML = `
       <section data-hydration-scope="note-content">
         <${initialTag}
@@ -611,7 +608,7 @@ describe('HydrationScheduler', () => {
       ],
     ]);
 
-    const root = await fixture<HTMLElement>(html`<main></main>`);
+    const root = await fixture<HTMLElement>(`<main></main>`);
     root.innerHTML = `
       <section data-hydration-scope="test-shell">
         <${preloadTag}
@@ -628,7 +625,10 @@ describe('HydrationScheduler', () => {
     const scheduler = new HydrationScheduler(registry);
     const hydration = scheduler.hydrateShell(root);
 
-    await waitForCondition(() => steps.includes('load:preload'), 'planned preload が開始されること');
+    await waitForCondition(
+      () => steps.includes('load:preload'),
+      'planned preload が開始されること',
+    );
     await waitForCondition(
       () => steps.includes('activate:initial'),
       'preload 未解決でも initial activation が実行されること',
@@ -678,7 +678,7 @@ describe('HydrationScheduler', () => {
       resolveContentGate = resolve;
     });
 
-    const contentRoot = await fixture<HTMLElement>(html`<main></main>`);
+    const contentRoot = await fixture<HTMLElement>(`<main></main>`);
     contentRoot.innerHTML = `
       <section data-hydration-scope="note-content">
         <${gateTag}
@@ -710,7 +710,7 @@ describe('HydrationScheduler', () => {
       resolveShellGate = resolve;
     });
 
-    const shellRoot = await fixture<HTMLElement>(html`<main></main>`);
+    const shellRoot = await fixture<HTMLElement>(`<main></main>`);
     shellRoot.innerHTML = `
       <section data-hydration-scope="test-shell">
         <${gateTag}
@@ -727,7 +727,10 @@ describe('HydrationScheduler', () => {
     const shellScheduler = new HydrationScheduler(registry);
     const shellHydration = shellScheduler.hydrateShell(shellRoot);
 
-    await waitForCondition(() => loadCount === 1, 'shell session で planned preload が開始されること');
+    await waitForCondition(
+      () => loadCount === 1,
+      'shell session で planned preload が開始されること',
+    );
 
     resolveShellGate();
     await shellHydration;
@@ -785,7 +788,7 @@ describe('HydrationScheduler', () => {
       ],
     ]);
 
-    const root = await fixture<HTMLElement>(html`<main></main>`);
+    const root = await fixture<HTMLElement>(`<main></main>`);
     root.innerHTML = `
       <section data-hydration-scope="test-shell">
         <${initialTag}
@@ -832,7 +835,7 @@ describe('HydrationScheduler', () => {
       ],
     ]);
 
-    const root = await fixture<HTMLElement>(html`<main></main>`);
+    const root = await fixture<HTMLElement>(`<main></main>`);
     root.innerHTML = `
       <section data-hydration-scope="test-shell">
         <${tag}
@@ -874,7 +877,7 @@ describe('HydrationScheduler', () => {
     ]);
 
     const scheduler = new HydrationScheduler(registry);
-    const firstRoot = await fixture<HTMLElement>(html`<main></main>`);
+    const firstRoot = await fixture<HTMLElement>(`<main></main>`);
     firstRoot.innerHTML = `
       <section data-hydration-scope="note-content">
         <${tag}
@@ -905,7 +908,7 @@ describe('HydrationScheduler', () => {
       },
     ]);
 
-    const secondRoot = await fixture<HTMLElement>(html`<main></main>`);
+    const secondRoot = await fixture<HTMLElement>(`<main></main>`);
     secondRoot.innerHTML = `
       <section data-hydration-scope="note-content">
         <${tag}
@@ -985,7 +988,7 @@ describe('HydrationScheduler', () => {
       ],
     ]);
 
-    const root = await fixture<HTMLElement>(html`<main></main>`);
+    const root = await fixture<HTMLElement>(`<main></main>`);
     root.innerHTML = `
       <section data-hydration-scope="test-shell">
         <${gateTag}
@@ -1069,7 +1072,7 @@ describe('HydrationScheduler', () => {
         ],
       ]);
 
-      const root = await fixture<HTMLElement>(html`<main></main>`);
+      const root = await fixture<HTMLElement>(`<main></main>`);
       root.innerHTML = `
         <section data-hydration-scope="test-shell">
           <${gateTag}
@@ -1106,7 +1109,7 @@ describe('HydrationScheduler', () => {
     const tag = 'x-hydration-boot-marker';
     defineTestElement(tag);
 
-    const root = await fixture<HTMLElement>(html`<main></main>`);
+    const root = await fixture<HTMLElement>(`<main></main>`);
     root.innerHTML = `
       <section data-hydration-scope="test-shell">
         <${tag}
@@ -1162,7 +1165,7 @@ describe('HydrationScheduler', () => {
       ],
     ]);
 
-    const root = await fixture<HTMLElement>(html`<main></main>`);
+    const root = await fixture<HTMLElement>(`<main></main>`);
     root.innerHTML = `
       <section data-hydration-scope="test-shell">
         <${tag}
@@ -1200,7 +1203,7 @@ describe('HydrationScheduler', () => {
       ],
     ]);
 
-    const root = await fixture<HTMLElement>(html`<main></main>`);
+    const root = await fixture<HTMLElement>(`<main></main>`);
     root.innerHTML = `
       <section data-hydration-scope="test-shell">
         <${tag}
@@ -1237,7 +1240,7 @@ describe('HydrationScheduler', () => {
       ],
     ]);
 
-    const root = await fixture<HTMLElement>(html`<main></main>`);
+    const root = await fixture<HTMLElement>(`<main></main>`);
     root.innerHTML = `
       <section data-hydration-scope="test-shell">
         <${tag}
@@ -1281,7 +1284,7 @@ describe('HydrationScheduler', () => {
       ],
     ]);
 
-    const firstRoot = await fixture<HTMLElement>(html`<main></main>`);
+    const firstRoot = await fixture<HTMLElement>(`<main></main>`);
     firstRoot.innerHTML = `
       <section data-hydration-scope="note-content">
         <${visibleTag}
@@ -1291,7 +1294,7 @@ describe('HydrationScheduler', () => {
       </section>
     `;
 
-    const secondRoot = await fixture<HTMLElement>(html`<main></main>`);
+    const secondRoot = await fixture<HTMLElement>(`<main></main>`);
     secondRoot.innerHTML = `
       <section data-hydration-scope="note-content">
         <${initialTag}
@@ -1315,7 +1318,10 @@ describe('HydrationScheduler', () => {
     await scheduler.hydrateContent(firstRoot, { dispatchTarget: firstRoot });
     await scheduler.hydrateContent(secondRoot, { dispatchTarget: secondRoot });
 
-    await waitForCondition(() => secondDiagnostics !== null, '後続 session の diagnostics が発火すること');
+    await waitForCondition(
+      () => secondDiagnostics !== null,
+      '後続 session の diagnostics が発火すること',
+    );
 
     const currentSecondDiagnostics = requireDiagnostics(
       secondDiagnostics,
@@ -1353,7 +1359,7 @@ describe('HydrationScheduler', () => {
       ],
     ]);
 
-    const root = await fixture<HTMLElement>(html`<main></main>`);
+    const root = await fixture<HTMLElement>(`<main></main>`);
     root.innerHTML = `
       <section data-hydration-scope="note-content">
         <${loadFailTag}

@@ -7,7 +7,7 @@ Markdown出力の構造契約は`docs/contracts/markdown.md`と`docs/references/
 
 - Type: Normative for Design System patterns
 - Source of truth: Design System CSS tokens、SSR CSS contract tests
-- Applies to: `.prose`、`.about-prose`、`ui-tabs` panel内の読書本文flow
+- Applies to: `.prose`、`.about-prose`、`[data-tabs-root]` panel内の読書本文flow
 - Non-goals: Markdown parser / transformerの変更、About専用表示調整、router / URL / hydration / search / TOCの再定義
 
 ## 2. Flow Tokens
@@ -22,7 +22,7 @@ Markdown出力の構造契約は`docs/contracts/markdown.md`と`docs/references/
 `.prose` / `.about-prose`直下の`p + p`は`--reading-paragraph-space`を使う。
 短文段落が続く場合でも、段落間の休止を保ちながら、表、図、コード、引用、callout、リストなどのblock遷移よりは控えめに見せる。
 
-同じ契約は`ui-tabs` panel内の直下`p + p`にも適用する。
+同じ契約は`[data-tabs-root]` panel内の直下`p + p`にも適用する。
 tabsは読書面内の一時的な表示容器であり、panel内の連続段落だけが別密度になるべきではない。
 
 ## 4. Block Flow
@@ -44,11 +44,11 @@ tabsは読書面内の一時的な表示容器であり、panel内の連続段�
 
 - `body`は`text-autospace: no-autospace`で固定する。
 - `.prose` / `.about-prose`だけを`text-autospace: ideograph-alpha ideograph-numeric`へopt-inする。
-- 読書面配下の`ui-tabs` hostは表示容器として`no-autospace`へ戻す。
-- 読書面配下の`ui-tabs > [slot='panel']`だけを読書本文として再opt-inする。
-- この`ui-tabs`契約はflow余白契約の拡張ではなく、autospace継承制御だけの追加契約である。
+- 読書面配下の`[data-tabs-root]` hostは表示容器として`no-autospace`へ戻す。
+- 読書面配下の`[data-tabs-root] > [data-tab-panel]`だけを読書本文として再opt-inする。
+- この`[data-tabs-root]`契約はflow余白契約の拡張ではなく、autospace継承制御だけの追加契約である。
 - `code`、`pre`、`kbd`、`samp`、`.katex`、`[data-math]`、`pre[data-code-block]`、`[data-code-block-root]`、`section[data-code-group]`、`[data-score]`は記号的表示として`no-autospace`へ戻す。
-- `ui-translation`と`.translation-static`の表示テキストは、読書面内の本文補助要素としてautospace継承を許容する。
+- `[data-translation-overlay]`と`.translation-static`の表示テキストは、読書面内の本文補助要素としてautospace継承を許容する。
 
 translation trigger / fallback / overlayに過剰な字間変化が見つかった場合、このChangeは完了不可とする。
 その場で個別scopeを追加せず、別ChangeまたはChange Plan更新で扱う。
@@ -58,7 +58,7 @@ translation trigger / fallback / overlayに過剰な字間変化が見つかっ�
 ## 7. Acceptance Criteria
 
 - `.prose` / `.about-prose`直下の`p + p`が`--reading-paragraph-space`を使う。
-- `ui-tabs` panel内の直下`p + p`も`--reading-paragraph-space`を使う。
+- `[data-tabs-root]` panel内の直下`p + p`も`--reading-paragraph-space`を使う。
 - 非段落block遷移は`--reading-flow-space`を維持する。
 - About専用hack、Markdown parser変更、runtime測定を導入していない。
 - Japanese/ASCII visual spacingは読書面CSSの継承制御だけで扱い、Markdown / DOM / search / hydrationを変更しない。

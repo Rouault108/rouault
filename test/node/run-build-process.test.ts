@@ -360,7 +360,6 @@ describe('run-build process helper', () => {
 
       expect(tsxSteps.map((step) => step.label)).to.deep.equal([
         'eleventy',
-        'apply-lit-ssr',
         'emit-navigation-artifacts',
         'emit-search-artifacts',
       ]);

@@ -18,7 +18,6 @@ export interface StaticFirstProfiledHydrationValidationOptions {
   readonly html: string;
   readonly registry: readonly StaticFirstHydrationRegistryContractEntry[];
   readonly denylistTags?: readonly string[];
-  readonly ssrTargetTags?: readonly string[];
 }
 
 export interface StaticFirstProfiledHydrationValidationResult {
@@ -60,13 +59,12 @@ export const validateStaticFirstProfiledHydration = ({
   html,
   registry,
   denylistTags = [],
-  ssrTargetTags = [],
 }: StaticFirstProfiledHydrationValidationOptions): StaticFirstProfiledHydrationValidationResult => {
   const fragment = parse5.parseFragment(html);
   const elements = collectElements(fragment);
   const registryByTag = new Map(registry.map((entry) => [entry.tag, entry] as const));
   const denylist = new Set(denylistTags);
-  const profileSsrTargets = new Set(ssrTargetTags);
+
   const hydrationKeys: string[] = [];
   const hydrationTags: string[] = [];
   const errors: string[] = [];
@@ -93,17 +91,6 @@ export const validateStaticFirstProfiledHydration = ({
     if (!entry.profiles.includes(profile)) {
       errors.push(
         `${profile} hydration root "${key}" は registry profiles ${entry.profiles.join(
-          ', ',
-        )} に含まれていません`,
-      );
-    }
-  }
-
-  for (const tag of profileSsrTargets) {
-    const entry = registryByTag.get(tag);
-    if (entry?.kind === 'custom-element' && !entry.profiles.includes(profile)) {
-      errors.push(
-        `${profile} SSR target "${tag}" は registry profiles ${entry.profiles.join(
           ', ',
         )} に含まれていません`,
       );

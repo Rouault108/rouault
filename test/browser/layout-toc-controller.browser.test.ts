@@ -1,4 +1,3 @@
-import { html } from 'lit/static-html.js';
 import { afterEach, describe, expect, it } from 'vitest';
 import { fixture } from './harness/browser-fixture.js';
 import { waitForCondition } from './harness/browser-test-utilities.js';
@@ -61,7 +60,7 @@ describe('layout-toc-controller', () => {
     let root: HTMLElement | null = null;
 
     try {
-      const currentRoot = await fixture<HTMLElement>(html`
+      const currentRoot = await fixture<HTMLElement>(`
         <div data-layout-toc-root>
           <nav class="layout-toc" aria-label="目次" data-layout-toc-nav>
             <ol class="layout-toc__list">
@@ -157,7 +156,7 @@ describe('layout-toc-controller', () => {
   });
 
   it('desktop nav sync helper が stale current state を削除し diagnostic snapshot を返すこと', async () => {
-    const nav = await fixture<HTMLElement>(html`
+    const nav = await fixture<HTMLElement>(`
       <nav>
         <ol>
           <li class="layout-toc__item" data-heading-id="section-1">
@@ -214,7 +213,7 @@ describe('layout-toc-controller', () => {
     let root: HTMLElement | null = null;
 
     try {
-      const currentRoot = await fixture<HTMLElement>(html`
+      const currentRoot = await fixture<HTMLElement>(`
         <div data-layout-toc-root>
           <nav class="layout-toc" aria-label="目次" data-layout-toc-nav>
             <ol class="layout-toc__list">
@@ -290,7 +289,7 @@ describe('layout-toc-controller', () => {
     let root: HTMLElement | null = null;
 
     try {
-      const currentRoot = await fixture<HTMLElement>(html`
+      const currentRoot = await fixture<HTMLElement>(`
         <div data-layout-toc-root>
           <nav class="layout-toc" aria-label="目次" data-layout-toc-nav>
             <ol class="layout-toc__list">
@@ -386,15 +385,20 @@ describe('layout-toc-controller', () => {
     try {
       const hiddenPanel = document.createElement('section');
       hiddenPanel.setAttribute('role', 'tabpanel');
+      hiddenPanel.setAttribute('data-tab-panel', '');
       hiddenPanel.setAttribute('hidden', '');
       const section2 = document.getElementById('section-2');
       if (!(section2 instanceof HTMLElement)) {
         throw new Error('section-2 heading が見つかりません');
       }
-      section2.before(hiddenPanel);
+      const tabsRoot = document.createElement('section');
+      tabsRoot.setAttribute('data-tabs-root', '');
+      tabsRoot.setAttribute('data-tabs-enhanced', '');
+      section2.before(tabsRoot);
+      tabsRoot.append(hiddenPanel);
       hiddenPanel.append(section2);
 
-      const currentRoot = await fixture<HTMLElement>(html`
+      const currentRoot = await fixture<HTMLElement>(`
         <div data-layout-toc-root>
           <nav class="layout-toc" aria-label="目次" data-layout-toc-nav>
             <ol class="layout-toc__list">
@@ -482,7 +486,7 @@ describe('layout-toc-controller', () => {
           }) satisfies DOMRect,
       });
 
-      const currentRoot = await fixture<HTMLElement>(html`
+      const currentRoot = await fixture<HTMLElement>(`
         <div data-layout-toc-root>
           <nav class="layout-toc" aria-label="目次" data-layout-toc-nav>
             <ol class="layout-toc__list">
@@ -571,7 +575,7 @@ describe('layout-toc-controller', () => {
       trigger.textContent = 'toc';
       document.body.append(trigger);
 
-      const currentRoot = await fixture<HTMLElement>(html`
+      const currentRoot = await fixture<HTMLElement>(`
         <div data-layout-toc-root>
           <nav class="layout-toc" aria-label="目次" data-layout-toc-nav>
             <ol class="layout-toc__list">

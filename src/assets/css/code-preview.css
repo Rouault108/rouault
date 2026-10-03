@@ -1,0 +1,517 @@
+[data-code-preview-root] {
+  --_note-code-preview-breakout-width-default: 100%;
+  --_note-code-preview-breakout-margin-default: 0;
+
+  /* ─── 子コンポーネントの breakout を無効化（本コンポーネントが担当） ─── */
+  --ui-code-surface-breakout-width: 100%;
+  --ui-code-surface-breakout-margin: 0;
+  --ui-code-surface-radius-top: 0;
+  --ui-code-block-breakout-width: 100%;
+  --ui-code-block-breakout-margin: 0;
+  --ui-code-block-radius-top: 0;
+  --ui-code-group-width: 100%;
+  --ui-code-group-margin-inline: 0;
+
+  display: block;
+  width: var(--ui-code-preview-breakout-width, var(--_note-code-preview-breakout-width-default));
+  margin-inline: var(
+    --ui-code-preview-breakout-margin,
+    var(--_note-code-preview-breakout-margin-default)
+  );
+  margin-block: var(--space-8, 2rem);
+
+  --_note-preview-color-scheme: inherit;
+  --_note-preview-primary: var(--primary, oklch(55% 0.2 250));
+  --_note-preview-primary-hover: var(--primary-hover, oklch(50% 0.2 250));
+  --_note-preview-on-primary: var(--on-primary, oklch(100% 0 0));
+  --_note-preview-danger: var(--danger, oklch(55% 0.2 25));
+  --_note-preview-on-danger: var(--on-danger, oklch(100% 0 0));
+  --_note-preview-success: var(--success, oklch(55% 0.18 145));
+  --_note-preview-on-success: var(--on-success, oklch(100% 0 0));
+  --_note-preview-warning: var(--warning, oklch(75% 0.16 85));
+  --_note-preview-on-warning: var(--on-warning, oklch(20% 0.05 85));
+  --_note-preview-bg-default: var(--bg-default, oklch(1 0 0));
+  --_note-preview-bg-surface-1: var(--bg-surface-1, var(--_note-preview-bg-default));
+  --_note-preview-bg-surface-2: var(--bg-surface-2, oklch(100% 0 0));
+  --_note-preview-bg-surface-3: var(--bg-surface-3, oklch(100% 0 0));
+  --_note-preview-bg-fill-muted: var(--bg-fill-muted, oklch(96% 0 0));
+  --_note-preview-bg-fill-neutral: var(--bg-fill-neutral, oklch(20% 0 0 / 0.12));
+  --_note-preview-bg-hover: var(--bg-hover, oklch(20% 0 0 / 0.05));
+  --_note-preview-bg-active: var(--bg-active, oklch(55% 0.2 250 / 0.08));
+  --_note-preview-bg-surface-active: var(--bg-surface-active, var(--_note-preview-bg-active));
+  --_note-preview-bg-danger-subtle: var(--bg-danger-subtle, oklch(96% 0.03 25));
+  --_note-preview-bg-warning-subtle: var(--bg-warning-subtle, oklch(96% 0.04 85));
+  --_note-preview-bg-highlight-subtle: var(--bg-highlight-subtle, oklch(96% 0.04 65));
+  --_note-preview-bg-success-subtle: var(--bg-success-subtle, oklch(96% 0.04 145));
+  --_note-preview-bg-tip-subtle: var(--bg-tip-subtle, oklch(96% 0.04 250));
+  --_note-preview-bg-note-subtle: var(--bg-note-subtle, oklch(96% 0 0));
+  --_note-preview-bg-table-ruler: var(--bg-table-ruler, oklch(20% 0 0 / 0.08));
+  --_note-preview-fg-default: var(--fg-default, oklch(20% 0 0));
+  --_note-preview-fg-muted: var(--fg-muted, oklch(45% 0 0));
+  --_note-preview-fg-subtle: var(--fg-subtle, oklch(60% 0 0));
+  --_note-preview-fg-on-primary: var(--fg-on-primary, var(--_note-preview-on-primary));
+  --_note-preview-fg-warning: var(--fg-warning, oklch(55% 0.16 85));
+  --_note-preview-fg-success: var(--fg-success, var(--_note-preview-success));
+  --_note-preview-fg-danger: var(--fg-danger, var(--_note-preview-danger));
+  --_note-preview-fg-info: var(--fg-info, var(--_note-preview-primary));
+  --_note-preview-border-default: var(--border-default, oklch(20% 0 0 / 0.12));
+  --_note-preview-border-muted: var(--border-muted, oklch(20% 0 0 / 0.06));
+  --_note-preview-border-ghost: var(--border-ghost, oklch(20% 0 0 / 0.04));
+  --_note-preview-border-danger: var(--border-danger, oklch(72% 0.15 25));
+  --_note-preview-border-warning: var(--border-warning, oklch(72% 0.15 85));
+  --_note-preview-border-on-inverted: var(
+    --border-on-inverted,
+    oklch(from var(--_note-preview-fg-default) l c h / 0.1)
+  );
+  --_note-preview-elevation-sm: var(--elevation-sm, 0 1px 2px oklch(0% 0 0 / 0.08));
+  --_note-preview-elevation-md: var(--elevation-md, 0 4px 12px oklch(0% 0 0 / 0.08));
+  --_note-preview-elevation-lg: var(--elevation-lg, 0 8px 24px oklch(0% 0 0 / 0.12));
+  --_note-preview-elevation-glow: var(--elevation-glow, 0 0 12px oklch(65% 0.18 250 / 0.5));
+  --_note-preview-bg-default-rgb: var(--bg-default-rgb, 250, 250, 251);
+  --_note-preview-bg-surface-2-rgb: var(--bg-surface-2-rgb, 255, 255, 255);
+  --_note-code-preview-surface-bg: var(
+    --ui-code-preview-preview-bg,
+    var(--_note-preview-bg-surface-2)
+  );
+  --_note-preview-context-bg-default: var(--_note-code-preview-surface-bg);
+  --_note-preview-context-bg-surface-1: var(--_note-code-preview-surface-bg);
+  --_note-code-preview-frame-width: 100%;
+}
+
+[data-code-preview-root][data-preview-theme='light'] {
+  --_note-preview-color-scheme: light;
+  --_note-preview-primary: oklch(55% 0.2 250);
+  --_note-preview-primary-hover: oklch(50% 0.2 250);
+  --_note-preview-on-primary: oklch(100% 0 0);
+  --_note-preview-danger: oklch(55% 0.2 25);
+  --_note-preview-on-danger: oklch(100% 0 0);
+  --_note-preview-success: oklch(55% 0.18 145);
+  --_note-preview-on-success: oklch(100% 0 0);
+  --_note-preview-warning: oklch(75% 0.16 85);
+  --_note-preview-on-warning: oklch(20% 0.05 85);
+  --_note-preview-bg-default: oklch(1 0 0);
+  --_note-preview-bg-surface-1: var(--_note-preview-bg-default);
+  --_note-preview-bg-surface-2: oklch(100% 0 0);
+  --_note-preview-bg-surface-3: oklch(100% 0 0);
+  --_note-preview-bg-fill-muted: oklch(96% 0 0);
+  --_note-preview-bg-fill-neutral: oklch(from var(--_note-preview-fg-default) l c h / 0.12);
+  --_note-preview-bg-hover: oklch(from var(--_note-preview-fg-default) l c h / 0.05);
+  --_note-preview-bg-active: oklch(from var(--_note-preview-primary) l c h / 0.08);
+  --_note-preview-bg-surface-active: var(--_note-preview-bg-active);
+  --_note-preview-bg-danger-subtle: oklch(96% 0.03 25);
+  --_note-preview-bg-warning-subtle: oklch(96% 0.04 85);
+  --_note-preview-bg-highlight-subtle: oklch(96% 0.04 65);
+  --_note-preview-bg-success-subtle: oklch(96% 0.04 145);
+  --_note-preview-bg-tip-subtle: oklch(96% 0.04 250);
+  --_note-preview-bg-note-subtle: oklch(96% 0 0);
+  --_note-preview-bg-table-ruler: oklch(from var(--_note-preview-fg-default) l c h / 0.08);
+  --_note-preview-fg-default: oklch(20% 0 0);
+  --_note-preview-fg-muted: oklch(45% 0 0);
+  --_note-preview-fg-subtle: oklch(60% 0 0);
+  --_note-preview-fg-on-primary: var(--_note-preview-on-primary);
+  --_note-preview-fg-warning: oklch(55% 0.16 85);
+  --_note-preview-fg-success: var(--_note-preview-success);
+  --_note-preview-fg-danger: var(--_note-preview-danger);
+  --_note-preview-fg-info: var(--_note-preview-primary);
+  --_note-preview-border-default: oklch(20% 0 0 / 0.12);
+  --_note-preview-border-muted: oklch(20% 0 0 / 0.06);
+  --_note-preview-border-ghost: oklch(20% 0 0 / 0.04);
+  --_note-preview-border-danger: oklch(72% 0.15 25);
+  --_note-preview-border-warning: oklch(72% 0.15 85);
+  --_note-preview-border-on-inverted: oklch(from var(--_note-preview-fg-default) l c h / 0.1);
+  --_note-preview-bg-default-rgb: 250, 250, 251;
+  --_note-preview-bg-surface-2-rgb: 255, 255, 255;
+}
+
+[data-code-preview-root][data-preview-theme='dark'] {
+  --_note-preview-color-scheme: dark;
+  --_note-preview-primary: oklch(65% 0.12 250);
+  --_note-preview-primary-hover: oklch(70% 0.18 250);
+  --_note-preview-on-primary: oklch(100% 0 0);
+  --_note-preview-danger: oklch(55% 0.2 25);
+  --_note-preview-on-danger: oklch(100% 0 0);
+  --_note-preview-success: oklch(55% 0.18 145);
+  --_note-preview-on-success: oklch(100% 0 0);
+  --_note-preview-warning: oklch(25% 0.16 85);
+  --_note-preview-on-warning: oklch(85% 0.16 85);
+  --_note-preview-bg-default: oklch(12% 0 0);
+  --_note-preview-bg-surface-1: var(--_note-preview-bg-default);
+  --_note-preview-bg-surface-2: oklch(17% 0 0);
+  --_note-preview-bg-surface-3: oklch(22% 0 0);
+  --_note-preview-bg-fill-muted: oklch(9% 0 0);
+  --_note-preview-bg-fill-neutral: oklch(from var(--_note-preview-fg-default) l c h / 0.12);
+  --_note-preview-bg-hover: oklch(from var(--_note-preview-fg-default) l c h / 0.05);
+  --_note-preview-bg-active: oklch(from var(--_note-preview-primary) l c h / 0.15);
+  --_note-preview-bg-surface-active: var(--_note-preview-bg-active);
+  --_note-preview-bg-danger-subtle: oklch(25% 0.05 25);
+  --_note-preview-bg-warning-subtle: oklch(25% 0.05 85);
+  --_note-preview-bg-highlight-subtle: oklch(60% 0.05 65);
+  --_note-preview-bg-success-subtle: oklch(25% 0.05 145);
+  --_note-preview-bg-tip-subtle: oklch(25% 0.05 250);
+  --_note-preview-bg-note-subtle: oklch(20% 0 0);
+  --_note-preview-bg-table-ruler: oklch(from var(--_note-preview-fg-default) l c h / 0.08);
+  --_note-preview-fg-default: oklch(90% 0 0);
+  --_note-preview-fg-muted: oklch(65% 0 0);
+  --_note-preview-fg-subtle: oklch(50% 0 0);
+  --_note-preview-fg-on-primary: var(--_note-preview-on-primary);
+  --_note-preview-fg-warning: oklch(85% 0.16 85);
+  --_note-preview-fg-success: var(--_note-preview-success);
+  --_note-preview-fg-danger: var(--_note-preview-danger);
+  --_note-preview-fg-info: var(--_note-preview-primary);
+  --_note-preview-border-default: oklch(90% 0 0 / 0.18);
+  --_note-preview-border-muted: oklch(90% 0 0 / 0.1);
+  --_note-preview-border-ghost: oklch(90% 0 0 / 0.06);
+  --_note-preview-border-danger: oklch(62% 0.2 25);
+  --_note-preview-border-warning: oklch(60% 0.14 85);
+  --_note-preview-border-on-inverted: oklch(from var(--_note-preview-bg-default) l c h / 0.1);
+  --_note-preview-elevation-sm: 0 1px 2px oklch(0% 0 0 / 0.3);
+  --_note-preview-elevation-md: 0 4px 8px oklch(0% 0 0 / 0.4);
+  --_note-preview-elevation-lg: 0 8px 16px oklch(0% 0 0 / 0.5);
+  --_note-preview-elevation-glow: 0 0 12px oklch(65% 0.18 250 / 0.5);
+  --_note-preview-bg-default-rgb: 28, 29, 33;
+  --_note-preview-bg-surface-2-rgb: 40, 42, 47;
+}
+
+[data-code-preview-root][data-preview-surface='surface'] {
+  --_note-code-preview-surface-bg: var(
+    --ui-code-preview-preview-bg,
+    var(--_note-preview-bg-surface-2)
+  );
+  --_note-preview-context-bg-default: var(--_note-code-preview-surface-bg);
+  --_note-preview-context-bg-surface-1: var(--_note-code-preview-surface-bg);
+}
+
+[data-code-preview-root][data-preview-surface='canvas'] {
+  --_note-code-preview-surface-bg: var(--_note-preview-bg-default);
+  --_note-preview-context-bg-default: var(--_note-preview-bg-default);
+  --_note-preview-context-bg-surface-1: var(--_note-preview-bg-default);
+}
+
+[data-code-preview-root][data-preview-surface='muted'] {
+  --_note-code-preview-surface-bg: var(--_note-preview-bg-fill-muted);
+  --_note-preview-context-bg-default: var(--_note-preview-bg-fill-muted);
+  --_note-preview-context-bg-surface-1: var(--_note-preview-bg-fill-muted);
+}
+
+[data-code-preview-root][data-preview-viewport='tablet'] {
+  --_note-code-preview-frame-width: 768px;
+}
+
+[data-code-preview-root][data-preview-viewport='mobile'] {
+  --_note-code-preview-frame-width: 375px;
+}
+
+/* ─── Root Container ─── */
+[data-code-preview-root] {
+  border: var(--border-style-subtle, 1px solid oklch(20% 0 0 / 0.08));
+  border-radius: var(--ui-code-preview-radius, var(--radius-md, 6px));
+  overflow: hidden;
+  background: var(--bg-fill-muted, oklch(96% 0 0));
+  page-break-inside: avoid;
+  break-inside: avoid;
+}
+
+/* ─── Header ─── */
+[data-code-preview-root] > [data-code-preview-header] {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: var(--space-2, 0.5rem);
+  padding: var(--space-4, 1rem) var(--space-4, 1rem);
+  background: var(--_note-code-preview-surface-bg);
+  color: var(--_note-preview-fg-default);
+  border-bottom: none;
+  min-block-size: var(--control-min-touch, 44px);
+}
+
+[data-code-preview-root]:has(> [data-code-preview-header]) > [data-code-preview-header] {
+  display: flex;
+}
+
+[data-code-preview-root] > [data-code-preview-header] > .header-heading {
+  display: block;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--_note-preview-fg-muted);
+  font-size: var(--text-xs, 12px);
+  font-weight: var(--font-medium, 500);
+  letter-spacing: var(--tracking-wide, 0.025em);
+}
+
+[data-code-preview-root]:has(> [data-code-preview-header] > .header-heading)
+  > [data-code-preview-header]
+  > .header-heading {
+  display: block;
+}
+
+[data-code-preview-root] > [data-code-preview-header] > .header-tools {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: var(--space-2, 0.5rem);
+  flex-shrink: 0;
+  margin-inline-start: auto;
+  min-width: 0;
+}
+
+[data-code-preview-root]
+  > [data-code-preview-header]
+  > .header-tools
+  > [data-code-preview-control] {
+  display: inline-flex;
+}
+
+[data-code-preview-root]
+  > [data-code-preview-header]
+  > .header-tools
+  > [data-code-preview-control]
+  > button {
+  --fg-default: var(--_note-preview-fg-default);
+  --fg-muted: var(--_note-preview-fg-muted);
+  --bg-hover: var(--_note-preview-bg-hover);
+}
+
+[data-code-preview-root]
+  > [data-code-preview-header]
+  > .header-tools
+  > [data-code-preview-control]
+  > button
+  [data-icon] {
+  flex-shrink: 0;
+}
+
+[data-code-preview-root] > [data-code-preview-header] > .header-tools > .header-toolbar {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-2, 0.5rem);
+}
+
+/* toolbar 内の操作要素は最低ターゲットサイズを保証 */
+[data-code-preview-root]
+  > [data-code-preview-header]
+  > .header-tools
+  > button[data-preview-toolbar],
+[data-code-preview-root] > [data-code-preview-header] > .header-tools > a[data-preview-toolbar],
+[data-code-preview-root]
+  > [data-code-preview-header]
+  > .header-tools
+  > [role='button'][data-preview-toolbar] {
+  min-inline-size: 24px;
+  min-block-size: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@media (pointer: coarse) {
+  [data-code-preview-root]
+    > [data-code-preview-header]
+    > .header-tools
+    > button[data-preview-toolbar],
+  [data-code-preview-root] > [data-code-preview-header] > .header-tools > a[data-preview-toolbar],
+  [data-code-preview-root]
+    > [data-code-preview-header]
+    > .header-tools
+    > [role='button'][data-preview-toolbar] {
+    min-inline-size: var(--control-min-touch, 24px);
+    min-block-size: var(--control-min-touch, 24px);
+  }
+}
+
+/* ─── Preview Area ─── */
+[data-code-preview-root] > [data-code-preview-surface] {
+  display: flex;
+  background: var(--_note-code-preview-surface-bg);
+  min-height: var(--ui-code-preview-preview-min-height, 72px);
+  border-bottom: var(--border-width, 1px) solid var(--_note-preview-border-default);
+  /* Padding variant: normal（既定値） */
+  padding: var(--space-4, 1rem);
+  /* Align variant: center（既定値） */
+  align-items: center;
+  justify-content: center;
+  color: var(--_note-preview-fg-default);
+}
+
+/* Padding variants */
+[data-code-preview-root][data-preview-padding='compact'] > [data-code-preview-surface] {
+  padding: var(--space-3, 0.75rem);
+}
+
+[data-code-preview-root][data-preview-padding='none'] > [data-code-preview-surface] {
+  padding: 0;
+}
+
+[data-code-preview-root]:has(> [data-code-preview-header]) > [data-code-preview-header] {
+  padding-bottom: 0;
+}
+
+/* ヘッダー表示時はヘッダーの下パディングと重複するため除去 */
+[data-code-preview-root]:has(> [data-code-preview-header]) > [data-code-preview-surface] {
+  padding-top: 0;
+}
+
+/* Align variants */
+[data-code-preview-root][data-preview-align='start'] > [data-code-preview-surface] {
+  align-items: flex-start;
+  justify-content: flex-start;
+}
+
+[data-code-preview-root][data-preview-align='stretch'] > [data-code-preview-surface] {
+  align-items: stretch;
+  justify-content: flex-start;
+}
+
+[data-code-preview-root] > [data-code-preview-surface] > .preview-frame {
+  width: 100%;
+  max-width: var(--_note-code-preview-frame-width);
+  max-inline-size: var(--_note-code-preview-frame-width);
+  box-sizing: border-box;
+  flex: 0 1 auto;
+  min-inline-size: 0;
+  transition:
+    width var(--duration-fast, 70ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9)),
+    max-width var(--duration-fast, 70ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9)),
+    max-inline-size var(--duration-fast, 70ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9));
+}
+
+[data-code-preview-root][data-preview-align='stretch']
+  > [data-code-preview-surface]
+  > .preview-frame {
+  width: 100%;
+  max-width: var(--_note-code-preview-frame-width);
+  max-inline-size: var(--_note-code-preview-frame-width);
+}
+
+[data-code-preview-root] > [data-code-preview-surface] > .preview-frame > [data-preview-content] {
+  color-scheme: var(--_note-preview-color-scheme);
+  color: var(--_note-preview-fg-default);
+  --primary: var(--_note-preview-primary);
+  --primary-hover: var(--_note-preview-primary-hover);
+  --on-primary: var(--_note-preview-on-primary);
+  --danger: var(--_note-preview-danger);
+  --on-danger: var(--_note-preview-on-danger);
+  --success: var(--_note-preview-success);
+  --on-success: var(--_note-preview-on-success);
+  --warning: var(--_note-preview-warning);
+  --on-warning: var(--_note-preview-on-warning);
+  --bg-default: var(--_note-preview-context-bg-default);
+  --bg-surface-1: var(--_note-preview-context-bg-surface-1);
+  --bg-surface-2: var(--_note-preview-bg-surface-2);
+  --bg-surface-3: var(--_note-preview-bg-surface-3);
+  --bg-fill-muted: var(--_note-preview-bg-fill-muted);
+  --bg-fill-neutral: var(--_note-preview-bg-fill-neutral);
+  --bg-hover: var(--_note-preview-bg-hover);
+  --bg-active: var(--_note-preview-bg-active);
+  --bg-surface-active: var(--_note-preview-bg-surface-active);
+  --bg-danger-subtle: var(--_note-preview-bg-danger-subtle);
+  --bg-warning-subtle: var(--_note-preview-bg-warning-subtle);
+  --bg-highlight-subtle: var(--_note-preview-bg-highlight-subtle);
+  --bg-success-subtle: var(--_note-preview-bg-success-subtle);
+  --bg-tip-subtle: var(--_note-preview-bg-tip-subtle);
+  --bg-note-subtle: var(--_note-preview-bg-note-subtle);
+  --bg-table-ruler: var(--_note-preview-bg-table-ruler);
+  --fg-default: var(--_note-preview-fg-default);
+  --fg-muted: var(--_note-preview-fg-muted);
+  --fg-subtle: var(--_note-preview-fg-subtle);
+  --fg-on-primary: var(--_note-preview-fg-on-primary);
+  --fg-warning: var(--_note-preview-fg-warning);
+  --fg-success: var(--_note-preview-fg-success);
+  --fg-danger: var(--_note-preview-fg-danger);
+  --fg-info: var(--_note-preview-fg-info);
+  --border-default: var(--_note-preview-border-default);
+  --border-muted: var(--_note-preview-border-muted);
+  --border-ghost: var(--_note-preview-border-ghost);
+  --border-danger: var(--_note-preview-border-danger);
+  --border-warning: var(--_note-preview-border-warning);
+  --border-on-inverted: var(--_note-preview-border-on-inverted);
+  --elevation-sm: var(--_note-preview-elevation-sm);
+  --elevation-md: var(--_note-preview-elevation-md);
+  --elevation-lg: var(--_note-preview-elevation-lg);
+  --elevation-glow: var(--_note-preview-elevation-glow);
+  --bg-default-rgb: var(--_note-preview-bg-default-rgb);
+  --bg-surface-2-rgb: var(--_note-preview-bg-surface-2-rgb);
+}
+
+[data-code-preview-root][data-preview-align='stretch']
+  > [data-code-preview-surface]
+  > .preview-frame
+  > [data-preview-content] {
+  inline-size: 100%;
+}
+
+/* ─── Code Area ─── */
+
+[data-code-preview-root] > [data-code-preview-code] > [data-code-block-root] {
+  width: 100% !important;
+  margin: 0 !important;
+  border-top-left-radius: 0 !important;
+  border-top-right-radius: 0 !important;
+}
+
+[data-code-preview-root] > [data-code-preview-code] > [data-code-group] {
+  margin: 0 !important;
+}
+
+/* ─── Forced Colors ─── */
+@media (forced-colors: active) {
+  [data-code-preview-root] {
+    border-color: CanvasText;
+  }
+
+  [data-code-preview-root] > [data-code-preview-header],
+  [data-code-preview-root] > [data-code-preview-surface] {
+    background: Canvas;
+    color: CanvasText;
+    border-bottom-color: CanvasText;
+  }
+
+  [data-code-preview-root] > [data-code-preview-surface] {
+    /* プレビューとコードの区別のため太い境界線を使用 */
+    border-bottom-width: var(--border-width-thick, 2px);
+  }
+
+  [data-code-preview-root]
+    > [data-code-preview-header]
+    > .header-tools
+    > [data-code-preview-control]
+    > button {
+    --fg-default: CanvasText;
+    --bg-hover: Highlight;
+    --border-default: CanvasText;
+  }
+}
+
+/* ─── Print ─── */
+@media print {
+  [data-code-preview-root] {
+    width: 100% !important;
+    margin-inline: 0 !important;
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  [data-code-preview-root] {
+    background: transparent !important;
+    border-color: #000 !important;
+  }
+
+  [data-code-preview-root] > [data-code-preview-header] {
+    background: transparent !important;
+    border-bottom-color: #000 !important;
+  }
+
+  [data-code-preview-root] > [data-code-preview-header] > .header-tools,
+  [data-code-preview-root] > [data-code-preview-header] > .header-tools > .header-toolbar {
+    display: none !important;
+  }
+
+  [data-code-preview-root] > [data-code-preview-surface] {
+    background: transparent !important;
+    border-bottom-color: #000 !important;
+    min-height: auto !important;
+  }
+}

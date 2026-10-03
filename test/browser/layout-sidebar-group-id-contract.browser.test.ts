@@ -1,7 +1,5 @@
-import { html } from 'lit/static-html.js';
 import { describe, expect, it } from 'vitest';
 import { fixture } from './harness/browser-fixture.js';
-import { unsafeHTML } from 'lit/directives/unsafe-html.js';
 
 import { renderNoteSidebarNav } from '../../build/navigation/render-note-sidebar-nav.js';
 import {
@@ -71,10 +69,10 @@ describe('layout-sidebar group id browser contract', () => {
     const primaryMarkup = renderMarkup('note-primary');
     const secondaryMarkup = renderMarkup('note-secondary');
 
-    const wrapper = await fixture<HTMLDivElement>(html`
+    const wrapper = await fixture<HTMLDivElement>(`
       <div data-app-shell-sidebar-overlay-layer>
-        <section data-app-shell-sidebar-host>${unsafeHTML(primaryMarkup)}</section>
-        <section data-app-shell-sidebar-host>${unsafeHTML(secondaryMarkup)}</section>
+        <section data-app-shell-sidebar-host>${primaryMarkup}</section>
+        <section data-app-shell-sidebar-host>${secondaryMarkup}</section>
       </div>
     `);
 

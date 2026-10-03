@@ -1,5 +1,5 @@
 :is(.prose, .about-prose) > [data-info-box],
-:is(.prose, .about-prose) > ui-tabs > [slot='panel'] > [data-info-box] {
+:is(.prose, .about-prose) > [data-tabs-root] > [data-tab-panel] > [data-info-box] {
   display: grid;
   border: var(--border-style-subtle, 1px solid oklch(20% 0 0 / 0.12));
   border-radius: var(--radius-md, 6px);

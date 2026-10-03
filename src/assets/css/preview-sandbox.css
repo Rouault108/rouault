@@ -1,0 +1,36 @@
+[data-preview-sandbox-root] {
+  display: block;
+  inline-size: 100%;
+}
+
+[data-preview-sandbox-root] {
+  inline-size: 100%;
+}
+
+[data-preview-sandbox-root] > [data-preview-sandbox-placeholder] {
+  display: grid;
+  place-items: center;
+  inline-size: 100%;
+  min-block-size: var(--_note-preview-sandbox-min-height, 160px);
+  block-size: var(--_note-preview-sandbox-resolved-height, 160px);
+  border: var(--border-style-subtle, 1px solid oklch(20% 0 0 / 0.12));
+  background: var(--ui-preview-sandbox-bg, rgb(255 255 255));
+  color: var(--fg-muted, oklch(48% 0 0));
+  font: inherit;
+}
+
+[data-preview-sandbox-root] > button[data-preview-sandbox-placeholder] {
+  appearance: none;
+  padding: 0;
+  text-align: center;
+  cursor: pointer;
+}
+
+[data-preview-sandbox-root] > iframe[data-sandbox-frame] {
+  display: block;
+  inline-size: 100%;
+  min-block-size: var(--_note-preview-sandbox-min-height, 160px);
+  block-size: var(--_note-preview-sandbox-resolved-height, 160px);
+  border: 0;
+  background: var(--ui-preview-sandbox-bg, rgb(255 255 255));
+}

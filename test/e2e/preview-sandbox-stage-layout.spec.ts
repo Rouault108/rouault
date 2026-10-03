@@ -1,5 +1,7 @@
 import { expect, test, type Frame, type Page } from '@playwright/test';
 
+import { normalizeRouaultStaticSurfaceHtml } from '../../build/rehype/rouault-components.js';
+import { resolveNotePreviewProfile } from '../../build/content/note-content-contracts.js';
 import { loadNotesData } from '../../build/data/notes.js';
 import type { PreviewSandboxContentLayout } from '../../shared/preview-sandbox/content-layout.js';
 
@@ -54,69 +56,39 @@ if (sandboxNote === undefined) {
 }
 const sandboxPath = `${sandboxNote.permalink.replace(/\/+$/u, '')}/`;
 
-const openSandboxPage = async (page: Page): Promise<void> => {
-  await page.goto(sandboxPath);
-  await page.locator('article').waitFor();
-  await page.evaluate(async () => {
-    await Promise.all([
-      customElements.whenDefined('ui-code-preview'),
-      customElements.whenDefined('ui-preview-sandbox'),
-    ]);
-  });
-};
+const escapeTemplateText = (value: string): string =>
+  value.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;');
 
 const mountPreviewFixture = async (page: Page, options: PreviewFixtureOptions): Promise<Frame> => {
-  await page.evaluate((fixtureOptions) => {
-    document.querySelector('#preview-stage-geometry')?.remove();
-
-    const fixtureRoot = document.createElement('div');
-    fixtureRoot.id = 'preview-stage-geometry';
-    fixtureRoot.style.cssText =
-      'position: fixed; inset: 0; z-index: 2147483647; padding: 16px; overflow: auto; background: white;';
-
-    const codePreview = document.createElement('ui-code-preview');
-    codePreview.setAttribute('preview-viewport', fixtureOptions.viewport);
-    codePreview.setAttribute('preview-padding', 'none');
-    codePreview.setAttribute('preview-align', 'stretch');
-    codePreview.setAttribute('preview-theme', 'light');
-    codePreview.setAttribute('preview-surface', 'canvas');
-
-    const sandbox = document.createElement('ui-preview-sandbox');
-    sandbox.setAttribute('slot', 'preview');
-    sandbox.setAttribute('activation-policy', 'eager');
-    sandbox.setAttribute('height-mode', 'fixed');
-    sandbox.setAttribute('height', '240');
-    sandbox.setAttribute('iframe-title', 'Preview stage geometry');
-    if (fixtureOptions.contentLayout !== undefined) {
-      sandbox.setAttribute('content-layout', fixtureOptions.contentLayout);
-    }
-    if (fixtureOptions.js !== undefined) {
-      sandbox.setAttribute('allow-js', '');
-    }
-
-    const htmlTemplate = document.createElement('template');
-    htmlTemplate.setAttribute('data-preview-kind', 'html');
-    htmlTemplate.innerHTML = fixtureOptions.html;
-    sandbox.append(htmlTemplate);
-
-    const cssTemplate = document.createElement('template');
-    cssTemplate.setAttribute('data-preview-kind', 'css');
-    cssTemplate.content.textContent = fixtureOptions.css;
-    sandbox.append(cssTemplate);
-
-    if (fixtureOptions.js !== undefined) {
-      const jsTemplate = document.createElement('template');
-      jsTemplate.setAttribute('data-preview-kind', 'js');
-      jsTemplate.content.textContent = fixtureOptions.js;
-      sandbox.append(jsTemplate);
-    }
-
-    codePreview.append(sandbox);
-    fixtureRoot.append(codePreview);
-    document.body.append(fixtureRoot);
-  }, options);
-
-  const iframeLocator = page.locator('#preview-stage-geometry ui-preview-sandbox iframe');
+  const source = `<ui-code-preview preview-viewport="${options.viewport}" preview-padding="none" preview-align="stretch" preview-theme="light" preview-surface="canvas">
+    <ui-preview-sandbox slot="preview" activation-policy="eager" height-mode="fixed" height="240" iframe-title="Preview stage geometry" content-layout="${options.contentLayout ?? 'stage'}" ${options.js === undefined ? '' : 'allow-js'}>
+      <template data-preview-kind="html">${options.html}</template>
+      <template data-preview-kind="css">${escapeTemplateText(options.css)}</template>
+      ${options.js === undefined ? '' : `<template data-preview-kind="js">${escapeTemplateText(options.js)}</template>`}
+    </ui-preview-sandbox>
+  </ui-code-preview>`;
+  const html = normalizeRouaultStaticSurfaceHtml(source, {
+    namespace: 'preview-stage-geometry',
+    previewProfile: resolveNotePreviewProfile('testing'),
+    documentUrl: 'http://127.0.0.1:4173/',
+  });
+  if (!html) throw new Error('Native preview fixture was not generated.');
+  // 初回documentへbuild-time出力を置き、production schedulerに起動させる。
+  await page.route(
+    (url) => url.pathname === sandboxPath,
+    async (route) => {
+      const response = await route.fetch();
+      const body = (await response.text()).replace(
+        /(<article\b[^>]*>)[\s\S]*?<\/article>/u,
+        (_match, opening: string) =>
+          `${opening}<div id="preview-stage-geometry" style="position:fixed;inset:0;z-index:2147483647;padding:16px;overflow:auto;background:white">${html}</div></article>`,
+      );
+      await route.fulfill({ response, body });
+    },
+    { times: 1 },
+  );
+  await page.goto(sandboxPath);
+  const iframeLocator = page.locator('#preview-stage-geometry [data-preview-sandbox-root] iframe');
   await expect(iframeLocator).toBeVisible();
   const iframeHandle = await iframeLocator.elementHandle();
   const frame = await iframeHandle?.contentFrame();
@@ -195,10 +167,6 @@ const readFrameSnapshot = async (frame: Frame): Promise<FrameSnapshot> =>
   });
 
 test.describe('preview sandbox stage layout geometry', () => {
-  test.beforeEach(async ({ page }) => {
-    await openSandboxPage(page);
-  });
-
   test('case 1: 小さい単体UIは既定stageでFull/Mobileとも縦横中央になること', async ({ page }) => {
     for (const viewport of ['full', 'mobile'] as const) {
       const frame = await mountPreviewFixture(page, {
@@ -299,7 +267,7 @@ test.describe('preview sandbox stage layout geometry', () => {
       expect(Math.abs(end.left - end.maxLeft)).toBeLessThanOrEqual(1);
       expect(Math.abs(end.top - end.maxTop)).toBeLessThanOrEqual(1);
 
-      const iframe = page.locator('#preview-stage-geometry ui-preview-sandbox iframe');
+      const iframe = page.locator('#preview-stage-geometry [data-preview-sandbox-root] iframe');
       const heights: number[] = [];
       for (let index = 0; index < 3; index += 1) {
         heights.push((await iframe.boundingBox())?.height ?? -1);

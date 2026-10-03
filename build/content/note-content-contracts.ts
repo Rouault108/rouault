@@ -27,7 +27,6 @@ import { isValidCodeGroupSyncScope } from '../../shared/code-group/code-group-sy
 type Parse5DocumentFragment = DefaultTreeAdapterMap['documentFragment'];
 type Parse5Element = DefaultTreeAdapterMap['element'];
 type Parse5Node = DefaultTreeAdapterMap['node'];
-type Parse5Attribute = Parse5Element['attrs'][number];
 
 const isElementNode = (node: Parse5Node): node is Parse5Element =>
   'tagName' in node && typeof node.tagName === 'string' && Array.isArray(node.attrs);
@@ -39,18 +38,6 @@ const getAttributeValue = (node: Parse5Element, name: string): string | undefine
 
 const hasAttribute = (node: Parse5Element, name: string): boolean =>
   node.attrs.some((attribute) => attribute.name === name);
-
-const setAttributeValue = (node: Parse5Element, name: string, value: string): void => {
-  const matched = node.attrs.find((attribute) => attribute.name === name);
-  if (matched) {
-    matched.value = value;
-    return;
-  }
-
-  node.attrs.push({ name, value } as Parse5Attribute);
-};
-
-const serializeFragment = (fragment: Parse5DocumentFragment): string => parse5.serialize(fragment);
 
 const getChildNodes = (node: Parse5Node): Parse5Node[] =>
   'childNodes' in node && Array.isArray(node.childNodes) ? node.childNodes : [];
@@ -111,7 +98,7 @@ const validateCodePreviewDefaultSlot = (node: Parse5Element, errors: string[]): 
   for (const child of getMeaningfulChildren(node)) {
     if (!isElementNode(child)) {
       errors.push(
-        'ui-code-preview の default slot には figure[data-code-block-root] または section[data-code-group] だけを配置できます',
+        '[data-code-preview-code] には figure[data-code-block-root] または section[data-code-group] だけを配置できます',
       );
       return;
     }
@@ -123,7 +110,7 @@ const validateCodePreviewDefaultSlot = (node: Parse5Element, errors: string[]): 
 
     if (!isAllowedCodePreviewDefaultSlotRoot(child)) {
       errors.push(
-        'ui-code-preview の default slot には figure[data-code-block-root] または section[data-code-group] だけを配置できます',
+        '[data-code-preview-code] には figure[data-code-block-root] または section[data-code-group] だけを配置できます',
       );
       return;
     }
@@ -491,13 +478,11 @@ const isSsrHiddenCodeGroupPanel = (panel: Parse5Element): boolean =>
   getAttributeValue(panel, 'aria-hidden') === 'true' ||
   hasAttribute(panel, 'inert');
 
-const getScopedCopyStatus = (
-  scope: Parse5Element,
-  statusId: string,
-): Parse5Element | undefined =>
+const getScopedCopyStatus = (scope: Parse5Element, statusId: string): Parse5Element | undefined =>
   collectDescendantElements(
     scope,
-    (child) => getAttributeValue(child, 'id') === statusId && hasAttribute(child, 'data-copy-status'),
+    (child) =>
+      getAttributeValue(child, 'id') === statusId && hasAttribute(child, 'data-copy-status'),
   )[0];
 
 const getDirectCodeGroupHeader = (group: Parse5Element): Parse5Element | undefined =>
@@ -613,7 +598,9 @@ const validateCodeGroupContract = (
   }
 
   if (!getDirectCodeGroupHeader(group)) {
-    errors.push(`${label} の code-group-header は data-code-group-controls="true" を持つ必要があります`);
+    errors.push(
+      `${label} の code-group-header は data-code-group-controls="true" を持つ必要があります`,
+    );
     return;
   }
 
@@ -778,7 +765,9 @@ const validateCodeGroupContract = (
     return;
   }
   if (activePanelKey !== selectedKey) {
-    errors.push(`${label} の active panel key は data-code-group-selected と一致する必要があります`);
+    errors.push(
+      `${label} の active panel key は data-code-group-selected と一致する必要があります`,
+    );
     return;
   }
   if (tabKeys.length !== panelKeys.length || tabKeys.some((key) => !panelByKey.has(key))) {
@@ -788,7 +777,9 @@ const validateCodeGroupContract = (
   for (const [tabKey, panelId] of panelIdByTabKey) {
     const panel = panelByKey.get(tabKey);
     if (!panel || getAttributeValue(panel, 'id')?.trim() !== panelId) {
-      errors.push(`${label} の data-code-group-panel-id は同じ key の panel id と一致する必要があります`);
+      errors.push(
+        `${label} の data-code-group-panel-id は同じ key の panel id と一致する必要があります`,
+      );
       return;
     }
   }
@@ -1394,10 +1385,8 @@ const getTableColumnCount = (table: Parse5Element): number => {
     return 0;
   }
 
-  return getDirectChildren(
-    firstRow,
-    (child) => child.tagName === 'th' || child.tagName === 'td',
-  ).length;
+  return getDirectChildren(firstRow, (child) => child.tagName === 'th' || child.tagName === 'td')
+    .length;
 };
 
 const isTableCellElement = (node: Parse5Element): boolean =>
@@ -1431,17 +1420,16 @@ const getContainingTable = (
   return undefined;
 };
 
-const validateTableFinalContracts = (
-  fragment: Parse5DocumentFragment,
-  errors: string[],
-): void => {
+const validateTableFinalContracts = (fragment: Parse5DocumentFragment, errors: string[]): void => {
   const collections = collectTableContractNodes(fragment);
 
   for (const element of collections.elements) {
     if (element.tagName === 'col' && hasAttribute(element, 'data-table-col-width')) {
       const token = getAttributeValue(element, 'data-table-col-width')?.trim() ?? '';
       if (!TABLE_COLUMN_WIDTH_TOKENS.has(token)) {
-        errors.push('col[data-table-col-width] は許可された table column width token だけを持てます');
+        errors.push(
+          'col[data-table-col-width] は許可された table column width token だけを持てます',
+        );
         return;
       }
     }
@@ -1491,7 +1479,7 @@ const validateStaticNoteRootContracts = (
   state: StaticContractState,
 ): void => {
   const classification = classifyStaticFirstTag(node.tagName);
-  if (classification !== 'NON_UI_TAG' && classification !== 'STATEFUL_ALLOWED_NOTE_TAGS') {
+  if (classification !== 'NON_UI_TAG') {
     errors.push(`${node.tagName} は note 最終 HTML に残してはいけません`);
     return;
   }
@@ -1554,7 +1542,9 @@ const validateStaticNoteRootContracts = (
     if (!zoomable) {
       const directImages = getDirectChildren(node, (child) => child.tagName === 'img');
       if (directImages.length !== 1) {
-        errors.push('zoomable=false の figure[data-image] は直下に img を 1 つだけ持つ必要があります');
+        errors.push(
+          'zoomable=false の figure[data-image] は直下に img を 1 つだけ持つ必要があります',
+        );
         return;
       }
       if (findDirectChild(node, (child) => hasAttribute(child, 'data-image-preview-frame'))) {
@@ -1566,13 +1556,16 @@ const validateStaticNoteRootContracts = (
         return;
       }
       if (getAttributeValue(node, 'data-hydration-key') === 'image-lightbox-enhancer') {
-        errors.push('zoomable=false の figure[data-image] は image lightbox hydration key を持ってはいけません');
+        errors.push(
+          'zoomable=false の figure[data-image] は image lightbox hydration key を持ってはいけません',
+        );
         return;
       }
       if (
         hasDescendant(
           node,
-          (child) => child.tagName === 'dialog' && hasAttribute(child, 'data-image-lightbox-dialog'),
+          (child) =>
+            child.tagName === 'dialog' && hasAttribute(child, 'data-image-lightbox-dialog'),
         )
       ) {
         errors.push('zoomable=false の figure[data-image] は lightbox dialog を持ってはいけません');
@@ -1597,13 +1590,17 @@ const validateStaticNoteRootContracts = (
       hasAttribute(child, 'data-image-preview-frame'),
     );
     if (previewFrames.length !== 1) {
-      errors.push('zoomable な figure[data-image] は直下に preview frame を 1 つだけ持つ必要があります');
+      errors.push(
+        'zoomable な figure[data-image] は直下に preview frame を 1 つだけ持つ必要があります',
+      );
       return;
     }
 
     const previewFrame = previewFrames[0];
     if (!previewFrame) {
-      errors.push('zoomable な figure[data-image] は直下に preview frame を 1 つだけ持つ必要があります');
+      errors.push(
+        'zoomable な figure[data-image] は直下に preview frame を 1 つだけ持つ必要があります',
+      );
       return;
     }
 
@@ -1613,13 +1610,20 @@ const validateStaticNoteRootContracts = (
       (child) => child.tagName === 'button' && hasAttribute(child, 'data-image-zoom-trigger'),
     );
     if (frameImages.length !== 1 || frameTriggers.length !== 1) {
-      errors.push('zoomable な figure[data-image] の preview frame は img と zoom trigger を 1 つずつ直下に持つ必要があります');
+      errors.push(
+        'zoomable な figure[data-image] の preview frame は img と zoom trigger を 1 つずつ直下に持つ必要があります',
+      );
       return;
     }
 
     const meaningfulFrameChildren = getMeaningfulChildren(previewFrame).filter(isElementNode);
-    if (meaningfulFrameChildren[0] !== frameImages[0] || meaningfulFrameChildren[1] !== frameTriggers[0]) {
-      errors.push('zoomable な figure[data-image] の preview frame では img を trigger より前に置く必要があります');
+    if (
+      meaningfulFrameChildren[0] !== frameImages[0] ||
+      meaningfulFrameChildren[1] !== frameTriggers[0]
+    ) {
+      errors.push(
+        'zoomable な figure[data-image] の preview frame では img を trigger より前に置く必要があります',
+      );
       return;
     }
 
@@ -1652,7 +1656,9 @@ const validateStaticNoteRootContracts = (
         hasClassName(child, 'static-icon'),
     );
     if (!triggerIcon || getAttributeValue(triggerIcon, 'aria-hidden') !== 'true') {
-      errors.push('zoomable な figure[data-image] の trigger icon は aria-hidden="true" が必要です');
+      errors.push(
+        'zoomable な figure[data-image] の trigger icon は aria-hidden="true" が必要です',
+      );
       return;
     }
     if (hasDescendant(trigger, (child) => hasClassName(child, 'sr-only'))) {
@@ -1666,7 +1672,9 @@ const validateStaticNoteRootContracts = (
       meaningfulFigureChildren.some((child) => child.tagName === 'figcaption') &&
       lastFigureChild?.tagName !== 'figcaption'
     ) {
-      errors.push('caption 付き figure[data-image] では figcaption が最後の直下子である必要があります');
+      errors.push(
+        'caption 付き figure[data-image] では figcaption が最後の直下子である必要があります',
+      );
       return;
     }
   }
@@ -1745,12 +1753,13 @@ export const validateNoteContentContracts = (
       node.tagName === 'template' &&
       (hasAttribute(node, 'shadowrootmode') || hasAttribute(node, 'shadowroot'))
     ) {
+      errors.push('note最終HTMLにDeclarative Shadow DOMを残してはいけません');
       return;
     }
 
-    const allowJs = getAttributeValue(node, 'allow-js') === 'true';
+    const allowJs = hasAttribute(node, 'data-sandbox-allow-js');
 
-    if (node.tagName === 'ui-preview-sandbox') {
+    if (hasAttribute(node, 'data-preview-sandbox-root')) {
       const previewSandboxRestriction = getPreviewSandboxRestrictionMessage(policyContext);
       if (previewSandboxRestriction) {
         errors.push(previewSandboxRestriction);
@@ -1766,24 +1775,28 @@ export const validateNoteContentContracts = (
       }
     }
 
-    const nextInsideCodePreview = insideCodePreview || node.tagName === 'ui-code-preview';
+    const nextInsideCodePreview = insideCodePreview || hasAttribute(node, 'data-code-preview-root');
 
-    if (node.tagName === 'ui-code-preview') {
-      const controls = getAttributeValue(node, 'controls')?.trim() ?? '';
-      if (controls.length > 0 && getCodePreviewControlsRestrictionMessage(policyContext)) {
+    if (hasAttribute(node, 'data-code-preview-root')) {
+      const controls = hasDescendant(node, (child) =>
+        hasAttribute(child, 'data-code-preview-control'),
+      );
+      if (controls && getCodePreviewControlsRestrictionMessage(policyContext)) {
         errors.push(getCodePreviewControlsRestrictionMessage(policyContext) ?? '');
         return;
       }
-      validateCodePreviewDefaultSlot(node, errors);
+      const code = findDirectChild(node, (child) => hasAttribute(child, 'data-code-preview-code'));
+      if (!code) errors.push('[data-code-preview-root] にはcode surfaceが必要です');
+      else validateCodePreviewDefaultSlot(code, errors);
       if (errors.length > 0) {
         return;
       }
     }
 
-    const slot = getAttributeValue(node, 'slot')?.trim() ?? '';
+    const isToolbar = hasAttribute(node, 'data-preview-toolbar');
     if (
       nextInsideCodePreview &&
-      slot === 'toolbar' &&
+      isToolbar &&
       getCodePreviewToolbarRestrictionMessage(policyContext)
     ) {
       errors.push(getCodePreviewToolbarRestrictionMessage(policyContext) ?? '');
@@ -1846,30 +1859,5 @@ export const validateNoteContentContracts = (
   }
 };
 
-export const injectNoteContentProfiles = (
-  html: string | undefined,
-  kind: NoteContentKind,
-): string => {
-  if (typeof html !== 'string' || html.length === 0) {
-    return '';
-  }
-
-  const previewProfile = createNotePolicyContext(kind).kind === 'reader' ? 'reader' : 'demo';
-  const fragment = parse5.parseFragment(html);
-
-  const visit = (node: Parse5Node): void => {
-    if (isElementNode(node) && node.tagName === 'ui-code-preview') {
-      setAttributeValue(node, 'preview-profile', previewProfile);
-    }
-
-    for (const child of getChildNodes(node)) {
-      visit(child);
-    }
-  };
-
-  for (const child of fragment.childNodes) {
-    visit(child);
-  }
-
-  return serializeFragment(fragment);
-};
+export const resolveNotePreviewProfile = (kind: NoteContentKind): 'reader' | 'demo' =>
+  createNotePolicyContext(kind).kind === 'reader' ? 'reader' : 'demo';

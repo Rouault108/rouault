@@ -1,4 +1,3 @@
-import { html } from 'lit/static-html.js';
 import { describe, expect, it } from 'vitest';
 import { fixture } from '../harness/browser-fixture.js';
 
@@ -27,7 +26,7 @@ describe('color contrast helper', () => {
   });
 
   it('resolves currentColor and nested var fallbacks', async () => {
-    const wrapper = await fixture<HTMLDivElement>(html`
+    const wrapper = await fixture<HTMLDivElement>(`
       <div style="color: rgb(10, 20, 30); --a: var(--b, rgb(1, 2, 3));"></div>
     `);
     expect(resolveComputedColor('currentColor', wrapper, 'color')).to.deep.equal(rgba(10, 20, 30));
@@ -35,7 +34,7 @@ describe('color contrast helper', () => {
   });
 
   it('resolves OKLCH, relative OKLCH, and OKLab color-mix values', async () => {
-    const wrapper = await fixture<HTMLDivElement>(html`
+    const wrapper = await fixture<HTMLDivElement>(`
       <div
         style="--primary: oklch(55% 0.2 250); --fg-default: oklch(20% 0 0); --fg-muted: oklch(45% 0 0);"
       ></div>
@@ -58,7 +57,7 @@ describe('color contrast helper', () => {
   });
 
   it('uses pseudo-element computed color as currentColor base', async () => {
-    const wrapper = await fixture<HTMLDivElement>(html`
+    const wrapper = await fixture<HTMLDivElement>(`
       <div>
         <style>
           .target {
@@ -80,7 +79,7 @@ describe('color contrast helper', () => {
 
   it('resolves painted background across shadow host and fallback root', async () => {
     const wrapper = await fixture<HTMLDivElement>(
-      html`<div style="background: rgb(240, 240, 240);"></div>`,
+      `<div style="background: rgb(240, 240, 240);"></div>`,
     );
     const host = document.createElement('div');
     host.style.backgroundColor = 'rgba(10, 20, 30, 0.5)';

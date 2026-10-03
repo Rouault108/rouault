@@ -4,6 +4,8 @@
 
 Accepted.
 
+Superseded for the outer host and hydration DOM replacement by [full Lit removal](full-lit-removal.md). 以下は当時のDecisionを保持する履歴である。
+
 ## Context
 
 `ui-translation` is a Light DOM component, but its SSR target was previously treated as Declarative Shadow DOM. That broke the reading baseline because translation overlay content is note content, not private component chrome.

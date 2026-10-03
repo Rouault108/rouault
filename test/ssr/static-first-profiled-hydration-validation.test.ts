@@ -8,13 +8,6 @@ import {
 } from '../../build/content/static-first-tags.js';
 import { validateStaticFirstProfiledHydration } from '../../build/content/static-first-profiled-hydration-validation.js';
 import { HYDRATION_REGISTRY } from '../../src/client/hydration/registry.js';
-import {
-  SSR_LAYOUT_TARGET_TAGS,
-  SSR_NOTE_TARGET_TAGS,
-  SSR_PAGE_TARGET_TAGS,
-  SSR_SHELL_TARGET_TAGS,
-} from '../../build/ssr/targets.js';
-
 describe('static-first profiled hydration validation', () => {
   it('validates note hydration roots without treating layout entries as note static surface violations', () => {
     const result = validateStaticFirstProfiledHydration({
@@ -27,12 +20,11 @@ describe('static-first profiled hydration validation', () => {
           <a data-footnote-ref="true" data-hydration-key="footnote-popover-enhancer"></a>
           <figure data-image data-hydration-key="image-lightbox-enhancer"></figure>
           <div data-score data-hydration-key="score-scroll-enhancer"></div>
-          <ui-tabs></ui-tabs>
+          <section data-tabs-root data-hydration-key="tabs-enhancer"></section>
         </article>
       `,
       registry: HYDRATION_REGISTRY,
       denylistTags: STATIC_FIRST_NOTE_DENYLIST_TAGS,
-      ssrTargetTags: SSR_NOTE_TARGET_TAGS,
     });
 
     expect(result.errors).toEqual([]);
@@ -43,22 +35,20 @@ describe('static-first profiled hydration validation', () => {
       'image-lightbox-enhancer',
       'note-static-surface-enhancer',
       'score-scroll-enhancer',
+      'tabs-enhancer',
     ]);
   });
 
-  it('validates layout hydration roots and SSR targets through the layout profile', () => {
+  it('validates layout hydration roots through the layout profile', () => {
     const result = validateStaticFirstProfiledHydration({
       profile: 'layout',
       html: `
         <layout-toc-controller data-hydration-key="layout-toc-controller"></layout-toc-controller>
       `,
       registry: HYDRATION_REGISTRY,
-      ssrTargetTags: SSR_LAYOUT_TARGET_TAGS,
     });
 
     expect(result.errors).toEqual([]);
-    expect(SSR_LAYOUT_TARGET_TAGS).not.toContain('layout-sidebar');
-    expect(SSR_LAYOUT_TARGET_TAGS).not.toContain('layout-toc');
   });
 
   it('validates page and shell hydration roots with profile-specific denylists', () => {
@@ -70,14 +60,12 @@ describe('static-first profiled hydration validation', () => {
         ...STATIC_FIRST_PAGE_DENYLIST_TAGS,
         ...STATIC_FIRST_PAGE_COMPONENT_DENYLIST_TAGS,
       ],
-      ssrTargetTags: SSR_PAGE_TARGET_TAGS,
     });
     const shell = validateStaticFirstProfiledHydration({
       profile: 'shell',
       html: '<div data-hydration-key="search-dialog-enhancer"></div><span data-hydration-key="layout-header-enhancer"></span><header data-layout-header="true"></header>',
       registry: HYDRATION_REGISTRY,
       denylistTags: STATIC_FIRST_SHELL_DENYLIST_TAGS,
-      ssrTargetTags: SSR_SHELL_TARGET_TAGS,
     });
 
     expect(page.errors).toEqual([]);
@@ -93,11 +81,10 @@ describe('static-first profiled hydration validation', () => {
         ...STATIC_FIRST_PAGE_DENYLIST_TAGS,
         ...STATIC_FIRST_PAGE_COMPONENT_DENYLIST_TAGS,
       ],
-      ssrTargetTags: SSR_PAGE_TARGET_TAGS,
     });
 
     expect(result.errors).toEqual([]);
-    expect(HYDRATION_REGISTRY.some((entry) => entry.tag === 'ui-tabs')).toBe(true);
+    expect(HYDRATION_REGISTRY.some((entry) => entry.tag === 'tabs-enhancer')).toBe(true);
     expect(HYDRATION_REGISTRY.some((entry) => entry.tag === 'layout-sidebar-enhancer')).toBe(true);
   });
 });

@@ -9,6 +9,7 @@ ADRは必須作成物ではない。
 
 ## Accepted Records
 
+- `full-lit-removal.md` - semantic static HTMLとplain enhancerへ移行し、note Lit/SSR/DSDと旧公開instance APIを撤去する承認済みDecision。
 - `preview-sandbox-content-root-and-stage-layout.md` - preview sandboxの恒久content rootとstage／flow layoutを定める。
 - `preview-sandbox-visible-by-default.md` - `ui-preview-sandbox`の既定activationをvisibleにする。
 - `syntax-card-quiet-definition-surface.md` - Syntax Cardを本文中に挿入される静的リファレンスsurfaceとして扱う。

@@ -20,7 +20,7 @@
 ### This Layer Must Not Own
 
 - Markdown parser全体の安全境界。`docs/contracts/markdown.md`を参照する。
-- `ui-code-preview`自身のpreview state、built-in controls、toolbar contract。`docs/contracts/code-preview.md`を参照する。
+- Code Preview（`figure[data-code-preview-root]`）自身のpreview state、built-in controls、toolbar contract。`docs/contracts/code-preview.md`を参照する。
 - copy buttonのdetailed enhanced state contract。Phase 6で別途固定する。
 - hydration trigger ownership。`docs/contracts/hydration.md`を参照する。
 
@@ -193,7 +193,7 @@ filename / caption付きのgroup-owned code blockでも、captionは独立card h
 - group copy controlが存在する場合、enhancerはactive panelのcopy sourceを参照できる状態へ同期します。
 - enhancerはtab keyを`data-code-group-key`だけから読み、`data-code-group-tab`をkey fallbackに使いません。
 - enhancerのtabs / panels / copy button取得は現在のcode group rootにscopeします。tabsはroot直下header内tablist直下の`button[data-code-group-tab]`、panelsはroot直下の`section[data-code-group-panel]`、copy buttonはroot直下`.code-group-header[data-code-group-controls="true"]`配下`.code-group-header-tools > button[data-code-group-copy][data-copy-button]`だけを対象にします。
-- 同期はauthorが`sync-scope`を明示したcode groupだけが対象です。同期範囲は`enhanceCodeGroups(root)`に渡された同一root配下に限定し、`ownerDocument`全体、URL、history、storage、通常`ui-tabs`、`ui-tabs[url-sync]`、TOC、primary tab URL stateへ波及させません。
+- 同期はauthorが`sync-scope`を明示したcode groupだけが対象です。同期範囲は`enhanceCodeGroups(root)`に渡された同一root配下に限定し、`ownerDocument`全体、URL、history、storage、通常Tabs（`[data-tabs-root]`）、URL同期付きTabs（`[data-tabs-root][data-tabs-url-sync]`）、TOC、primary tab URL stateへ波及させません。
 - 同期はclick、Enter、Spaceによるユーザー選択時だけ発火します。初期hydration、arrow key、Home、End、URL変更、history navigationでは発火しません。
 - peer判定は`data-code-group-sync-scope`と`data-code-group-key`の完全一致に基づきます。同期先は`data-code-group-enhanced="true"`のcode groupだけで、同期先に同じkeyのdirect tabとdirect panelの両方がない場合は変更しません。
 - 同期先更新はroot selected key、`data-code-group-enhanced` marker、tab selected / active state、roving tabindex、panel active state、group copy targetだけを更新します。focus、scroll、URL、history、storage、custom event dispatchを発生させません。
@@ -327,7 +327,7 @@ Markdown出力はcode surfaceの静的HTML構造を生成します。詳細なdi
 
 ### Code Preview
 
-`ui-code-preview`はcode rootの公開属性や選択状態を所有しません。previewとcode rootの合成時も、code block / code group / copy / tab contractは本書に従います。
+Code Previewはcode rootの公開属性や選択状態を所有しません。previewとcode rootの合成時も、code block / code group / copy / tab contractは本書に従います。
 
 ### Hydration
 
@@ -346,11 +346,11 @@ hydration triggerはscheduler / registryが所有します。code surface enhanc
 - A-CODE-GROUP-SINGLE-SURFACE-001: group-owned code block rootは独立surfaceを持たず、`section[data-code-group]`がouter surfaceを所有する。
 - A-CODE-GROUP-NOJS-STACK-001: no-JSでは全panel stack表示とpanel dividerで読解境界を維持する。
 - A-CODE-GROUP-PRINT-001: printでは全panel表示とpanel dividerで読解境界を維持する。
-- A-CODE-GROUP-TABS-VARIANT-001: code group tabsは通常`ui-tabs`へ統合せず、code surface内部の局所切替として扱う。
+- A-CODE-GROUP-TABS-VARIANT-001: code group tabsは通常Tabs（`[data-tabs-root]`）へ統合せず、code surface内部の局所切替として扱う。
 - A-CODE-GROUP-CAPTION-NONREGRESSION-001: filename / caption付きgroup-owned code blockを独立cardとして見せない。
 - A-CODE-GROUP-FORCED-COLORS-001: forced-colorsでselected tab、focus-visible、outer borderの識別性を維持する。
 - A-CODE-GROUP-HEADER-DIVIDER-001: enhanced header / body dividerはselected tab下線と過剰な二重線に見えない。
 - A-CODE-GROUP-HEADER-DIVIDER-FORCED-COLORS-001: header / body dividerはforced-colorsでも視認可能である。
 - A-CODE-GROUP-OVERFLOW-OWNERSHIP-001: overflow clippingはouter code group surfaceが所有し、group-owned rootへ残さない。
 - A-CODE-GROUP-RESET-SCOPE-001: group-owned resetはsurface視覚、余白、overflow clippingを超えて過剰化しない。
-- A-CODE-GROUP-NONREGRESSION-001: DOM、Markdown構文、ARIA enhancer、copy同期、URL、routing、通常`ui-tabs`は変更しない。
+- A-CODE-GROUP-NONREGRESSION-001: code groupのDOM、Markdown構文、ARIA enhancer、copy同期、URL、routing、および通常Tabsとの責務分離は変更しない。

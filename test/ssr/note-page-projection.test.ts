@@ -350,11 +350,11 @@ describe('buildNotePageProjection', () => {
       kind: 'reader',
       title: 'Example',
       genre: ['testing'],
-      content: '<ui-code-preview heading="例"></ui-code-preview>',
+      content: '<figure data-code-preview-root data-preview-profile="reader"><div data-code-preview-code></div></figure>',
     });
 
     expect(projection.articleHeader.genres).toEqual(['testing']);
-    expect(projection.contentHtml).toContain('preview-profile="reader"');
+    expect(projection.contentHtml).toContain('data-preview-profile="reader"');
     expect(projection.showSidebar).toBe(true);
   });
 
@@ -374,10 +374,10 @@ describe('buildNotePageProjection', () => {
       kind: 'testing',
       chromeProfile: 'plain',
       title: 'Example',
-      content: '<ui-code-preview heading="例"></ui-code-preview>',
+      content: '<figure data-code-preview-root data-preview-profile="demo"><div data-code-preview-code></div></figure>',
     });
 
-    expect(projection.contentHtml).toContain('preview-profile="demo"');
+    expect(projection.contentHtml).toContain('data-preview-profile="demo"');
     expect(projection.showSidebar).toBe(false);
     expect(projection.sidebar).toBeUndefined();
     expect(projection.noteShellSidebarPresence).toBe('absent');
@@ -473,7 +473,7 @@ describe('buildNotePageProjection', () => {
         genre: ['javascript', 'programming'],
         content: [
           '<h2 id="sample">Sample</h2>',
-          '<ui-tabs data-hydration-trigger="initial"></ui-tabs>',
+          '<section data-tabs-root data-hydration-key="tabs-enhancer" data-hydration-capability="interactive" data-hydration-trigger="initial"></section>',
           '<div data-code-block-root="true" data-hydration-trigger="post-commit" data-hydration-key="code-block-enhancer"><pre data-code-block="true"></pre></div>',
         ].join(''),
       }),
@@ -500,7 +500,7 @@ describe('buildNotePageProjection', () => {
         genre: ['javascript', 'programming'],
         content: [
           '<h2 id="sample">Sample</h2>',
-          '<ui-tabs data-hydration-trigger="initial"></ui-tabs>',
+          '<section data-tabs-root data-hydration-key="tabs-enhancer" data-hydration-capability="interactive" data-hydration-trigger="initial"></section>',
           '<div data-code-block-root="true" data-hydration-trigger="post-commit" data-hydration-key="code-block-enhancer"><pre data-code-block="true"></pre></div>',
         ].join(''),
       }),

@@ -1,5 +1,5 @@
 :is(.prose, .about-prose) > [data-callout],
-:is(.prose, .about-prose) > ui-tabs > [slot='panel'] > [data-callout] {
+:is(.prose, .about-prose) > [data-tabs-root] > [data-tab-panel] > [data-callout] {
   --_callout-bg: color-mix(in srgb, var(--bg-note-subtle) 70%, transparent);
   --_callout-rule-color: var(--border-muted, var(--fg-muted));
   --_callout-accent-color: var(--fg-muted);
@@ -17,35 +17,50 @@
 }
 
 :is(.prose, .about-prose) > [data-callout][data-callout-kind='note'],
-:is(.prose, .about-prose) > ui-tabs > [slot='panel'] > [data-callout][data-callout-kind='note'] {
+:is(.prose, .about-prose)
+  > [data-tabs-root]
+  > [data-tab-panel]
+  > [data-callout][data-callout-kind='note'] {
   --_callout-bg: color-mix(in srgb, var(--bg-note-subtle) 70%, transparent);
   --_callout-rule-color: var(--border-muted, var(--fg-muted));
   --_callout-accent-color: var(--fg-muted);
 }
 
 :is(.prose, .about-prose) > [data-callout][data-callout-kind='tip'],
-:is(.prose, .about-prose) > ui-tabs > [slot='panel'] > [data-callout][data-callout-kind='tip'] {
+:is(.prose, .about-prose)
+  > [data-tabs-root]
+  > [data-tab-panel]
+  > [data-callout][data-callout-kind='tip'] {
   --_callout-bg: var(--bg-info-subtle);
   --_callout-rule-color: var(--border-info-subtle);
   --_callout-accent-color: var(--fg-info);
 }
 
 :is(.prose, .about-prose) > [data-callout][data-callout-kind='success'],
-:is(.prose, .about-prose) > ui-tabs > [slot='panel'] > [data-callout][data-callout-kind='success'] {
+:is(.prose, .about-prose)
+  > [data-tabs-root]
+  > [data-tab-panel]
+  > [data-callout][data-callout-kind='success'] {
   --_callout-bg: color-mix(in srgb, var(--bg-success-subtle) 50%, transparent);
   --_callout-rule-color: var(--border-success-subtle, var(--fg-success));
   --_callout-accent-color: var(--fg-success);
 }
 
 :is(.prose, .about-prose) > [data-callout][data-callout-kind='warning'],
-:is(.prose, .about-prose) > ui-tabs > [slot='panel'] > [data-callout][data-callout-kind='warning'] {
+:is(.prose, .about-prose)
+  > [data-tabs-root]
+  > [data-tab-panel]
+  > [data-callout][data-callout-kind='warning'] {
   --_callout-bg: var(--bg-warning-subtle);
   --_callout-rule-color: var(--fg-warning);
   --_callout-accent-color: var(--fg-warning);
 }
 
 :is(.prose, .about-prose) > [data-callout][data-callout-kind='danger'],
-:is(.prose, .about-prose) > ui-tabs > [slot='panel'] > [data-callout][data-callout-kind='danger'] {
+:is(.prose, .about-prose)
+  > [data-tabs-root]
+  > [data-tab-panel]
+  > [data-callout][data-callout-kind='danger'] {
   --_callout-bg: var(--bg-danger-subtle);
   --_callout-rule-color: var(--fg-danger);
   --_callout-accent-color: var(--fg-danger);
@@ -54,8 +69,12 @@
 
 :is(.prose, .about-prose) > [data-callout] > .callout-icon,
 :is(.prose, .about-prose) > [data-callout] > [data-callout-icon-svg],
-:is(.prose, .about-prose) > ui-tabs > [slot='panel'] > [data-callout] > .callout-icon,
-:is(.prose, .about-prose) > ui-tabs > [slot='panel'] > [data-callout] > [data-callout-icon-svg] {
+:is(.prose, .about-prose) > [data-tabs-root] > [data-tab-panel] > [data-callout] > .callout-icon,
+:is(.prose, .about-prose)
+  > [data-tabs-root]
+  > [data-tab-panel]
+  > [data-callout]
+  > [data-callout-icon-svg] {
   flex-shrink: 0;
   display: flex;
   align-items: center;
@@ -67,8 +86,8 @@
 
 :is(.prose, .about-prose) > [data-callout] > [data-callout-content='true'],
 :is(.prose, .about-prose)
-  > ui-tabs
-  > [slot='panel']
+  > [data-tabs-root]
+  > [data-tab-panel]
   > [data-callout]
   > [data-callout-content='true'] {
   min-width: 0;
@@ -78,8 +97,8 @@
 
 :is(.prose, .about-prose) > [data-callout] [data-callout-heading='true'],
 :is(.prose, .about-prose)
-  > ui-tabs
-  > [slot='panel']
+  > [data-tabs-root]
+  > [data-tab-panel]
   > [data-callout]
   [data-callout-heading='true'] {
   margin: 0 0 var(--space-2, 8px) 0;
@@ -90,14 +109,18 @@
 }
 
 :is(.prose, .about-prose) > [data-callout] [data-callout-body='true'],
-:is(.prose, .about-prose) > ui-tabs > [slot='panel'] > [data-callout] [data-callout-body='true'] {
+:is(.prose, .about-prose)
+  > [data-tabs-root]
+  > [data-tab-panel]
+  > [data-callout]
+  [data-callout-body='true'] {
   color: inherit;
 }
 
 :is(.prose, .about-prose) > [data-callout] [data-callout-body='true'] > :first-child,
 :is(.prose, .about-prose)
-  > ui-tabs
-  > [slot='panel']
+  > [data-tabs-root]
+  > [data-tab-panel]
   > [data-callout]
   [data-callout-body='true']
   > :first-child {
@@ -106,8 +129,8 @@
 
 :is(.prose, .about-prose) > [data-callout] [data-callout-body='true'] > :last-child,
 :is(.prose, .about-prose)
-  > ui-tabs
-  > [slot='panel']
+  > [data-tabs-root]
+  > [data-tab-panel]
   > [data-callout]
   [data-callout-body='true']
   > :last-child {
@@ -116,7 +139,7 @@
 
 @media (forced-colors: active) {
   :is(.prose, .about-prose) > [data-callout],
-  :is(.prose, .about-prose) > ui-tabs > [slot='panel'] > [data-callout] {
+  :is(.prose, .about-prose) > [data-tabs-root] > [data-tab-panel] > [data-callout] {
     border: var(--border-width, 1px) solid var(--border-default);
     border-inline-start: var(--border-width-thick, 2px) solid var(--primary);
     background: Canvas;
@@ -125,8 +148,8 @@
 
   :is(.prose, .about-prose) > [data-callout][data-callout-kind='danger'],
   :is(.prose, .about-prose)
-    > ui-tabs
-    > [slot='panel']
+    > [data-tabs-root]
+    > [data-tab-panel]
     > [data-callout][data-callout-kind='danger'] {
     border-inline-start-width: calc(var(--border-width-thick, 2px) * 2);
     border-inline-start-color: var(--danger);

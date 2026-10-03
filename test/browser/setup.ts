@@ -1,4 +1,4 @@
-import { fixtureCleanup } from '@open-wc/testing-helpers/pure';
+import { fixtureCleanup } from './harness/browser-fixture.js';
 import { afterEach } from 'vitest';
 
 afterEach(() => {

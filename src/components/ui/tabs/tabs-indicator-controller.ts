@@ -1,4 +1,3 @@
-import type { ReactiveController, ReactiveControllerHost } from 'lit';
 import type { TabsOrientation } from './tabs.types.js';
 
 export interface TabsIndicatorHost {
@@ -9,17 +8,16 @@ export interface TabsIndicatorHost {
   getActiveTabElement(): HTMLElement | null;
 }
 
-export class TabsIndicatorController implements ReactiveController {
-  private readonly host: ReactiveControllerHost & TabsIndicatorHost;
+export class TabsIndicatorController {
+  private readonly host: TabsIndicatorHost;
   private resizeObserver?: ResizeObserver | undefined;
   private observedTablist: HTMLElement | null = null;
   private observedContainer: HTMLElement | null = null;
   private observedActiveTab: HTMLElement | null = null;
   private rafId: number | null = null;
 
-  constructor(host: ReactiveControllerHost & TabsIndicatorHost) {
+  constructor(host: TabsIndicatorHost) {
     this.host = host;
-    this.host.addController(this);
   }
 
   hostConnected(): void {

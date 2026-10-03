@@ -16,7 +16,10 @@ import {
 } from './build/rehype/rouault-components.js';
 import { rehypeShikiCodeBlocks } from './build/rehype/shiki-code-blocks.js';
 import { rehypeStaticCodeGroups } from './build/rehype/static-code-groups.js';
-import { validateNoteContentContracts } from './build/content/note-content-contracts.js';
+import {
+  resolveNotePreviewProfile,
+  validateNoteContentContracts,
+} from './build/content/note-content-contracts.js';
 import { annotateGeneratedPageHtmlLinkContracts } from './build/content/page-html-link-contracts.js';
 import { validateNoteMetadataContracts } from './build/content/note-metadata-contracts.js';
 import { remarkExpandExampleIncludes } from './build/remark/expand-example-includes.js';
@@ -96,14 +99,16 @@ const notes = defineCollection({
       const hydrationBudgetProfile = normalizeNoteHydrationBudgetProfileName(
         data.hydrationBudgetProfile,
       );
-      const normalizedStaticContent = normalizeRouaultStaticSurfaceHtml(data.content, {
-        namespace: sourcePath,
-      });
       const linkAnnotationOptions = resolveBuildLinkAnnotationOptions();
       const sourceFilePath = sourcePath.endsWith('.md') ? sourcePath : `${sourcePath}.md`;
       const noteLinkContext = resolveNoteLinkClassificationContext({
         sourceFilePath,
         siteUrlContext: linkAnnotationOptions.siteUrlContext,
+      });
+      const normalizedStaticContent = normalizeRouaultStaticSurfaceHtml(data.content, {
+        namespace: sourcePath,
+        previewProfile: resolveNotePreviewProfile(kind),
+        documentUrl: noteLinkContext.currentUrl,
       });
       const normalizedContent = annotateGeneratedPageHtmlLinkContracts({
         html: normalizedStaticContent,

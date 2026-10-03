@@ -1,5 +1,5 @@
 import { HeadManager } from './head-manager.js';
-import { replaceElementChildrenFromHtml } from './declarative-shadow-dom.js';
+import { replaceElementChildrenFromHtml } from './html-fragment.js';
 import { LocationAdapter } from './location-adapter.js';
 import type { NavigationEnvelope } from '../../shared/navigation/navigation-envelope.js';
 import { validateCommittedRuntimeDomLinkContracts } from './dom-link-contract.js';

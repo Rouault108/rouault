@@ -1,4 +1,3 @@
-import type { ReactiveController, ReactiveControllerHost } from 'lit';
 import { getTabsUrlSyncStrategy } from './tabs-url-sync-strategy.js';
 import type { TabsUrlSource, UrlHistoryMode } from './tabs.types.js';
 
@@ -16,16 +15,15 @@ export interface UrlDrivenValueResolution {
   source: TabsUrlSource;
 }
 
-export class TabsUrlSyncController implements ReactiveController {
-  private readonly host: ReactiveControllerHost & TabsUrlSyncHost;
+export class TabsUrlSyncController {
+  private readonly host: TabsUrlSyncHost;
   private suppressWrite = false;
   private changeEventName: string | null = null;
   private locationSyncGeneration = 0;
   private locationSyncRafId: number | null = null;
 
-  constructor(host: ReactiveControllerHost & TabsUrlSyncHost) {
+  constructor(host: TabsUrlSyncHost) {
     this.host = host;
-    this.host.addController(this);
   }
 
   hostConnected(): void {

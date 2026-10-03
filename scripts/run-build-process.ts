@@ -166,10 +166,6 @@ export const RUN_BUILD_STEPS = defineRunBuildSteps([
     ],
   },
   {
-    label: 'apply-lit-ssr',
-    pnpmArgs: ['exec', 'tsx', 'scripts/apply-lit-ssr.ts'],
-  },
-  {
     label: 'emit-navigation-artifacts',
     pnpmArgs: ['exec', 'tsx', 'scripts/emit-navigation-artifacts.ts'],
   },

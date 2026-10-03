@@ -1,5 +1,7 @@
 # Tabs-owned hash URL recovery
 
+native root/panel schemaへの移行は[full Lit removal](full-lit-removal.md)による。以下のURL優先順位とhistory Decisionは維持し、旧host/slot表記は当時のEvidenceとして保持する。
+
 - Decision Record ID: D-TABS-OWNED-HASH-PRECEDES-CONFLICTING-TAB-QUERY-001
 - Request ID: REQ-TABS-OWNED-HASH-URL-RECOVERY-001
 - Status: Accepted

@@ -1,4 +1,4 @@
-:is(.prose, .about-prose) > ui-tabs > [slot='panel'] {
+:is(.prose, .about-prose) > [data-tabs-root] > [data-tab-panel] {
   display: block;
   width: 100%;
   min-width: 0;
@@ -8,8 +8,8 @@
 }
 
 :is(.prose, .about-prose)
-  > ui-tabs
-  > [slot='panel']
+  > [data-tabs-root]
+  > [data-tab-panel]
   > :is(pre[data-code-block], section[data-code-group], [data-code-block-root]) {
   --ui-code-surface-breakout-width: 100%;
   --ui-code-surface-breakout-margin: 0;
@@ -20,16 +20,16 @@
 }
 
 :is(.prose, .about-prose)
-  > ui-tabs
-  > [slot='panel']
+  > [data-tabs-root]
+  > [data-tab-panel]
   > :is([data-table-root], [data-score], [data-math]) {
   --ui-table-breakout-width: 100%;
   --ui-table-breakout-margin: 0;
 }
 
 :is(.prose, .about-prose)
-  > ui-tabs
-  > [slot='panel']
+  > [data-tabs-root]
+  > [data-tab-panel]
   > *
   + :where(
     p,
@@ -48,42 +48,42 @@
     [data-details],
     [data-info-box],
     [data-image],
-    ui-video,
+    [data-video-root],
     [data-score],
     [data-table-root],
-    ui-tabs,
-    ui-translation
+    [data-tabs-root],
+    [data-translation-overlay]
   ) {
   margin-block-start: var(--reading-flow-space);
 }
 
-:is(.prose, .about-prose) > ui-tabs > [slot='panel'] > p + p {
+:is(.prose, .about-prose) > [data-tabs-root] > [data-tab-panel] > p + p {
   margin-block-start: var(--reading-paragraph-space);
 }
 
-:is(.prose, .about-prose) > ui-tabs > [slot='panel'] > * + h2 {
+:is(.prose, .about-prose) > [data-tabs-root] > [data-tab-panel] > * + h2 {
   margin-block-start: var(--reading-h2-space);
 }
 
-:is(.prose, .about-prose) > ui-tabs > [slot='panel'] > * + h3 {
+:is(.prose, .about-prose) > [data-tabs-root] > [data-tab-panel] > * + h3 {
   margin-block-start: var(--reading-h3-space);
 }
 
-:is(.prose, .about-prose) > ui-tabs > [slot='panel'] > * + h4 {
+:is(.prose, .about-prose) > [data-tabs-root] > [data-tab-panel] > * + h4 {
   margin-block-start: var(--reading-h4-space);
 }
 
-:is(.prose, .about-prose) > ui-tabs > [slot='panel'] > * + h5 {
+:is(.prose, .about-prose) > [data-tabs-root] > [data-tab-panel] > * + h5 {
   margin-block-start: var(--reading-h5-space);
 }
 
-:is(.prose, .about-prose) > ui-tabs > [slot='panel'] > * + h6 {
+:is(.prose, .about-prose) > [data-tabs-root] > [data-tab-panel] > * + h6 {
   margin-block-start: var(--reading-h6-space);
 }
 
 @media (max-width: 767px) {
-  .prose > ui-tabs,
-  .about-prose > ui-tabs {
+  .prose > [data-tabs-root],
+  .about-prose > [data-tabs-root] {
     --ui-tabs-inline-bleed: var(--space-1);
   }
 }

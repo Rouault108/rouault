@@ -1,3 +1,4 @@
+import { lowerNativeNoteTree } from './native-note-lowering.js';
 import { toHtml } from 'hast-util-to-html';
 import * as parse5 from 'parse5';
 import type { DefaultTreeAdapterMap } from 'parse5';
@@ -2760,7 +2761,12 @@ const normalizeRouaultStaticSurfacesTree = (
 
 export const normalizeRouaultStaticSurfaceHtml = (
   html: string | undefined,
-  options: { readonly idContext?: StaticRenderIdContext; readonly namespace?: string } = {},
+  options: {
+    readonly idContext?: StaticRenderIdContext;
+    readonly namespace?: string;
+    readonly previewProfile?: 'reader' | 'demo';
+    readonly documentUrl?: string;
+  } = {},
 ): string | undefined => {
   if (typeof html !== 'string' || html.trim().length === 0) {
     return html;
@@ -2783,6 +2789,7 @@ export const normalizeRouaultStaticSurfaceHtml = (
       options.namespace ? `note:${options.namespace}:static-surface` : 'note:static-surface',
     );
   normalizeRouaultStaticSurfacesTree(root, idContext);
+  lowerNativeNoteTree(root, { ...options, idContext });
 
   return toHtml(root as Parameters<typeof toHtml>[0]);
 };

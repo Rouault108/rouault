@@ -8,7 +8,6 @@ import {
   STATIC_FIRST_PAGE_COMPONENT_DENYLIST_TAGS,
   STATIC_FIRST_PAGE_DENYLIST_TAGS,
   STATIC_FIRST_SHELL_DENYLIST_TAGS,
-  STATEFUL_ALLOWED_NOTE_TAGS,
 } from '../../build/content/static-first-tags.js';
 
 describe('static-first tag classification', () => {
@@ -18,18 +17,23 @@ describe('static-first tag classification', () => {
     expect(STATIC_FIRST_PAGE_DENYLIST_TAGS).toContain('ui-search-trigger');
     expect(STATIC_FIRST_PAGE_COMPONENT_DENYLIST_TAGS).toContain('search-page');
     expect(STATIC_FIRST_SHELL_DENYLIST_TAGS).toEqual(['ui-search-dialog', 'layout-footer']);
-    expect(STATEFUL_ALLOWED_NOTE_TAGS).toEqual([
-      'ui-tabs',
-      'ui-code-preview',
-      'ui-preview-sandbox',
-      'ui-translation',
-      'ui-video',
-    ]);
+    expect(STATIC_FIRST_NOTE_DENYLIST_TAGS).toEqual(
+      expect.arrayContaining([
+        'ui-tabs',
+        'ui-code-preview',
+        'ui-preview-sandbox',
+        'ui-translation',
+        'ui-video',
+        'ui-button',
+        'ui-dropdown',
+        'ui-menu-item',
+      ]),
+    );
   });
 
   it('derives unknown ui-* from the classifier instead of a fixed array', () => {
     expect(classifyStaticFirstTag('ui-not-registered')).toBe('UNKNOWN_UI_TAGS');
-    expect(classifyStaticFirstTag('ui-video')).toBe('STATEFUL_ALLOWED_NOTE_TAGS');
+    expect(classifyStaticFirstTag('ui-video')).toBe('STATIC_FIRST_NOTE_DENYLIST_TAGS');
     expect(classifyStaticFirstTag('search-page')).toBe('STATIC_FIRST_PAGE_COMPONENT_DENYLIST_TAGS');
     expect(classifyStaticFirstTag('article')).toBe('NON_UI_TAG');
   });
@@ -44,7 +48,9 @@ describe('static-first tag classification', () => {
       'STATIC_FIRST_NOTE_FORBIDDEN_INPUT_TAGS',
       'STATIC_FIRST_NOTE_DENYLIST_TAGS',
     ]);
-    expect(getStaticFirstTagClassifications('ui-video')).toEqual(['STATEFUL_ALLOWED_NOTE_TAGS']);
+    expect(getStaticFirstTagClassifications('ui-video')).toEqual([
+      'STATIC_FIRST_NOTE_DENYLIST_TAGS',
+    ]);
     expect(getStaticFirstTagClassifications('ui-not-registered')).toEqual(['UNKNOWN_UI_TAGS']);
     expect(getStaticFirstTagClassifications('article')).toEqual(['NON_UI_TAG']);
   });

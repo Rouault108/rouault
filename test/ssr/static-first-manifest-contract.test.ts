@@ -8,7 +8,7 @@ import { STATIC_FIRST_DELETION_TARGETS } from '../../build/content/static-first-
 import { STATIC_FIRST_RETAINED_COMPONENTS } from '../../build/content/static-first-retained-components.js';
 import { STATIC_FIRST_REMOVED_OR_REDUCED_LEGACY_TAGS } from '../../build/content/static-first-removed-or-reduced-tags.js';
 import { STATIC_FIRST_UNKNOWN_UI_ALLOWLIST } from '../../build/content/static-first-unknown-ui-allowlist.js';
-import { STATEFUL_ALLOWED_NOTE_TAGS } from '../../build/content/static-first-tags.js';
+import { STATIC_FIRST_NOTE_DENYLIST_TAGS } from '../../build/content/static-first-tags.js';
 
 const repoRoot = process.cwd();
 const oldManifestScriptPath = [
@@ -133,8 +133,8 @@ describe('static-first manifest generation contract', () => {
     for (const tag of unknownTags) {
       expect(manifestTags.has(tag), tag).toBe(false);
     }
-    for (const tag of STATEFUL_ALLOWED_NOTE_TAGS) {
-      expect(manifestTags.has(tag), tag).toBe(true);
+    for (const tag of STATIC_FIRST_NOTE_DENYLIST_TAGS) {
+      expect(manifestTags.has(tag), tag).toBe(false);
     }
   });
 

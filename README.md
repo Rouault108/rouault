@@ -3,7 +3,7 @@
 Rouaultは個人的なノートを静かに読むためのWebアプリケーションです。  
 一般的なドキュメントサイトやナレッジベースではなく、Markdownで蓄積した内容を**落ち着いて通読すること**を優先して設計しています。
 
-現行実装は、Eleventyによる静的生成を基盤とし、semanticな静的HTMLをbaselineに、build-time SSR、必要箇所に限定したLitによるclient hydration、MiniSearchとSuzumeを使うWorker検索、VeliteとMarkdown変換パイプラインによるコンテンツ管理を組み合わせています。
+現行実装は、Eleventyによる静的生成を基盤とし、semanticな静的HTMLをbaselineに、build-timeのsemantic HTML生成、必要箇所に限定したplain enhancerによるinteraction、MiniSearchとSuzumeを使うWorker検索、VeliteとMarkdown変換パイプラインによるコンテンツ管理を組み合わせています。
 
 ## このリポジトリの正本
 
@@ -31,9 +31,9 @@ Rouaultは次を中核とする個人向け読書アプリです。
 ## 技術スタック
 
 - SSG: Eleventy
-- UI: semanticな静的HTMLをbaselineとし、必要な対話部分にLitを使用
+- UI: semanticな静的HTMLをbaselineとし、必要な対話部分にplain enhancerを使用
 - 言語: TypeScript
-- ビルド時SSR: `@lit-labs/ssr`
+- ビルド時SSR: Eleventyとnative note lowering
 - コンテンツ処理: Velite + Markdown変換パイプライン
 - 検索: MiniSearch / Suzume（Worker）、障害時のみCatalog fallback
 - コードハイライト: Shiki
@@ -138,9 +138,8 @@ pnpm sync:link-cards        # link card metadataを同期
 1. client bundleを生成する
 2. 画像生成を行う
 3. Eleventyで静的ページを生成する
-4. Lit SSRを適用する
-5. navigation artifactを出力する
-6. search artifactを出力する
+4. navigation artifactを出力する
+5. search artifactを出力する
 
 production条件つきのビルド入口は`pnpm build:production`です。通常ビルドに加えて、production向け環境を設定し、生成後にCSS、font、site URL、HTML、search artifactのassertionを実行します。
 
@@ -198,7 +197,7 @@ Browser runner、browser selection、fixture lifecycleを含むtesting harness�
 
 ## 現在の設計上の要点
 
-- semanticな静的HTMLとno-JS baselineを先に成立させ、Litは必要な対話部分に限定します
+- semanticな静的HTMLとno-JS baselineを先に成立させ、plain enhancerは必要な対話部分に限定します
 - routerの正規入力は`NavigationEnvelope`です
 - hydration triggerの正本はscheduler / registryです
 - sidebarはserver-first navigationを前提にし、light DOMのnav subtreeを正本とします

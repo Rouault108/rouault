@@ -1036,7 +1036,7 @@ describe('rehypeRouaultComponents', () => {
   });
 
   it('保存前 surface HTML 正規化は preview sandbox template payload を保持すること', () => {
-    const normalized = normalizeRouaultStaticSurfaceHtml(previewSandboxTemplatePayloadHtml) ?? '';
+    const normalized = normalizeRouaultStaticSurfaceHtml(previewSandboxTemplatePayloadHtml, { documentUrl: 'https://example.com/note', previewProfile: 'demo' }) ?? '';
 
     expect(normalized).toContain('data-preview-kind="html"');
     expect(normalized).toContain('data-preview-kind="css"');
@@ -1048,7 +1048,7 @@ describe('rehypeRouaultComponents', () => {
   });
 
   it('保存前 surface HTML 正規化は preview sandbox template payload について冪等であること', () => {
-    const once = normalizeRouaultStaticSurfaceHtml(previewSandboxTemplatePayloadHtml) ?? '';
+    const once = normalizeRouaultStaticSurfaceHtml(previewSandboxTemplatePayloadHtml, { documentUrl: 'https://example.com/note', previewProfile: 'demo' }) ?? '';
     const twice = normalizeRouaultStaticSurfaceHtml(once) ?? '';
 
     expect(twice).toBe(once);

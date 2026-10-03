@@ -46,16 +46,14 @@ describe('extractTocFromHtml', () => {
 
   it('tabs 配下の見出しに scopeSelections を付与し、HTML に data-toc-scope を補完すること', () => {
     const source = `
-      <ui-tabs>
-        <div slot="tab" value="overview">概要</div>
-        <div slot="panel">
+      <section data-tabs-root>
+        <div data-tab-panel data-tab-value="overview">
           <h2 id="overview-heading">Overview</h2>
         </div>
-        <div slot="tab" value="details">詳細</div>
-        <div slot="panel">
+        <div data-tab-panel data-tab-value="details">
           <h2 id="details-heading">Details</h2>
         </div>
-      </ui-tabs>
+      </section>
     `;
 
     const prepared = prepareTocHtml(source);
@@ -82,12 +80,11 @@ describe('extractTocFromHtml', () => {
       <h2 id="outside">本文見出し</h2>
       <section data-syntax-card="true">
         <h2 id="inside">カード内部見出し</h2>
-        <ui-tabs>
-          <div slot="tab" value="signature">署名</div>
-          <div slot="panel">
+        <section data-tabs-root>
+          <div data-tab-panel data-tab-value="signature">
             <h3 id="inside-tab">カード内部タブ見出し</h3>
           </div>
-        </ui-tabs>
+        </section>
       </section>
     `;
 

@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { projectSearchHtml, splitSearchPassage } from '../../build/search/project-search-html.js';
 import { createSearchCanonicalPathname } from '../../shared/search/document-url.js';
+import { normalizeRouaultStaticSurfaceHtml } from '../../build/rehype/rouault-components.js';
+import { resolveNotePreviewProfile } from '../../build/content/note-content-contracts.js';
 
 const canonical = createSearchCanonicalPathname({ pathname: '/notes/example/' });
 if (!canonical.ok) throw new Error('Invalid test canonical');
@@ -8,6 +10,37 @@ const project = (html: string) => projectSearchHtml(html, canonical.canonicalPat
 const surface = (html: string) => project(`<main data-note-static-surface>${html}</main>`);
 
 describe('final HTML search projection', () => {
+  it('native lowering後もpanel/対訳/code/captionを保持し操作・重複subtreeをindexしない', () => {
+    const html = normalizeRouaultStaticSurfaceHtml(
+      `<main data-note-static-surface>
+        <ui-tabs>
+          <div slot="tab" value="one">NavigationOnlyOne</div>
+          <div slot="panel"><h2 id="one">HeadingOne</h2><p>PanelOne</p></div>
+          <div slot="tab" value="two">NavigationOnlyTwo</div>
+          <div slot="panel"><h2 id="two">HeadingTwo</h2><p>PanelTwo</p></div>
+        </ui-tabs>
+        <ui-translation original="OriginalDocument" translated="TranslatedDocument"></ui-translation>
+        <ui-code-preview controls="theme"><div slot="preview"><p>PreviewDocument</p></div><p>CodeDocument</p>
+          <div slot="toolbar"><button>ToolbarOperationOnly</button></div>
+        </ui-code-preview>
+        <ui-preview-sandbox><template data-preview-kind="html"><p>InertPayloadOnly</p></template></ui-preview-sandbox>
+        <ui-video src="/movie.mp4" caption="VideoDocument"></ui-video>
+      </main>`,
+      {
+        namespace: 'search-native-integration',
+        previewProfile: resolveNotePreviewProfile('testing'),
+        documentUrl: 'https://example.test/notes/example/',
+      },
+    );
+    if (!html) throw new Error('native output missing');
+    const result = project(html);
+    for (const content of ['PanelOne', 'PanelTwo', 'OriginalDocument', 'TranslatedDocument', 'PreviewDocument', 'CodeDocument', 'VideoDocument']) {
+      expect(result.body).toContain(content);
+      expect(result.body.split(content)).toHaveLength(2);
+    }
+    expect(result.body).not.toMatch(/NavigationOnly|ToolbarOperationOnly|InertPayloadOnly|JavaScript|プレビューを|再試行/u);
+    expect(result.passages.find((passage) => passage.text === 'PanelTwo')?.anchorId).toBe('two');
+  });
   it('外側blockquote内の見出しもmetadataへ分離し本文に重複させない', () => {
     const result = surface(
       '<blockquote><h2 id="quote">見出し</h2><p>引用本文</p></blockquote><p>続き</p>',

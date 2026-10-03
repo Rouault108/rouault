@@ -1,432 +1,210 @@
-import { html } from 'lit/static-html.js';
 import { describe, expect, it } from 'vitest';
-import { fixture } from './harness/browser-fixture.js';
+import type { HastNode, HastProperties } from '../../build/rehype/hast-utils.js';
+import { HydrationScheduler } from '../../src/client/hydration/scheduler.js';
+import { activatePreviewSandbox } from '../../src/client/post-hydrate/preview-sandbox-enhancer.js';
+import { fixtureAbortController, requireFixtureValue } from './harness/browser-fixture.js';
+import { element, text, nativeNoteFixture } from './harness/native-note-fixture.js';
 import { waitForCondition } from './harness/browser-test-utilities.js';
-import '../../src/components/ui/preview-sandbox/preview-sandbox.js';
 
-type LitLikeElement = HTMLElement & {
-  updateComplete?: Promise<unknown>;
+const payload = (kind: string, children: HastNode[]): HastNode => ({
+  ...element('template', { 'data-preview-kind': kind }),
+  content: { type: 'root', children },
+});
+const makeSandbox = (
+  properties: HastProperties = {},
+  children: HastNode[] = [payload('html', [element('button', {}, [text('Push')])])],
+) =>
+  nativeNoteFixture(
+    element('ui-preview-sandbox', { 'iframe-title': 'Preview', ...properties }, children),
+  );
+const activate = (root: HTMLElement) => {
+  const controller = fixtureAbortController(root);
+  activatePreviewSandbox(root, controller.signal);
+  return controller;
+};
+const frame = (root: HTMLElement): HTMLIFrameElement => {
+  const result = root.querySelector('iframe');
+  if (!result) throw new Error('iframe missing');
+  return result;
+};
+const resize = (
+  iframe: HTMLIFrameElement,
+  height: number,
+  validToken = true,
+  source: Window | null = iframe.contentWindow,
+) => {
+  const token = /token: "([^"]+)"/.exec(iframe.srcdoc)?.[1];
+  if (!token) throw new Error('helper message token missing');
+  const event = new MessageEvent('message', {
+    data: {
+      source: 'ui-preview-sandbox',
+      token: validToken ? token : 'wrong-token',
+      height,
+    },
+  });
+  // Firefoxはopaque-origin WindowProxyをconstructor引数へ渡せないため、合成eventへ明示する。
+  Object.defineProperty(event, 'source', { value: source });
+  window.dispatchEvent(event);
 };
 
-type PreviewSandboxHost = LitLikeElement & {
-  activationPolicy?: string;
-  contentLayout?: string;
-  height?: number;
-  heightMode?: string;
-  maxHeight?: number;
-  activateHydration?: () => void;
-  readonly _messageToken?: string;
-  _handleWindowMessage?: (event: MessageEvent<unknown>) => void;
-};
-
-const waitForElement = async (element: LitLikeElement): Promise<void> => {
-  await element.updateComplete;
-  await Promise.resolve();
-  await Promise.resolve();
-};
-
-describe('ui-preview-sandbox contract', () => {
-  it('content-layout は stage を既定として reflect し、runtime 列挙外値は property を保ったまま実効 stage として扱うこと', async () => {
-    const sandbox = await fixture<PreviewSandboxHost>(html`
-      <ui-preview-sandbox activation-policy="eager" iframe-title="Layout preview">
-        <template data-preview-kind="html"><button>Push</button></template>
-      </ui-preview-sandbox>
-    `);
-
-    await waitForElement(sandbox);
-
-    const initialSrcdoc =
-      sandbox.shadowRoot?.querySelector<HTMLIFrameElement>('iframe')?.srcdoc ?? '';
-    expect(sandbox.contentLayout).to.equal('stage');
-    expect(sandbox.getAttribute('content-layout')).to.equal('stage');
-    expect(initialSrcdoc).to.contain('<body data-preview-content-layout="stage">');
-
-    sandbox.contentLayout = 'unexpected';
-    await waitForElement(sandbox);
-
-    expect(sandbox.contentLayout).to.equal('unexpected');
-    expect(sandbox.getAttribute('content-layout')).to.equal('unexpected');
-    expect(sandbox.shadowRoot?.querySelector<HTMLIFrameElement>('iframe')?.srcdoc).to.equal(
-      initialSrcdoc,
+describe('native preview sandbox contract', () => {
+  it('静的payloadはinertで、正規metadataとno-JS説明を持つ', async () => {
+    const root = await makeSandbox({ 'activation-policy': 'manual' });
+    expect(root.querySelector('iframe')).toBeNull();
+    expect(root.querySelector('template')?.content.querySelector('button')?.textContent).toBe(
+      'Push',
     );
-
-    sandbox.contentLayout = 'flow';
-    await waitForElement(sandbox);
-    const flowSrcdoc = sandbox.shadowRoot?.querySelector<HTMLIFrameElement>('iframe')?.srcdoc ?? '';
-    expect(sandbox.getAttribute('content-layout')).to.equal('flow');
-    expect(flowSrcdoc).to.contain('<body data-preview-content-layout="flow">');
-    expect(flowSrcdoc).not.to.equal(initialSrcdoc);
-
-    sandbox.contentLayout = 'flow';
-    await waitForElement(sandbox);
-    expect(sandbox.shadowRoot?.querySelector<HTMLIFrameElement>('iframe')?.srcdoc).to.equal(
-      flowSrcdoc,
+    expect(root.dataset['sandboxContentLayout']).toBe('stage');
+    expect(root.dataset['hydrationTrigger']).toBe('interaction');
+    expect(root.textContent).toContain('JavaScript');
+    expect(root.querySelector('button')?.textContent).toBe('プレビューを表示');
+    expect(root.querySelector('button')?.getAttribute('aria-label')).toBe(
+      'プレビューを表示: Preview',
     );
   });
 
-  it('srcdoc は author JS より前に body 直下の正規 content root を1個だけ持つこと', async () => {
-    const sandbox = await fixture<PreviewSandboxHost>(html`
-      <ui-preview-sandbox activation-policy="eager" iframe-title="Root preview" allow-js>
-        <template data-preview-kind="html">
-          <section>
-            <ui-preview-content-root id="nested">Nested</ui-preview-content-root>
-          </section>
-        </template>
-        <template data-preview-kind="js">document.body.dataset.authorScriptRan = 'true';</template>
-      </ui-preview-sandbox>
-    `);
+  it.each(['allow-js', 'allow-forms', 'allow-downloads', 'allow-pointer-lock', 'allow-popups'])(
+    '%sのmanual文言とtokenを維持する',
+    async (capability) => {
+      const root = await makeSandbox({ 'activation-policy': 'manual', [capability]: true });
+      expect(root.querySelector('button')?.textContent).toBe('プレビューを実行');
+      activate(root);
+      const tokens = frame(root).sandbox;
+      expect(tokens.contains('allow-scripts')).toBe(true);
+      expect(tokens.contains('allow-same-origin')).toBe(false);
+      if (capability !== 'allow-js') expect(tokens.contains(capability)).toBe(true);
+    },
+  );
 
-    await waitForElement(sandbox);
-
-    const srcdoc = sandbox.shadowRoot?.querySelector<HTMLIFrameElement>('iframe')?.srcdoc ?? '';
-    const previewDocument = new DOMParser().parseFromString(srcdoc, 'text/html');
-    const directRoots = Array.from(previewDocument.body.children).filter(
-      (child) => child.tagName.toLowerCase() === 'ui-preview-content-root',
-    );
-    const allRoots = previewDocument.querySelectorAll('ui-preview-content-root');
-
-    expect(directRoots).to.have.length(1);
-    expect(allRoots).to.have.length(2);
-    expect(directRoots[0]?.querySelector('#nested')).to.not.equal(null);
-    expect(previewDocument.body.firstElementChild).to.equal(directRoots[0]);
-    expect(directRoots[0]?.nextElementSibling?.tagName).to.equal('SCRIPT');
-    expect(srcdoc.indexOf('<ui-preview-content-root>')).to.be.lessThan(
-      srcdoc.indexOf('document.body.dataset.authorScriptRan'),
-    );
-  });
-
-  it('author CSS の後に shell だけを対象とする structural guard を配置すること', async () => {
-    const authorCss = 'div { color: rgb(1 2 3); } html, body { display: block; }';
-    const sandbox = await fixture<PreviewSandboxHost>(html`
-      <ui-preview-sandbox activation-policy="eager" iframe-title="Cascade preview">
-        <template data-preview-kind="html"><div>Payload</div></template>
-        <template data-preview-kind="css"
-          >div { color: rgb(1 2 3); } html, body { display: block; }</template
-        >
-      </ui-preview-sandbox>
-    `);
-
-    await waitForElement(sandbox);
-
-    const srcdoc = sandbox.shadowRoot?.querySelector<HTMLIFrameElement>('iframe')?.srcdoc ?? '';
-    const authorIndex = srcdoc.indexOf(authorCss);
-    const guardIndex = srcdoc.indexOf('body[data-preview-content-layout]');
-
-    expect(authorIndex).to.be.greaterThan(-1);
-    expect(guardIndex).to.be.greaterThan(authorIndex);
-    expect(srcdoc).to.contain('body > ui-preview-content-root');
-    expect(srcdoc).not.to.contain('ui-preview-content-root div');
-    expect(srcdoc).not.to.contain('ui-preview-content-root *');
-  });
-
-  it('fixed/auto/bounded-auto の高さ解決を content root 導入後も維持すること', async () => {
-    const cases = [
-      { heightMode: 'fixed', maxHeight: undefined, expectedHeight: 160 },
-      { heightMode: 'auto', maxHeight: undefined, expectedHeight: 420 },
-      { heightMode: 'bounded-auto', maxHeight: 300, expectedHeight: 300 },
-    ] as const;
-
-    for (const testCase of cases) {
-      const sandbox = await fixture<PreviewSandboxHost>(html`
-        <ui-preview-sandbox
-          activation-policy="eager"
-          iframe-title="Height preview"
-          height="160"
-          height-mode=${testCase.heightMode}
-          max-height=${testCase.maxHeight ?? ''}
-        >
-          <template data-preview-kind="html"><div>Payload</div></template>
-        </ui-preview-sandbox>
-      `);
-      await waitForElement(sandbox);
-
-      const iframe = sandbox.shadowRoot?.querySelector<HTMLIFrameElement>('iframe');
-      expect(iframe).to.not.equal(null);
-      expect(sandbox._messageToken).to.be.a('string');
-      sandbox._handleWindowMessage?.({
-        source: iframe?.contentWindow ?? null,
-        data: {
-          source: 'ui-preview-sandbox',
-          token: sandbox._messageToken,
-          height: 420,
-        },
-      } as MessageEvent<unknown>);
-      await waitForElement(sandbox);
-
-      const root = sandbox.shadowRoot?.querySelector<HTMLElement>('.root');
-      expect(root?.style.getPropertyValue('--_ui-preview-sandbox-resolved-height').trim()).to.equal(
-        `${String(testCase.expectedHeight)}px`,
+  it('schedulerだけがmanual初回起動を所有し、focusとpointerdownでは起動しない', async () => {
+    const root = await makeSandbox({ 'activation-policy': 'manual' });
+    requireFixtureValue(root.parentElement).setAttribute('data-hydration-scope', 'note');
+    const scheduler = new HydrationScheduler();
+    try {
+      await scheduler.hydrateContent(requireFixtureValue(root.parentElement));
+      const button = requireFixtureValue(root.querySelector('button'));
+      button.focus();
+      button.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }));
+      await Promise.resolve();
+      expect(root.querySelector('iframe')).toBeNull();
+      button.click();
+      await waitForCondition(
+        () => root.querySelector('iframe') !== null,
+        'manual activation missing',
       );
+      expect(frame(root).srcdoc).toContain('<button>Push</button>');
+    } finally {
+      await scheduler.hydrateContent(document.createElement('div'));
+    }
+    expect(root.querySelector('iframe')).toBeNull();
+  });
+
+  it.each(['eager', 'visible'])('%sはscheduler経由で起動する', async (activation) => {
+    const root = await makeSandbox({ 'activation-policy': activation });
+    requireFixtureValue(root.parentElement).setAttribute('data-hydration-scope', 'note');
+    const scheduler = new HydrationScheduler();
+    try {
+      await scheduler.hydrateContent(requireFixtureValue(root.parentElement));
+      await waitForCondition(
+        () => root.querySelector('iframe') !== null,
+        'scheduler activation missing',
+      );
+      expect(frame(root).title).toBe('Preview');
+    } finally {
+      await scheduler.hydrateContent(document.createElement('div'));
     }
   });
 
-  it('activation-policy の既定値は visible で、列挙外の値は visible として扱うこと', async () => {
-    const defaultSandbox = await fixture<PreviewSandboxHost>(html`
-      <ui-preview-sandbox data-hydration-trigger="interaction"></ui-preview-sandbox>
-    `);
-
-    await waitForElement(defaultSandbox);
-
-    expect(defaultSandbox.activationPolicy).to.equal('visible');
-    expect(defaultSandbox.getAttribute('activation-policy')).to.equal('visible');
-
-    const invalidSandbox = await fixture<PreviewSandboxHost>(html`
-      <ui-preview-sandbox activation-policy="unexpected" iframe-title="Invalid fallback">
-        <template data-preview-kind="html"><button>Push</button></template>
-      </ui-preview-sandbox>
-    `);
-
-    await waitForElement(invalidSandbox);
-
-    const placeholder = invalidSandbox.shadowRoot?.querySelector<HTMLElement>('.placeholder');
-    expect(placeholder).to.not.equal(null);
-    expect(placeholder?.getAttribute('role')).to.equal('status');
-    expect(placeholder?.textContent?.trim()).to.equal('プレビューを読み込んでいます');
-    expect(invalidSandbox.shadowRoot?.querySelector('iframe')).to.equal(null);
+  it.each([
+    ['fixed', undefined, 160],
+    ['auto', undefined, 420],
+    ['bounded-auto', 300, 300],
+  ] as const)('%sの高さとmessage source/token検証を維持する', async (mode, maximum, expected) => {
+    const root = await makeSandbox({ height: '160', 'height-mode': mode, 'max-height': maximum });
+    activate(root);
+    const iframe = frame(root);
+    resize(iframe, 420, false);
+    resize(iframe, 420, true, window);
+    resize(iframe, Number.POSITIVE_INFINITY);
+    resize(iframe, -1);
+    expect(iframe.style.height).toBe('160px');
+    resize(iframe, 419.1);
+    expect(iframe.style.height).toBe(`${expected}px`);
   });
 
-  it('scheduler visible/eager 経路では activateHydration() 後に iframe を生成すること', async () => {
-    const visibleSandbox = await fixture<PreviewSandboxHost>(html`
-      <ui-preview-sandbox data-hydration-trigger="visible" iframe-title="Visible preview">
-        <template data-preview-kind="html"><button>Visible</button></template>
-      </ui-preview-sandbox>
-    `);
-    visibleSandbox.activateHydration?.();
-    await waitForElement(visibleSandbox);
-
-    expect(
-      visibleSandbox.shadowRoot?.querySelector<HTMLIFrameElement>('iframe')?.srcdoc,
-    ).to.contain('<button>Visible</button>');
-
-    const eagerSandbox = await fixture<PreviewSandboxHost>(html`
-      <ui-preview-sandbox
-        activation-policy="eager"
-        data-hydration-trigger="initial"
-        iframe-title="Eager preview"
-      >
-        <template data-preview-kind="html"><button>Eager</button></template>
-      </ui-preview-sandbox>
-    `);
-    eagerSandbox.activateHydration?.();
-    await waitForElement(eagerSandbox);
-
-    expect(eagerSandbox.shadowRoot?.querySelector<HTMLIFrameElement>('iframe')?.srcdoc).to.contain(
-      '<button>Eager</button>',
-    );
-  });
-
-  it('scheduler interaction 経路では manual preview も activateHydration() 後に iframe を生成すること', async () => {
-    const sandbox = await fixture<PreviewSandboxHost>(html`
-      <ui-preview-sandbox
-        activation-policy="manual"
-        data-hydration-trigger="interaction"
-        iframe-title="Manual scheduler preview"
-      >
-        <template data-preview-kind="html"><button>Push</button></template>
-      </ui-preview-sandbox>
-    `);
-
-    sandbox.activateHydration?.();
-    await waitForElement(sandbox);
-
-    expect(sandbox.shadowRoot?.querySelector<HTMLIFrameElement>('iframe')?.srcdoc).to.contain(
-      '<button>Push</button>',
-    );
-  });
-
-  it('manual の未起動時は native button を描画し、focus では起動せず click で起動すること', async () => {
-    const sandbox = await fixture<PreviewSandboxHost>(html`
-      <ui-preview-sandbox
-        activation-policy="manual"
-        data-hydration-trigger="interaction"
-        iframe-title="Manual preview"
-      >
-        <template data-preview-kind="html"><button>Push</button></template>
-      </ui-preview-sandbox>
-    `);
-
-    await waitForElement(sandbox);
-
-    const shadowRoot = sandbox.shadowRoot;
-    expect(shadowRoot).to.not.equal(null);
-
-    const placeholder = shadowRoot?.querySelector<HTMLButtonElement>('button.placeholder');
-    expect(placeholder).to.not.equal(null);
-    expect(placeholder?.textContent?.trim()).to.equal('プレビューを表示');
-    expect(placeholder?.getAttribute('aria-label')).to.contain('表示');
-    expect(shadowRoot?.querySelector('iframe')).to.equal(null);
-
-    placeholder?.focus();
-    await waitForElement(sandbox);
-    expect(shadowRoot?.querySelector('iframe')).to.equal(null);
-
-    placeholder?.click();
-    await waitForElement(sandbox);
-
-    const iframe = sandbox.shadowRoot?.querySelector<HTMLIFrameElement>('iframe');
-    expect(iframe).to.not.equal(null);
-    expect(iframe?.getAttribute('title')).to.equal('Manual preview');
-    expect(iframe?.srcdoc).to.contain('<button>Push</button>');
-  });
-
-  it('manual allow-js と manual-only capability は実行文言を使うこと', async () => {
-    const allowJsSandbox = await fixture<PreviewSandboxHost>(html`
-      <ui-preview-sandbox
-        activation-policy="manual"
-        data-hydration-trigger="interaction"
-        iframe-title="Manual JS preview"
-        allow-js
-      >
-        <template data-preview-kind="html"><button>Push</button></template>
-        <template data-preview-kind="js">console.log('sandbox');</template>
-      </ui-preview-sandbox>
-    `);
-    await waitForElement(allowJsSandbox);
-    const allowJsButton =
-      allowJsSandbox.shadowRoot?.querySelector<HTMLButtonElement>('button.placeholder');
-    expect(allowJsButton?.textContent?.trim()).to.equal('プレビューを実行');
-    expect(allowJsButton?.getAttribute('aria-label')).to.contain('実行');
-
-    const manualOnlySandbox = await fixture<PreviewSandboxHost>(html`
-      <ui-preview-sandbox
-        activation-policy="manual"
-        data-hydration-trigger="interaction"
-        iframe-title="Manual forms preview"
-        allow-forms
-      >
-        <template data-preview-kind="html">
-          <form><button>Send</button></form>
-        </template>
-      </ui-preview-sandbox>
-    `);
-    await waitForElement(manualOnlySandbox);
-    const manualOnlyButton =
-      manualOnlySandbox.shadowRoot?.querySelector<HTMLButtonElement>('button.placeholder');
-    expect(manualOnlyButton?.textContent?.trim()).to.equal('プレビューを実行');
-    expect(manualOnlyButton?.getAttribute('aria-label')).to.contain('実行');
-  });
-
-  it('manual click 前に hydration plumbing が未初期化でも template mutation 追従が機能すること', async () => {
-    const sandbox = await fixture<PreviewSandboxHost>(html`
-      <ui-preview-sandbox
-        activation-policy="manual"
-        data-hydration-trigger="interaction"
-        iframe-title="Mutation preview"
-      >
-        <template data-preview-kind="html"><button>Before</button></template>
-      </ui-preview-sandbox>
-    `);
-
-    await waitForElement(sandbox);
-
-    sandbox.shadowRoot?.querySelector<HTMLButtonElement>('button.placeholder')?.click();
-    await waitForElement(sandbox);
-
-    const iframe = sandbox.shadowRoot?.querySelector<HTMLIFrameElement>('iframe');
-    expect(iframe).to.not.equal(null);
-    expect(iframe?.srcdoc).to.contain('<button>Before</button>');
-
-    const template = sandbox.querySelector<HTMLTemplateElement>(
-      'template[data-preview-kind="html"]',
-    );
-    expect(template).to.not.equal(null);
-    if (template) {
-      const strong = document.createElement('strong');
-      strong.textContent = 'After';
-      template.content.replaceChildren(strong);
-    }
-
-    const expectedHtml = '<strong>After</strong>';
+  it('payloadだけを再構築しmetadata mutationを入力にしない、abort後は破棄する', async () => {
+    const root = await makeSandbox();
+    const lifetime = activate(root);
+    const iframe = frame(root);
+    const original = iframe.srcdoc;
+    root.dataset['sandboxContentLayout'] = 'flow';
+    root.dataset['sandboxAllowJs'] = '';
+    root.dataset['sandboxBaseUrl'] = 'https://changed.invalid/';
+    await Promise.resolve();
+    expect(iframe.srcdoc).toBe(original);
+    const template = requireFixtureValue(root.querySelector('template'));
+    const strong = document.createElement('strong');
+    strong.textContent = 'After';
+    template.content.replaceChildren(strong);
     await waitForCondition(
-      () =>
-        (
-          sandbox.shadowRoot?.querySelector<HTMLIFrameElement>('iframe')?.srcdoc ?? ''
-        ).includes(expectedHtml),
-      'template mutation が iframe srcdoc に反映されなかった',
+      () => iframe.srcdoc.includes('<strong>After</strong>'),
+      'payload mutation missing',
     );
-
-    expect(sandbox.shadowRoot?.querySelector<HTMLIFrameElement>('iframe')?.srcdoc).to.contain(
-      expectedHtml,
+    expect(frame(root)).toBe(iframe);
+    expect(iframe.srcdoc).toContain('data-preview-content-layout="stage"');
+    expect(iframe.srcdoc).not.toContain('https://changed.invalid/');
+    lifetime.abort();
+    expect(root.querySelector('iframe')).toBeNull();
+    expect(root.querySelector<HTMLElement>('[data-preview-sandbox-placeholder]')?.hidden).toBe(
+      false,
     );
+    template.content.replaceChildren(document.createTextNode('Late'));
+    resize(iframe, 900);
+    await Promise.resolve();
+    expect(root.querySelector('iframe')).toBeNull();
   });
 
-  it('manual+visible/manual+initial は activateHydration() 後も iframe を生成しないこと', async () => {
-    for (const trigger of ['visible', 'initial']) {
-      const sandbox = await fixture<PreviewSandboxHost>(html`
-        <ui-preview-sandbox
-          activation-policy="manual"
-          data-hydration-trigger=${trigger}
-          iframe-title="Robust preview"
-        >
-          <template data-preview-kind="html"><button>Push</button></template>
-        </ui-preview-sandbox>
-      `);
+  it.each([false, true])(
+    'helperとauthor JSを分離し、危険なpayloadを除去する (allow-js=%s)',
+    async (allowJs) => {
+      const root = await makeSandbox({ 'allow-js': allowJs }, [
+        payload('html', [
+          text(
+            '<base href="https://evil.invalid/"><script>bad()</script><iframe></iframe><a href="javascript:bad()" onclick="bad()">Safe</a><img src="data:text/html,bad">',
+          ),
+        ]),
+        payload('js', [text('document.body.dataset.authorScriptRan = "true";')]),
+        payload('css', [text('div { color: rgb(1 2 3); }')]),
+      ]);
+      activate(root);
+      const srcdoc = frame(root).srcdoc;
+      const doc = new DOMParser().parseFromString(srcdoc, 'text/html');
+      expect(frame(root).sandbox.value).toBe('allow-scripts');
+      expect(doc.querySelectorAll('base')).toHaveLength(1);
+      expect(doc.querySelector('base')?.href).toBe(document.baseURI);
+      expect(doc.querySelector('iframe')).toBeNull();
+      expect(doc.querySelector('a')?.hasAttribute('href')).toBe(false);
+      expect(doc.querySelector('a')?.hasAttribute('onclick')).toBe(false);
+      expect(doc.querySelector('img')?.hasAttribute('src')).toBe(false);
+      expect(srcdoc).not.toContain('bad()');
+      expect(srcdoc.includes('document.body.dataset.authorScriptRan')).toBe(allowJs);
+      expect(srcdoc).toContain('parent.postMessage');
+      expect(doc.body.firstElementChild?.localName).toBe('ui-preview-content-root');
+      expect(srcdoc.indexOf('body[data-preview-content-layout]')).toBeGreaterThan(
+        srcdoc.indexOf('div { color: rgb(1 2 3); }'),
+      );
+    },
+  );
 
-      sandbox.activateHydration?.();
-      await waitForElement(sandbox);
-
-      expect(sandbox.shadowRoot?.querySelector('iframe')).to.equal(null);
+  it('text encodedとDOM fragmentのpayloadを同じHTMLとして渡す', async () => {
+    for (const children of [
+      [text('<button class="demo">押す</button>')],
+      [element('button', { className: ['demo'] }, [text('押す')])],
+    ]) {
+      const root = await makeSandbox({}, [payload('html', children)]);
+      activate(root);
+      expect(frame(root).srcdoc).toContain('<button class="demo">押す</button>');
+      expect(frame(root).srcdoc).not.toContain('&lt;button');
     }
-  });
-
-  it('非 manual status は「読み込んでいます」を支援技術上も残すこと', async () => {
-    const sandbox = await fixture<PreviewSandboxHost>(html`
-      <ui-preview-sandbox data-hydration-trigger="visible" iframe-title="Loading preview">
-        <template data-preview-kind="html"><button>Push</button></template>
-      </ui-preview-sandbox>
-    `);
-
-    await waitForElement(sandbox);
-
-    const status = sandbox.shadowRoot?.querySelector<HTMLElement>('[role="status"]');
-    expect(status?.textContent?.trim()).to.equal('プレビューを読み込んでいます');
-    expect(status?.getAttribute('aria-label')).to.contain('読み込んでいます');
-  });
-
-  it('text-encoded HTML payload は activation 後に実 HTML として iframe へ渡すこと', async () => {
-    const sandbox = await fixture<PreviewSandboxHost>(html`
-      <ui-preview-sandbox
-        activation-policy="manual"
-        data-hydration-trigger="interaction"
-        iframe-title="Text encoded preview"
-      >
-        <template data-preview-kind="html"
-          >&lt;button class="demo-button"&gt;押す&lt;/button&gt;</template
-        >
-      </ui-preview-sandbox>
-    `);
-
-    await waitForElement(sandbox);
-
-    const placeholder = sandbox.shadowRoot?.querySelector<HTMLButtonElement>('button.placeholder');
-    placeholder?.click();
-    await waitForElement(sandbox);
-
-    const iframe = sandbox.shadowRoot?.querySelector<HTMLIFrameElement>('iframe');
-    expect(iframe).to.not.equal(null);
-    expect(iframe?.srcdoc).to.contain('<button class="demo-button">押す</button>');
-    expect(iframe?.srcdoc).not.to.contain('&lt;button');
-  });
-
-  it('手書き DOM fragment 形式の HTML payload を維持すること', async () => {
-    const sandbox = await fixture<PreviewSandboxHost>(html`
-      <ui-preview-sandbox
-        activation-policy="manual"
-        data-hydration-trigger="interaction"
-        iframe-title="DOM fragment preview"
-      >
-        <template data-preview-kind="html"><button class="demo-button">押す</button></template>
-      </ui-preview-sandbox>
-    `);
-
-    await waitForElement(sandbox);
-
-    const placeholder = sandbox.shadowRoot?.querySelector<HTMLButtonElement>('button.placeholder');
-    placeholder?.click();
-    await waitForElement(sandbox);
-
-    const iframe = sandbox.shadowRoot?.querySelector<HTMLIFrameElement>('iframe');
-    expect(iframe).to.not.equal(null);
-    expect(iframe?.srcdoc).to.contain('<button class="demo-button">押す</button>');
   });
 });

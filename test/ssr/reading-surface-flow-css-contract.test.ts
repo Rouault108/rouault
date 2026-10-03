@@ -133,17 +133,17 @@ const surfaceFlowSelector = `:is(.prose, .about-prose)
     [data-details],
     [data-info-box],
     [data-image],
-    ui-video,
+    [data-video-root],
     [data-score],
     [data-table-root],
-    ui-tabs,
-    ui-translation,
+    [data-tabs-root],
+    [data-translation-overlay],
     .translation-static
   )`;
 
 const panelFlowSelector = `:is(.prose, .about-prose)
-  > ui-tabs
-  > [slot='panel']
+  > [data-tabs-root]
+  > [data-tab-panel]
   > *
   + :where(
     p,
@@ -162,11 +162,11 @@ const panelFlowSelector = `:is(.prose, .about-prose)
     [data-details],
     [data-info-box],
     [data-image],
-    ui-video,
+    [data-video-root],
     [data-score],
     [data-table-root],
-    ui-tabs,
-    ui-translation
+    [data-tabs-root],
+    [data-translation-overlay]
   )`;
 
 describe('reading surface flow CSS contract', () => {
@@ -215,9 +215,9 @@ describe('reading surface flow CSS contract', () => {
     );
   });
 
-  it('keeps ui-tabs panel p + p on the same paragraph contract', () => {
+  it('keeps [data-tabs-root] panel p + p on the same paragraph contract', () => {
     const panelParagraphSelector =
-      ":is(.prose, .about-prose) > ui-tabs > [slot='panel'] > p + p";
+      ":is(.prose, .about-prose) > [data-tabs-root] > [data-tab-panel] > p + p";
 
     expect(
       hasDeclarationForSelector(
@@ -309,10 +309,10 @@ describe('reading surface flow CSS contract', () => {
     ).toBe(true);
   });
 
-  it('keeps ui-tabs hosts out of autospace and re-opens only panel reading text', () => {
+  it('keeps [data-tabs-root] hosts out of autospace and re-opens only panel reading text', () => {
     expect(
       supportsRuleHasDeclarationForSelectorFragments(
-        [':is(.prose, .about-prose)', ':where(ui-tabs)'],
+        [':is(.prose, .about-prose)', ':where([data-tabs-root])'],
         'text-autospace',
         'no-autospace',
       ),
@@ -321,13 +321,13 @@ describe('reading surface flow CSS contract', () => {
     const panelAutospaceRules = rulesWithDeclarationInTargetSupports(
       'text-autospace',
       'ideograph-alpha ideograph-numeric',
-    ).filter((rule) => normalizeSelectorText(rule.selector).includes("ui-tabs > [slot='panel']"));
+    ).filter((rule) => normalizeSelectorText(rule.selector).includes("[data-tabs-root] > [data-tab-panel]"));
 
     expect(panelAutospaceRules.length).toBeGreaterThan(0);
     expect(
       panelAutospaceRules.some((rule) =>
         normalizeSelectorText(rule.selector).includes(
-          ":is(.prose, .about-prose) ui-tabs > [slot='panel']",
+          ":is(.prose, .about-prose) [data-tabs-root] > [data-tab-panel]",
         ),
       ),
     ).toBe(true);
@@ -335,7 +335,7 @@ describe('reading surface flow CSS contract', () => {
       panelAutospaceRules.every(
         (rule) =>
           !normalizeSelectorText(rule.selector).includes(
-            ":is(.prose, .about-prose) > ui-tabs > [slot='panel']",
+            ":is(.prose, .about-prose) > [data-tabs-root] > [data-tab-panel]",
           ),
       ),
     ).toBe(true);

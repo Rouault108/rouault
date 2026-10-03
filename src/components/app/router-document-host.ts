@@ -15,10 +15,7 @@ import {
   type RouterContentHtml,
   unwrapRouterContentHtml,
 } from '../../router/router-content-html.js';
-import {
-  promoteDeclarativeShadowRoots,
-  replaceElementChildrenFromHtml,
-} from '../../router/declarative-shadow-dom.js';
+import { replaceElementChildrenFromHtml } from '../../router/html-fragment.js';
 import {
   ROUTER_DOCUMENT_HOST_ANNOUNCEMENT_ARIA_ATOMIC,
   ROUTER_DOCUMENT_HOST_ANNOUNCEMENT_ARIA_LIVE,
@@ -49,7 +46,10 @@ export interface RouterDocumentHostRouterDiagnosticDetail {
   diagnostic: RouterDiagnosticPayload;
 }
 
-export type RouterDocumentHostRuntimeInitializationState = 'not-initialized' | 'initialized' | 'failed';
+export type RouterDocumentHostRuntimeInitializationState =
+  | 'not-initialized'
+  | 'initialized'
+  | 'failed';
 
 export class RouterDocumentHostRuntimeInitializationError extends Error {
   override readonly name = 'RouterDocumentHostRuntimeInitializationError';
@@ -135,7 +135,8 @@ export class RouterDocumentHost extends HTMLElement {
   private _runtimeFailureSiteUrlContext: RouterRuntimeUrlDependencies['siteUrlContext'] | null =
     null;
   private _bootstrapped = false;
-  private _runtimeInitializationState: RouterDocumentHostRuntimeInitializationState = 'not-initialized';
+  private _runtimeInitializationState: RouterDocumentHostRuntimeInitializationState =
+    'not-initialized';
   private _isNavigating = false;
   private readonly _postRenderController: RouterDocumentHostPostRenderController;
   private _resolveReady: (() => void) | null = null;
@@ -345,8 +346,6 @@ export class RouterDocumentHost extends HTMLElement {
   }
 
   private _adoptInitialContent(contentRoot: HTMLElement): void {
-    promoteDeclarativeShadowRoots(contentRoot);
-
     this._currentContent = createRouterContentHtml(contentRoot.innerHTML);
 
     this._ensureAnnouncementRegion();
@@ -354,7 +353,9 @@ export class RouterDocumentHost extends HTMLElement {
   }
 
   private _ensureAnnouncementRegion(): HTMLElement {
-    const existingRegion = this.querySelector<HTMLElement>(ROUTER_DOCUMENT_HOST_ANNOUNCEMENT_SELECTOR);
+    const existingRegion = this.querySelector<HTMLElement>(
+      ROUTER_DOCUMENT_HOST_ANNOUNCEMENT_SELECTOR,
+    );
     if (existingRegion instanceof HTMLElement) {
       existingRegion.setAttribute('aria-live', ROUTER_DOCUMENT_HOST_ANNOUNCEMENT_ARIA_LIVE);
       existingRegion.setAttribute('aria-atomic', ROUTER_DOCUMENT_HOST_ANNOUNCEMENT_ARIA_ATOMIC);
@@ -405,11 +406,14 @@ export class RouterDocumentHost extends HTMLElement {
 
   private _dispatchContentDomReplaced(contentRoot: HTMLElement): void {
     this.dispatchEvent(
-      new CustomEvent<RouterDocumentHostContentDomReplacedDetail>('router-document-host:content-dom-replaced', {
-        detail: { contentRoot },
-        bubbles: true,
-        composed: true,
-      }),
+      new CustomEvent<RouterDocumentHostContentDomReplacedDetail>(
+        'router-document-host:content-dom-replaced',
+        {
+          detail: { contentRoot },
+          bubbles: true,
+          composed: true,
+        },
+      ),
     );
   }
 
@@ -429,24 +433,30 @@ export class RouterDocumentHost extends HTMLElement {
     }
 
     this.dispatchEvent(
-      new CustomEvent<RouterDocumentHostNavigationCommittedDetail>('router-document-host:navigation-committed', {
-        detail: {
-          contentRoot,
-          result,
+      new CustomEvent<RouterDocumentHostNavigationCommittedDetail>(
+        'router-document-host:navigation-committed',
+        {
+          detail: {
+            contentRoot,
+            result,
+          },
+          bubbles: true,
+          composed: true,
         },
-        bubbles: true,
-        composed: true,
-      }),
+      ),
     );
   }
 
   private _dispatchRouterDiagnostic(diagnostic: RouterDiagnosticPayload): void {
     this.dispatchEvent(
-      new CustomEvent<RouterDocumentHostRouterDiagnosticDetail>('router-document-host:router-diagnostic', {
-        detail: { diagnostic },
-        bubbles: true,
-        composed: true,
-      }),
+      new CustomEvent<RouterDocumentHostRouterDiagnosticDetail>(
+        'router-document-host:router-diagnostic',
+        {
+          detail: { diagnostic },
+          bubbles: true,
+          composed: true,
+        },
+      ),
     );
   }
 }

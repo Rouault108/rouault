@@ -10,14 +10,6 @@ import { enhanceLayoutSidebar } from '../post-hydrate/layout-sidebar-enhancer.js
 import { enhanceNoteStaticSurface } from '../post-hydrate/note-static-surface-enhancer.js';
 import type { HydrationActivationContext, HydrationRegistryEntry } from './types.js';
 
-interface ActivatableElement extends HTMLElement {
-  activateHydration?: () => void | Promise<void>;
-}
-
-const activateElementMethod = ({ element }: HydrationActivationContext): void | Promise<void> => {
-  return (element as ActivatableElement).activateHydration?.();
-};
-
 const activateCodeBlocks = ({ root, signal }: HydrationActivationContext): void => {
   enhanceCodeBlocks(root, signal);
 };
@@ -142,17 +134,24 @@ export const HYDRATION_REGISTRY = [
     activate: activateNoteStaticSurface,
   },
   {
-    tag: 'ui-code-preview',
-    kind: 'custom-element',
+    tag: 'code-preview-enhancer',
+    kind: 'enhancer',
     profiles: ['note'],
-    loader: () => import('../../components/ui/code-preview/code-preview.js'),
+    loader: () => import('../post-hydrate/code-preview-enhancer.js'),
+    activate: async ({ element, signal }: HydrationActivationContext) => {
+      const module = await import('../post-hydrate/code-preview-enhancer.js');
+      return module.activateCodePreview(element, signal);
+    },
   },
   {
-    tag: 'ui-preview-sandbox',
-    kind: 'custom-element',
+    tag: 'preview-sandbox-enhancer',
+    kind: 'enhancer',
     profiles: ['note'],
-    loader: () => import('../../components/ui/preview-sandbox/preview-sandbox.js'),
-    activate: activateElementMethod,
+    loader: () => import('../post-hydrate/preview-sandbox-enhancer.js'),
+    activate: async ({ element, signal }: HydrationActivationContext) => {
+      const module = await import('../post-hydrate/preview-sandbox-enhancer.js');
+      return module.activatePreviewSandbox(element, signal);
+    },
   },
   {
     tag: 'footnote-popover-enhancer',
@@ -169,23 +168,34 @@ export const HYDRATION_REGISTRY = [
     activate: activateImageLightboxes,
   },
   {
-    tag: 'ui-tabs',
-    kind: 'custom-element',
+    tag: 'tabs-enhancer',
+    kind: 'enhancer',
     profiles: ['note'],
-    loader: () => import('../../components/ui/tabs/tabs.js'),
+    loader: () => import('../post-hydrate/tabs-enhancer.js'),
+    activate: async ({ element, signal }: HydrationActivationContext) => {
+      const module = await import('../post-hydrate/tabs-enhancer.js');
+      return module.activateTabs(element, signal);
+    },
   },
   {
-    tag: 'ui-translation',
-    kind: 'custom-element',
+    tag: 'translation-overlay-enhancer',
+    kind: 'enhancer',
     profiles: ['note'],
-    loader: () => import('../../components/ui/translation/translation.js'),
-    activate: activateElementMethod,
+    loader: () => import('../post-hydrate/translation-overlay-enhancer.js'),
+    activate: async ({ element, signal }: HydrationActivationContext) => {
+      const module = await import('../post-hydrate/translation-overlay-enhancer.js');
+      return module.activateTranslationOverlay(element, signal);
+    },
   },
   {
-    tag: 'ui-video',
-    kind: 'custom-element',
+    tag: 'video-enhancer',
+    kind: 'enhancer',
     profiles: ['note'],
-    loader: () => import('../../components/ui/video/video.js'),
+    loader: () => import('../post-hydrate/video-enhancer.js'),
+    activate: async ({ element, signal }: HydrationActivationContext) => {
+      const module = await import('../post-hydrate/video-enhancer.js');
+      return module.activateVideo(element, signal);
+    },
   },
 ] as const satisfies readonly HydrationRegistryEntry[];
 

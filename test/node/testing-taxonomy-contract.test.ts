@@ -296,9 +296,13 @@ describe('final testing taxonomy contract', () => {
     expect(missing).toEqual([]);
   });
 
-  it('uses lit/static-html.js as the browser test template owner', () => {
+  it('keeps browser test templates independent of Lit', () => {
     const ordinaryLitConsumers = browserTestFiles
-      .filter((file) => collectModuleSpecifiers(readSourceFile(file)).includes('lit'))
+      .filter((file) =>
+        collectModuleSpecifiers(readSourceFile(file)).some(
+          (specifier) => specifier === 'lit' || specifier.startsWith('lit/'),
+        ),
+      )
       .map((file) => normalizePath(path.relative(repositoryRoot, file)));
 
     expect(ordinaryLitConsumers).toEqual([]);
@@ -385,8 +389,7 @@ describe('final testing taxonomy contract', () => {
     expect(mochaTypeConsumers).toEqual([]);
   });
 
-  it('limits direct Open WC pure helper imports to the fixture and setup owners', () => {
-    const allowed = new Set(['test/browser/harness/browser-fixture.ts', 'test/browser/setup.ts']);
+  it('removes Open WC helper imports after native fixture migration', () => {
     const consumers = repositorySourceFiles
       .filter((file) =>
         collectModuleSpecifiers(readSourceFile(file)).some(
@@ -398,7 +401,7 @@ describe('final testing taxonomy contract', () => {
       .map((file) => normalizePath(path.relative(repositoryRoot, file)))
       .sort();
 
-    expect(consumers).toEqual([...allowed].sort());
+    expect(consumers).toEqual([]);
   });
 
   it('makes the repository utility the only active readiness owner', () => {

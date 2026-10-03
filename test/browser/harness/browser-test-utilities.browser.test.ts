@@ -1,4 +1,3 @@
-import { html } from 'lit/static-html.js';
 import { describe, expect, it, vi } from 'vitest';
 import { fixture } from './browser-fixture.js';
 import { waitForCondition } from './browser-test-utilities.js';
@@ -52,9 +51,7 @@ const trackUtilityTimers = async (action: () => Promise<void>): Promise<number> 
 
 describe('browser fixture lifecycle', () => {
   it('creates a repository-owned fixture', async () => {
-    const element = await fixture<HTMLElement>(
-      html`<div id="fixture-cleanup-contract">ready</div>`,
-    );
+    const element = await fixture<HTMLElement>(`<div id="fixture-cleanup-contract">ready</div>`);
 
     expect(element.textContent).toBe('ready');
   });
@@ -67,22 +64,17 @@ describe('browser fixture lifecycle', () => {
 describe('waitForCondition browser contract', () => {
   it('resolves synchronous and asynchronous truthy predicates', async () => {
     await expect(waitForCondition(() => true, 'sync timeout')).resolves.toBeUndefined();
-    await expect(
-      waitForCondition(async () => true, 'async timeout'),
-    ).resolves.toBeUndefined();
+    await expect(waitForCondition(async () => true, 'async timeout')).resolves.toBeUndefined();
   });
 
   it('uses the default timeout and interval', async () => {
     let attempts = 0;
     const startedAt = performance.now();
 
-    await waitForCondition(
-      () => {
-        attempts += 1;
-        return attempts === 2;
-      },
-      'default polling timeout',
-    );
+    await waitForCondition(() => {
+      attempts += 1;
+      return attempts === 2;
+    }, 'default polling timeout');
 
     expect(attempts).toBe(2);
     expect(performance.now() - startedAt).toBeGreaterThanOrEqual(40);
@@ -148,9 +140,7 @@ describe('waitForCondition browser contract', () => {
       await completion;
 
       expect(attemptStartedAt).toHaveLength(1);
-      expect(
-        attemptStartedAt.every((startedAt) => startedAt < deadline),
-      ).toBe(true);
+      expect(attemptStartedAt.every((startedAt) => startedAt < deadline)).toBe(true);
     } finally {
       vi.useRealTimers();
     }
@@ -165,9 +155,9 @@ describe('waitForCondition browser contract', () => {
         throw thrown;
       }, 'timeout'),
     ).rejects.toBe(thrown);
-    await expect(
-      waitForCondition(() => Promise.reject(rejected), 'timeout'),
-    ).rejects.toBe(rejected);
+    await expect(waitForCondition(() => Promise.reject(rejected), 'timeout')).rejects.toBe(
+      rejected,
+    );
   });
 
   it.each([
@@ -207,11 +197,10 @@ describe('waitForCondition browser contract', () => {
     expect(synchronousCalls).toBe(1);
 
     await expect(
-      waitForCondition(
-        () => Promise.resolve(true),
-        'zero timeout same-microtask fulfillment',
-        { timeout: 0, interval: 0 },
-      ),
+      waitForCondition(() => Promise.resolve(true), 'zero timeout same-microtask fulfillment', {
+        timeout: 0,
+        interval: 0,
+      }),
     ).resolves.toBeUndefined();
 
     let falsyCalls = 0;

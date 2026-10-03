@@ -1,7 +1,4 @@
-import {
-  injectNoteContentProfiles,
-  validateNoteContentContracts,
-} from '../../build/content/note-content-contracts.js';
+import { validateNoteContentContracts } from '../../build/content/note-content-contracts.js';
 import type {
   BreadcrumbItem,
   NoteNavigationModel,
@@ -277,10 +274,7 @@ export function buildNotePageProjection(input: NotePageProjectionInput): NotePag
     contentRootId,
   });
   const genres = shouldRenderArticleHeaderTags(input.note) ? normalizeGenres(input.note.genre) : [];
-  const contentHtml = injectNoteContentProfiles(
-    typeof input.note.content === 'string' ? input.note.content : '',
-    noteKind,
-  );
+  const contentHtml = typeof input.note.content === 'string' ? input.note.content : '';
   const siteUrlContext = process.env['ROUAULT_SITE_ORIGIN']
     ? resolveProductionSiteUrlContext()
     : resolveDevelopmentSiteUrlContext();
@@ -291,7 +285,7 @@ export function buildNotePageProjection(input: NotePageProjectionInput): NotePag
   validateNoteContentContracts({
     kind: noteKind,
     html: contentHtml,
-    sourceLabel: `${slug}:post-profile-injection`,
+    sourceLabel: `${slug}:page-projection`,
     siteUrlContext,
     currentUrl: noteLinkContext.currentUrl,
     routeClassificationMode: noteLinkContext.routeClassificationMode,

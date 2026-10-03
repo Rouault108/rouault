@@ -186,14 +186,14 @@ hydration後のvisible headings同期契約:
 
 ## 6. tabs連動
 
-build-timeで`ui-tabs[data-toc-scope]`を注釈し、見出し側へ`scopeSelections`を持たせます。
+build-timeで`[data-tabs-root][data-toc-scope]`を注釈し、見出し側へ`scopeSelections`を持たせます。
 
 runtime契約:
 
-- `ui-tabs`は`ui-tab-change.detail.scopeId`を発火する
+- `[data-tabs-root]`は`ui-tab-change.detail.scopeId`を発火する
 - trackerはtabsの内部DOM構造ではなく`scopeId`とscope snapshot helperを使う
 - hidden tab内のhash対象見出しに遷移するときは、対応するtabを先に選択してからTOCを同期する
-- TOCは`?tab=`の正規化を所有しない。hashと`?tab=`の矛盾回復、host-owned hash判定、`replaceState`によるURL正規化は`ui-tabs[url-sync]`のfeature-local URL stateとして扱う
+- TOCは`?tab=`の正規化を所有しない。hashと`?tab=`の矛盾回復、host-owned hash判定、`replaceState`によるURL正規化は`[data-tabs-root][data-tabs-url-sync]`のfeature-local URL stateとして扱う
 
 ---
 
@@ -209,3 +209,7 @@ runtime契約:
 - mobile panelがheaderの直下から開くこと
 - close後にtriggerへfocus returnできること
 - density tierがCSS structureとbrowser behaviorの両方で固定されていること
+
+## Native Tabs integration
+
+build-time annotationのownerはextract-toc-from-html.ts/prepareTocHtmlである。direct panelのdata-tab-valueを読み、既存scope IDと外側→内側のscopeSelections tupleを維持する。runtimeはreadTabsSelection/selectTabsValueを使う。未enhance scopeは全panel可視として扱い、hash revealは外側からhistoryMode:noneで要求する。起動は要求せずqueueも作らない。data-tabs-enhanced/data-selected-valueのmutationで再評価し、初期化用の選択eventを偽装しない。

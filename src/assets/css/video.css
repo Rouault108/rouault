@@ -1,0 +1,580 @@
+[data-video-root] {
+  display: block;
+}
+
+[data-video-root] {
+  margin: 0;
+}
+
+.prose [data-video-root] {
+  width: calc(100% + var(--space-8, 2rem));
+  margin-inline: var(--space-n4, -1rem);
+}
+
+@media (min-width: 768px) {
+  .prose [data-video-root] {
+    width: calc(100% + var(--space-16, 4rem));
+    margin-inline: var(--space-n8, -2rem);
+  }
+}
+
+[data-video-root] .player-shell {
+  position: relative;
+  display: block;
+  overflow: hidden;
+  isolation: isolate;
+  border: var(--border-width, 1px) solid var(--border-ghost, oklch(20% 0 0 / 0.08));
+  border-radius: var(--radius-md, 6px);
+  background: var(--bg-fill-neutral, oklch(95% 0 0));
+}
+
+[data-video-root] .video-element {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: brightness(var(--brightness-dimmed, 0.85));
+  transition: filter var(--duration-normal, 150ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9));
+}
+
+[data-video-root] .player-shell.is-playing .video-element,
+[data-video-root] .player-shell:hover .video-element,
+[data-video-root] .player-shell:focus-within .video-element {
+  filter: brightness(1);
+}
+
+[data-video-root] .overlay-center {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+}
+
+[data-video-root] .skip-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4, 16px);
+}
+
+[data-video-root] .play-button {
+  pointer-events: auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: calc(var(--control-min-touch, 24px) + var(--space-1, 4px));
+  height: calc(var(--control-min-touch, 24px) + var(--space-1, 4px));
+  padding: 0;
+  border: var(--border-width, 1px) solid
+    var(--video-overlay-border, var(--border-default, oklch(86% 0 0)));
+  border-radius: var(--radius-full, 999px);
+  background: var(--video-overlay-bg, var(--bg-surface-3, oklch(100% 0 0 / 0.88)));
+  box-shadow: var(--video-overlay-elevation, var(--elevation-md, 0 4px 12px oklch(0% 0 0 / 0.16)));
+  color: var(--fg-default, oklch(20% 0 0));
+  cursor: pointer;
+  transition:
+    transform var(--duration-fast, 70ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9)),
+    opacity var(--duration-normal, 150ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9));
+}
+
+[data-video-root] .play-button svg {
+  inline-size: var(--icon-xl, 32px);
+  block-size: var(--icon-xl, 32px);
+}
+
+[data-video-root] .play-button.is-hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+[data-video-root] .play-button:hover:not(:disabled) {
+  transform: scale(var(--scale-hover-lg, 1.04));
+}
+
+[data-video-root] .play-button:active:not(:disabled) {
+  transform: scale(var(--scale-pressed, 0.96));
+}
+
+[data-video-root] .play-button:focus-visible {
+  outline: var(--focus-ring-width, 2px) solid var(--focus-ring-color, oklch(60% 0.15 250));
+  outline-offset: var(--focus-ring-offset, 2px);
+  animation: var(--animation-focus);
+}
+
+[data-video-root] .play-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* スキップボタン（10秒戻る/進む） */
+[data-video-root] .skip-button {
+  pointer-events: auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--control-min-touch, 24px);
+  height: var(--control-min-touch, 24px);
+  padding: 0;
+  border: var(--border-width, 1px) solid
+    var(--video-overlay-border, var(--border-default, oklch(86% 0 0)));
+  border-radius: var(--radius-full, 999px);
+  background: var(--video-overlay-bg, var(--bg-surface-3, oklch(100% 0 0 / 0.88)));
+  box-shadow: var(--video-overlay-elevation, var(--elevation-md, 0 4px 12px oklch(0% 0 0 / 0.16)));
+  color: var(--fg-default, oklch(20% 0 0));
+  cursor: pointer;
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    opacity var(--duration-normal, 150ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9)),
+    transform var(--duration-fast, 70ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9));
+}
+
+[data-video-root] .skip-button svg {
+  inline-size: var(--icon-md, 18px);
+  block-size: var(--icon-md, 18px);
+}
+
+[data-video-root] .skip-button:hover:not(:disabled) {
+  transform: scale(var(--scale-hover-lg, 1.04));
+}
+
+[data-video-root] .skip-button:active:not(:disabled) {
+  transform: scale(var(--scale-pressed, 0.96));
+}
+
+[data-video-root] .skip-button:focus-visible {
+  outline: var(--focus-ring-width, 2px) solid var(--focus-ring-color, oklch(60% 0.15 250));
+  outline-offset: var(--focus-ring-offset, 2px);
+  animation: var(--animation-focus);
+}
+
+/* 全画面 + モバイル (< 768px) でのみスキップボタンを表示 */
+[data-video-root] .player-shell.is-fullscreen .skip-button.is-visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+@media (min-width: 768px) {
+  [data-video-root] .player-shell.is-fullscreen .skip-button.is-visible {
+    opacity: 0;
+    pointer-events: none;
+  }
+}
+
+/* 2倍速バッジ */
+[data-video-root] .speed-badge {
+  position: absolute;
+  top: var(--space-3, 12px);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 5;
+  padding: var(--space-1, 4px) var(--space-2, 8px);
+  border-radius: var(--radius-full, 999px);
+  background: oklch(0% 0 0 / 0.65);
+  color: var(--fg-on-primary, var(--on-primary, oklch(100% 0 0)));
+  font-family: var(--font-sans, 'Noto Sans JP Variable', sans-serif);
+  font-weight: var(--font-semibold, 600);
+  font-size: var(--text-xs, 12px);
+  line-height: 1;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity var(--duration-fast, 70ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9));
+}
+
+[data-video-root] .speed-badge.is-active {
+  opacity: 1;
+}
+
+/* 全画面キャプションタイトル */
+[data-video-root] .fullscreen-caption {
+  position: absolute;
+  top: var(--space-4, 16px);
+  left: var(--space-4, 16px);
+  z-index: 5;
+  max-width: 60%;
+  font-family: var(--font-sans, 'Noto Sans JP Variable', sans-serif);
+  font-weight: var(--font-semibold, 600);
+  font-size: var(--text-lg, 16px);
+  color: var(--fg-on-primary, var(--on-primary, oklch(100% 0 0)));
+  line-height: var(--line-height-normal, 1.5);
+  pointer-events: none;
+  text-shadow: 0 1px 3px oklch(0% 0 0 / 0.5);
+  opacity: 0;
+  transition: opacity var(--duration-fast, 70ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9));
+}
+
+[data-video-root] .player-shell.is-fullscreen .fullscreen-caption.has-content {
+  opacity: 1;
+}
+
+[data-video-root] .state-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+}
+
+[data-video-root] .empty-panel,
+[data-video-root] .loading-panel,
+[data-video-root] .error-panel {
+  display: grid;
+  place-items: center;
+  gap: var(--space-2, 8px);
+  width: 100%;
+  height: 100%;
+  padding: var(--space-4, 16px);
+  box-sizing: border-box;
+  text-align: center;
+  color: var(--fg-muted, oklch(48% 0 0));
+  background: color-mix(in oklab, var(--bg-fill-neutral, oklch(95% 0 0)) 75%, transparent);
+  backdrop-filter: blur(var(--blur-sm, 8px));
+  -webkit-backdrop-filter: blur(var(--blur-sm, 8px));
+}
+
+[data-video-root] .empty-panel svg,
+[data-video-root] .error-panel svg {
+  inline-size: var(--icon-xl, 32px);
+  block-size: var(--icon-xl, 32px);
+}
+
+[data-video-root] .error-panel {
+  pointer-events: auto;
+  gap: var(--space-3, 12px);
+}
+
+[data-video-root] .state-text {
+  font-size: var(--text-sm, 13px);
+  line-height: var(--line-height-normal, 1.5);
+}
+
+[data-video-root] .retry-button {
+  min-height: var(--control-min-touch, 24px);
+  padding: 0 var(--space-4, 16px);
+  border: var(--border-width, 1px) solid var(--border-default, oklch(86% 0 0));
+  border-radius: var(--radius-full, 999px);
+  background: var(--bg-surface-2, oklch(100% 0 0));
+  color: var(--fg-default, oklch(20% 0 0));
+  font: inherit;
+  cursor: pointer;
+}
+
+[data-video-root] .retry-button:focus-visible {
+  outline: var(--focus-ring-width, 2px) solid var(--focus-ring-color, oklch(60% 0.15 250));
+  outline-offset: var(--focus-ring-offset, 2px);
+  animation: var(--animation-focus);
+}
+
+[data-video-root] .loading-spinner {
+  width: var(--icon-xl, 32px);
+  height: var(--icon-xl, 32px);
+  border: 2px solid var(--border-default, oklch(86% 0 0));
+  border-top-color: var(--primary, oklch(56% 0.16 252));
+  border-radius: var(--radius-full, 999px);
+  animation: ui-video-spin 0.9s linear infinite;
+}
+
+[data-video-root] .floating-bar {
+  position: absolute;
+  left: var(--space-4, 16px);
+  right: var(--space-4, 16px);
+  bottom: var(--space-4, 16px);
+  z-index: 4;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1, 4px);
+  padding: var(--space-3, 12px) var(--space-4, 16px);
+  border: var(--border-width, 1px) solid
+    var(--video-overlay-border, var(--border-default, oklch(86% 0 0)));
+  border-radius: var(--radius-lg, 10px);
+  background: var(--video-overlay-bg, var(--bg-surface-3, oklch(100% 0 0 / 0.88)));
+  box-shadow: var(--video-overlay-elevation, var(--elevation-md, 0 4px 12px oklch(0% 0 0 / 0.16)));
+  opacity: 1;
+  transition: opacity var(--duration-fast, 70ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9));
+}
+
+/* 初回再生前は非表示 */
+[data-video-root] .floating-bar.is-pre-play {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* JS制御による非表示 */
+[data-video-root] .floating-bar.is-bar-hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+[data-video-root] .bar-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2, 8px);
+}
+
+[data-video-root] .bar-row-top {
+  gap: var(--space-3, 12px);
+}
+
+[data-video-root] .bar-row-bottom {
+  justify-content: space-between;
+}
+
+[data-video-root] .bar-group-left,
+[data-video-root] .bar-group-right {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1, 4px);
+}
+
+[data-video-root] .floating-bar button.note-control {
+  --fg-muted: var(--fg-default, oklch(20% 0 0));
+}
+
+[data-video-root] .seek-input,
+[data-video-root] .volume-input {
+  margin: 0;
+  appearance: none;
+  -webkit-appearance: none;
+  height: var(--space-1, 4px);
+  border-radius: var(--radius-full, 999px);
+  background: var(--bg-fill-neutral, oklch(95% 0 0));
+  cursor: pointer;
+}
+
+[data-video-root] .seek-input {
+  flex: 1;
+  min-width: 0;
+  background: linear-gradient(
+    to right,
+    var(--primary, oklch(56% 0.16 252)) 0%,
+    var(--primary, oklch(56% 0.16 252)) var(--seek-progress, 0%),
+    var(--border-muted, oklch(82% 0 0)) var(--seek-progress, 0%),
+    var(--border-muted, oklch(82% 0 0)) var(--seek-buffered, 0%),
+    var(--bg-fill-neutral, oklch(95% 0 0)) var(--seek-buffered, 0%),
+    var(--bg-fill-neutral, oklch(95% 0 0)) 100%
+  );
+}
+
+[data-video-root] .volume-input {
+  width: clamp(72px, 14vw, 108px);
+  background: linear-gradient(
+    to right,
+    var(--primary, oklch(56% 0.16 252)) 0%,
+    var(--primary, oklch(56% 0.16 252)) var(--volume-progress, 100%),
+    var(--bg-fill-neutral, oklch(95% 0 0)) var(--volume-progress, 100%),
+    var(--bg-fill-neutral, oklch(95% 0 0)) 100%
+  );
+}
+
+[data-video-root] .seek-input:disabled,
+[data-video-root] .volume-input:disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+[data-video-root] .seek-input:focus-visible,
+[data-video-root] .volume-input:focus-visible {
+  outline: var(--focus-ring-width, 2px) solid var(--focus-ring-color, oklch(60% 0.15 250));
+  outline-offset: var(--focus-ring-offset, 2px);
+  animation: var(--animation-focus);
+}
+
+[data-video-root] .seek-input::-webkit-slider-thumb,
+[data-video-root] .volume-input::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 12px;
+  height: 12px;
+  border-radius: var(--radius-full, 999px);
+  border: none;
+  background: var(--primary, oklch(56% 0.16 252));
+  transition: transform var(--duration-fast, 70ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9));
+}
+
+[data-video-root] .seek-input:hover::-webkit-slider-thumb,
+[data-video-root] .seek-input:active::-webkit-slider-thumb,
+[data-video-root] .volume-input:hover::-webkit-slider-thumb,
+[data-video-root] .volume-input:active::-webkit-slider-thumb {
+  transform: scale(1.3333);
+}
+
+[data-video-root] .seek-input::-moz-range-thumb,
+[data-video-root] .volume-input::-moz-range-thumb {
+  width: 12px;
+  height: 12px;
+  border-radius: var(--radius-full, 999px);
+  border: none;
+  background: var(--primary, oklch(56% 0.16 252));
+  transition: transform var(--duration-fast, 70ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9));
+}
+
+[data-video-root] .seek-input:hover::-moz-range-thumb,
+[data-video-root] .seek-input:active::-moz-range-thumb,
+[data-video-root] .volume-input:hover::-moz-range-thumb,
+[data-video-root] .volume-input:active::-moz-range-thumb {
+  transform: scale(1.3333);
+}
+
+[data-video-root] .time-label {
+  color: var(--fg-muted, oklch(48% 0 0));
+  font-size: var(--text-xs, 12px);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+[data-video-root] .caption {
+  margin-block-start: var(--space-2, 8px);
+  color: var(--fg-muted, oklch(48% 0 0));
+  font-size: var(--text-sm, 13px);
+  line-height: var(--line-height-relaxed, 1.75);
+  text-align: left;
+}
+
+.prose [data-video-root] .caption {
+  padding-inline: var(--space-4, 1rem);
+}
+
+[data-video-root] .sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  border: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* スキップインジケータ */
+[data-video-root] .skip-indicator {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 5;
+  padding: var(--space-2, 8px) var(--space-3, 12px);
+  border-radius: var(--radius-full, 999px);
+  background: oklch(0% 0 0 / 0.55);
+  color: var(--fg-on-primary, var(--on-primary, oklch(100% 0 0)));
+  font-family: var(--font-sans, 'Noto Sans JP Variable', sans-serif);
+  font-weight: var(--font-semibold, 600);
+  font-size: var(--text-sm, 13px);
+  line-height: 1;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity var(--duration-normal, 150ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9));
+}
+
+[data-video-root] .skip-indicator-left {
+  left: var(--space-8, 32px);
+}
+
+[data-video-root] .skip-indicator-right {
+  right: var(--space-8, 32px);
+}
+
+[data-video-root] .skip-indicator.is-active {
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-video-root] .video-element,
+  [data-video-root] .floating-bar,
+  [data-video-root] .play-button,
+  [data-video-root] .skip-button,
+  [data-video-root] .speed-badge,
+  [data-video-root] .fullscreen-caption,
+  [data-video-root] .skip-indicator,
+  [data-video-root] .seek-input::-webkit-slider-thumb,
+  [data-video-root] .volume-input::-webkit-slider-thumb,
+  [data-video-root] .seek-input::-moz-range-thumb,
+  [data-video-root] .volume-input::-moz-range-thumb {
+    transition-duration: 0.01ms !important;
+  }
+
+  [data-video-root] .loading-spinner {
+    animation: none;
+  }
+}
+
+@media (forced-colors: active) {
+  [data-video-root] .floating-bar,
+  [data-video-root] .play-button,
+  [data-video-root] .skip-button,
+  [data-video-root] .retry-button {
+    background: Canvas;
+    border: var(--border-width, 1px) solid CanvasText;
+    color: CanvasText;
+    box-shadow: none;
+  }
+
+  [data-video-root] .speed-badge,
+  [data-video-root] .skip-indicator {
+    background: Canvas;
+    color: CanvasText;
+    border: var(--border-width, 1px) solid CanvasText;
+  }
+
+  [data-video-root] .fullscreen-caption {
+    color: CanvasText;
+    text-shadow: none;
+  }
+
+  [data-video-root] .seek-input {
+    background: linear-gradient(
+      to right,
+      Highlight 0%,
+      Highlight var(--seek-progress, 0%),
+      CanvasText var(--seek-progress, 0%),
+      CanvasText var(--seek-buffered, 0%),
+      GrayText var(--seek-buffered, 0%),
+      GrayText 100%
+    );
+  }
+
+  [data-video-root] .volume-input {
+    background: linear-gradient(
+      to right,
+      Highlight 0%,
+      Highlight var(--volume-progress, 100%),
+      GrayText var(--volume-progress, 100%),
+      GrayText 100%
+    );
+  }
+
+  [data-video-root] .seek-input::-webkit-slider-thumb,
+  [data-video-root] .volume-input::-webkit-slider-thumb,
+  [data-video-root] .seek-input::-moz-range-thumb,
+  [data-video-root] .volume-input::-moz-range-thumb {
+    background: CanvasText;
+    forced-color-adjust: none;
+  }
+
+  [data-video-root] .play-button:focus-visible,
+  [data-video-root] .skip-button:focus-visible,
+  [data-video-root] .retry-button:focus-visible,
+  [data-video-root] .seek-input:focus-visible,
+  [data-video-root] .volume-input:focus-visible {
+    outline: 3px solid CanvasText;
+    outline-offset: 2px;
+    box-shadow: none;
+  }
+}
+
+@media print {
+  [data-video-root] .player-shell {
+    display: none !important;
+  }
+}
+
+@keyframes ui-video-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

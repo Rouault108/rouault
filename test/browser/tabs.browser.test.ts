@@ -1,15 +1,15 @@
-import { html } from 'lit/static-html.js';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { fixture } from './harness/browser-fixture.js';
-import '../../src/components/ui/tabs/tabs.js';
-import type { Tabs } from '../../src/components/ui/tabs/tabs.js';
+import { fixtureAbortController } from './harness/browser-fixture.js';
+import { nativeNoteFixture, element, text } from './harness/native-note-fixture.js';
+import { activateTabs, readTabsSelection } from '../../src/client/post-hydrate/tabs-enhancer.js';
 import type { UiTabChangeDetail } from '../../src/components/ui/tabs/tabs.types.js';
 import {
   clearTabsUrlSyncStrategy,
   registerTabsUrlSyncStrategy,
 } from '../../src/components/ui/tabs/tabs-url-sync-strategy.js';
 import { primaryTabTabsUrlSyncStrategy } from '../../src/components/app/navigation/primary-tab-url-state.js';
-import { dispatchKey, waitForLitUpdate } from './harness/browser-test-utilities.js';
+import { dispatchKey, waitForCondition } from './harness/browser-test-utilities.js';
+import { fetchCssText } from './helpers/fetch-css-text.js';
 
 const must = <T>(value: T | null | undefined, message: string): T => {
   if (value === null || value === undefined) {
@@ -30,16 +30,43 @@ describe('ui-tabs browser contract', () => {
     clearTabsUrlSyncStrategy();
   });
 
-  const withThreeTabs = html`
-    <ui-tabs>
-      <button slot="tab" value="overview">概要</button>
-      <div slot="panel">概要パネル</div>
-      <button slot="tab" value="details">詳細</button>
-      <div slot="panel">詳細パネル</div>
-      <button slot="tab" value="settings">設定</button>
-      <div slot="panel">設定パネル</div>
-    </ui-tabs>
-  `;
+  const withThreeTabs = element('ui-tabs', {}, [
+    element('button', { slot: 'tab', value: 'overview' }, [text('概要')]),
+    element('div', { slot: 'panel' }, [text('概要パネル')]),
+    element('button', { slot: 'tab', value: 'details' }, [text('詳細')]),
+    element('div', { slot: 'panel' }, [text('詳細パネル')]),
+    element('button', { slot: 'tab', value: 'settings' }, [text('設定')]),
+    element('div', { slot: 'panel' }, [text('設定パネル')]),
+  ]);
+
+  it.each(['horizontal', 'vertical'] as const)(
+    '%s tabsの装飾は、収まるlabelに不要なscroll領域を作らない',
+    async (orientation) => {
+      const tabs = await nativeNoteFixture<HTMLElement>(
+        element('ui-tabs', { orientation }, withThreeTabs.children ?? []),
+      );
+      // CSSもfixture内へ置き、他testへstylesheetを持ち越さない。
+      const style = document.createElement('style');
+      style.textContent = await fetchCssText('/src/assets/css/tabs.css');
+      tabs.prepend(style);
+      tabs.style.width = '600px';
+      activateTabs(tabs, fixtureAbortController(tabs).signal);
+      const nav = must(tabs.querySelector<HTMLElement>('[data-tabs-static-nav]'), 'tab navigation');
+      const indicator = must(
+        nav.querySelector<HTMLElement>('[data-tabs-indicator]'),
+        'tab indicator',
+      );
+      await waitForCondition(
+        () =>
+          orientation === 'horizontal'
+            ? indicator.style.width !== ''
+            : indicator.style.height !== '',
+        'indicator layout',
+      );
+      expect(nav.scrollWidth).toBe(nav.clientWidth);
+      expect(nav.scrollHeight).toBe(nav.clientHeight);
+    },
+  );
 
   const replaceUrl = (url: string): (() => void) => {
     const original = `${window.location.pathname}${window.location.search}${window.location.hash}`;
@@ -82,12 +109,13 @@ describe('ui-tabs browser contract', () => {
   };
 
   it('初期描画で tab / tabpanel / roving tabindex を公開すること', async () => {
-    const tabs = await fixture<Tabs>(withThreeTabs);
-    await waitForLitUpdate(tabs);
+    const tabs = await nativeNoteFixture<HTMLElement>(withThreeTabs);
+    activateTabs(tabs, fixtureAbortController(tabs).signal);
+    await waitForCondition(() => tabs.hasAttribute('data-tabs-enhanced'), 'tabs enhanced');
 
-    const tabEls = asHtmlElements(tabs.querySelectorAll('[slot="tab"]'));
-    const panelEls = asHtmlElements(tabs.querySelectorAll('[slot="panel"]'));
-    const tablist = tabs.shadowRoot?.querySelector<HTMLElement>('[role="tablist"]') ?? null;
+    const tabEls = asHtmlElements(tabs.querySelectorAll('[data-tab]'));
+    const panelEls = asHtmlElements(tabs.querySelectorAll('[data-tab-panel]'));
+    const tablist = tabs.querySelector<HTMLElement>('[role="tablist"]') ?? null;
 
     const firstTab = must(tabEls[0], '1 番目の tab が見つかりません');
     const secondTab = must(tabEls[1], '2 番目の tab が見つかりません');
@@ -116,56 +144,69 @@ describe('ui-tabs browser contract', () => {
   });
 
   it('manual activation では矢印キーで focus のみ移動し、Enter で選択を確定すること', async () => {
-    const tabs = await fixture<Tabs>(withThreeTabs);
-    await waitForLitUpdate(tabs);
+    const tabs = await nativeNoteFixture<HTMLElement>(withThreeTabs);
+    activateTabs(tabs, fixtureAbortController(tabs).signal);
+    await waitForCondition(() => tabs.hasAttribute('data-tabs-enhanced'), 'tabs enhanced');
 
-    const tabEls = asHtmlElements(tabs.querySelectorAll('[slot="tab"]'));
+    const tabEls = asHtmlElements(tabs.querySelectorAll('[data-tab]'));
     const firstTab = must(tabEls[0], '1 番目の tab が見つかりません');
     const secondTab = must(tabEls[1], '2 番目の tab が見つかりません');
     const thirdTab = must(tabEls[2], '3 番目の tab が見つかりません');
 
     firstTab.focus();
     dispatchKey(firstTab, 'ArrowRight');
-    await waitForLitUpdate(tabs);
+    activateTabs(tabs, fixtureAbortController(tabs).signal);
+    await waitForCondition(() => tabs.hasAttribute('data-tabs-enhanced'), 'tabs enhanced');
 
     expect(secondTab.getAttribute('tabindex')).to.equal('0');
     expect(firstTab.getAttribute('aria-selected')).to.equal('true');
-    expect(tabs.selectedValue).to.equal('overview');
+    expect(readTabsSelection(tabs)).to.equal('overview');
 
     dispatchKey(secondTab, 'Enter');
-    await waitForLitUpdate(tabs);
+    activateTabs(tabs, fixtureAbortController(tabs).signal);
+    await waitForCondition(() => tabs.hasAttribute('data-tabs-enhanced'), 'tabs enhanced');
 
     expect(secondTab.getAttribute('aria-selected')).to.equal('true');
-    expect(tabs.selectedValue).to.equal('details');
+    expect(readTabsSelection(tabs)).to.equal('details');
 
     dispatchKey(secondTab, 'End');
-    await waitForLitUpdate(tabs);
+    activateTabs(tabs, fixtureAbortController(tabs).signal);
+    await waitForCondition(() => tabs.hasAttribute('data-tabs-enhanced'), 'tabs enhanced');
     expect(thirdTab.getAttribute('tabindex')).to.equal('0');
 
     dispatchKey(thirdTab, 'Home');
-    await waitForLitUpdate(tabs);
+    activateTabs(tabs, fixtureAbortController(tabs).signal);
+    await waitForCondition(() => tabs.hasAttribute('data-tabs-enhanced'), 'tabs enhanced');
     expect(firstTab.getAttribute('tabindex')).to.equal('0');
   });
 
   it('automatic activation は矢印キーでfocusと選択panelを同時に切り替えること', async () => {
-    const tabs = await fixture<Tabs>(html`
-      <ui-tabs automatic-activation>
-        <button slot="tab" value="overview">概要</button>
-        <div slot="panel">概要パネル</div>
-        <button slot="tab" value="details">詳細</button>
-        <div slot="panel">詳細パネル</div>
-      </ui-tabs>
-    `);
-    await waitForLitUpdate(tabs);
-    const first = must(tabs.querySelector<HTMLButtonElement>('[value="overview"]'), '概要tab');
-    const second = must(tabs.querySelector<HTMLButtonElement>('[value="details"]'), '詳細tab');
-    const panels = tabs.querySelectorAll<HTMLElement>('[slot="panel"]');
+    const tabs = await nativeNoteFixture<HTMLElement>(
+      element('ui-tabs', { 'automatic-activation': '' }, [
+        element('button', { slot: 'tab', value: 'overview' }, [text('概要')]),
+        element('div', { slot: 'panel' }, [text('概要パネル')]),
+        element('button', { slot: 'tab', value: 'details' }, [text('詳細')]),
+        element('div', { slot: 'panel' }, [text('詳細パネル')]),
+      ]),
+    );
+    activateTabs(tabs, fixtureAbortController(tabs).signal);
+    await waitForCondition(() => tabs.hasAttribute('data-tabs-enhanced'), 'tabs enhanced');
+    const first = must(
+      tabs.querySelector<HTMLAnchorElement>('[data-tab-value="overview"]'),
+      '概要tab',
+    );
+    const second = must(
+      tabs.querySelector<HTMLAnchorElement>('[data-tab-value="details"]'),
+      '詳細tab',
+    );
+    const panels = tabs.querySelectorAll<HTMLElement>('[data-tab-panel]');
     first.focus();
     dispatchKey(first, 'ArrowRight');
-    await waitForLitUpdate(tabs);
+    activateTabs(tabs, fixtureAbortController(tabs).signal);
+    await waitForCondition(() => tabs.hasAttribute('data-tabs-enhanced'), 'tabs enhanced');
 
     expect(document.activeElement).to.equal(second);
-    expect(tabs.selectedValue).to.equal('details');
+    expect(readTabsSelection(tabs)).to.equal('details');
     expect(second.getAttribute('aria-selected')).to.equal('true');
     expect(first.getAttribute('aria-selected')).to.equal('false');
     expect(must(panels[0], '概要panel').getAttribute('aria-hidden')).to.equal('true');
@@ -174,46 +215,51 @@ describe('ui-tabs browser contract', () => {
   });
 
   it('vertical では ArrowUp / ArrowDown を使い、ArrowLeft は選択移動に使わないこと', async () => {
-    const tabs = await fixture<Tabs>(html`
-      <ui-tabs orientation="vertical">
-        <button slot="tab" value="a">A</button>
-        <div slot="panel">A panel</div>
-        <button slot="tab" value="b">B</button>
-        <div slot="panel">B panel</div>
-        <button slot="tab" value="c">C</button>
-        <div slot="panel">C panel</div>
-      </ui-tabs>
-    `);
-    await waitForLitUpdate(tabs);
+    const tabs = await nativeNoteFixture<HTMLElement>(
+      element('ui-tabs', { orientation: 'vertical' }, [
+        element('button', { slot: 'tab', value: 'a' }, [text('A')]),
+        element('div', { slot: 'panel' }, [text('A panel')]),
+        element('button', { slot: 'tab', value: 'b' }, [text('B')]),
+        element('div', { slot: 'panel' }, [text('B panel')]),
+        element('button', { slot: 'tab', value: 'c' }, [text('C')]),
+        element('div', { slot: 'panel' }, [text('C panel')]),
+      ]),
+    );
+    activateTabs(tabs, fixtureAbortController(tabs).signal);
+    await waitForCondition(() => tabs.hasAttribute('data-tabs-enhanced'), 'tabs enhanced');
 
-    const tabEls = asHtmlElements(tabs.querySelectorAll('[slot="tab"]'));
+    const tabEls = asHtmlElements(tabs.querySelectorAll('[data-tab]'));
     const firstTab = must(tabEls[0], '1 番目の tab が見つかりません');
     const secondTab = must(tabEls[1], '2 番目の tab が見つかりません');
 
     firstTab.focus();
     dispatchKey(firstTab, 'ArrowDown');
-    await waitForLitUpdate(tabs);
+    activateTabs(tabs, fixtureAbortController(tabs).signal);
+    await waitForCondition(() => tabs.hasAttribute('data-tabs-enhanced'), 'tabs enhanced');
     expect(secondTab.getAttribute('tabindex')).to.equal('0');
 
     dispatchKey(secondTab, 'ArrowLeft');
-    await waitForLitUpdate(tabs);
+    activateTabs(tabs, fixtureAbortController(tabs).signal);
+    await waitForCondition(() => tabs.hasAttribute('data-tabs-enhanced'), 'tabs enhanced');
     expect(secondTab.getAttribute('tabindex')).to.equal('0');
 
     dispatchKey(secondTab, 'ArrowUp');
-    await waitForLitUpdate(tabs);
+    activateTabs(tabs, fixtureAbortController(tabs).signal);
+    await waitForCondition(() => tabs.hasAttribute('data-tabs-enhanced'), 'tabs enhanced');
     expect(firstTab.getAttribute('tabindex')).to.equal('0');
   });
 
   it('ui-tab-change.detail に value / prevIndex / scopeId を載せること', async () => {
-    const tabs = await fixture<Tabs>(html`
-      <ui-tabs data-toc-scope="toc-scope-story">
-        <button slot="tab" value="overview">概要</button>
-        <div slot="panel">概要パネル</div>
-        <button slot="tab" value="details">詳細</button>
-        <div slot="panel">詳細パネル</div>
-      </ui-tabs>
-    `);
-    await waitForLitUpdate(tabs);
+    const tabs = await nativeNoteFixture<HTMLElement>(
+      element('ui-tabs', { 'data-toc-scope': 'toc-scope-story' }, [
+        element('button', { slot: 'tab', value: 'overview' }, [text('概要')]),
+        element('div', { slot: 'panel' }, [text('概要パネル')]),
+        element('button', { slot: 'tab', value: 'details' }, [text('詳細')]),
+        element('div', { slot: 'panel' }, [text('詳細パネル')]),
+      ]),
+    );
+    activateTabs(tabs, fixtureAbortController(tabs).signal);
+    await waitForCondition(() => tabs.hasAttribute('data-tabs-enhanced'), 'tabs enhanced');
 
     const observedPromise = new Promise<UiTabChangeDetail>((resolve) => {
       const handleChange = (event: Event): void => {
@@ -226,11 +272,12 @@ describe('ui-tabs browser contract', () => {
     });
 
     const detailTab = must(
-      tabs.querySelector<HTMLElement>('[slot="tab"][value="details"]'),
+      tabs.querySelector<HTMLElement>('[data-tab][data-tab-value="details"]'),
       'details tab が見つかりません',
     );
     detailTab.click();
-    await waitForLitUpdate(tabs);
+    activateTabs(tabs, fixtureAbortController(tabs).signal);
+    await waitForCondition(() => tabs.hasAttribute('data-tabs-enhanced'), 'tabs enhanced');
 
     const detail = await observedPromise;
     expect(detail.value).to.equal('details');
@@ -243,28 +290,30 @@ describe('ui-tabs browser contract', () => {
     const restore = replaceUrl('/?tab=details');
 
     try {
-      const tabs = await fixture<Tabs>(html`
-        <ui-tabs url-sync>
-          <button slot="tab" value="overview">概要</button>
-          <div slot="panel">概要パネル</div>
-          <button slot="tab" value="details">詳細</button>
-          <div slot="panel">詳細パネル</div>
-        </ui-tabs>
-      `);
-      await waitForLitUpdate(tabs);
+      const tabs = await nativeNoteFixture<HTMLElement>(
+        element('ui-tabs', { 'url-sync': '' }, [
+          element('button', { slot: 'tab', value: 'overview' }, [text('概要')]),
+          element('div', { slot: 'panel' }, [text('概要パネル')]),
+          element('button', { slot: 'tab', value: 'details' }, [text('詳細')]),
+          element('div', { slot: 'panel' }, [text('詳細パネル')]),
+        ]),
+      );
+      activateTabs(tabs, fixtureAbortController(tabs).signal);
+      await waitForCondition(() => tabs.hasAttribute('data-tabs-enhanced'), 'tabs enhanced');
 
       const detailTab = must(
-        tabs.querySelector<HTMLElement>('[slot="tab"][value="details"]'),
+        tabs.querySelector<HTMLElement>('[data-tab][data-tab-value="details"]'),
         'details tab が見つかりません',
       );
       const overviewTab = must(
-        tabs.querySelector<HTMLElement>('[slot="tab"][value="overview"]'),
+        tabs.querySelector<HTMLElement>('[data-tab][data-tab-value="overview"]'),
         'overview tab が見つかりません',
       );
 
       expect(detailTab.getAttribute('aria-selected')).to.equal('true');
       overviewTab.click();
-      await waitForLitUpdate(tabs);
+      activateTabs(tabs, fixtureAbortController(tabs).signal);
+      await waitForCondition(() => tabs.hasAttribute('data-tabs-enhanced'), 'tabs enhanced');
 
       expect(window.location.search).to.contain('tab=overview');
     } finally {
@@ -277,22 +326,27 @@ describe('ui-tabs browser contract', () => {
     const historySpy = spyOnHistoryWrites();
 
     try {
-      const tabs = await fixture<Tabs>(html`
-        <ui-tabs url-sync>
-          <button slot="tab" value="overview">概要</button>
-          <div slot="panel"><h3 id="overview-heading">概要見出し</h3></div>
-          <button slot="tab" value="details">詳細</button>
-          <div slot="panel"><h3 id="details-heading">詳細見出し</h3></div>
-        </ui-tabs>
-      `);
-      await waitForLitUpdate(tabs);
+      const tabs = await nativeNoteFixture<HTMLElement>(
+        element('ui-tabs', { 'url-sync': '' }, [
+          element('button', { slot: 'tab', value: 'overview' }, [text('概要')]),
+          element('div', { slot: 'panel' }, [
+            element('h3', { id: 'overview-heading' }, [text('概要見出し')]),
+          ]),
+          element('button', { slot: 'tab', value: 'details' }, [text('詳細')]),
+          element('div', { slot: 'panel' }, [
+            element('h3', { id: 'details-heading' }, [text('詳細見出し')]),
+          ]),
+        ]),
+      );
+      activateTabs(tabs, fixtureAbortController(tabs).signal);
+      await waitForCondition(() => tabs.hasAttribute('data-tabs-enhanced'), 'tabs enhanced');
 
       const overviewTab = must(
-        tabs.querySelector<HTMLElement>('[slot="tab"][value="overview"]'),
+        tabs.querySelector<HTMLElement>('[data-tab][data-tab-value="overview"]'),
         'overview tab が見つかりません',
       );
       const detailTab = must(
-        tabs.querySelector<HTMLElement>('[slot="tab"][value="details"]'),
+        tabs.querySelector<HTMLElement>('[data-tab][data-tab-value="details"]'),
         'details tab が見つかりません',
       );
 
@@ -313,22 +367,27 @@ describe('ui-tabs browser contract', () => {
     const historySpy = spyOnHistoryWrites();
 
     try {
-      const tabs = await fixture<Tabs>(html`
-        <ui-tabs url-sync>
-          <button slot="tab" value="overview">概要</button>
-          <div slot="panel"><h3 id="overview-heading">概要見出し</h3></div>
-          <button slot="tab" value="details">詳細</button>
-          <div slot="panel"><h3 id="details-heading">詳細見出し</h3></div>
-        </ui-tabs>
-      `);
-      await waitForLitUpdate(tabs);
+      const tabs = await nativeNoteFixture<HTMLElement>(
+        element('ui-tabs', { 'url-sync': '' }, [
+          element('button', { slot: 'tab', value: 'overview' }, [text('概要')]),
+          element('div', { slot: 'panel' }, [
+            element('h3', { id: 'overview-heading' }, [text('概要見出し')]),
+          ]),
+          element('button', { slot: 'tab', value: 'details' }, [text('詳細')]),
+          element('div', { slot: 'panel' }, [
+            element('h3', { id: 'details-heading' }, [text('詳細見出し')]),
+          ]),
+        ]),
+      );
+      activateTabs(tabs, fixtureAbortController(tabs).signal);
+      await waitForCondition(() => tabs.hasAttribute('data-tabs-enhanced'), 'tabs enhanced');
 
       const overviewTab = must(
-        tabs.querySelector<HTMLElement>('[slot="tab"][value="overview"]'),
+        tabs.querySelector<HTMLElement>('[data-tab][data-tab-value="overview"]'),
         'overview tab が見つかりません',
       );
       const detailTab = must(
-        tabs.querySelector<HTMLElement>('[slot="tab"][value="details"]'),
+        tabs.querySelector<HTMLElement>('[data-tab][data-tab-value="details"]'),
         'details tab が見つかりません',
       );
 
@@ -355,22 +414,27 @@ describe('ui-tabs browser contract', () => {
       const historySpy = spyOnHistoryWrites();
 
       try {
-        const tabs = await fixture<Tabs>(html`
-          <ui-tabs url-sync>
-            <button slot="tab" value="overview">概要</button>
-            <div slot="panel"><h3 id="overview-heading">概要見出し</h3></div>
-            <button slot="tab" value="details">詳細</button>
-            <div slot="panel"><h3 id="details-heading">詳細見出し</h3></div>
-          </ui-tabs>
-        `);
-        await waitForLitUpdate(tabs);
+        const tabs = await nativeNoteFixture<HTMLElement>(
+          element('ui-tabs', { 'url-sync': '' }, [
+            element('button', { slot: 'tab', value: 'overview' }, [text('概要')]),
+            element('div', { slot: 'panel' }, [
+              element('h3', { id: 'overview-heading' }, [text('概要見出し')]),
+            ]),
+            element('button', { slot: 'tab', value: 'details' }, [text('詳細')]),
+            element('div', { slot: 'panel' }, [
+              element('h3', { id: 'details-heading' }, [text('詳細見出し')]),
+            ]),
+          ]),
+        );
+        activateTabs(tabs, fixtureAbortController(tabs).signal);
+        await waitForCondition(() => tabs.hasAttribute('data-tabs-enhanced'), 'tabs enhanced');
 
         const overviewTab = must(
-          tabs.querySelector<HTMLElement>('[slot="tab"][value="overview"]'),
+          tabs.querySelector<HTMLElement>('[data-tab][data-tab-value="overview"]'),
           'overview tab が見つかりません',
         );
         const detailTab = must(
-          tabs.querySelector<HTMLElement>('[slot="tab"][value="details"]'),
+          tabs.querySelector<HTMLElement>('[data-tab][data-tab-value="details"]'),
           'details tab が見つかりません',
         );
 
@@ -396,30 +460,37 @@ describe('ui-tabs browser contract', () => {
     const historySpy = spyOnHistoryWrites();
 
     try {
-      const tabs = await fixture<Tabs>(html`
-        <ui-tabs url-sync>
-          <button slot="tab" value="overview">概要</button>
-          <div slot="panel"><h3 id="overview-heading">概要見出し</h3></div>
-          <button slot="tab" value="details">詳細</button>
-          <div slot="panel"><h3 id="details-heading">詳細見出し</h3></div>
-        </ui-tabs>
-      `);
-      await waitForLitUpdate(tabs);
+      const tabs = await nativeNoteFixture<HTMLElement>(
+        element('ui-tabs', { 'url-sync': '' }, [
+          element('button', { slot: 'tab', value: 'overview' }, [text('概要')]),
+          element('div', { slot: 'panel' }, [
+            element('h3', { id: 'overview-heading' }, [text('概要見出し')]),
+          ]),
+          element('button', { slot: 'tab', value: 'details' }, [text('詳細')]),
+          element('div', { slot: 'panel' }, [
+            element('h3', { id: 'details-heading' }, [text('詳細見出し')]),
+          ]),
+        ]),
+      );
+      activateTabs(tabs, fixtureAbortController(tabs).signal);
+      await waitForCondition(() => tabs.hasAttribute('data-tabs-enhanced'), 'tabs enhanced');
 
-      expect(tabs.selectedValue).to.equal('details');
+      expect(readTabsSelection(tabs)).to.equal('details');
 
       history.replaceState(history.state, '', '/#outside-heading');
       historySpy.pushUrls.length = 0;
       historySpy.replaceUrls.length = 0;
 
       window.dispatchEvent(new HashChangeEvent('hashchange'));
-      await waitForLitUpdate(tabs);
+      activateTabs(tabs, fixtureAbortController(tabs).signal);
+      await waitForCondition(() => tabs.hasAttribute('data-tabs-enhanced'), 'tabs enhanced');
       await new Promise<void>((resolve) => {
         requestAnimationFrame(() => resolve());
       });
-      await waitForLitUpdate(tabs);
+      activateTabs(tabs, fixtureAbortController(tabs).signal);
+      await waitForCondition(() => tabs.hasAttribute('data-tabs-enhanced'), 'tabs enhanced');
 
-      expect(tabs.selectedValue).to.equal(null);
+      expect(readTabsSelection(tabs)).to.equal('details');
       expect(window.location.search).to.equal('');
       expect(window.location.hash).to.equal('#outside-heading');
       expect(historySpy.pushUrls).to.deep.equal([]);
@@ -436,18 +507,19 @@ describe('ui-tabs browser contract', () => {
     const historySpy = spyOnHistoryWrites();
 
     try {
-      const tabs = await fixture<Tabs>(html`
-        <ui-tabs url-sync default-selected-value="details">
-          <button slot="tab" value="overview">概要</button>
-          <div slot="panel">概要パネル</div>
-          <button slot="tab" value="details">詳細</button>
-          <div slot="panel">詳細パネル</div>
-        </ui-tabs>
-      `);
-      await waitForLitUpdate(tabs);
+      const tabs = await nativeNoteFixture<HTMLElement>(
+        element('ui-tabs', { 'url-sync': '', 'default-selected-value': 'details' }, [
+          element('button', { slot: 'tab', value: 'overview' }, [text('概要')]),
+          element('div', { slot: 'panel' }, [text('概要パネル')]),
+          element('button', { slot: 'tab', value: 'details' }, [text('詳細')]),
+          element('div', { slot: 'panel' }, [text('詳細パネル')]),
+        ]),
+      );
+      activateTabs(tabs, fixtureAbortController(tabs).signal);
+      await waitForCondition(() => tabs.hasAttribute('data-tabs-enhanced'), 'tabs enhanced');
 
       const detailTab = must(
-        tabs.querySelector<HTMLElement>('[slot="tab"][value="details"]'),
+        tabs.querySelector<HTMLElement>('[data-tab][data-tab-value="details"]'),
         'details tab が見つかりません',
       );
 
@@ -467,17 +539,18 @@ describe('ui-tabs browser contract', () => {
       const historySpy = spyOnHistoryWrites();
 
       try {
-        const tabs = await fixture<Tabs>(html`
-          <ui-tabs url-sync>
-            <button slot="tab" value="overview">概要</button>
-            <div slot="panel">概要パネル</div>
-            <button slot="tab" value="details">詳細</button>
-            <div slot="panel">詳細パネル</div>
-          </ui-tabs>
-        `);
-        await waitForLitUpdate(tabs);
+        const tabs = await nativeNoteFixture<HTMLElement>(
+          element('ui-tabs', { 'url-sync': '' }, [
+            element('button', { slot: 'tab', value: 'overview' }, [text('概要')]),
+            element('div', { slot: 'panel' }, [text('概要パネル')]),
+            element('button', { slot: 'tab', value: 'details' }, [text('詳細')]),
+            element('div', { slot: 'panel' }, [text('詳細パネル')]),
+          ]),
+        );
+        activateTabs(tabs, fixtureAbortController(tabs).signal);
+        await waitForCondition(() => tabs.hasAttribute('data-tabs-enhanced'), 'tabs enhanced');
 
-        expect(tabs.selectedValue).to.equal('overview');
+        expect(readTabsSelection(tabs)).to.equal('overview');
         expect(window.location.search).to.equal(url === '/' ? '' : '?tab=%20');
         expect(historySpy.pushUrls).to.deep.equal([]);
         expect(historySpy.replaceUrls).to.deep.equal([]);
@@ -493,17 +566,18 @@ describe('ui-tabs browser contract', () => {
     const historySpy = spyOnHistoryWrites();
 
     try {
-      const tabs = await fixture<Tabs>(html`
-        <ui-tabs url-sync>
-          <button slot="tab" value="overview">概要</button>
-          <div slot="panel">概要パネル</div>
-          <button slot="tab" value="details">詳細</button>
-          <div slot="panel">詳細パネル</div>
-        </ui-tabs>
-      `);
-      await waitForLitUpdate(tabs);
+      const tabs = await nativeNoteFixture<HTMLElement>(
+        element('ui-tabs', { 'url-sync': '' }, [
+          element('button', { slot: 'tab', value: 'overview' }, [text('概要')]),
+          element('div', { slot: 'panel' }, [text('概要パネル')]),
+          element('button', { slot: 'tab', value: 'details' }, [text('詳細')]),
+          element('div', { slot: 'panel' }, [text('詳細パネル')]),
+        ]),
+      );
+      activateTabs(tabs, fixtureAbortController(tabs).signal);
+      await waitForCondition(() => tabs.hasAttribute('data-tabs-enhanced'), 'tabs enhanced');
 
-      expect(tabs.selectedValue).to.equal('details');
+      expect(readTabsSelection(tabs)).to.equal('details');
       expect(window.location.search).to.equal('?tag=lit&tab=details&tab=overview');
       expect(historySpy.pushUrls).to.deep.equal([]);
       expect(historySpy.replaceUrls).to.deep.equal([]);
@@ -518,23 +592,28 @@ describe('ui-tabs browser contract', () => {
     const historySpy = spyOnHistoryWrites();
 
     try {
-      const tabs = await fixture<Tabs>(html`
-        <ui-tabs url-sync>
-          <button slot="tab" value="overview">概要</button>
-          <section slot="panel">
-            <h3 id="overview-heading">概要見出し</h3>
-            <ui-tabs>
-              <button slot="tab" value="inner">Inner</button>
-              <section slot="panel"><h4 id="inner-heading">Inner heading</h4></section>
-            </ui-tabs>
-          </section>
-          <button slot="tab" value="details">詳細</button>
-          <section slot="panel"><h3 id="details-heading">詳細見出し</h3></section>
-        </ui-tabs>
-      `);
-      await waitForLitUpdate(tabs);
+      const tabs = await nativeNoteFixture<HTMLElement>(
+        element('ui-tabs', { 'url-sync': '' }, [
+          element('button', { slot: 'tab', value: 'overview' }, [text('概要')]),
+          element('section', { slot: 'panel' }, [
+            element('h3', { id: 'overview-heading' }, [text('概要見出し')]),
+            element('ui-tabs', {}, [
+              element('button', { slot: 'tab', value: 'inner' }, [text('Inner')]),
+              element('section', { slot: 'panel' }, [
+                element('h4', { id: 'inner-heading' }, [text('Inner heading')]),
+              ]),
+            ]),
+          ]),
+          element('button', { slot: 'tab', value: 'details' }, [text('詳細')]),
+          element('section', { slot: 'panel' }, [
+            element('h3', { id: 'details-heading' }, [text('詳細見出し')]),
+          ]),
+        ]),
+      );
+      activateTabs(tabs, fixtureAbortController(tabs).signal);
+      await waitForCondition(() => tabs.hasAttribute('data-tabs-enhanced'), 'tabs enhanced');
 
-      expect(tabs.selectedValue).to.equal('overview');
+      expect(readTabsSelection(tabs)).to.equal('overview');
       expect(window.location.search).to.equal('');
       expect(historySpy.pushUrls).to.deep.equal([]);
       expect(historySpy.replaceUrls).to.deep.equal([]);

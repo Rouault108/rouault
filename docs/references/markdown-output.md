@@ -57,14 +57,18 @@
         data-code-group-tab="true"
         data-code-group-key="valid"
         data-code-group-panel-id="code-group-1-panel-valid"
-      >正しい例</button>
+      >
+        正しい例
+      </button>
       <button
         id="code-group-1-tab-invalid"
         type="button"
         data-code-group-tab="true"
         data-code-group-key="invalid"
         data-code-group-panel-id="code-group-1-panel-invalid"
-      >誤り例</button>
+      >
+        誤り例
+      </button>
     </div>
     <div class="code-group-header-tools">
       <button
@@ -110,7 +114,7 @@
 - group copy buttonの`data-copy-target-id`はactive panelの`data-code-copy-source-id`を指す。
 - tab id、panel id、`data-code-group-panel-id`は非空で、同じkeyのtabとpanelを結ぶ。
 - SSR時点では`hidden`、`aria-hidden`、`inert`、`role="tablist"`、`role="tab"`、`role="tabpanel"`、`aria-selected`、`aria-controls`、`tabindex`を付与しない。
-- 同期scopeはenhancerの同一root配下に限定され、通常`ui-tabs`、URL、history、storage、custom eventには接続しない。
+- 同期scopeはenhancerの同一root配下に限定され、通常Tabs（`[data-tabs-root]`）、URL、history、storage、custom eventには接続しない。
 
 ### `::callout`
 
@@ -191,66 +195,34 @@
 - 表セル内のmarkerなし`<br>`はdefensive final contract errorとする。
 - exact `{{break}}`以外の`{{...}}` tokenはこの出力契約の対象外であり、通常テキストとして保持する。
 
-### `::translation` / `::translation-overlay`
+### Native note output
 
-`::translation`はstatic translationとして次のLight DOMを出力する。
+| 中間HAST           | final document root               | capability / trigger              |
+| ------------------ | --------------------------------- | --------------------------------- |
+| ui-tabs            | section[data-tabs-root]           | interactive / initial             |
+| ui-translation     | details[data-translation-overlay] | interactive / visible             |
+| ui-code-preview    | figure[data-code-preview-root]    | conditional interactive / visible |
+| ui-preview-sandbox | div[data-preview-sandbox-root]    | sandboxed / activation mapping    |
+| ui-video           | figure[data-video-root]           | interactive / visible             |
 
-```html
-<div class="translation-static" data-translation-kind="static">
-  <p class="translation-original" lang="fr">Je pense, donc je suis.</p>
-  <p class="translation-translated" lang="ja">我思う、ゆえに我あり。</p>
-</div>
-```
+Tabsはnav内のformattingを保持したfragment anchorと全panelを生成する。no-JS時にrole=tab/hiddenを付けない。labelにinteractive descendantを含むauthoring inputはbuild errorである。Translationは同一details/summaryを使用し、空訳文は原文spanとなる。
 
-`::translation-overlay`はinteractive overlay用hostとnative disclosure fallbackを出力する。
+Code Previewはcanonical preview metadataとheader/surface/codeをbuild時に生成する。canonicalized controlsがnon-empty、または元rootのdirect child elementにslot=toolbarが存在する場合だけhydration注釈を付ける。toolbarのdescendant検索やcontent非空判定を追加しない。reader/testing/demoのprofile mappingとpermission ownerは[Markdown](../contracts/markdown.md)に従う。
 
-```html
-<ui-translation
-  lang="fr"
-  target-lang="ja"
-  original="Je pense, donc je suis."
-  translated="我思う、ゆえに我あり。"
-  surface="drawer"
-  data-hydration-capability="interactive"
-  data-hydration-trigger="visible"
->
-  <details class="translation-overlay-fallback" data-translation-fallback>
-    <summary
-      class="translation-overlay-fallback__summary"
-      data-translation-fallback-trigger
-      lang="fr"
-    >
-      Je pense, donc je suis.
-    </summary>
-    <p class="translation-overlay-fallback__content" data-translation-fallback-content lang="ja">
-      我思う、ゆえに我あり。
-    </p>
-  </details>
-</ui-translation>
-```
+Preview Sandboxはcanonical data-sandbox-\* metadata、no-JS placeholder、direct child inert templateを出力する。eager/visible/manualはinitial/visible/interactionに写す。iframe/srcdocはscheduler許可後のoperational DOMである。allow-jsはauthor JSの評価policyであり、helper用baseline allow-scriptsを切り替えない。
 
-- `original` / `translated`とfallback textはplain-text 2片だけを保持する。
-- fallbackは`data-part`とgeneric `data-surface`を使わない。
-- hydration後の`ui-translation`は`button[data-part="trigger"]`と`div[data-part="content"][role="dialog"]`へ置き換える。
-- host`[open]`はMarkdown outputとして生成しない。
+Videoはnative video controls、source/track、caption、hidden custom controlsとlive regionを出力する。同一mediaのstateを採用してatomicにenhanceし、失敗/abort時はnative controlsを戻す。
+
+DOMとmetadataの詳細は[Tabs](../contracts/tabs.md)、[Translation](../contracts/translation.md)、[Code Preview](../contracts/code-preview.md)、[Preview Sandbox](../contracts/preview-sandbox.md)、[Video](../contracts/video.md)を参照する。
 
 ## Hydration Directive
 
-- noteページのhydration directiveはbuild-time annotationとして出力する。
-- Hydration budgetはSSR artifactとclient schedulerの境界で検証する。
-- Markdown由来`ui-preview-sandbox`は`data-hydration-capability="sandboxed"`を持つ。
-- `content-layout`未指定時はfinal hostへ属性を出力せず、明示した`stage` / `flow`だけをcanonical `content-layout`として出力する。
-- hydration後にcomponentのreflectionで既定の`content-layout="stage"`が現れることは、build outputの非出力契約と矛盾しない。
-- `activation-policy`未指定または明示`visible`のpreviewは`data-hydration-trigger="visible"`を持つ。未指定default visibleでは`activation-policy="visible"`を出力しない。
-- `activation-policy="eager"`は`data-hydration-trigger="initial"`を持つ。
-- `activation-policy="manual"`は`data-hydration-trigger="interaction"`を持つ。
-- manual-only capabilityによりmanualへ正規化された場合だけ`activation-policy="manual"`を出力する。
-- raw HAST/HTML経由の同義camelCase属性は最終出力でkebab-caseへ正規化し、`data-hydration-capability` / `data-hydration-trigger`はbuild-owned値で上書きする。
+build-time annotationとregistryを正本とし、HydrationSchedulerだけが初回起動を所有する。visibleは既存のviewport近傍/focusin/IntersectionObserver非対応policyを維持する。featureに独自の初回observerを置かない。
 
 ## Final HAST Invariants
 
 - 静的検索highlight用の一時`<mark>`を最終本文DOMに残さない。
-- Component化後もsemantic fallbackを失わない。
+- native lowering後もsemantic no-JS baselineを失わない。stateful note custom elementとnote DSDをfinal HTMLへ残さない。
 - `preview-sandbox`の`srcdoc`はcompiler-generated outputとして扱い、author supplied HTMLではない。
 
 ---

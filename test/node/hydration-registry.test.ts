@@ -18,11 +18,11 @@ const expectedProfilesByTag = new Map<string, readonly string[]>([
   ['score-scroll-enhancer', ['note']],
   ['footnote-popover-enhancer', ['note']],
   ['image-lightbox-enhancer', ['note']],
-  ['ui-code-preview', ['note']],
-  ['ui-preview-sandbox', ['note']],
-  ['ui-tabs', ['note']],
-  ['ui-translation', ['note']],
-  ['ui-video', ['note']],
+  ['code-preview-enhancer', ['note']],
+  ['preview-sandbox-enhancer', ['note']],
+  ['tabs-enhancer', ['note']],
+  ['translation-overlay-enhancer', ['note']],
+  ['video-enhancer', ['note']],
 ]);
 
 describe('hydration registry', () => {

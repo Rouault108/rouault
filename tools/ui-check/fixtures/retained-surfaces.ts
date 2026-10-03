@@ -1,3 +1,5 @@
+import { normalizeRouaultStaticSurfaceHtml } from '../../../build/rehype/rouault-components.js';
+import { resolveNotePreviewProfile } from '../../../build/content/note-content-contracts.js';
 import { buildNotFoundPageMarkup } from '../../../src/components/not-found/not-found-page.js';
 import { renderFooterHtml } from '../../../src/layouts/footer-html.js';
 import { escapeHtmlAttribute } from '../../../src/layouts/html-output.js';
@@ -13,10 +15,10 @@ const page = (title: string, content: string, script?: string): string => `<!doc
     <link rel="stylesheet" href="/src/assets/css/main.css" />
   </head>
   <body>
-    <main class="page-shell">
+    <main class="page-shell" data-hydration-scope="note">
       <p><a href="../">UI Check Workbench</a></p>
       <h1>${title}</h1>
-      ${content}
+      ${normalizeRouaultStaticSurfaceHtml(content, { namespace: `ui-check:${title}`, previewProfile: resolveNotePreviewProfile('testing'), documentUrl: 'http://localhost/' }) ?? ''}
     </main>
     ${script ? `<script type="module" src="${script}"></script>` : ''}
   </body>
@@ -85,7 +87,7 @@ export const renderNotFoundCase = (): string =>
     }),
   );
 
-// 実際のproduction componentに入力だけを渡し、shadow/light DOM内部の表示を複製しない。
+// production lowererに入力を渡し、native DOMの構造を複製しない。
 export const renderReadingInteractionsCase = (): string => {
   const translation = SHARED_TRANSLATION_EXAMPLE;
   const renderTranslation = (id: string, surface: 'popover' | 'drawer'): string => `
@@ -120,6 +122,19 @@ export const renderReadingInteractionsCase = (): string => {
       <p>Popover: ${renderTranslation('translation-popover', 'popover')}</p>
       <p>Drawer: ${renderTranslation('translation-drawer', 'drawer')}</p>
       <p>二つの訳文を順に開き、単一openの表示も確認できます。</p>
+    </section>
+    <section class="prose" aria-labelledby="preview-title">
+      <h2 id="preview-title">Code Preview / Sandbox</h2>
+      <ui-code-preview id="preview-responsive" heading="Responsive preview" controls="theme surface viewport">
+        <div slot="preview"><p class="header">著者のpreview本文です。同名classにもcomponent用CSSが漏れないことを確認します。</p></div>
+        <pre><code>const reading = '静かに読む';</code></pre>
+      </ui-code-preview>
+      <ui-code-preview heading="Isolated preview">
+        <ui-preview-sandbox slot="preview" activation-policy="manual" iframe-title="Manual sandbox">
+          <template data-preview-kind="html"><p>隔離されたpreview本文</p></template>
+        </ui-preview-sandbox>
+        <pre><code>&lt;p&gt;隔離されたpreview本文&lt;/p&gt;</code></pre>
+      </ui-code-preview>
     </section>`,
     '../fixtures/reading-interactions.ts',
   );
@@ -129,7 +144,7 @@ export const renderVideoCase = (): string => {
   const source = '/src/assets/videos/sample-video.mp4';
   const poster = '/src/assets/images/sample-video-poster.jpg';
   const video = (id: string, caption: string, attributes = ''): string =>
-    `<ui-video id="${id}" src="${source}" poster="${poster}" caption="${caption}" ${attributes}></ui-video>`;
+    `<ui-video id="${id}" src="${source}" poster="${poster}" caption="${caption}" ${attributes}>${id === 'video-captions' ? '<track src="/src/assets/other/sample-vtt.vtt" srclang="ja" label="日本語" kind="captions" default>' : ''}</ui-video>`;
   return page(
     'Video',
     `

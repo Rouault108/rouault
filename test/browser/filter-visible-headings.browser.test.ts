@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import type { TocHeading as Heading } from '../../src/toc/toc-headings.js';
+import type { HastNode } from '../../build/rehype/hast-utils.js';
+import type { TocHeading } from '../../src/toc/toc-headings.js';
 import {
   applyTocScopeSelections,
   filterHeadingsByScopeSelections,
@@ -8,247 +9,114 @@ import {
   resolveTabValueForDescendant,
   revealHeadingInTabs,
 } from '../../src/toc/filter-visible-headings.js';
+import { activateTabs, readTabsSelection } from '../../src/client/post-hydrate/tabs-enhancer.js';
+import { fixtureAbortController, requireFixtureValue } from './harness/browser-fixture.js';
+import { element, text, nativeNoteFixture } from './harness/native-note-fixture.js';
 
-describe('filterVisibleHeadings', () => {
-  it('非アクティブな tabpanel 内の見出しを除外すること', () => {
-    document.body.innerHTML = `
-      <article id="content-root">
-        <h2 id="top">トップ</h2>
+const tabsInput = (scope: string, nested = false): HastNode =>
+  element('ui-tabs', { 'data-toc-scope': scope }, [
+    element('div', { slot: 'tab', value: 'overview' }, [text('概要')]),
+    element('div', { slot: 'panel' }, [
+      element('h2', { id: `${scope}-overview` }, [text('Overview')]),
+    ]),
+    element('div', { slot: 'tab', value: 'details' }, [text('詳細')]),
+    element(
+      'div',
+      { slot: 'panel' },
+      nested
+        ? [tabsInput('inner')]
+        : [element('h2', { id: `${scope}-details` }, [text('Details')])],
+    ),
+  ]);
+const create = async (nested = false) =>
+  nativeNoteFixture(element('article', {}, [tabsInput('outer', nested)]));
+const roots = (content: HTMLElement) => [
+  ...content.querySelectorAll<HTMLElement>('[data-tabs-root]'),
+];
+const enhance = (content: HTMLElement) => {
+  const lifetime = fixtureAbortController(content);
+  for (const root of roots(content)) activateTabs(root, lifetime.signal);
+};
+const headings: TocHeading[] = [
+  {
+    id: 'outer-overview',
+    text: 'Overview',
+    level: 2,
+    scopeSelections: [{ scopeId: 'outer', value: 'overview' }],
+  },
+  {
+    id: 'outer-details',
+    text: 'Details',
+    level: 2,
+    scopeSelections: [{ scopeId: 'outer', value: 'details' }],
+  },
+];
 
-        <ui-tabs>
-          <div slot="tab" value="js">JavaScript</div>
-          <div slot="panel" role="tabpanel" aria-hidden="false">
-            <h3 id="js-heading">JavaScript の見出し</h3>
-          </div>
-
-          <div slot="tab" value="rust">Rust</div>
-          <div slot="panel" role="tabpanel" aria-hidden="true" hidden>
-            <h3 id="rust-heading">Rust の見出し</h3>
-          </div>
-        </ui-tabs>
-      </article>
-    `;
-
-    const contentRoot = document.getElementById('content-root');
-    if (!contentRoot) return;
-    const headings: Heading[] = [
-      { id: 'top', text: 'トップ', level: 2 },
-      { id: 'js-heading', text: 'JavaScript の見出し', level: 3 },
-      { id: 'rust-heading', text: 'Rust の見出し', level: 3 },
-    ];
-
-    expect(filterVisibleHeadings(contentRoot, headings)).to.deep.equal([
-      { id: 'top', text: 'トップ', level: 2 },
-      { id: 'js-heading', text: 'JavaScript の見出し', level: 3 },
-    ]);
+describe('native tabs TOC integration', () => {
+  it('未enhanceでは全panelの見出しを可視として扱う', async () => {
+    const content = await create();
+    expect(filterVisibleHeadings(content, headings)).toEqual(headings);
+    expect(readTocScopeSelectionMap(content).size).toBe(0);
+    expect(filterHeadingsByScopeSelections(headings, readTocScopeSelectionMap(content))).toEqual(
+      headings,
+    );
   });
-
-  it('ネストした非表示 tabpanel も除外すること', () => {
-    document.body.innerHTML = `
-      <article id="content-root">
-        <h2 id="top">トップ</h2>
-
-        <ui-tabs>
-          <div slot="tab" value="outer-a">A</div>
-          <div slot="panel" role="tabpanel" aria-hidden="false">
-            <ui-tabs>
-              <div slot="tab" value="inner-a">A-1</div>
-              <div slot="panel" role="tabpanel" aria-hidden="false">
-                <h3 id="visible-heading">見える見出し</h3>
-              </div>
-
-              <div slot="tab" value="inner-b">A-2</div>
-              <div slot="panel" role="tabpanel" aria-hidden="true" hidden>
-                <h3 id="hidden-heading">隠れた見出し</h3>
-              </div>
-            </ui-tabs>
-          </div>
-        </ui-tabs>
-      </article>
-    `;
-
-    const contentRoot = document.getElementById('content-root');
-    if (!contentRoot) return;
-    const headings: Heading[] = [
-      { id: 'top', text: 'トップ', level: 2 },
-      { id: 'visible-heading', text: '見える見出し', level: 3 },
-      { id: 'hidden-heading', text: '隠れた見出し', level: 3 },
-    ];
-
-    expect(filterVisibleHeadings(contentRoot, headings)).to.deep.equal([
-      { id: 'top', text: 'トップ', level: 2 },
-      { id: 'visible-heading', text: '見える見出し', level: 3 },
-    ]);
+  it('非アクティブpanel内の見出しを除外する', async () => {
+    const content = await create();
+    enhance(content);
+    expect(filterVisibleHeadings(content, headings)).toEqual([headings[0]]);
   });
-
-  it('hash 対象見出しに対して祖先タブを外側から順に開くこと', () => {
-    document.body.innerHTML = `
-      <article id="content-root">
-        <ui-tabs id="tabs-root">
-          <div slot="tab" value="overview">概要</div>
-          <div slot="panel" role="tabpanel" aria-hidden="true" hidden>
-            <h3 id="overview-heading">概要見出し</h3>
-          </div>
-
-          <div slot="tab" value="details">詳細</div>
-          <div slot="panel" role="tabpanel" aria-hidden="true" hidden>
-            <h3 id="details-heading">詳細見出し</h3>
-          </div>
-        </ui-tabs>
-      </article>
-    `;
-
-    const contentRoot = document.getElementById('content-root');
-    if (!contentRoot) return;
-    const tabs = document.getElementById('tabs-root') as HTMLElement & {
-      calls?: {
-        value: string;
-        historyMode: string | undefined;
-      }[];
-      select: (value: string, options?: { historyMode?: string }) => void;
-    };
-    const target = document.getElementById('details-heading');
-    if (!target) return;
-
-    tabs.calls = [];
-    tabs.select = (value: string, options?: { historyMode?: string }) => {
-      tabs.calls?.push({ value, historyMode: options?.historyMode });
-    };
-
-    revealHeadingInTabs(contentRoot, target);
-
-    expect(tabs.calls).to.deep.equal([{ value: 'details', historyMode: 'none' }]);
+  it('ネストした非表示panelも除外する', async () => {
+    const content = await create(true);
+    enhance(content);
+    const nested = [{ id: 'inner-overview', text: 'Overview', level: 2 }];
+    expect(filterVisibleHeadings(content, nested)).toEqual([]);
   });
-
-  it('descendant 見出しから属する panel の tab value を解決できること', () => {
-    document.body.innerHTML = `
-      <article id="content-root">
-        <ui-tabs id="tabs-root">
-          <div slot="tab" value="overview">概要</div>
-          <div slot="panel" role="tabpanel" aria-hidden="false">
-            <h3 id="overview-heading">Overview Heading</h3>
-          </div>
-
-          <div slot="tab" value="details">詳細</div>
-          <div slot="panel" role="tabpanel" aria-hidden="false">
-            <h3 id="details-heading">Details Heading</h3>
-          </div>
-        </ui-tabs>
-      </article>
-    `;
-
-    const tabs = document.getElementById('tabs-root');
-    const target = document.getElementById('details-heading');
-    if (!(tabs instanceof HTMLElement) || !(target instanceof HTMLElement)) return;
-
-    expect(resolveTabValueForDescendant(tabs, target)).to.equal('details');
+  it('hash対象の祖先tabsを外側から順に開き、URLを変更しない', async () => {
+    const content = await create(true);
+    enhance(content);
+    const order: string[] = [];
+    content.addEventListener('ui-tab-change', (event) => {
+      const target = event.target;
+      if (target instanceof HTMLElement) order.push(target.dataset['tocScope'] ?? '');
+    });
+    const url = location.href;
+    revealHeadingInTabs(
+      content,
+      requireFixtureValue(content.querySelector<HTMLElement>('#inner-details')),
+    );
+    expect(order).toEqual(['outer', 'inner']);
+    expect(roots(content).map(readTabsSelection)).toEqual(['details', 'details']);
+    expect(location.href).toBe(url);
   });
-
-  it('ネストした tabs でも外側 host に対する panel value を解決できること', () => {
-    document.body.innerHTML = `
-      <article id="content-root">
-        <ui-tabs id="outer-tabs">
-          <div slot="tab" value="outer-a">A</div>
-          <div slot="panel" role="tabpanel" aria-hidden="false">
-            <ui-tabs>
-              <div slot="tab" value="inner-a">A-1</div>
-              <div slot="panel" role="tabpanel" aria-hidden="false">
-                <h3 id="nested-heading">Nested Heading</h3>
-              </div>
-            </ui-tabs>
-          </div>
-
-          <div slot="tab" value="outer-b">B</div>
-          <div slot="panel" role="tabpanel" aria-hidden="false">
-            <h3 id="other-heading">Other Heading</h3>
-          </div>
-        </ui-tabs>
-      </article>
-    `;
-
-    const tabs = document.getElementById('outer-tabs');
-    const target = document.getElementById('nested-heading');
-    if (!(tabs instanceof HTMLElement) || !(target instanceof HTMLElement)) return;
-
-    expect(resolveTabValueForDescendant(tabs, target)).to.equal('outer-a');
+  it('descendantから所属panelのvalueを解決する', async () => {
+    const content = await create();
+    expect(
+      resolveTabValueForDescendant(
+        requireFixtureValue(roots(content)[0]),
+        requireFixtureValue(content.querySelector<HTMLElement>('#outer-details')),
+      ),
+    ).toBe('details');
   });
-
-  it('data-toc-scope ごとの選択状態を読み取り、scopeSelections で見出しを絞り込めること', () => {
-    document.body.innerHTML = `
-      <article id="content-root">
-        <ui-tabs data-toc-scope="toc-scope-1" selected-value="details">
-          <div slot="tab" value="overview">概要</div>
-          <div slot="panel" role="tabpanel" aria-hidden="true" hidden></div>
-          <div slot="tab" value="details">詳細</div>
-          <div slot="panel" role="tabpanel" aria-hidden="false"></div>
-        </ui-tabs>
-      </article>
-    `;
-
-    const contentRoot = document.getElementById('content-root');
-    if (!(contentRoot instanceof HTMLElement)) return;
-
-    const selections = readTocScopeSelectionMap(contentRoot);
-    expect(Array.from(selections.entries())).to.deep.equal([['toc-scope-1', 'details']]);
-
-    const headings: Heading[] = [
-      {
-        id: 'overview-heading',
-        text: 'Overview',
-        level: 2,
-        scopeSelections: [{ scopeId: 'toc-scope-1', value: 'overview' }],
-      },
-      {
-        id: 'details-heading',
-        text: 'Details',
-        level: 2,
-        scopeSelections: [{ scopeId: 'toc-scope-1', value: 'details' }],
-      },
-      { id: 'shared-heading', text: 'Shared', level: 2 },
-    ];
-
-    expect(filterHeadingsByScopeSelections(headings, selections)).to.deep.equal([
-      {
-        id: 'details-heading',
-        text: 'Details',
-        level: 2,
-        scopeSelections: [{ scopeId: 'toc-scope-1', value: 'details' }],
-      },
-      { id: 'shared-heading', text: 'Shared', level: 2 },
-    ]);
+  it('ネストしたdescendantから外側panelのvalueを解決する', async () => {
+    const content = await create(true);
+    expect(
+      resolveTabValueForDescendant(
+        requireFixtureValue(roots(content)[0]),
+        requireFixtureValue(content.querySelector<HTMLElement>('#inner-details')),
+      ),
+    ).toBe('details');
   });
-
-  it('scope selection 適用時に history mode を指定できること', () => {
-    document.body.innerHTML = `
-      <article id="content-root">
-        <ui-tabs id="tabs-root" data-toc-scope="toc-scope-1">
-          <div slot="tab" value="overview">概要</div>
-          <div slot="panel" role="tabpanel" aria-hidden="false"></div>
-          <div slot="tab" value="details">詳細</div>
-          <div slot="panel" role="tabpanel" aria-hidden="true" hidden></div>
-        </ui-tabs>
-      </article>
-    `;
-
-    const contentRoot = document.getElementById('content-root');
-    const tabs = document.getElementById('tabs-root') as HTMLElement & {
-      calls?: {
-        value: string;
-        historyMode: string | undefined;
-      }[];
-      select: (value: string, options?: { historyMode?: string }) => void;
-    };
-    if (!(contentRoot instanceof HTMLElement) || !(tabs instanceof HTMLElement)) return;
-
-    tabs.calls = [];
-    tabs.select = (value: string, options?: { historyMode?: string }) => {
-      tabs.calls?.push({ value, historyMode: options?.historyMode });
-    };
-
-    applyTocScopeSelections(contentRoot, [{ scopeId: 'toc-scope-1', value: 'details' }], {
+  it('scopeSelectionsをcontrollerへ適用し、canonical selectionで絞り込む', async () => {
+    const content = await create();
+    enhance(content);
+    const url = location.href;
+    applyTocScopeSelections(content, [{ scopeId: 'outer', value: 'details' }], {
       historyMode: 'none',
     });
-
-    expect(tabs.calls).to.deep.equal([{ value: 'details', historyMode: 'none' }]);
+    const selections = readTocScopeSelectionMap(content);
+    expect([...selections]).toEqual([['outer', 'details']]);
+    expect(filterHeadingsByScopeSelections(headings, selections)).toEqual([headings[1]]);
+    expect(location.href).toBe(url);
   });
 });

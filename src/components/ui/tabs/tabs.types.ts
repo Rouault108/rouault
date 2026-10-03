@@ -11,18 +11,6 @@ export type TabsResolvedSource =
   | 'current'
   | 'fallback';
 
-export type DevImportMeta = ImportMeta & {
-  env?: {
-    DEV?: boolean;
-  };
-};
-
-export interface TabsSnapshot {
-  tabs: HTMLElement[];
-  panels: HTMLElement[];
-  interactiveCount: number;
-}
-
 export interface ResolveSelectionInput {
   selectedValue: string | null;
   defaultSelectedValue: string | null;
@@ -56,22 +44,4 @@ export interface UiTabChangeDetail {
   value: string | null;
   prevIndex: number;
   scopeId: string | null;
-}
-
-export interface ResolveAndCommitOptions {
-  emitEvent?: boolean;
-  historyMode?: UrlHistoryMode;
-  normalizeUrl?: boolean;
-}
-
-export interface CommitActiveIndexOptions {
-  emitEvent?: boolean;
-  historyMode?: UrlHistoryMode;
-}
-
-let uidCounter = 0;
-
-export function nextTabsUid(): number {
-  uidCounter += 1;
-  return uidCounter;
 }

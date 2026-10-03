@@ -1,4 +1,3 @@
-import { html } from 'lit/static-html.js';
 import { describe, expect, it } from 'vitest';
 import { fixture } from './harness/browser-fixture.js';
 
@@ -50,7 +49,7 @@ const createLoadedRouteManifestState = (routes: readonly string[]) => {
 
 describe('search-navigation', () => {
   it('router-document-host が存在する場合は SPA navigate を優先すること', async () => {
-    const host = await fixture<HTMLElement>(html`<router-document-host></router-document-host>`);
+    const host = await fixture<HTMLElement>(`<router-document-host></router-document-host>`);
     let navigatedUrl = '';
 
     (host as HTMLElement & { navigate: (url: string) => Promise<NavigationResult> }).navigate = (

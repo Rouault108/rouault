@@ -22,7 +22,17 @@ export const STATIC_FIRST_NOTE_FORBIDDEN_INPUT_TAGS = [
   'ui-ul',
 ] as const;
 
-export const STATIC_FIRST_NOTE_DENYLIST_TAGS = [...STATIC_FIRST_NOTE_FORBIDDEN_INPUT_TAGS] as const;
+export const STATIC_FIRST_NOTE_DENYLIST_TAGS = [
+  ...STATIC_FIRST_NOTE_FORBIDDEN_INPUT_TAGS,
+  'ui-tabs',
+  'ui-code-preview',
+  'ui-preview-sandbox',
+  'ui-translation',
+  'ui-video',
+  'ui-button',
+  'ui-dropdown',
+  'ui-menu-item',
+] as const;
 
 export const STATIC_FIRST_PAGE_DENYLIST_TAGS = [
   'ui-article-header',
@@ -48,21 +58,12 @@ export const STATIC_FIRST_PAGE_COMPONENT_DENYLIST_TAGS = [
 
 export const STATIC_FIRST_SHELL_DENYLIST_TAGS = ['ui-search-dialog', 'layout-footer'] as const;
 
-export const STATEFUL_ALLOWED_NOTE_TAGS = [
-  'ui-tabs',
-  'ui-code-preview',
-  'ui-preview-sandbox',
-  'ui-translation',
-  'ui-video',
-] as const;
-
 export type StaticFirstTagClassification =
   | 'STATIC_FIRST_NOTE_FORBIDDEN_INPUT_TAGS'
   | 'STATIC_FIRST_NOTE_DENYLIST_TAGS'
   | 'STATIC_FIRST_PAGE_DENYLIST_TAGS'
   | 'STATIC_FIRST_PAGE_COMPONENT_DENYLIST_TAGS'
   | 'STATIC_FIRST_SHELL_DENYLIST_TAGS'
-  | 'STATEFUL_ALLOWED_NOTE_TAGS'
   | 'UNKNOWN_UI_TAGS'
   | 'NON_UI_TAG';
 
@@ -71,7 +72,6 @@ const noteDenylistTags = new Set<string>(STATIC_FIRST_NOTE_DENYLIST_TAGS);
 const pageDenylistTags = new Set<string>(STATIC_FIRST_PAGE_DENYLIST_TAGS);
 const pageComponentDenylistTags = new Set<string>(STATIC_FIRST_PAGE_COMPONENT_DENYLIST_TAGS);
 const shellDenylistTags = new Set<string>(STATIC_FIRST_SHELL_DENYLIST_TAGS);
-const statefulAllowedNoteTags = new Set<string>(STATEFUL_ALLOWED_NOTE_TAGS);
 
 const STATIC_FIRST_TAG_CLASSIFICATION_SETS = [
   ['STATIC_FIRST_NOTE_FORBIDDEN_INPUT_TAGS', noteForbiddenInputTags],
@@ -79,7 +79,6 @@ const STATIC_FIRST_TAG_CLASSIFICATION_SETS = [
   ['STATIC_FIRST_PAGE_DENYLIST_TAGS', pageDenylistTags],
   ['STATIC_FIRST_PAGE_COMPONENT_DENYLIST_TAGS', pageComponentDenylistTags],
   ['STATIC_FIRST_SHELL_DENYLIST_TAGS', shellDenylistTags],
-  ['STATEFUL_ALLOWED_NOTE_TAGS', statefulAllowedNoteTags],
 ] as const satisfies readonly (readonly [StaticFirstTagClassification, ReadonlySet<string>])[];
 
 const normalizeStaticFirstTag = (tag: string): string => tag.trim().toLowerCase();

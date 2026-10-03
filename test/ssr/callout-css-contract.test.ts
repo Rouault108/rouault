@@ -11,7 +11,7 @@ const root = postcss.parse(css);
 
 const readingRootScopes = [
   ':is(.prose,.about-prose)>[data-callout]',
-  ":is(.prose,.about-prose)>ui-tabs>[slot='panel']>[data-callout]",
+  ":is(.prose,.about-prose)>[data-tabs-root]>[data-tab-panel]>[data-callout]",
 ] as const;
 
 const visualDeclarationProperties = [
@@ -174,7 +174,7 @@ const rulesWithCalloutVisualDeclarationsOutsideReadingScope = (
 
 const kindSelector = (kind: string, panel = false): string =>
   panel
-    ? `:is(.prose, .about-prose) > ui-tabs > [slot='panel'] > [data-callout][data-callout-kind='${kind}']`
+    ? `:is(.prose, .about-prose) > [data-tabs-root] > [data-tab-panel] > [data-callout][data-callout-kind='${kind}']`
     : `:is(.prose, .about-prose) > [data-callout][data-callout-kind='${kind}']`;
 
 describe('callout CSS contract', () => {
@@ -234,10 +234,10 @@ describe('callout CSS contract', () => {
     expect(selectors).toContain(':is(.prose,.about-prose)>[data-callout]>.callout-icon');
     expect(selectors).toContain(':is(.prose,.about-prose)>[data-callout]>[data-callout-icon-svg]');
     expect(selectors).toContain(
-      ":is(.prose,.about-prose)>ui-tabs>[slot='panel']>[data-callout]>.callout-icon",
+      ":is(.prose,.about-prose)>[data-tabs-root]>[data-tab-panel]>[data-callout]>.callout-icon",
     );
     expect(selectors).toContain(
-      ":is(.prose,.about-prose)>ui-tabs>[slot='panel']>[data-callout]>[data-callout-icon-svg]",
+      ":is(.prose,.about-prose)>[data-tabs-root]>[data-tab-panel]>[data-callout]>[data-callout-icon-svg]",
     );
   });
 

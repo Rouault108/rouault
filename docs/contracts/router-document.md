@@ -104,3 +104,7 @@
 - `router-document-host` light DOMに本文subtreeが存在する。
 - `router-document-host:content-dom-replaced`と`router-document-host:navigation-committed`が観測できる。
 - `getContentRoot()`が本文rootを返す。
+
+## Static initial document / HTML replacement
+
+BaseLayoutがcanonical main/announcementを出力する。router-document-hostは非Lit light DOM HTMLElementとして同一文書境界を保持する。generic HTML fragment parsing/replacementはsrc/router/html-fragment.tsが担当し、note DSD promotionとLit hydrationを行わない。routerのdurable commit/rollbackとpost-commit effectsの責務は維持する。

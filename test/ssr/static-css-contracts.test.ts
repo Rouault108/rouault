@@ -423,6 +423,11 @@ const mainCssImportRegistry = [
   './layout-containers.css',
   './stateful-note-bridges.css',
   './translation.css',
+  './tabs.css',
+  './code-preview.css',
+  './preview-sandbox.css',
+  './video.css',
+  './note-controls.css',
   './skip-link.css',
   './dialog-state.css',
   './app-shell.css',
@@ -601,13 +606,13 @@ describe('static CSS contracts', () => {
     ]);
   });
 
-  it('translation fallback CSS exposes readable disclosure contracts only for fallback markup', () => {
+  it('translation native CSS preserves readable disclosure contracts', () => {
     const css = readCss('translation.css');
 
-    expectRuleToDeclare(css, 'ui-translation > [data-translation-fallback]', ['margin: 0']);
+    expectRuleToDeclare(css, '[data-translation-overlay]', ['margin: 0']);
     expectRuleToDeclare(
       css,
-      'ui-translation > [data-translation-fallback] > [data-translation-fallback-trigger]',
+      '[data-translation-overlay] > summary',
       [
         'display: inline',
         'background: transparent',
@@ -619,7 +624,7 @@ describe('static CSS contracts', () => {
     );
     expectRuleToDeclare(
       css,
-      'ui-translation > [data-translation-fallback] > [data-translation-fallback-content]',
+      '[data-translation-overlay] > [data-translation-content]',
       [
         'padding: var(--space-3, 12px) var(--space-4, 16px)',
         'background: var(--bg-surface-1)',
@@ -631,20 +636,20 @@ describe('static CSS contracts', () => {
     const forcedColors = atRuleBlock(css, '@media (forced-colors: active)');
     expectRuleToDeclare(
       forcedColors,
-      'ui-translation > [data-translation-fallback] > [data-translation-fallback-trigger]',
+      '[data-translation-overlay] > summary',
       ['color: LinkText'],
     );
     expectRuleToDeclare(
       forcedColors,
-      'ui-translation > [data-translation-fallback] > [data-translation-fallback-content]',
+      '[data-translation-overlay] > [data-translation-content]',
       ['background: Canvas', 'color: CanvasText'],
     );
 
     const print = atRuleBlock(css, '@media print');
-    expectRuleToDeclare(print, 'ui-translation > [data-translation-fallback]', ['display: block']);
+    expectRuleToDeclare(print, '[data-translation-overlay]', ['display: block']);
     expectRuleToDeclare(
       print,
-      'ui-translation > [data-translation-fallback] > [data-translation-fallback-content]',
+      '[data-translation-overlay] > [data-translation-content]',
       ['display: block'],
     );
 
@@ -2471,7 +2476,7 @@ describe('static CSS contracts', () => {
           (selector.includes('pre[data-code-block]') ||
             selector.includes('section[data-code-group]') ||
             selector.includes('[data-code-block-root]')) &&
-          !selector.includes('ui-tabs'),
+          !selector.includes('[data-tabs-root]'),
       ),
     ).not.toMatch(/--ui-code-(?:surface|block|group)-/u);
 
@@ -2479,7 +2484,7 @@ describe('static CSS contracts', () => {
       bridge,
       'tabs panel code surface variable reset',
       (selector) =>
-        selector.includes("ui-tabs>[slot='panel']") &&
+        selector.includes("[data-tabs-root]>[data-tab-panel]") &&
         selector.includes('pre[data-code-block]') &&
         selector.includes('section[data-code-group]') &&
         selector.includes('[data-code-block-root]'),
@@ -2523,7 +2528,7 @@ describe('static CSS contracts', () => {
   it('code surface CSS keeps group-owned code blocks embedded in the outer code group surface', () => {
     const css = readCss('code-surfaces.css');
     const codePreviewSource = readFileSync(
-      resolve(process.cwd(), 'src/components/ui/code-preview/code-preview.ts'),
+      resolve(process.cwd(), 'src/assets/css/code-preview.css'),
       'utf8',
     );
     const groupOwnedSelector = "[data-code-block-root][data-code-group-owned='true']";

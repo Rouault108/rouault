@@ -8,10 +8,10 @@ test.describe('translation fallback without JavaScript', () => {
   test('summary から翻訳本文を開いて読めること', async ({ page }) => {
     await page.goto(e2eNoteFixtures.interactive.directPath);
 
-    const translation = page.locator('ui-translation').first();
-    const fallback = translation.locator('details[data-translation-fallback]');
-    const summary = fallback.locator('summary[data-translation-fallback-trigger]');
-    const content = fallback.locator('[data-translation-fallback-content]');
+    const translation = page.locator('details[data-translation-overlay]').first();
+    const fallback = translation;
+    const summary = fallback.locator('summary');
+    const content = fallback.locator('[data-translation-content]');
 
     await expect(translation).toHaveCount(1);
     await expect(summary).toHaveText('Je pense, donc je suis.');

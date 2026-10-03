@@ -104,7 +104,7 @@ Markdown link-cardのfocus表示は、native anchorである`.link-card__link:fo
 
 `sync-scope`はtrim後に空なら未指定扱いとする。非空の場合は64文字以下で`^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$`に一致する値だけを許可し、final DOMでは`data-code-group-sync-scope`として出力する。この属性はfinal DOM契約属性であり、final source markerではない。
 
-同期は通常`ui-tabs`、`ui-tabs[url-sync]`、`?tab=`、hash、history、storage、TOC、primary tab URL stateを所有しない。詳細DOMとenhancer契約は`docs/contracts/code-surfaces.md`と`docs/references/markdown-output.md`を参照する。
+同期は通常Tabs（`[data-tabs-root]`）、URL同期付きTabs（`[data-tabs-root][data-tabs-url-sync]`）、`?tab=`、hash、history、storage、TOC、primary tab URL stateを所有しない。詳細DOMとenhancer契約は`docs/contracts/code-surfaces.md`と`docs/references/markdown-output.md`を参照する。
 
 ### Static Table Surface Contract
 
@@ -191,32 +191,33 @@ raw `<br>`、Markdown hard break、`:br[]`は表セル改行契約として採�
 
 ### Translation Output Contract
 
-`translation` familyは、`original` / `translated`のplain-text 2片だけをMarkdown出力契約として扱う。inline markup、脚注、リンク、ruby、辞書UI、rich bilingual contentはこのfamilyへ保持しない。
+translation familyの入力はoriginal/translatedのplain-text 2片を維持する。
 
-- `::translation`は`div.translation-static[data-translation-kind="static"]`へ出力し、hydration directiveを持たない。
-- `::translation-overlay`はLight DOMの`ui-translation` hostへ出力し、`data-hydration-capability="interactive"` / `data-hydration-trigger="visible"`を持つ。
-- `ui-translation` hostは`lang`、`target-lang`、`original`、`translated`、`surface`を保持する。
-- SSR / pre-hydrationの`ui-translation` host直下には`details[data-translation-fallback]`を置き、`summary[data-translation-fallback-trigger]`に原文、`[data-translation-fallback-content]`に訳文を置く。
-- fallback childには対応する`lang`を付与する。
-- fallbackはhydrated UI用の`data-part` selectorを使わず、generic `data-surface`も持たない。
-- JS無効またはJS遅延時でも、読者はnative `summary`から訳文へ到達できなければならない。
-- hostの`open`属性はcomponent API / direct HTML compatibilityの範囲に限る。Markdown `translation-overlay`の入力属性として復活させてはならない。
+- `::translation`は既存の`div.translation-static[data-translation-kind="static"]`を出力し、hydration対象にしない。
+- `::translation-overlay`は`details[data-translation-overlay]`、原文のsummary、訳文の`[data-translation-content]`を直接出力する。各言語を対応nodeへ付ける。
+- 非空訳文は`translation-overlay-enhancer` / `interactive` / `visible`とし、空訳文は非interactiveな原文にする。
+- canonical details/summaryをenhancement後も保ち、openとfocusを引き継ぐ。dialog role、modal、focus trapを追加しない。
+- authoring `open`を許可する変更は行わない。詳細は[Translation](translation.md)。
+
+### Native Note Lowering Boundary
+
+authoring raw HTMLは禁止する。directive parser/validatorが入力policyを所有し、内部中間HASTである`ui-tabs`等をnative lowererがsemantic final DOMへ変換する。既存静的変換後、link annotation/search projection/TOC/final validationの前にnative loweringを行う。final note HTMLにはstateful note custom elementとnote DSDを残さない。
+
+`::tab` labelはnon-interactiveに限定する。Markdown link/link reference等の操作要素を生成する構造は既存`validate-structure.ts`でbuild-time errorにする。text/emphasis/strong/inline codeは保持する。native lowererは残存interactive descendantを防御的にassertするだけで、text化・抽出・分離・fallbackを行わない。current contentの自動migrationは行わない。
+
+Code Preview profileの解決は`note-content-contracts.ts`で一度行い、`reader → reader`、`testing/demo → demo`をloweringへ明示入力する。authoring permission policyは既存`note-policy-context.ts` / `preview-policy.ts`に置く。search foundationの契約へnative DOMを適合させ、searchのschema/strategy/ownershipを変更しない。
 
 ### Preview Sandbox Output Contract
 
-`::preview-sandbox`は`code-preview`直下のspecialized childであり、Markdown出力層は`ui-preview-sandbox` hostとbuild-time hydration directiveを所有する。`build/rehype/preview-sandbox.ts`はsnippet/template変換責務であり、manual-only capability validationの正本ではない。
+`::preview-sandbox`は`code-preview`直下のspecialized childであり、Markdown出力層は中間HASTを経て`[data-preview-sandbox-root]`とbuild-time hydration directiveを生成する。`build/rehype/preview-sandbox.ts`はsnippet/template変換責務であり、manual-only capability validationの正本ではない。
 
 - `content-layout`はexact lowercaseの`stage` / `flow`だけを受け付け、既定の実効値は`stage`とする。
-- `content-layout`未指定時はbuild outputへ属性を追加せず、明示値だけをcanonical kebab-caseでhostへ出力する。
-- client runtimeではLitのreflectionにより既定の`content-layout="stage"`がDOMへ現れる場合がある。このruntime reflectionはbuild outputの非出力契約とは分ける。
+- native final rootへ`data-sandbox-content-layout="stage|flow"`をcanonical immutable metadataとして出力する。未指定は`stage`とする。
 - directive parser経由のuppercase、前後空白、空文字列、列挙外値はbuild errorとし、検証前にtrimまたはcase-foldしない。
 - raw HAST/HTML経由の`content-layout` / `contentLayout`もexact lowercaseの`stage` / `flow`だけを受け付ける。文字列以外はbuild errorとする。
-- raw HAST/HTMLでkebab-caseとcamelCaseが同値なら`content-layout`へ統合し、競合すればbuild errorとする。未指定時に既定属性を追加しない。
-- runtime componentへ直接渡された列挙外値を実効`stage`へ正規化する挙動は、build-time rejectionの代替ではない。
+- raw HAST/HTMLでkebab-caseとcamelCaseが同値なら`content-layout`へ統合し、競合すればbuild errorとする。中間入力の未指定はnative loweringでcanonical default metadataへ投影する。
 - 通常previewはreading-firstのため`activation-policy`未指定時にvisibleとして扱う。
-- `activation-policy`未指定のdefault visibleでは、SSR/build outputに`activation-policy="visible"`を追加しない。
-- authorが`activation-policy="visible"`を明示した場合は属性を維持する。
-- client runtimeではLitの`reflect: true`により`activation-policy="visible"`がDOMへ現れる場合がある。このruntime reflectionはSSR/build output契約とは分ける。
+- native final rootには`data-activation-policy="eager|visible|manual"`を出力する。未指定は`visible`。旧属性を互換surfaceとして二重保持しない。
 - `activation-policy="eager"`はclient hydration sessionのinitial phaseでpreviewを構築する契約であり、SSR時点でiframe `srcdoc`を生成しない。
 - hydration directive mappingは、default/explicit visibleが`sandboxed`/`visible`、`eager`が`sandboxed`/`initial`、`manual`が`sandboxed`/`interaction`である。
 - `allow-js`単独ではmanualを強制しない。`allow-js`と`activation-policy`未指定、`visible`、`eager`、`manual`の併用は許可する。
@@ -231,7 +232,7 @@ raw `<br>`、Markdown hard break、`:br[]`は表セル改行契約として採�
 - raw HAST/HTML経由でkebab-caseとcamelCaseの同義属性が併存する場合、同じ意味ならkebab-caseへ正規化し、意味が異なる場合はbuild errorとする。
 - `data-hydration-capability` / `data-hydration-trigger`はbuild-ownedであり、入力に旧値やcamelCaseがあっても新契約のkebab-case属性へ上書きする。
 - manual UIは準備中表示ではなく操作可能なnative buttonである。focusだけでpreviewを起動してはならない。
-- 非manual statusでは「読み込んでいます」という状態表示を支援技術上も消してはならない。
+- no-JSではpayloadをinertに保持し、実行にはJavaScriptが必要であることをplaceholderで説明する。
 - 旧クリック待ち挙動を維持する場合は`activation-policy="manual"`を明示する。
 
 ## 4. State Model

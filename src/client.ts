@@ -1,8 +1,9 @@
-import '@lit-labs/ssr-client/lit-element-hydrate-support.js';
 import { MAIN_CONTENT_SELECTOR } from '../shared/navigation/main-landmark-contract.js';
-import type { RouterDocumentHost, RouterDocumentHostNavigationCommittedDetail } from './components/app/router-document-host.js';
+import type {
+  RouterDocumentHost,
+  RouterDocumentHostNavigationCommittedDetail,
+} from './components/app/router-document-host.js';
 import { HydrationScheduler } from './client/hydration/scheduler.js';
-import { promoteDeclarativeShadowRoots } from './router/declarative-shadow-dom.js';
 import { attachUnsafeLinkClickGuard } from './router/unsafe-link-click-guard.js';
 import {
   loadInternalDocumentRouteManifest,
@@ -16,7 +17,8 @@ import type { AppContentHydrationReadyDetail } from './components/app/shell/app-
 const hydrationScheduler = new HydrationScheduler();
 let contentHydrationGeneration = 0;
 
-const getRouterDocumentHost = (): RouterDocumentHost | null => document.querySelector<RouterDocumentHost>('router-document-host');
+const getRouterDocumentHost = (): RouterDocumentHost | null =>
+  document.querySelector<RouterDocumentHost>('router-document-host');
 
 const resolveCurrentContentRoot = (): HTMLElement | null => {
   const routerDocumentHost = getRouterDocumentHost();
@@ -82,14 +84,13 @@ const hydrateCurrentContent = async (
 
   const mainContent =
     contentRoot ??
-    (routerDocumentHost?.getContentRoot() instanceof HTMLElement ? routerDocumentHost.getContentRoot() : null) ??
+    (routerDocumentHost?.getContentRoot() instanceof HTMLElement
+      ? routerDocumentHost.getContentRoot()
+      : null) ??
     resolveCurrentContentRoot();
   if (!(mainContent instanceof HTMLElement)) {
     return;
   }
-
-  promoteDeclarativeShadowRoots(mainContent);
-  customElements.upgrade(mainContent);
   await Promise.resolve();
 
   await hydrationScheduler.hydrateContent(mainContent, {

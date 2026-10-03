@@ -1,4 +1,3 @@
-import { html } from 'lit/static-html.js';
 import { describe, expect, it } from 'vitest';
 import { userEvent } from 'vitest/browser';
 import { fixture } from './harness/browser-fixture.js';
@@ -55,7 +54,7 @@ describe('layout-sidebar-nav paint contract', () => {
     branchControl: HTMLElement;
   }> => {
     await ensureMainCssLoaded();
-    const surface = await fixture<HTMLElement>(html`<aside data-layout-sidebar-root></aside>`);
+    const surface = await fixture<HTMLElement>(`<aside data-layout-sidebar-root></aside>`);
     surface.innerHTML = navMarkup;
     await waitForStyleRecalc();
     const shellNav = document.body;

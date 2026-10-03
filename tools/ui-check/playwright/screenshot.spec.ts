@@ -69,11 +69,20 @@ test('captures retained surfaces under viewing preferences', async ({ page }) =>
       await page.goto(`/tools/ui-check/cases/${name}.html`);
       await page.evaluate(() => document.fonts.ready);
       if (name === 'reading-interactions') {
-        await page.locator('#tabs-horizontal [role="tab"]').first().waitFor({ state: 'visible' });
         if (preference !== 'print') {
-          await page.locator('#translation-popover [data-part="trigger"]').click();
+          await page.locator('#preview-responsive').scrollIntoViewIfNeeded();
+          await expect(
+            page.locator('#preview-responsive [data-command-menu]').first(),
+          ).toBeVisible();
+        }
+        await page
+          .locator('#tabs-horizontal [role="tab"]')
+          .first()
+          .waitFor({ state: preference === 'print' ? 'attached' : 'visible' });
+        if (preference !== 'print') {
+          await page.locator('#translation-popover > summary').click();
           await page
-            .locator('#translation-popover [data-part="content"]')
+            .locator('#translation-popover > [data-translation-content]')
             .waitFor({ state: 'visible' });
         }
       }
@@ -85,9 +94,13 @@ test('captures retained surfaces under viewing preferences', async ({ page }) =>
         fullPage: true,
       });
       if (name === 'reading-interactions' && preference !== 'print') {
-        await page.locator('#translation-drawer [data-part="trigger"]').click();
+        await page.locator('#translation-popover > summary').press('Escape');
+        await expect(
+          page.locator('#translation-popover > [data-translation-content]'),
+        ).toBeHidden();
+        await page.locator('#translation-drawer > summary').click();
         await page
-          .locator('#translation-drawer [data-part="content"]')
+          .locator('#translation-drawer > [data-translation-content]')
           .waitFor({ state: 'visible' });
         await page.screenshot({
           path: path.join(screenshotDir, `translation-drawer-${preference}.png`),

@@ -1,40 +1,56 @@
-import { html } from 'lit/static-html.js';
 import { describe, expect, it } from 'vitest';
-import { fixture } from '../harness/browser-fixture.js';
+import { activateCodePreview } from '../../../src/client/post-hydrate/code-preview-enhancer.js';
+import { nativeNoteFixture, element } from '../harness/native-note-fixture.js';
+import { fixtureAbortController } from '../harness/browser-fixture.js';
 import { dispatchKey, waitForCondition } from '../harness/browser-test-utilities.js';
-import '../../../src/components/ui/dropdown/dropdown.js';
-import type { Dropdown, MenuItem } from '../../../src/components/ui/dropdown/dropdown.js';
+import '../../../src/assets/css/note-controls.css';
 
-describe('retained dropdown command contract', () => {
-  for (const key of ['Enter', ' ']) {
-    it(`${key}でcommandを1回選択し、閉鎖後triggerへfocusを返すこと`, async () => {
-      const dropdown = await fixture<Dropdown>(html`
-        <ui-dropdown>
-          <button slot="trigger">Playback</button>
-          <ui-menu-item disabled value="unavailable">Unavailable</ui-menu-item>
-          <ui-menu-item value="normal">Normal speed</ui-menu-item>
-        </ui-dropdown>
-      `);
-      const trigger = dropdown.getTriggerElement();
-      const item = dropdown.querySelector<MenuItem>('ui-menu-item[value="normal"]');
-      if (!trigger || !item) throw new Error('command fixture is incomplete');
-      const selections: unknown[] = [];
-      dropdown.addEventListener('menu-item-select', (event: Event) => {
-        if (event instanceof CustomEvent) selections.push(event.detail);
-      });
-      trigger.focus();
-      dispatchKey(trigger, 'ArrowDown');
-      await waitForCondition(
-        () => item.shadowRoot?.activeElement instanceof HTMLButtonElement,
-        'enabled command receives focus after positioning',
-      );
-      const button = item.shadowRoot?.querySelector('button');
-      if (!button) throw new Error('command button is missing');
-      dispatchKey(button, key);
-      await dropdown.updateComplete;
-      expect(selections).toEqual([{ value: 'normal', label: 'Normal speed' }]);
-      expect(dropdown.opened).toBe(false);
-      expect(document.activeElement).toBe(trigger);
+describe('native command menu', () => {
+  it.each(['Enter', ' '])('%sで一度選択してtriggerにfocusを戻す', async (key) => {
+    const root = await nativeNoteFixture(element('ui-code-preview', { controls: 'theme' }));
+    activateCodePreview(root, fixtureAbortController(root).signal);
+    const trigger = root.querySelector<HTMLButtonElement>('[data-command-menu-trigger]');
+    if (!trigger) throw new Error('trigger missing');
+    let changes = 0;
+    root.addEventListener('ui-code-preview-state-change', () => {
+      changes += 1;
     });
-  }
+    trigger.focus();
+    dispatchKey(trigger, 'ArrowDown');
+    await waitForCondition(() => trigger.getAttribute('aria-expanded') === 'true', 'menu ready');
+    const first = document.activeElement;
+    if (!(first instanceof HTMLElement)) throw new Error('item missing');
+    dispatchKey(first, 'End');
+    const last = document.activeElement;
+    if (!(last instanceof HTMLElement)) throw new Error('item missing');
+    dispatchKey(last, key);
+    expect(root.dataset['previewTheme']).toBe('dark');
+    expect(changes).toBe(1);
+    expect(document.activeElement).toBe(trigger);
+    expect(trigger.getAttribute('aria-expanded')).toBe('false');
+  });
+  it('Home/End/矢印/typeahead/Escapeのfocusとcloseを維持する', async () => {
+    const root = await nativeNoteFixture(element('ui-code-preview', { controls: 'theme' }));
+    activateCodePreview(root, fixtureAbortController(root).signal);
+    const trigger = root.querySelector<HTMLButtonElement>('[data-command-menu-trigger]');
+    if (!trigger) throw new Error('trigger missing');
+    dispatchKey(trigger, 'ArrowUp');
+    await waitForCondition(() => trigger.getAttribute('aria-expanded') === 'true', 'menu ready');
+    const send = (key: string): void => {
+      const target = document.activeElement;
+      if (!(target instanceof HTMLElement)) throw new Error('item missing');
+      dispatchKey(target, key);
+    };
+    expect(document.activeElement?.getAttribute('data-command-menu-value')).toBe('dark');
+    send('ArrowDown');
+    expect(document.activeElement?.getAttribute('data-command-menu-value')).toBe('page');
+    send('End');
+    send('Home');
+    expect(document.activeElement?.getAttribute('data-command-menu-value')).toBe('page');
+    send('l');
+    expect(document.activeElement?.getAttribute('data-command-menu-value')).toBe('light');
+    send('Escape');
+    expect(document.activeElement).toBe(trigger);
+    expect(trigger.getAttribute('aria-expanded')).toBe('false');
+  });
 });

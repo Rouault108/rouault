@@ -47,8 +47,7 @@ interface SemanticLineSignature {
   }[];
 }
 
-const sha256 = (value: string): string =>
-  createHash('sha256').update(value, 'utf8').digest('hex');
+const sha256 = (value: string): string => createHash('sha256').update(value, 'utf8').digest('hex');
 
 const readSemanticLineSignature = async (line: Locator): Promise<SemanticLineSignature> => {
   const snapshot = await line.evaluate((element) => {
@@ -307,9 +306,7 @@ test('line state semantics remain available across SSR, no-JS, group, and previe
           wrapperCount: line.querySelectorAll('mark, ins, del').length,
         })),
       );
-    await groupRoot
-      .locator('[data-code-group-tab][data-code-group-key="secondary"]')
-      .click();
+    await groupRoot.locator('[data-code-group-tab][data-code-group-key="secondary"]').click();
     expect(
       await groupRoot.locator('[data-code-line-state]').evaluateAll((lines) =>
         lines.map((line) => ({
@@ -334,9 +331,9 @@ test('line state semantics remain available across SSR, no-JS, group, and previe
     const previewBefore = await assertSemanticCodeBlock(preview, 'preview');
     await assertTemplateSourceIsIndependent(preview, 'preview');
     await assertCopyResult(page, preview, 'preview');
-    const previewHost = preview.locator('xpath=ancestor::ui-code-preview[1]');
-    await previewHost.evaluate((element) => element.setAttribute('preview-theme', 'dark'));
-    await expect(previewHost).toHaveAttribute('preview-theme', 'dark');
+    const previewHost = preview.locator('xpath=ancestor::*[@data-code-preview-root][1]');
+    await previewHost.evaluate((element) => element.setAttribute('data-preview-theme', 'dark'));
+    await expect(previewHost).toHaveAttribute('data-preview-theme', 'dark');
     expect(await assertSemanticCodeBlock(preview, 'preview-updated')).toEqual(previewBefore);
   } finally {
     await context.close();

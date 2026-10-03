@@ -1,4 +1,3 @@
-import { html } from 'lit/static-html.js';
 import { describe, expect, it } from 'vitest';
 import { fixture } from './harness/browser-fixture.js';
 import {
@@ -25,7 +24,7 @@ const routeManifestState = {
 
 describe('runtime DOM link contract', () => {
   it('footer nav の external-web は data-external なしでも許可すること', async () => {
-    const root = await fixture<HTMLElement>(html`
+    const root = await fixture<HTMLElement>(`
       <footer class="ui-footer" data-footer>
         <nav class="ui-footer__nav">
           <a
@@ -52,7 +51,7 @@ describe('runtime DOM link contract', () => {
   });
 
   it('footer 外の external-web は data-external なしなら拒否すること', async () => {
-    const root = await fixture<HTMLElement>(html`
+    const root = await fixture<HTMLElement>(`
       <div>
         <a
           href="https://example.com/manual"
@@ -77,7 +76,7 @@ describe('runtime DOM link contract', () => {
   });
 
   it('data-external が external-action に付く場合は拒否すること', async () => {
-    const root = await fixture<HTMLElement>(html`
+    const root = await fixture<HTMLElement>(`
       <div>
         <a
           href="mailto:hello@example.com"

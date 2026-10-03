@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
-  injectNoteContentProfiles,
+  resolveNotePreviewProfile,
   validateNoteContentContracts,
 } from '../../build/content/note-content-contracts.js';
 
@@ -155,7 +155,7 @@ describe('validateNoteContentContracts', () => {
     expect(() => {
       validateNoteContentContracts({
         kind: 'reader',
-        html: '<ui-code-preview><ui-preview-sandbox slot="preview"></ui-preview-sandbox></ui-code-preview>',
+        html: '<figure data-code-preview-root><div data-code-preview-code></div><div data-preview-sandbox-root></div></figure>',
         sourceLabel: 'testing/test',
       });
     }).toThrow('[note-content:testing/test] reader note では preview-sandbox を使用できません');
@@ -165,7 +165,7 @@ describe('validateNoteContentContracts', () => {
     expect(() => {
       validateNoteContentContracts({
         kind: 'reader',
-        html: '<ui-code-preview controls="viewport"><button slot="toolbar">Open</button></ui-code-preview>',
+        html: '<figure data-code-preview-root><div data-code-preview-code></div><div data-code-preview-control="viewport"></div><button data-preview-toolbar>Open</button></figure>',
         sourceLabel: 'testing/test',
       });
     }).toThrow(
@@ -177,7 +177,7 @@ describe('validateNoteContentContracts', () => {
     expect(() => {
       validateNoteContentContracts({
         kind: 'testing',
-        html: '<ui-code-preview controls="viewport"><ui-preview-sandbox slot="preview"></ui-preview-sandbox></ui-code-preview>',
+        html: '<figure data-code-preview-root><div data-code-preview-code></div><div data-code-preview-control="viewport"></div><div data-preview-sandbox-root></div></figure>',
         sourceLabel: 'testing/test',
         testingArea: 'sandbox',
       });
@@ -188,7 +188,7 @@ describe('validateNoteContentContracts', () => {
     expect(() => {
       validateNoteContentContracts({
         kind: 'testing',
-        html: '<ui-code-preview><ui-preview-sandbox slot="preview" allow-js="true"></ui-preview-sandbox></ui-code-preview>',
+        html: '<figure data-code-preview-root><div data-code-preview-code></div><div data-preview-sandbox-root data-sandbox-allow-js></div></figure>',
         sourceLabel: 'testing/interactive',
         testingArea: 'interactive',
       });
@@ -357,10 +357,12 @@ describe('validateNoteContentContracts', () => {
     }
   });
 
-
   it('code group header controls が true でなければ build error にすること', () => {
     for (const html of [
-      codeGroupHtml().replace('data-code-group-controls="true"', 'data-code-group-controls="false"'),
+      codeGroupHtml().replace(
+        'data-code-group-controls="true"',
+        'data-code-group-controls="false"',
+      ),
       codeGroupHtml().replace('data-code-group-controls="true"', 'data-code-group-controls'),
     ]) {
       expect(() => {
@@ -375,9 +377,18 @@ describe('validateNoteContentContracts', () => {
 
   it('code group active state が文字列 true/false でなければ build error にすること', () => {
     for (const html of [
-      codeGroupHtml().replace('data-code-group-panel-active="true"', 'data-code-group-panel-active=""'),
-      codeGroupHtml().replace('data-code-group-panel-active="true"', 'data-code-group-panel-active'),
-      codeGroupHtml().replace('data-code-group-panel-active="true"', 'data-code-group-panel-active="yes"'),
+      codeGroupHtml().replace(
+        'data-code-group-panel-active="true"',
+        'data-code-group-panel-active=""',
+      ),
+      codeGroupHtml().replace(
+        'data-code-group-panel-active="true"',
+        'data-code-group-panel-active',
+      ),
+      codeGroupHtml().replace(
+        'data-code-group-panel-active="true"',
+        'data-code-group-panel-active="yes"',
+      ),
     ]) {
       expect(() => {
         validateNoteContentContracts({
@@ -439,12 +450,14 @@ describe('validateNoteContentContracts', () => {
     }).toThrow('data-code-group-panel-id は同じ key の panel id と一致する必要があります');
   });
 
-
   it('code group selected key と direct child panel key が空なら build error にすること', () => {
     expect(() => {
       validateNoteContentContracts({
         kind: 'reader',
-        html: codeGroupHtml().replace('data-code-group-selected="valid"', 'data-code-group-selected=""'),
+        html: codeGroupHtml().replace(
+          'data-code-group-selected="valid"',
+          'data-code-group-selected=""',
+        ),
         sourceLabel: 'testing/code-group',
       });
     }).toThrow('data-code-group-selected は空にできません');
@@ -452,7 +465,10 @@ describe('validateNoteContentContracts', () => {
     expect(() => {
       validateNoteContentContracts({
         kind: 'reader',
-        html: codeGroupHtml().replace('data-code-group-panel="invalid"', 'data-code-group-panel=""'),
+        html: codeGroupHtml().replace(
+          'data-code-group-panel="invalid"',
+          'data-code-group-panel=""',
+        ),
         sourceLabel: 'testing/code-group',
       });
     }).toThrow('direct child panel key は空にできません');
@@ -462,7 +478,10 @@ describe('validateNoteContentContracts', () => {
     expect(() => {
       validateNoteContentContracts({
         kind: 'reader',
-        html: codeGroupHtml().replace('data-code-group-key="invalid"', 'data-code-group-key="valid"'),
+        html: codeGroupHtml().replace(
+          'data-code-group-key="invalid"',
+          'data-code-group-key="valid"',
+        ),
         sourceLabel: 'testing/code-group',
       });
     }).toThrow('data-code-group-key "valid" が重複しています');
@@ -470,7 +489,10 @@ describe('validateNoteContentContracts', () => {
     expect(() => {
       validateNoteContentContracts({
         kind: 'reader',
-        html: codeGroupHtml().replace('data-code-group-panel="invalid"', 'data-code-group-panel="valid"'),
+        html: codeGroupHtml().replace(
+          'data-code-group-panel="invalid"',
+          'data-code-group-panel="valid"',
+        ),
         sourceLabel: 'testing/code-group',
       });
     }).toThrow('direct child panel key "valid" が重複しています');
@@ -478,7 +500,10 @@ describe('validateNoteContentContracts', () => {
     expect(() => {
       validateNoteContentContracts({
         kind: 'reader',
-        html: codeGroupHtml().replace('data-code-group-key="invalid"', 'data-code-group-key="other"'),
+        html: codeGroupHtml().replace(
+          'data-code-group-key="invalid"',
+          'data-code-group-key="other"',
+        ),
         sourceLabel: 'testing/code-group',
       });
     }).toThrow('tab key集合と direct child panel key集合は一致する必要があります');
@@ -775,16 +800,12 @@ describe('validateNoteContentContracts', () => {
   });
 });
 
-describe('injectNoteContentProfiles', () => {
-  it('reader note の code-preview に reader profile を注入すること', () => {
-    expect(
-      injectNoteContentProfiles('<ui-code-preview heading="例"></ui-code-preview>', 'reader'),
-    ).toContain('preview-profile="reader"');
-  });
-
-  it('testing note の code-preview に demo profile を注入すること', () => {
-    expect(
-      injectNoteContentProfiles('<ui-code-preview heading="例"></ui-code-preview>', 'testing'),
-    ).toContain('preview-profile="demo"');
+describe('resolveNotePreviewProfile', () => {
+  it.each([
+    ['reader', 'reader'],
+    ['testing', 'demo'],
+    ['demo', 'demo'],
+  ] as const)('%s maps to %s', (kind, profile) => {
+    expect(resolveNotePreviewProfile(kind)).toBe(profile);
   });
 });

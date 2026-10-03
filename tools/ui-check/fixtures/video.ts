@@ -1,14 +1,5 @@
-import { UiVideo } from '../../../src/components/ui/video/video.js';
+import { HydrationScheduler } from '../../../src/client/hydration/scheduler.js';
 
-const captionVideo = document.querySelector('#video-captions');
-if (captionVideo instanceof UiVideo) {
-  captionVideo.tracks = [
-    {
-      src: '/src/assets/other/sample-vtt.vtt',
-      srclang: 'ja',
-      label: '日本語',
-      kind: 'captions',
-      default: true,
-    },
-  ];
-}
+// UI-checkでも初回起動はproduction registryとschedulerに委譲する。
+const scheduler = new HydrationScheduler();
+void scheduler.hydrateContent(document);

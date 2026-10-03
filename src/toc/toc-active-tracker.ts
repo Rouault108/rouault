@@ -615,7 +615,7 @@ export class TocActiveTracker {
       subtree: true,
       childList: true,
       attributes: true,
-      attributeFilter: ['hidden', 'aria-hidden', 'selected-value', 'hydrated', 'data-panel-active'],
+      attributeFilter: ['hidden', 'aria-hidden', 'data-selected-value', 'data-tabs-enhanced'],
     });
   }
 
@@ -633,11 +633,11 @@ export class TocActiveTracker {
       return false;
     }
 
-    if (record.target.matches('ui-tabs')) {
+    if (record.target.matches('[data-tabs-root]')) {
       return true;
     }
 
-    return record.target.getAttribute('role') === 'tabpanel';
+    return record.target.hasAttribute('data-tab-panel');
   }
 
   private _scheduleRefresh(): void {

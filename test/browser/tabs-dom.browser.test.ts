@@ -1,192 +1,73 @@
 import { describe, expect, it } from 'vitest';
-import {
-  applyTabsAria,
-  readTabsSnapshot,
-  resolveTabValueForPanelTarget,
-} from '../../src/components/ui/tabs/tabs-dom.js';
+import { scrollTabElementIntoView } from '../../src/components/ui/tabs/tabs-dom.js';
+import { activateTabs, selectTabsValue } from '../../src/client/post-hydrate/tabs-enhancer.js';
+import { fixture, fixtureAbortController, requireFixtureValue } from './harness/browser-fixture.js';
+import { element, nativeNoteFixture, text } from './harness/native-note-fixture.js';
 
-const createSlotMock = (elements: Element[]): HTMLSlotElement => {
-  const slot = document.createElement('slot');
-  Object.defineProperty(slot, 'assignedElements', {
-    value: () => elements,
-  });
-  return slot;
-};
-
-describe('tabs-dom', () => {
-  it('readTabsSnapshot: tab / panel の最小数を interactiveCount として返すこと', () => {
-    const tabA = document.createElement('button');
-    const tabB = document.createElement('button');
-    const panelA = document.createElement('div');
-
-    const snapshot = readTabsSnapshot(createSlotMock([tabA, tabB]), createSlotMock([panelA]));
-
-    expect(snapshot.tabs.length).to.equal(2);
-    expect(snapshot.panels.length).to.equal(1);
-    expect(snapshot.interactiveCount).to.equal(1);
-  });
-
-  it('applyTabsAria: role / aria-selected / aria-controls / aria-labelledby を設定すること', () => {
-    const tabA = document.createElement('button');
-    tabA.setAttribute('value', 'overview');
-
-    const tabB = document.createElement('button');
-    tabB.setAttribute('value', 'details');
-
-    const panelA = document.createElement('div');
-    const panelB = document.createElement('div');
-
-    const snapshot = {
-      tabs: [tabA, tabB],
-      panels: [panelA, panelB],
-      interactiveCount: 2,
-    };
-
-    applyTabsAria(snapshot, 7, 1, 1);
-
-    expect(tabA.getAttribute('role')).to.equal('tab');
-    expect(tabB.getAttribute('role')).to.equal('tab');
-    expect(panelA.getAttribute('role')).to.equal('tabpanel');
-    expect(panelB.getAttribute('role')).to.equal('tabpanel');
-
-    expect(tabA.getAttribute('aria-selected')).to.equal('false');
-    expect(tabB.getAttribute('aria-selected')).to.equal('true');
-
-    expect(tabA.getAttribute('tabindex')).to.equal('-1');
-    expect(tabB.getAttribute('tabindex')).to.equal('0');
-
-    const controlsA = tabA.getAttribute('aria-controls');
-    const controlsB = tabB.getAttribute('aria-controls');
-
-    expect(controlsA).to.be.a('string');
-    expect(controlsB).to.be.a('string');
-    expect(panelA.getAttribute('id')).to.equal(controlsA);
-    expect(panelB.getAttribute('id')).to.equal(controlsB);
-
-    expect(panelA.getAttribute('aria-labelledby')).to.equal(tabA.getAttribute('id'));
-    expect(panelB.getAttribute('aria-labelledby')).to.equal(tabB.getAttribute('id'));
+describe('native tabs DOM lifecycle', () => {
+  it('cleanup は fragment baseline を復元し、旧listenerを残さず再起動できる', async () => {
+    const root = await nativeNoteFixture(
+      element('ui-tabs', {}, [
+        element('div', { slot: 'tab', value: 'one' }, [text('One')]),
+        element('div', { slot: 'panel' }, [text('First')]),
+        element('div', { slot: 'tab', value: 'two' }, [text('Two')]),
+        element('div', { slot: 'panel' }, [text('Second')]),
+      ]),
+    );
+    const links = [...root.querySelectorAll<HTMLAnchorElement>('a[data-tab]')];
+    const panels = [...root.querySelectorAll<HTMLElement>('[data-tab-panel]')];
+    const ids = [...links, ...panels].map((node) => node.id);
+    const lifetime = fixtureAbortController(root);
+    const first = activateTabs(root, lifetime.signal);
+    expect(first.status).toBe('activated');
+    if (first.status !== 'activated') throw new Error('activation failed');
+    if (typeof first.cleanup !== 'function') throw new Error('cleanup missing');
+    first.cleanup();
+    expect(lifetime.signal.aborted).toBe(false);
+    expect(selectTabsValue(root, 'two', { historyMode: 'none' })).toBe('not-enhanced');
+    expect(panels.every((panel) => !panel.hidden)).toBe(true);
+    expect(root.querySelector('[role=tab]')).toBeNull();
+    const click = new MouseEvent('click', { bubbles: true, cancelable: true });
+    requireFixtureValue(links[1]).dispatchEvent(click);
+    expect(click.defaultPrevented).toBe(false);
+    const second = activateTabs(root, lifetime.signal);
+    expect(second.status).toBe('activated');
+    expect([...links, ...panels].map((node) => node.id)).toEqual(ids);
+    const mutations: MutationRecord[] = [];
+    const observer = new MutationObserver((records) => mutations.push(...records));
+    observer.observe(root, { attributes: true, subtree: true });
+    expect(selectTabsValue(root, 'one', { historyMode: 'none' })).toBe('unchanged');
+    await Promise.resolve();
+    observer.disconnect();
+    expect(mutations).toEqual([]);
+    let changes = 0;
+    root.addEventListener('ui-tab-change', () => {
+      changes += 1;
+    });
+    requireFixtureValue(links[1]).click();
+    expect(changes).toBe(1);
+    expect(panels[0]?.hidden).toBe(true);
+    lifetime.abort();
+    expect(panels.every((panel) => !panel.hidden)).toBe(true);
   });
 
-  it('applyTabsAria: interactiveCount を超える tab には aria-controls を付けないこと', () => {
-    const tabA = document.createElement('button');
-    const tabB = document.createElement('button');
-    const panelA = document.createElement('div');
-
-    const snapshot = {
-      tabs: [tabA, tabB],
-      panels: [panelA],
-      interactiveCount: 1,
-    };
-
-    applyTabsAria(snapshot, 11, 0, 0);
-
-    expect(tabA.getAttribute('aria-controls')).to.be.a('string');
-    expect(tabB.hasAttribute('aria-controls')).to.equal(false);
-  });
-
-  it('resolveTabValueForPanelTarget: panel 自身を target として対応 tab value を返すこと', () => {
-    const tabA = document.createElement('button');
-    tabA.setAttribute('value', 'overview');
-    const panelA = document.createElement('section');
-
-    expect(
-      resolveTabValueForPanelTarget(
-        {
-          tabs: [tabA],
-          panels: [panelA],
-          interactiveCount: 1,
-        },
-        panelA,
-      ),
-    ).to.equal('overview');
-  });
-
-  it('resolveTabValueForPanelTarget: panel 配下 target から対応 tab value を返すこと', () => {
-    const tabA = document.createElement('button');
-    tabA.setAttribute('value', 'overview');
-    const panelA = document.createElement('section');
-    const heading = document.createElement('h2');
-    panelA.append(heading);
-
-    expect(
-      resolveTabValueForPanelTarget(
-        {
-          tabs: [tabA],
-          panels: [panelA],
-          interactiveCount: 1,
-        },
-        heading,
-      ),
-    ).to.equal('overview');
-  });
-
-  it('resolveTabValueForPanelTarget: interactiveCount 範囲外の panel は採用しないこと', () => {
-    const tabA = document.createElement('button');
-    tabA.setAttribute('value', 'overview');
-    const tabB = document.createElement('button');
-    tabB.setAttribute('value', 'details');
-    const panelA = document.createElement('section');
-    const panelB = document.createElement('section');
-
-    expect(
-      resolveTabValueForPanelTarget(
-        {
-          tabs: [tabA, tabB],
-          panels: [panelA, panelB],
-          interactiveCount: 1,
-        },
-        panelB,
-      ),
-    ).to.equal(null);
-  });
-
-  it('resolveTabValueForPanelTarget: 対応 tab が欠落している場合は null を返すこと', () => {
-    const panelA = document.createElement('section');
-
-    expect(
-      resolveTabValueForPanelTarget(
-        {
-          tabs: [],
-          panels: [panelA],
-          interactiveCount: 1,
-        },
-        panelA,
-      ),
-    ).to.equal(null);
-  });
-
-  it('resolveTabValueForPanelTarget: 対応 tab value が空の場合は null を返すこと', () => {
-    const tabA = document.createElement('button');
-    tabA.setAttribute('value', ' ');
-    const panelA = document.createElement('section');
-
-    expect(
-      resolveTabValueForPanelTarget(
-        {
-          tabs: [tabA],
-          panels: [panelA],
-          interactiveCount: 1,
-        },
-        panelA,
-      ),
-    ).to.equal(null);
-  });
-
-  it('resolveTabValueForPanelTarget: panel 外 target は採用しないこと', () => {
-    const tabA = document.createElement('button');
-    tabA.setAttribute('value', 'overview');
-    const panelA = document.createElement('section');
-    const outside = document.createElement('h2');
-
-    expect(
-      resolveTabValueForPanelTarget(
-        {
-          tabs: [tabA],
-          panels: [panelA],
-          interactiveCount: 1,
-        },
-        outside,
-      ),
-    ).to.equal(null);
-  });
+  it.each(['horizontal', 'vertical'] as const)(
+    '%s の表示範囲外tabだけをscrollする',
+    async (orientation) => {
+      const vertical = orientation === 'vertical';
+      const container = await fixture(
+        `<div style="width:100px;height:100px;overflow:auto;display:flex;flex-direction:${vertical ? 'column' : 'row'}"><a style="flex:none;width:100px;height:100px">One</a><a style="flex:none;width:100px;height:100px">Two</a></div>`,
+      );
+      const first = requireFixtureValue(container.firstElementChild);
+      const last = requireFixtureValue(container.lastElementChild);
+      if (!(first instanceof HTMLElement) || !(last instanceof HTMLElement))
+        throw new Error('tab missing');
+      scrollTabElementIntoView(container, first, orientation);
+      expect(vertical ? container.scrollTop : container.scrollLeft).toBe(0);
+      scrollTabElementIntoView(container, last, orientation);
+      expect(vertical ? container.scrollTop : container.scrollLeft).toBeGreaterThan(0);
+      scrollTabElementIntoView(container, first, orientation);
+      expect(vertical ? container.scrollTop : container.scrollLeft).toBe(0);
+    },
+  );
 });

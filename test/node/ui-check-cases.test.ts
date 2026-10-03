@@ -60,7 +60,7 @@ describe('UI Check生成fixture', () => {
   });
 
   it('動画fixtureは既存ローカルmediaを参照し、empty表示を残すこと', () => {
-    const nodes = elements(parse(renderVideoCase())).filter((node) => node.tagName === 'ui-video');
+    const nodes = elements(parse(renderVideoCase())).filter((node) => node.tagName === 'video');
     expect(nodes.filter((node) => !node.attrs.some((attr) => attr.name === 'src'))).toHaveLength(1);
     for (const node of nodes) {
       for (const attr of node.attrs.filter(

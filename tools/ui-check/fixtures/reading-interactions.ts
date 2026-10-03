@@ -1,5 +1,5 @@
-import '../../../src/components/ui/tabs/tabs.js';
-import '../../../src/components/ui/translation/translation.js';
+import { HydrationScheduler } from '../../../src/client/hydration/scheduler.js';
 
-// URL同期とshell hydrationの観察は生成済み実ページが所有する。
-// この入口は局所表示に必要なcomponentだけを登録する。
+// UI-checkでも初回起動はproduction registryとschedulerに委譲する。
+const scheduler = new HydrationScheduler();
+void scheduler.hydrateContent(document);

@@ -336,12 +336,13 @@ const normalizeText = (value: string): string => value.replace(WHITESPACE_PATTER
 
 const getPanelSelectionMap = (tabsHost: Parse5Element): Map<Parse5Element, string> => {
   const children = getElementChildren(tabsHost);
-  const tabs = children.filter((child) => getAttributeValue(child, 'slot') === 'tab');
-  const panels = children.filter((child) => getAttributeValue(child, 'slot') === 'panel');
+  const panels = children.filter(
+    (child) => getAttributeValue(child, 'data-tab-panel') !== undefined,
+  );
 
   const panelSelections = new Map<Parse5Element, string>();
-  panels.forEach((panel, index) => {
-    const value = getAttributeValue(tabs[index] as Parse5Element, 'value')?.trim() ?? '';
+  panels.forEach((panel) => {
+    const value = getAttributeValue(panel, 'data-tab-value')?.trim() ?? '';
     if (value.length > 0) {
       panelSelections.set(panel, value);
     }
@@ -422,7 +423,7 @@ const visitNode = (
     return;
   }
 
-  if (node.tagName === 'ui-tabs') {
+  if (getAttributeValue(node, 'data-tabs-root') !== undefined) {
     counters.scope += 1;
     const scopeId =
       getAttributeValue(node, 'data-toc-scope')?.trim() || `toc-scope-${String(counters.scope)}`;

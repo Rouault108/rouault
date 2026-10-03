@@ -1,4 +1,3 @@
-import { html } from 'lit/static-html.js';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { fixture } from './harness/browser-fixture.js';
 import { RouterLinkInterceptor } from '../../src/router/browser-link-interceptor.js';
@@ -107,7 +106,7 @@ describe('RouterLinkInterceptor', () => {
 
   it('同一 origin の文書リンクを横取りすること', async () => {
     const link = await fixture<HTMLAnchorElement>(
-      html`<a href="${window.location.origin}/notes/next">Next</a>`,
+      `<a href="${window.location.origin}/notes/next">Next</a>`,
     );
 
     const defaultPrevented = dispatchObservedClick(link);
@@ -122,7 +121,7 @@ describe('RouterLinkInterceptor', () => {
   });
 
   it('root-relative internal-document link を absolute currentUrl に補正して横取りすること', async () => {
-    const link = await fixture<HTMLAnchorElement>(html`<a href="/notes/next">Next</a>`);
+    const link = await fixture<HTMLAnchorElement>(`<a href="/notes/next">Next</a>`);
 
     const defaultPrevented = dispatchObservedClick(link);
 
@@ -137,7 +136,7 @@ describe('RouterLinkInterceptor', () => {
 
   it('外部リンクは横取りしないこと', async () => {
     const link = await fixture<HTMLAnchorElement>(
-      html`<a href="https://example.com/external">External</a>`,
+      `<a href="https://example.com/external">External</a>`,
     );
 
     const defaultPrevented = dispatchObservedClick(link);
@@ -147,9 +146,7 @@ describe('RouterLinkInterceptor', () => {
   });
 
   it('mailto は横取りしないこと', async () => {
-    const link = await fixture<HTMLAnchorElement>(
-      html`<a href="mailto:hello@example.com">Mail</a>`,
-    );
+    const link = await fixture<HTMLAnchorElement>(`<a href="mailto:hello@example.com">Mail</a>`);
 
     const defaultPrevented = dispatchObservedClick(link);
 
@@ -158,7 +155,7 @@ describe('RouterLinkInterceptor', () => {
   });
 
   it('同一ページ内 hash jump は横取りしないこと', async () => {
-    const link = await fixture<HTMLAnchorElement>(html`<a href="#section-2">Jump</a>`);
+    const link = await fixture<HTMLAnchorElement>(`<a href="#section-2">Jump</a>`);
 
     const defaultPrevented = dispatchObservedClick(link);
 
@@ -168,7 +165,7 @@ describe('RouterLinkInterceptor', () => {
 
   it('rel=external は横取りしないこと', async () => {
     const link = await fixture<HTMLAnchorElement>(
-      html`<a href="/notes/other" rel="external">Other</a>`,
+      `<a href="/notes/other" rel="external">Other</a>`,
     );
 
     const defaultPrevented = dispatchObservedClick(link);

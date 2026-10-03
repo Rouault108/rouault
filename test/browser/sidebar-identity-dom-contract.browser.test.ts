@@ -1,4 +1,3 @@
-import { html } from 'lit/static-html.js';
 import { describe, expect, it } from 'vitest';
 import { fixture } from './harness/browser-fixture.js';
 
@@ -16,7 +15,7 @@ const readLayoutSidebarInstances = (root: ParentNode) =>
 
 describe('sidebar identity document contract', () => {
   it('stateScopeId が異なっても document-wide の sidebar-id 重複を拒否すること', async () => {
-    const wrapper = await fixture<HTMLDivElement>(html`
+    const wrapper = await fixture<HTMLDivElement>(`
       <div>
         <aside
           data-layout-sidebar-root
@@ -39,7 +38,7 @@ describe('sidebar identity document contract', () => {
   });
 
   it('hidden な absent placeholder は document-wide sidebar-id 重複として数えないこと', async () => {
-    const wrapper = await fixture<HTMLDivElement>(html`
+    const wrapper = await fixture<HTMLDivElement>(`
       <div>
         <aside
           data-layout-sidebar-root

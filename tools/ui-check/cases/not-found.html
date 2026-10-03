@@ -8,10 +8,10 @@
     <link rel="stylesheet" href="/src/assets/css/main.css" />
   </head>
   <body>
-    <main class="page-shell">
+    <main class="page-shell" data-hydration-scope="note">
       <p><a href="../">UI Check Workbench</a></p>
       <h1>Not found</h1>
-      <div data-not-found-page data-requested-path="/notes/missing-entry?tab=outline#section-2">
+      <div data-not-found-page="" data-requested-path="/notes/missing-entry?tab=outline#section-2">
   <style>
     [data-not-found-page] {
       display: block;
@@ -175,11 +175,7 @@
     }
   </style>
 
-  <section
-    data-not-found-fallback
-    class="home-shell not-found-page-fallback"
-    aria-labelledby="not-found-page-title"
-  >
+  <section data-not-found-fallback="" class="home-shell not-found-page-fallback" aria-labelledby="not-found-page-title">
     <div class="not-found-page-fallback__inner">
       <p class="not-found-page-fallback__eyebrow">404</p>
       <h1 id="not-found-page-title" class="not-found-page-fallback__title">
@@ -199,12 +195,7 @@
       </dl>
 
       <nav class="not-found-page-fallback__actions" aria-label="404 navigation">
-        <a
-          class="not-found-page-fallback__link not-found-page-fallback__link--primary"
-          href="/search/"
-          data-link-kind="internal-document"
-          data-link-surface="control"
-        >
+        <a class="not-found-page-fallback__link not-found-page-fallback__link--primary" href="/search/" data-link-kind="internal-document" data-link-surface="control">
           検索ページへ
         </a>
         <a class="not-found-page-fallback__link" href="/about/" data-link-kind="internal-document" data-link-surface="control">

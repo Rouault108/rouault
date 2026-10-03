@@ -85,16 +85,14 @@ describe('buildNotesCollection', () => {
           title: '項目アルファ',
           kind: 'reader',
           content: `
-            <ui-tabs>
-              <div slot="tab" value="overview">概要</div>
-              <div slot="panel">
+            <section data-tabs-root>
+              <div data-tab-panel data-tab-value="overview">
                 <h2 id="overview-heading">Overview</h2>
               </div>
-              <div slot="tab" value="details">詳細</div>
-              <div slot="panel">
+              <div data-tab-panel data-tab-value="details">
                 <h2 id="details-heading">Details</h2>
               </div>
-            </ui-tabs>
+            </section>
           `,
         },
       ],

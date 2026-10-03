@@ -1,5 +1,5 @@
 :is(.prose, .about-prose) > [data-table-root],
-:is(.prose, .about-prose) > ui-tabs > [slot='panel'] > [data-table-root] {
+:is(.prose, .about-prose) > [data-tabs-root] > [data-tab-panel] > [data-table-root] {
   --_table-scroll-fade-left-shadow: inset 0 0 0 0 transparent;
   --_table-scroll-fade-right-shadow: inset 0 0 0 0 transparent;
   --_table-scroll-fade-color: oklch(from var(--fg-default, oklch(20% 0 0)) l c h / 0.16);
@@ -18,17 +18,23 @@
 }
 
 :is(.prose, .about-prose) > [data-table-root][data-fade-left],
-:is(.prose, .about-prose) > ui-tabs > [slot='panel'] > [data-table-root][data-fade-left] {
+:is(.prose, .about-prose)
+  > [data-tabs-root]
+  > [data-tab-panel]
+  > [data-table-root][data-fade-left] {
   --_table-scroll-fade-left-shadow: inset 14px 0 14px -14px var(--_table-scroll-fade-color);
 }
 
 :is(.prose, .about-prose) > [data-table-root][data-fade-right],
-:is(.prose, .about-prose) > ui-tabs > [slot='panel'] > [data-table-root][data-fade-right] {
+:is(.prose, .about-prose)
+  > [data-tabs-root]
+  > [data-tab-panel]
+  > [data-table-root][data-fade-right] {
   --_table-scroll-fade-right-shadow: inset -14px 0 14px -14px var(--_table-scroll-fade-color);
 }
 
 :is(.prose, .about-prose) > [data-table-root]:focus-visible,
-:is(.prose, .about-prose) > ui-tabs > [slot='panel'] > [data-table-root]:focus-visible {
+:is(.prose, .about-prose) > [data-tabs-root] > [data-tab-panel] > [data-table-root]:focus-visible {
   outline: var(--focus-ring-width, 2px) solid var(--focus-ring-color, oklch(60% 0.15 250));
   outline-offset: var(--focus-ring-offset, 2px);
   border-radius: var(--radius-sm, 4px);
@@ -36,7 +42,7 @@
 }
 
 :is(.prose, .about-prose) > [data-table-scroll-rail],
-:is(.prose, .about-prose) > ui-tabs > [slot='panel'] > [data-table-scroll-rail] {
+:is(.prose, .about-prose) > [data-tabs-root] > [data-tab-panel] > [data-table-scroll-rail] {
   box-sizing: border-box;
   overflow-x: auto;
   overflow-y: hidden;
@@ -47,15 +53,18 @@
 
 :is(.prose, .about-prose) > [data-table-scroll-rail] > [data-table-scroll-rail-spacer],
 :is(.prose, .about-prose)
-  > ui-tabs
-  > [slot='panel']
+  > [data-tabs-root]
+  > [data-tab-panel]
   > [data-table-scroll-rail]
   > [data-table-scroll-rail-spacer] {
   block-size: 1px;
 }
 
 :is(.prose, .about-prose) > [data-table-scroll-rail]:focus-visible,
-:is(.prose, .about-prose) > ui-tabs > [slot='panel'] > [data-table-scroll-rail]:focus-visible {
+:is(.prose, .about-prose)
+  > [data-tabs-root]
+  > [data-tab-panel]
+  > [data-table-scroll-rail]:focus-visible {
   outline: var(--focus-ring-width, 2px) solid var(--focus-ring-color, oklch(60% 0.15 250));
   outline-offset: var(--focus-ring-offset, 2px);
   border-radius: var(--radius-sm, 4px);
@@ -64,9 +73,12 @@
 
 @media (prefers-reduced-motion: reduce) {
   :is(.prose, .about-prose) > [data-table-root]:focus-visible,
-  :is(.prose, .about-prose) > ui-tabs > [slot='panel'] > [data-table-root]:focus-visible,
+  :is(.prose, .about-prose) > [data-tabs-root] > [data-tab-panel] > [data-table-root]:focus-visible,
   :is(.prose, .about-prose) > [data-table-scroll-rail]:focus-visible,
-  :is(.prose, .about-prose) > ui-tabs > [slot='panel'] > [data-table-scroll-rail]:focus-visible {
+  :is(.prose, .about-prose)
+    > [data-tabs-root]
+    > [data-tab-panel]
+    > [data-table-scroll-rail]:focus-visible {
     animation: none;
   }
 }
@@ -180,7 +192,7 @@
 
 @media (hover: none) and (pointer: coarse) {
   :is(.prose, .about-prose) > [data-table-scroll-rail],
-  :is(.prose, .about-prose) > ui-tabs > [slot='panel'] > [data-table-scroll-rail] {
+  :is(.prose, .about-prose) > [data-tabs-root] > [data-tab-panel] > [data-table-scroll-rail] {
     display: none;
   }
 
@@ -193,17 +205,26 @@
 
 @media (forced-colors: active) {
   :is(.prose, .about-prose) > [data-table-scroll-rail]:focus-visible,
-  :is(.prose, .about-prose) > ui-tabs > [slot='panel'] > [data-table-scroll-rail]:focus-visible {
+  :is(.prose, .about-prose)
+    > [data-tabs-root]
+    > [data-tab-panel]
+    > [data-table-scroll-rail]:focus-visible {
     outline-color: Highlight;
   }
 
   :is(.prose, .about-prose) > [data-table-root][data-fade-left],
-  :is(.prose, .about-prose) > ui-tabs > [slot='panel'] > [data-table-root][data-fade-left] {
+  :is(.prose, .about-prose)
+    > [data-tabs-root]
+    > [data-tab-panel]
+    > [data-table-root][data-fade-left] {
     --_table-scroll-fade-left-shadow: inset 2px 0 0 0 CanvasText;
   }
 
   :is(.prose, .about-prose) > [data-table-root][data-fade-right],
-  :is(.prose, .about-prose) > ui-tabs > [slot='panel'] > [data-table-root][data-fade-right] {
+  :is(.prose, .about-prose)
+    > [data-tabs-root]
+    > [data-tab-panel]
+    > [data-table-root][data-fade-right] {
     --_table-scroll-fade-right-shadow: inset -2px 0 0 0 CanvasText;
   }
 

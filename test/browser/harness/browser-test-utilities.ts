@@ -1,7 +1,3 @@
-export type LitLikeElement = HTMLElement & {
-  updateComplete?: Promise<unknown>;
-};
-
 // Decisionで公開型の形を固定しているため、ここではtype aliasを維持する。
 // eslint-disable-next-line @typescript-eslint/consistent-type-definitions
 export type WaitForConditionOptions = {
@@ -114,14 +110,6 @@ export async function waitForCondition(
   }
 
   throw new Error(message);
-}
-
-export async function waitForLitUpdate(element: LitLikeElement): Promise<void> {
-  if (element.updateComplete) {
-    await element.updateComplete;
-  }
-  await Promise.resolve();
-  await Promise.resolve();
 }
 
 export async function waitForStyleRecalc(): Promise<void> {

@@ -1,0 +1,106 @@
+:is([data-code-preview-root], [data-video-root]) button.note-control {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2, 8px);
+  min-block-size: var(--control-height-sm, 28px);
+  min-inline-size: var(--control-min-touch, 24px);
+  padding: 0 var(--space-2, 8px);
+  border: 0;
+  border-radius: var(--radius-md, 6px);
+  color: var(--fg-default);
+  background: transparent;
+  font: inherit;
+  font-size: var(--text-sm, 13px);
+  cursor: pointer;
+}
+[data-code-preview-root] button.note-control svg[data-icon],
+[data-video-root] .floating-bar button.note-control > svg[data-icon],
+[data-code-preview-root] [data-command-menu-panel] > button > svg[data-icon] {
+  inline-size: var(--icon-sm, 14px);
+  block-size: var(--icon-sm, 14px);
+  flex-shrink: 0;
+}
+:is([data-code-preview-root], [data-video-root]) button.note-control:hover:not(:disabled) {
+  background: var(--bg-hover);
+}
+:is([data-code-preview-root], [data-video-root]) button.note-control:active:not(:disabled) {
+  background: var(--bg-active);
+  transform: scale(var(--scale-pressed, 0.96));
+}
+:is([data-code-preview-root], [data-video-root]) button.note-control:focus-visible {
+  outline: var(--focus-ring-width, 2px) solid var(--focus-ring-color);
+  outline-offset: var(--focus-ring-offset, 2px);
+}
+:is([data-code-preview-root], [data-video-root]) button.note-control:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+[data-code-preview-root] [data-command-menu-label]:not([hidden]) {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2, 8px);
+}
+[data-code-preview-root] [data-command-menu-panel] {
+  position: fixed;
+  inset: 0 auto auto 0;
+  min-inline-size: var(--ui-dropdown-min-inline-size, 180px);
+  max-inline-size: var(--ui-dropdown-max-inline-size, 280px);
+  padding: calc(var(--radius-md, 6px) - var(--radius-sm, 4px));
+  background: var(--bg-surface-2);
+  color: var(--fg-default);
+  border: var(--border-width, 1px) solid var(--border-default);
+  border-radius: var(--radius-md, 6px);
+  box-shadow: var(--elevation-lg);
+  z-index: var(--z-anchored-overlay, var(--z-popover, 400));
+  max-block-size: calc(var(--control-height-md, 32px) * 10);
+  overflow-y: auto;
+}
+[data-code-preview-root] [data-command-menu-panel][data-position-phase='positioning'] {
+  visibility: hidden;
+  pointer-events: none;
+}
+[data-code-preview-root] [data-command-menu-value] {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2, 8px);
+  inline-size: 100%;
+  min-block-size: var(--control-height-md, 32px);
+  padding: var(--space-2, 8px);
+  border: 0;
+  border-radius: var(--radius-sm, 4px);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+[data-code-preview-root] [data-command-menu-value]:is(:hover, :focus-visible) {
+  background: var(--bg-hover);
+  outline: var(--focus-ring-width, 2px) solid var(--focus-ring-color);
+  outline-offset: calc(-1 * var(--focus-ring-width, 2px));
+}
+:is([data-code-preview-root], [data-video-root], [data-tabs-root], [data-preview-sandbox-root])
+  [hidden] {
+  display: none !important;
+}
+[data-tabs-root]:not([data-tabs-enhanced]) > [data-tabs-static-nav] > [data-tabs-indicator] {
+  display: none;
+}
+@media (forced-colors: active) {
+  :is([data-code-preview-root], [data-video-root]) button.note-control {
+    border: var(--border-width, 1px) solid ButtonText;
+    color: ButtonText;
+  }
+  [data-code-preview-root] [data-command-menu-panel] {
+    color: CanvasText;
+    background: Canvas;
+    border-color: CanvasText;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  :is([data-code-preview-root], [data-video-root]) button.note-control {
+    transition: none;
+    transform: none;
+  }
+}

@@ -1,4 +1,8 @@
 export type StaticRenderIdKind =
+  | 'tabs-tab'
+  | 'tabs-panel'
+  | 'command-menu'
+  | 'video-caption'
   | 'copy-status'
   | 'copy-source'
   | 'code-block'

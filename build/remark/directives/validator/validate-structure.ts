@@ -468,6 +468,41 @@ const validateTabStructure = (
   if (!payload?.value?.trim()) {
     throw toError(file, node, 'tab には value 属性が必須です');
   }
+  // panel への anchor 内へ投影するため、操作要素を生成する入力は変換前に拒否する。
+  const visitLabel = (child: MdastNode): void => {
+    const imagePayload = child.rouaultImagePayload;
+    const zoomDisabled =
+      typeof imagePayload === 'object' &&
+      imagePayload !== null &&
+      'zoomable' in imagePayload &&
+      imagePayload.zoomable === false;
+    const directive = getDirectiveNameFromNode(child);
+    const interactiveDirective =
+      directive &&
+      [
+        'tabs',
+        'details',
+        'translation-overlay',
+        'code-preview',
+        'code-group',
+        'preview-sandbox',
+        'link-card',
+        'syntax-card',
+      ].includes(directive);
+    if (
+      ['link', 'linkReference', 'footnoteReference', 'code'].includes(child.type ?? '') ||
+      (['image', 'imageReference'].includes(child.type ?? '') && !zoomDisabled) ||
+      ('checked' in child && typeof child.checked === 'boolean') ||
+      interactiveDirective ||
+      ['a', 'button', 'input', 'select', 'textarea', 'details', 'summary'].includes(
+        child.data?.hName ?? '',
+      )
+    ) {
+      throw toError(file, child, 'tab label は non-interactive content に限定されます');
+    }
+    for (const descendant of child.children ?? []) visitLabel(descendant);
+  };
+  for (const child of node.children ?? []) visitLabel(child);
 };
 
 export const validateStructure = (
