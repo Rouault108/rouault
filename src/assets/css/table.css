@@ -9,6 +9,7 @@
   box-sizing: border-box;
   overflow-x: auto;
   overflow-y: visible;
+  scrollbar-width: thin;
   box-shadow: var(--_table-scroll-fade-left-shadow), var(--_table-scroll-fade-right-shadow);
 
   /* iOS Safari:
@@ -49,6 +50,7 @@
   block-size: 0.875rem;
   margin-block: var(--space-1, 0.25rem) calc(var(--space-1, 0.25rem) * -1);
   scrollbar-gutter: stable;
+  scrollbar-width: thin;
 }
 
 :is(.prose, .about-prose) > [data-table-scroll-rail] > [data-table-scroll-rail-spacer],

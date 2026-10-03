@@ -3,7 +3,7 @@ interface TableScrollState {
   resizeObserver: ResizeObserver | null;
   rail: HTMLElement | null;
   spacer: HTMLElement | null;
-  isSyncing: boolean;
+  readonly pendingScrollEchoes: Map<HTMLElement, number>;
   generatedRootId: string | null;
   removeRailScrollListener: (() => void) | null;
   removeWindowResizeListener: (() => void) | null;
@@ -62,6 +62,9 @@ const isTopRailEligibleTable = (root: HTMLElement): boolean => {
 const removeRail = (state: TableScrollState, root: HTMLElement): void => {
   state.removeRailScrollListener?.();
   state.removeRailScrollListener = null;
+  if (state.rail) {
+    state.pendingScrollEchoes.delete(state.rail);
+  }
   state.rail?.remove();
   state.rail = null;
   state.spacer = null;
@@ -101,13 +104,23 @@ const syncScrollLeft = (
   target: HTMLElement | null,
   state: TableScrollState,
 ): void => {
-  if (!target || state.isSyncing || target.scrollLeft === source.scrollLeft) {
+  if (!target || target.scrollLeft === source.scrollLeft) {
     return;
   }
 
-  state.isSyncing = true;
+  const previousScrollLeft = target.scrollLeft;
   target.scrollLeft = source.scrollLeft;
-  state.isSyncing = false;
+  // 非同期の通知を識別するため、UA が clamp / 丸めを適用した実到達値を記録する。
+  if (target.scrollLeft !== previousScrollLeft) {
+    state.pendingScrollEchoes.set(target, target.scrollLeft);
+  }
+};
+
+const consumeScrollEcho = (source: HTMLElement, state: TableScrollState): boolean => {
+  const expectedScrollLeft = state.pendingScrollEchoes.get(source);
+  state.pendingScrollEchoes.delete(source);
+  // 記録値と異なる位置は新しい操作として扱い、逆方向の同期を維持する。
+  return expectedScrollLeft !== undefined && source.scrollLeft === expectedScrollLeft;
 };
 
 const updateRailMetrics = (root: HTMLElement, state: TableScrollState): void => {
@@ -130,6 +143,9 @@ const ensureRail = (root: HTMLElement, state: TableScrollState): HTMLElement | n
   if (activeRail !== previousRail) {
     state.removeRailScrollListener?.();
     state.removeRailScrollListener = null;
+    if (previousRail) {
+      state.pendingScrollEchoes.delete(previousRail);
+    }
     state.spacer = null;
   }
 
@@ -169,6 +185,9 @@ const ensureRail = (root: HTMLElement, state: TableScrollState): HTMLElement | n
 
   if (!state.removeRailScrollListener) {
     const handleRailScroll = (): void => {
+      if (consumeScrollEcho(activeRail, state)) {
+        return;
+      }
       syncScrollLeft(activeRail, root, state);
       updateTableScrollState(root, state);
     };
@@ -233,6 +252,7 @@ const disposeTableScrollState = (root: HTMLElement, state: TableScrollState): vo
   state.removeWindowResizeListener?.();
   state.removeWindowResizeListener = null;
   removeRail(state, root);
+  state.pendingScrollEchoes.clear();
   activeTableRoots.delete(root);
 };
 
@@ -255,7 +275,7 @@ export const enhanceTableScroll = (root: ParentNode = document, signal?: AbortSi
       resizeObserver: null,
       rail: null,
       spacer: null,
-      isSyncing: false,
+      pendingScrollEchoes: new Map(),
       generatedRootId: null,
       removeRailScrollListener: null,
       removeWindowResizeListener: null,
@@ -264,10 +284,16 @@ export const enhanceTableScroll = (root: ParentNode = document, signal?: AbortSi
     const update = (): void => {
       updateTableScrollState(tableRoot, state);
     };
+    const handleRootScroll = (): void => {
+      if (consumeScrollEcho(tableRoot, state)) {
+        return;
+      }
+      update();
+    };
 
     tableRoot.addEventListener(
       'scroll',
-      update,
+      handleRootScroll,
       signal ? { signal, passive: true } : { passive: true },
     );
 

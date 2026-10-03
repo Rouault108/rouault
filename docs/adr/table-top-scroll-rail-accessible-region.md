@@ -62,6 +62,33 @@ Rouaultはroot / railのoverflow container、rootのfocus可能性、railのacce
 
 PRE-2では、unexpected owner、関連untracked file、検索不能ファイル、root / railへ影響する残存author scrollbar rule、CSS-in-JS / runtime stylesheet生成経路がないこと、および変更を4ファイルへ限定できることが確認された。人間によるMinimal PRE-1ではChromeとFirefoxでnative scrollbarの発見可能性、mouse-only / keyboard操作、root / railのscroll同期、非clip、現行rail geometryでの操作可能性が確認された。Edgeは実装後manual Verificationで確認する。
 
+## Amendment: Compact Native Scrollbar Density
+
+- Decision date: 2026-10-03
+- Decision status: Accepted
+- Workflow: `feature-change`
+- R段階: R3
+- Aレベル: A0
+- R4 overlay: 発火しない
+- 承認済み基本計画: `rouault-markdown-table-scrollbar-density-change-plan-v3.md`
+- Delete / Breaking Change Gate: 発火しない
+
+Windows Chromeの横溢れMarkdown tableでは、default classic scrollbarのblock-sizeとthumb contrastが本文周辺のruleより強く、top railが見出し直下の強いhorizontal controlとして見え、root下端でも同じvisual salience問題が観測された。long pageで反復するscrollbarがreading flowを過度に区切るため、root / rail双方を同一のcompact density contractへ揃える。railだけの変更ではroot下端の問題と両surfaceのdensity不一致が残る。
+
+table root / top auxiliary scroll railはnative scrollbarのまま維持し、標準CSSの`scrollbar-width: thin`だけをwidth / density hintとして採用する。Rouaultはcompact native scrollbar densityの要求を所有し、exact pixel widthを所有しない。`thin`をpixel値へ変換せず、table専用size tokenやglobal scrollbar tokenは使用しない。
+
+exact width、thumb / track color、part shape、classic / overlay、native scroll buttons、visibility / auto-hide timing、forced-colorsでのnative renderingは引き続きUA / OS ownershipとする。native mouse drag、wheel / trackpad / keyboard integration、OSのscrollbar visibility / accessibility preferenceへの委譲を維持する。scrollbarを不可視化せず、OSの常時表示設定を尊重し、browser / OS間のexact appearance差を不具合としない。
+
+color ownershipは取らない。まずwidthだけでvisual salienceを下げられるかを確認し、必要性が未確認のlight / dark / contrast / color token設計を今回の責務へ広げない。`::-webkit-scrollbar*`等のcustom paintingは、browser-specificなthumb / track / corner / buttonとforced-colors対応をRouaultの保守責務へ戻すため採用しない。未対応UAではnative defaultへ自然に退化し、browser / OS detection、`@supports`のparallel path、WebKit fallback、runtime feature detection、JS drag control、compatibility shimは追加しない。
+
+この後続Decisionは、2026-07-26の`Native Scrollbar Rendering Ownership` Decisionのうち「thicknessも全面的にUA / OS owner」とする部分だけをsupersedeする。native mechanics、color、part painting、利用者設定の委譲は継続し、旧`thin / subtle` custom paintingへ戻すDecisionではない。既存amendmentは過去Decisionの履歴として保持する。その`Gate result: Passed`は過去Decisionの記録であり、今回のGate結果として再利用しない。今回は削除、互換性破壊、migration、deprecationを伴わず、Delete / Breaking Change Gateは発火しない。
+
+Markdown authoring API、SSR table DOM、top rail eligibility、ARIA、Tab順序、rootをkeyboard操作の正本とする契約、root / rail同期、edge fade、coarse pointer、focus-visible、reduced motion、rail geometry、`scrollbar-gutter: stable`、no-JS baselineは維持する。
+
+[Accessibility Contract](../design-system/accessibility.md)を横断基準とし、authorがdensityへ介入する以上、native UA controlであることだけを理由にpointer target / spacing確認を省略しない。CSSの`thin`値や200% zoomの成立からactual native hit geometryや適合を推定せず、Windows Chrome light / darkでbaselineよりquietであること、scrollbarの識別可能性、root / rail双方のmouse-only thumb dragの実用性、誤操作を誘発しない周辺pointer spacing、scroll同期をmanual Verificationする。keyboard-only、Windows forced colors / high contrast相当、zoom 200%も必須Acceptanceとする。未実施のmanual Verificationはpassと推定しない。
+
+mouse dragやpointer spacingが実用上許容できない、discoverabilityが明確に悪化する、forced colorsで操作不能になる、同期が回帰する、width-onlyではvisual salienceが実質的に改善しない場合は、`replan-required`として人間へEvidenceを返す。rail-only、rootだけ`auto`、color追加、WebKit styling等の代替仕様をその場で実装しない。
+
 ## Rationale
 
 native overflow scroll containerを使うことで、既存のtable root scroll契約を保ったまま、上部にも同じ横scroll操作面を提供できる。railをaccessible auxiliary scroll regionとして公開することで、Tab到達可能なscroll領域であることを支援技術にも説明できる。

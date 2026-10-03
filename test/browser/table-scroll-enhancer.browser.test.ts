@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it } from 'vitest';
 
 import { enhanceTableScroll } from '../../src/client/post-hydrate/table-scroll-enhancer.js';
+import { waitForCondition } from './harness/browser-test-utilities.js';
 
 const nextFrame = async (): Promise<void> => {
   await new Promise<void>((resolve) => {
@@ -90,6 +91,131 @@ const makeRailScrollableInFixture = (root: HTMLElement): HTMLElement | null => {
 
   return rail;
 };
+
+describe('table-scroll-enhancer native asynchronous scroll synchronization', () => {
+  const controllers: AbortController[] = [];
+
+  afterEach(() => {
+    for (const controller of controllers) controller.abort();
+    controllers.length = 0;
+    document.body.replaceChildren();
+  });
+
+  const createPair = async () => {
+    const controller = new AbortController();
+    controllers.push(controller);
+    const root = createEligibleTableFixture();
+    enhanceTableScroll(root, controller.signal);
+    await nextFrame();
+    const rail = makeRailScrollableInFixture(root);
+    if (!rail) throw new Error('Eligible overflow table requires a rail');
+    await nextFrame();
+    await nextFrame();
+    return { root, rail, signal: controller.signal };
+  };
+
+  for (const direction of ['rail', 'root'] as const) {
+    it(`${direction} の次の操作値を遅れて届く同期先の native scroll echo で巻き戻さないこと`, async () => {
+      const { root, rail, signal } = await createPair();
+      const source = direction === 'rail' ? rail : root;
+      const target = direction === 'rail' ? root : rail;
+      let advanced = false;
+      const sourcePositionsAfterEcho: number[] = [];
+
+      target.addEventListener(
+        'scroll',
+        () => {
+          if (advanced) return;
+          advanced = true;
+          // drag の次の位置が同期先の通知より先に到着する順序を固定する。
+          source.scrollLeft = 160;
+        },
+        { capture: true, signal },
+      );
+      target.addEventListener(
+        'scroll',
+        () => {
+          sourcePositionsAfterEcho.push(source.scrollLeft);
+        },
+        { signal },
+      );
+
+      source.scrollLeft = 80;
+      await waitForCondition(() => advanced, 'Native target scroll event was not delivered');
+      await nextFrame();
+      await nextFrame();
+
+      expect(sourcePositionsAfterEcho.length).to.be.greaterThan(0);
+      expect(sourcePositionsAfterEcho.every((position) => Math.abs(position - 160) <= 1)).to.equal(
+        true,
+      );
+      expect(root.scrollLeft).to.be.closeTo(160, 1);
+      expect(rail.scrollLeft).to.be.closeTo(160, 1);
+    });
+
+    it(`${direction} からの同期先で新しい操作が起きた場合は echo として捨てず逆方向へ同期すること`, async () => {
+      const { root, rail, signal } = await createPair();
+      const source = direction === 'rail' ? rail : root;
+      const target = direction === 'rail' ? root : rail;
+      let advanced = false;
+
+      target.addEventListener(
+        'scroll',
+        () => {
+          if (advanced) return;
+          advanced = true;
+          target.scrollLeft = 160;
+        },
+        { capture: true, signal },
+      );
+
+      source.scrollLeft = 80;
+      await waitForCondition(() => advanced, 'Native target scroll event was not delivered');
+      await nextFrame();
+      await nextFrame();
+
+      expect(root.scrollLeft).to.be.closeTo(160, 1);
+      expect(rail.scrollLeft).to.be.closeTo(160, 1);
+    });
+  }
+
+  it('同期先の clamp 後の実到達値を echo として扱い操作元へ書き戻さないこと', async () => {
+    const { root, rail } = await createPair();
+    rail.style.inlineSize = '200px';
+    rail.style.width = '200px';
+    await nextFrame();
+    await nextFrame();
+
+    root.scrollLeft = 240;
+    await waitForCondition(
+      () => rail.scrollLeft > 0,
+      'Native source scroll event was not delivered',
+    );
+    await nextFrame();
+    await nextFrame();
+
+    expect(rail.scrollLeft).to.be.lessThan(240);
+    expect(root.scrollLeft).to.be.closeTo(240, 1);
+  });
+
+  it('複数の native scroll 入力が合流しても最新の subpixel 到達値を両方向へ同期すること', async () => {
+    const { root, rail } = await createPair();
+    for (const source of [rail, root]) {
+      source.scrollLeft = 40.25;
+      source.scrollLeft = 80.5;
+      source.scrollLeft = 160.75;
+      const reached = source.scrollLeft;
+      await waitForCondition(
+        () => Math.abs(root.scrollLeft - rail.scrollLeft) <= 1,
+        'Native scroll input did not converge',
+      );
+      await nextFrame();
+      await nextFrame();
+      expect(root.scrollLeft).to.be.closeTo(reached, 1);
+      expect(rail.scrollLeft).to.be.closeTo(reached, 1);
+    }
+  });
+});
 
 describe('table-scroll-enhancer overflow/fade state', () => {
   afterEach(() => {
@@ -497,7 +623,9 @@ describe('table-scroll-enhancer Phase3B accessible top scroll rail', () => {
     const rail = getRail(root);
     expect(rail).to.not.equal(null);
 
-    const firstSpacer = rail?.querySelector<HTMLElement>(':scope > [data-table-scroll-rail-spacer]');
+    const firstSpacer = rail?.querySelector<HTMLElement>(
+      ':scope > [data-table-scroll-rail-spacer]',
+    );
     firstSpacer?.remove();
     root.dispatchEvent(new Event('scroll'));
     await nextFrame();
@@ -555,7 +683,8 @@ describe('table-scroll-enhancer Phase3B accessible top scroll rail', () => {
     const table = getOwnedTableInFixture(root);
     const firstCell = table?.rows.item(0)?.cells.item(0);
     if (firstCell) {
-      firstCell.innerHTML = '<table><caption>入れ子 caption</caption><tbody><tr><td>N</td></tr></tbody></table>';
+      firstCell.innerHTML =
+        '<table><caption>入れ子 caption</caption><tbody><tr><td>N</td></tr></tbody></table>';
     }
 
     enhanceTableScroll(root);

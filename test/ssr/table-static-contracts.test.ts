@@ -4,6 +4,7 @@ import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 
 import { expectCssExcludes, expectCssIncludes } from './css-contract-test-helpers.js';
+import { hasDeclarationForSelector, hasRuleForSelector } from './support/css-contract.js';
 
 const dirname = path.dirname(fileURLToPath(import.meta.url));
 const tableCssPath = path.resolve(dirname, '../../src/assets/css/table.css');
@@ -156,18 +157,36 @@ describe('table static css contracts', () => {
     }
   });
 
-  it('table root / top rail は native scrollbar rendering を UA / OS へ委譲すること', () => {
-    expectCssIncludes(tableCss, [
-      ':is(.prose, .about-prose) > [data-table-root]',
-      ":is(.prose, .about-prose) > [data-tabs-root] > [data-tab-panel] > [data-table-root]",
-      ':is(.prose, .about-prose) > [data-table-scroll-rail]',
-      ":is(.prose, .about-prose) > [data-tabs-root] > [data-tab-panel] > [data-table-scroll-rail]",
-      'overflow-x: auto',
-      'scrollbar-gutter: stable',
-    ]);
+  it('table root / top rail は native mechanics / rendering を維持し compact density hint だけを Rouault が所有すること', () => {
+    for (const surface of ['data-table-root', 'data-table-scroll-rail']) {
+      const selectors = [
+        `:is(.prose, .about-prose) > [${surface}]`,
+        `:is(.prose, .about-prose) > [data-tabs-root] > [data-tab-panel] > [${surface}]`,
+      ];
+
+      for (const selector of selectors) {
+        expect(hasRuleForSelector(tableCss, selector, { scope: 'base' }), selector).toBe(true);
+        expect(
+          hasDeclarationForSelector(tableCss, selector, 'scrollbar-width', 'thin', { scope: 'base' }),
+          selector,
+        ).toBe(true);
+        expect(
+          hasDeclarationForSelector(tableCss, selector, 'overflow-x', 'auto', { scope: 'base' }),
+          selector,
+        ).toBe(true);
+
+        if (surface === 'data-table-scroll-rail') {
+          expect(
+            hasDeclarationForSelector(tableCss, selector, 'scrollbar-gutter', 'stable', {
+              scope: 'base',
+            }),
+            selector,
+          ).toBe(true);
+        }
+      }
+    }
 
     expectCssExcludes(tableCss, [
-      'scrollbar-width:',
       'scrollbar-color:',
       '--_table-scrollbar-',
       '::-webkit-scrollbar',
