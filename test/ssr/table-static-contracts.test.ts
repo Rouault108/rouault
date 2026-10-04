@@ -126,22 +126,26 @@ describe('table static css contracts', () => {
     expectCssIncludes(tableCss, [
       '--_table-scroll-fade-left-shadow: inset 0 0 0 0 transparent',
       '--_table-scroll-fade-right-shadow: inset 0 0 0 0 transparent',
-      '--_table-scroll-fade-color: oklch(from var(--fg-default, oklch(20% 0 0)) l c h / 0.16)',
+      '--_table-scroll-fade-color: oklch(from var(--fg-default, oklch(20% 0 0)) l c h / 0.08)',
       'box-shadow:\n    var(--_table-scroll-fade-left-shadow),\n    var(--_table-scroll-fade-right-shadow)',
       ':is(.prose, .about-prose) > [data-table-root][data-fade-left]',
       ":is(.prose, .about-prose) > [data-tabs-root] > [data-tab-panel] > [data-table-root][data-fade-left]",
       ':is(.prose, .about-prose) > [data-table-root][data-fade-right]',
       ":is(.prose, .about-prose) > [data-tabs-root] > [data-tab-panel] > [data-table-root][data-fade-right]",
-      '--_table-scroll-fade-left-shadow: inset 14px 0 14px -14px var(--_table-scroll-fade-color)',
-      '--_table-scroll-fade-right-shadow: inset -14px 0 14px -14px var(--_table-scroll-fade-color)',
+      '--_table-scroll-fade-left-shadow: inset 10px 0 10px -10px var(--_table-scroll-fade-color)',
+      '--_table-scroll-fade-right-shadow: inset -10px 0 10px -10px var(--_table-scroll-fade-color)',
       '@media (forced-colors: active)',
       '--_table-scroll-fade-left-shadow: inset 2px 0 0 0 CanvasText',
       '--_table-scroll-fade-right-shadow: inset -2px 0 0 0 CanvasText',
     ]);
 
     expectCssExcludes(tableCss, [
-      'inset 18px 0 18px -18px oklch(0% 0 0 / 0.24)',
-      'inset -18px 0 18px -18px oklch(0% 0 0 / 0.24)',
+      'inset 14px 0 14px -14px',
+      'inset -14px 0 14px -14px',
+      'inset 18px 0 18px -18px',
+      'inset -18px 0 18px -18px',
+      '/ 0.16)',
+      '/ 0.24)',
     ]);
   });
 
@@ -153,6 +157,11 @@ describe('table static css contracts', () => {
     for (const selectorList of selectors) {
       for (const selector of splitSelectorPreludeListAtTopLevelComma(selectorList)) {
         expect(selector.trim()).not.toMatch(bareOverflowAffordanceStateSelector);
+        if (/\[data-fade-(?:left|right)\]/u.test(selector)) {
+          expect(selector.trim()).toMatch(
+            /^:is\(\.prose,\s*\.about-prose\)\s*>\s*(?:\[data-tabs-root\]\s*>\s*\[data-tab-panel\]\s*>\s*)?\[data-table-root\]\[data-fade-(?:left|right)\]$/u,
+          );
+        }
       }
     }
   });
