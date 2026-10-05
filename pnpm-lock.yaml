@@ -90,6 +90,9 @@ importers:
       hast-util-to-html:
         specifier: 9.0.5
         version: 9.0.5
+      js-yaml:
+        specifier: 4.1.1
+        version: 4.1.1
       parse5:
         specifier: 7.3.0
         version: 7.3.0

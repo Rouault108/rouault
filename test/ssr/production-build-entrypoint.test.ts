@@ -1,4 +1,5 @@
 import { readFileSync } from 'node:fs';
+import { createRequire } from 'node:module';
 import path from 'node:path';
 
 import { describe, expect, it } from 'vitest';
@@ -17,15 +18,102 @@ const productionCssArtifactAssertionPath = path.resolve(
   'scripts/assert-production-css-artifacts.ts',
 );
 
-const sliceWorkflowJob = (workflow: string, jobName: string, nextJobName: string): string => {
-  const start = workflow.indexOf(`${jobName}:`);
-  const end = workflow.indexOf(`${nextJobName}:`);
+interface YamlApi {
+  readonly load: (source: string) => unknown;
+  readonly dump: (
+    value: unknown,
+    options?: { readonly indent?: number; readonly sortKeys?: boolean },
+  ) => string;
+}
 
-  if (start < 0 || end < 0 || end <= start) {
-    throw new Error(`workflow から ${jobName} job を切り出せません`);
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null && !Array.isArray(value);
+
+// CommonJSの境界をunknownで受け、parserの型をworkflowの型として扱わない。
+const isYamlApi = (value: unknown): value is YamlApi =>
+  isRecord(value) && typeof value['load'] === 'function' && typeof value['dump'] === 'function';
+const yamlModule: unknown = createRequire(import.meta.url)('js-yaml');
+if (!isYamlApi(yamlModule)) throw new Error('js-yamlのload/dumpが必要です');
+const yaml = yamlModule;
+
+const requireRecord = (value: unknown, location: string): Record<string, unknown> => {
+  if (!isRecord(value)) throw new Error(`${location}はmappingである必要があります`);
+  return value;
+};
+
+const readWorkflowJobs = (source: string): Record<string, unknown> => {
+  const workflow = requireRecord(yaml.load(source), 'workflow');
+  return requireRecord(workflow['jobs'], 'jobs');
+};
+
+const readJob = (jobs: Record<string, unknown>, jobId: string): Record<string, unknown> =>
+  requireRecord(jobs[jobId], `jobs.${jobId}`);
+
+const readSteps = (job: Record<string, unknown>): readonly Record<string, unknown>[] => {
+  const steps: unknown = job['steps'];
+  if (!Array.isArray(steps)) throw new Error('job.stepsはsequenceである必要があります');
+  return steps.map((step: unknown) => requireRecord(step, 'job.steps[]'));
+};
+
+const runLines = (step: Record<string, unknown>): readonly string[] => {
+  const run = step['run'];
+  if (run === undefined) return [];
+  if (typeof run !== 'string') throw new Error('step.runは文字列である必要があります');
+  return run
+    .split(/\r?\n/u)
+    .map((line) => line.trim())
+    .filter(Boolean);
+};
+
+const buildLabelCommand = 'echo "ROUAULT_BUILD_LABEL=${GITHUB_SHA::7}" >> "$GITHUB_ENV"';
+const mediaBaseUrl = '${{ vars.ROUAULT_MEDIA_BASE_URL }}';
+const buildJobCommands = [
+  ['test-e2e-production', 'pnpm run test:e2e:production'],
+  ['test-e2e-dev', 'pnpm run test:e2e:dev'],
+  ['build-production', 'pnpm build:production'],
+] as const;
+
+const assertBuildJobs = (source: string): void => {
+  const jobs = readWorkflowJobs(source);
+  for (const [jobId, command] of buildJobCommands) {
+    const job = readJob(jobs, jobId);
+    const env = requireRecord(job['env'], `${jobId}.env`);
+    expect(env['ROUAULT_MEDIA_BASE_URL'], `${jobId}: media URL`).toBe(mediaBaseUrl);
+    const steps = readSteps(job);
+    const commands = steps.map(runLines);
+    const labelSteps = commands.flatMap((lines, index) =>
+      lines.filter((line) => line === buildLabelCommand).map(() => index),
+    );
+    const executionSteps = commands.flatMap((lines, index) =>
+      lines.filter((line) => line === command).map(() => index),
+    );
+    expect(labelSteps, `${jobId}: build label`).toHaveLength(1);
+    expect(executionSteps, `${jobId}: command`).toHaveLength(1);
+    // GITHUB_ENVの値は書き込んだstep自身には反映されない。
+    expect(labelSteps[0], `${jobId}: build label must precede execution`).toBeLessThan(
+      executionSteps[0] ?? -1,
+    );
   }
+};
 
-  return workflow.slice(start, end);
+const normalizeCondition = (value: unknown): string => {
+  if (typeof value !== 'string') throw new Error('job.ifは文字列である必要があります');
+  return value.replace(/\s+/gu, ' ').trim();
+};
+
+const fullRunCondition =
+  "${{ !cancelled() && needs.detect-changes.result == 'success' && needs.prebuild-gate.result == 'success' && needs.detect-changes.outputs.app == 'true' && ((github.event_name == 'push' && github.ref == 'refs/heads/main') || github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && github.base_ref == 'main')) }}";
+
+const assertEventGates = (source: string): void => {
+  const jobs = readWorkflowJobs(source);
+  for (const jobId of ['test-e2e-production', 'test-e2e-dev']) {
+    expect(normalizeCondition(readJob(jobs, jobId)['if']), jobId).toBe(fullRunCondition);
+  }
+  const deployCondition = normalizeCondition(readJob(jobs, 'deploy-production')['if']);
+  expect(deployCondition).toContain("github.event_name == 'push'");
+  expect(deployCondition).toContain("github.ref == 'refs/heads/main'");
+  expect(deployCondition).toContain("needs.detect-changes.outputs.build == 'true'");
+  expect(deployCondition).not.toContain("github.event_name == 'workflow_dispatch'");
 };
 
 describe('production build entrypoint contract', () => {
@@ -49,47 +137,11 @@ describe('production build entrypoint contract', () => {
   });
 
   it('build-production と dev/prod e2e jobs が同じ media base URL と build label 経路を使うこと', () => {
-    const workflow = readFileSync(workflowPath, 'utf8');
-    const testE2eProductionJob = sliceWorkflowJob(workflow, 'test-e2e-production', 'test-e2e-dev');
-    const testE2eDevJob = sliceWorkflowJob(workflow, 'test-e2e-dev', 'build-production');
-    const buildProductionJob = sliceWorkflowJob(workflow, 'build-production', 'ci-required');
-    const mediaBaseUrlPattern = /ROUAULT_MEDIA_BASE_URL: \$\{\{ vars\.ROUAULT_MEDIA_BASE_URL \}\}/g;
-    const buildLabelPattern = /echo "ROUAULT_BUILD_LABEL=\$\{GITHUB_SHA::7\}" >> "\$GITHUB_ENV"/g;
-
-    expect(workflow).toContain('test-e2e-production:');
-    expect(workflow).toContain('test-e2e-dev:');
-    expect(workflow).toContain('build-production:');
-
-    expect(testE2eProductionJob.match(mediaBaseUrlPattern) ?? []).toHaveLength(1);
-    expect(testE2eDevJob.match(mediaBaseUrlPattern) ?? []).toHaveLength(1);
-    expect(buildProductionJob.match(mediaBaseUrlPattern) ?? []).toHaveLength(1);
-
-    expect(testE2eProductionJob.match(buildLabelPattern) ?? []).toHaveLength(1);
-    expect(testE2eDevJob.match(buildLabelPattern) ?? []).toHaveLength(1);
-    expect(buildProductionJob.match(buildLabelPattern) ?? []).toHaveLength(1);
-
-    expect(testE2eProductionJob).toMatch(
-      /^ {6}(?:- | {2})run: pnpm run test:e2e:production[\t ]*$/mu,
-    );
-    expect(testE2eDevJob).toMatch(/^ {6}(?:- | {2})run: pnpm run test:e2e:dev[\t ]*$/mu);
-    expect(workflow).toContain('- run: pnpm build:production');
+    assertBuildJobs(readFileSync(workflowPath, 'utf8'));
   });
 
   it('workflow_dispatch は full run 対象に含め、deploy は push main のみに限定すること', () => {
-    const workflow = readFileSync(workflowPath, 'utf8');
-    const testE2eProductionJob = sliceWorkflowJob(workflow, 'test-e2e-production', 'test-e2e-dev');
-    const testE2eDevJob = sliceWorkflowJob(workflow, 'test-e2e-dev', 'build-production');
-    const deployProductionJob = workflow.slice(workflow.indexOf('deploy-production:'));
-    const fullRunCondition =
-      "if: ${{ !cancelled() && needs.detect-changes.result == 'success' && needs.prebuild-gate.result == 'success' && needs.detect-changes.outputs.app == 'true' && ((github.event_name == 'push' && github.ref == 'refs/heads/main') || github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && github.base_ref == 'main')) }}";
-
-    expect(testE2eProductionJob).toContain(fullRunCondition);
-    expect(testE2eDevJob).toContain(fullRunCondition);
-    expect(deployProductionJob).toContain('if: >-');
-    expect(deployProductionJob).toContain("github.event_name == 'push'");
-    expect(deployProductionJob).toContain("github.ref == 'refs/heads/main'");
-    expect(deployProductionJob).toContain("needs.detect-changes.outputs.build == 'true'");
-    expect(deployProductionJob).not.toContain("github.event_name == 'workflow_dispatch'");
+    assertEventGates(readFileSync(workflowPath, 'utf8'));
   });
 
   it('production build entrypoint は生成後に CSS artifact assertion を実行すること', () => {
@@ -189,5 +241,149 @@ describe('production build entrypoint contract', () => {
     expect(assertionSource).toContain('expectRuleHasDeclarations');
     expect(assertionSource).toContain('var(--toc-item-inactive-max-lines, 2)');
     expect(assertionSource).toContain('var(--toc-item-active-max-lines, 3)');
+  });
+});
+
+interface FixtureJob {
+  env?: Record<string, string>;
+  steps: Record<string, unknown>[];
+  if?: string;
+}
+
+const createWorkflowFixture = (): { jobs: Record<string, FixtureJob> } => ({
+  jobs: Object.fromEntries([
+    ...buildJobCommands.map(([jobId, command]) => [
+      jobId,
+      {
+        env: { ROUAULT_MEDIA_BASE_URL: mediaBaseUrl },
+        steps: [{ run: buildLabelCommand }, { run: command }],
+        if: fullRunCondition,
+      },
+    ]),
+    [
+      'deploy-production',
+      {
+        steps: [],
+        if: "${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && needs.detect-changes.outputs.build == 'true' }}",
+      },
+    ],
+  ]),
+});
+
+const fixtureJob = (
+  fixture: ReturnType<typeof createWorkflowFixture>,
+  jobId: string,
+): FixtureJob => {
+  const job = fixture.jobs[jobId];
+  if (job === undefined) throw new Error(`fixtureに${jobId}がありません`);
+  return job;
+};
+
+describe('workflow structure regression coverage', () => {
+  it.each([2, 4])('indent=%i、job/key順序、name/id、引用符の変更を許容すること', (indent) => {
+    const fixture = createWorkflowFixture();
+    fixture.jobs = Object.fromEntries(Object.entries(fixture.jobs).reverse());
+    for (const [jobId, job] of Object.entries(fixture.jobs)) {
+      job.steps = job.steps.map((step, index) => ({
+        id: `${jobId}-${String(index)}`,
+        name: 'runは先頭キーでなくてもよい',
+        ...step,
+      }));
+    }
+    const source = yaml.dump(fixture, { indent, sortKeys: true });
+    assertBuildJobs(source);
+    assertEventGates(source);
+  });
+
+  it.each(['|', '>'])('runのblock scalar %s とコメントを許容すること', (style) => {
+    const source = buildJobCommands
+      .map(
+        ([jobId, command]) => `
+  ${jobId}:
+    env:
+      ROUAULT_MEDIA_BASE_URL: "${mediaBaseUrl}"
+    steps:
+      - run: |-
+          ${buildLabelCommand}
+      - name: execute
+        run: ${style} # 表記だけを変えている
+          ${command}
+        id: execute
+`,
+      )
+      .join('');
+    assertBuildJobs(`jobs:${source}`);
+  });
+
+  it.each(buildJobCommands)('%sの欠落、env/run/labelの破損を検出すること', (jobId, command) => {
+    const mutations: readonly ((job: FixtureJob) => void)[] = [
+      (job) => {
+        delete job.env;
+      },
+      (job) => {
+        job.env = { ROUAULT_MEDIA_BASE_URL: 'https://wrong.example' };
+      },
+      (job) => {
+        job.steps = [{ run: buildLabelCommand }];
+      },
+      (job) => {
+        job.steps = [{ run: buildLabelCommand }, { run: 'pnpm wrong' }];
+      },
+      (job) => {
+        job.steps = [{ run: command }];
+      },
+      (job) => {
+        job.steps = [{ run: command }, { run: buildLabelCommand }];
+      },
+      (job) => {
+        job.steps = [{ run: `${buildLabelCommand}\n${command}` }];
+      },
+      (job) => {
+        job.steps.push({ run: command });
+      },
+      (job) => {
+        job.steps.unshift({ run: buildLabelCommand });
+      },
+      (job) => {
+        job.steps = [{ run: buildLabelCommand }, { name: command, run: `# ${command}` }];
+      },
+      (job) => {
+        job.steps = [{ run: buildLabelCommand }, { run: 123 }];
+      },
+    ];
+    for (const mutate of mutations) {
+      const fixture = createWorkflowFixture();
+      mutate(fixtureJob(fixture, jobId));
+      expect(() => assertBuildJobs(yaml.dump(fixture))).toThrow();
+    }
+    const fixture = createWorkflowFixture();
+    fixture.jobs = Object.fromEntries(Object.entries(fixture.jobs).filter(([id]) => id !== jobId));
+    expect(() => assertBuildJobs(yaml.dump(fixture))).toThrow();
+  });
+
+  it.each(buildJobCommands)('%sのcommandを別jobへ移しても通さないこと', (jobId, command) => {
+    const fixture = createWorkflowFixture();
+    fixtureJob(fixture, jobId).steps = [{ run: buildLabelCommand }];
+    fixtureJob(fixture, 'deploy-production').steps.push({ run: command });
+    expect(() => assertBuildJobs(yaml.dump(fixture))).toThrow();
+  });
+
+  it('別jobのifでE2E/deploy条件を補えないこと', () => {
+    const fixture = createWorkflowFixture();
+    fixtureJob(fixture, 'test-e2e-dev').if = '${{ false }}';
+    expect(() => assertEventGates(yaml.dump(fixture))).toThrow();
+    const deployFixture = createWorkflowFixture();
+    fixtureJob(deployFixture, 'deploy-production').if =
+      "${{ github.event_name == 'workflow_dispatch' }}";
+    expect(() => assertEventGates(yaml.dump(deployFixture))).toThrow();
+  });
+
+  it.each([
+    'jobs: [',
+    'jobs: {}\njobs: {}',
+    'jobs: []',
+    'jobs: { test-e2e-production: { steps: {} } }',
+  ])('不正なYAMLまたは構造を拒否すること: %s', (source) => {
+    expect(() => assertBuildJobs(source)).toThrow();
   });
 });
