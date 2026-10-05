@@ -35,7 +35,7 @@ router-document-host[data-sidebar-presence='absent'] > main#main-content {
   grid-column: 1;
 }
 
-@media (max-width: 1023px) {
+@media (width < 1024px) {
   router-document-host[data-sidebar-presence='present'] {
     width: 100%;
     column-gap: 0;
@@ -44,7 +44,7 @@ router-document-host[data-sidebar-presence='absent'] > main#main-content {
 }
 
 /* native sidebarは本文より前に通常flowで配置し、active後だけoverlay用trackに切り替える。 */
-@media (max-width: 1023px) {
+@media (width < 1024px) {
   router-document-host[data-sidebar-presence='present'] > main#main-content {
     grid-column: 1;
   }

@@ -26,7 +26,7 @@
 - `--note-frame-outer-gutter`は`clamp(var(--space-4, 16px), 1.5vw, var(--space-6, 24px))`とする。
 - `router-document-host[data-sidebar-presence='present']`はviewport幅から左右のouter gutterを差し引いた幅と`--note-fixed-frame-max-width`の小さい方を使う。
 - `margin-inline: auto`によりwide viewportでは実際のgutterが最小値より大きくなってよい。
-- `@media (max-width: 1023px)`ではrouter-document-host幅を`100%`へ戻し、fixed sidebar用outer gutterを二重適用しない。
+- `@media (width < 1024px)`ではrouter-document-host幅を`100%`へ戻し、fixed sidebar用outer gutterを二重適用しない。
 
 この変更はURL、DOM意味論、ARIA、sidebar state、TOC active tracking、hydration ownership、NavigationEnvelopeを変更しません。Header geometryも変更対象ではありません。
 
@@ -53,7 +53,7 @@
 - 1366px〜1394px付近でもfixed sidebar note frameはviewport edgeから最小outer gutterを持つ。
 - Wide viewportでは既存の`--note-fixed-frame-max-width`によるnote frame最大幅契約を維持する。
 - Sidebar item padding、TOC item padding、active rail、TOC indentはouter gutterと独立して調整できる。
-- 1023px以下ではrouter-document-host自体がviewport幅に戻り、mobile / overlay側の余白契約と二重適用しない。
+- 1024px未満ではrouter-document-host自体がviewport幅に戻り、mobile / overlay側の余白契約と二重適用しない。
 
 ## Counter-hypothesis review
 

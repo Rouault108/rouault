@@ -509,6 +509,102 @@ const forbiddenMainCssSelectorPatterns = [
 ] as const;
 
 describe('static CSS contracts', () => {
+  it('Reading Chrome media boundaries use complementary ranges with feature-owned rules', () => {
+    const contracts = [
+      {
+        file: 'router-shell.css',
+        params: '(width < 1024px)',
+        selector: "router-document-host[data-sidebar-presence='present']",
+        property: 'width',
+        value: '100%',
+      },
+      {
+        file: 'router-shell.css',
+        params: '(width < 1024px)',
+        selector:
+          "[data-sidebar-enhancement-state='active'] router-document-host[data-sidebar-presence='present']",
+        property: 'grid-template-columns',
+        value: '0px minmax(0, 1fr)',
+      },
+      {
+        file: 'layout-sidebar.css',
+        params: '(width < 1024px)',
+        selector: "[data-sidebar-enhancement-state='active'] .layout-sidebar-col",
+        property: 'inline-size',
+        value: '0',
+      },
+      {
+        file: 'note-shell.css',
+        params: '(width < 1024px)',
+        selector: ".note-shell[data-toc-presence='present']",
+        property: 'grid-template-columns',
+        value: 'minmax(0, 1fr) minmax(200px, 34vw)',
+      },
+      {
+        file: 'note-shell.css',
+        params: '(width < 640px)',
+        selector: ".note-shell[data-toc-presence='present']",
+        property: 'grid-template-columns',
+        value: 'minmax(0, 1fr)',
+      },
+      {
+        file: 'layout-header.css',
+        params: '(width < 640px)',
+        selector: "header[data-layout-header] .toc-trigger[data-visible='true']",
+        property: 'display',
+        value: 'inline-flex',
+      },
+      {
+        file: 'layout-header.css',
+        params: '(width >= 640px)',
+        selector: "header[data-layout-header] .toc-trigger[data-visible='true']",
+        property: 'display',
+        value: 'none',
+      },
+      {
+        file: 'layout-header.css',
+        params: '(width >= 1024px)',
+        selector:
+          "header[data-layout-header][data-note-layout='true'][data-sidebar-enabled='true'] .sidebar-toggle",
+        property: 'display',
+        value: 'none',
+      },
+      {
+        file: 'layout-toc.css',
+        params: '(width < 640px)',
+        selector: ".layout-toc-col[data-toc-hydration='hydrated'] [data-layout-toc-nav]",
+        property: 'display',
+        value: 'none',
+      },
+      {
+        file: 'layout-toc.css',
+        params: '(width >= 640px)',
+        selector: '.layout-toc-mobile-panel',
+        property: 'display',
+        value: 'none',
+      },
+    ] as const;
+
+    for (const { file, params, selector, property, value } of contracts) {
+      const css = readCss(file);
+      const values = declarationsForSelectorInMedia(
+        css,
+        selector,
+        property,
+        (actual) => actual.replace(/\s+/gu, '') === params.replace(/\s+/gu, ''),
+      ).map((declaration) => normalizeDeclarationValue(declaration.value));
+      expect(values, `${file} @media ${params} ${selector}`).toContain(value);
+    }
+
+    for (const file of new Set(contracts.map((contract) => contract.file))) {
+      postcss.parse(readCss(file)).walkAtRules('media', (atRule) => {
+        expect(atRule.params, file).not.toMatch(
+          /\b(?:max-width\s*:\s*(?:639|1023)|min-width\s*:\s*(?:640|1024))px\b/u,
+        );
+      });
+    }
+  });
+
   it('selector AST helper preserves nested and quoted commas while splitting selector lists', () => {
     const selectorFixtures = [
       {
@@ -739,7 +835,7 @@ describe('static CSS contracts', () => {
     ).toBe(true);
 
     const mobileWidthValues = declarationsForSelectorInMedia(css, selector, 'width', (params) =>
-      /max-width\s*:\s*1023px/u.test(params),
+      /^\(\s*width\s*<\s*1024px\s*\)$/u.test(params),
     ).map((declaration) => normalizeDeclarationValue(declaration.value));
     expect(mobileWidthValues).toContain('100%');
   });
@@ -1041,21 +1137,21 @@ describe('static CSS contracts', () => {
       'color: CanvasText',
     ]);
 
-    const mobileVisibility = atRuleBlock(css, '@media (max-width: 639px)');
+    const mobileVisibility = atRuleBlock(css, '@media (width < 640px)');
     expectRuleToDeclare(
       mobileVisibility,
       "header[data-layout-header] .toc-trigger[data-visible='true']",
       ['display: inline-flex'],
     );
 
-    const tabletVisibility = atRuleBlock(css, '@media (min-width: 640px)');
+    const tabletVisibility = atRuleBlock(css, '@media (width >= 640px)');
     expectRuleToDeclare(
       tabletVisibility,
       "header[data-layout-header] .toc-trigger[data-visible='true']",
       ['display: none'],
     );
 
-    const desktopVisibility = atRuleBlock(css, '@media (min-width: 1024px)');
+    const desktopVisibility = atRuleBlock(css, '@media (width >= 1024px)');
     expectRuleToDeclare(
       desktopVisibility,
       "header[data-layout-header][data-note-layout='true'][data-sidebar-enabled='true'] .sidebar-toggle",

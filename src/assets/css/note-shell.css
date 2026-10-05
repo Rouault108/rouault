@@ -79,7 +79,7 @@
   transform: translateY(calc(var(--layout-sticky-footer-offset, 0px) * -1));
 }
 
-@media (max-width: 1023px) {
+@media (width < 1024px) {
   .note-shell[data-toc-presence='present'] {
     grid-template-columns:
       minmax(0, 1fr)
@@ -91,7 +91,7 @@
   }
 }
 
-@media (max-width: 639px) {
+@media (width < 640px) {
   .note-shell,
   .note-shell[data-toc-presence='present'],
   .note-shell[data-toc-presence='absent'] {

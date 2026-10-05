@@ -258,13 +258,13 @@ layout-toc-controller {
   outline-offset: var(--focus-ring-offset, 2px);
 }
 
-@media (min-width: 640px) {
+@media (width >= 640px) {
   .layout-toc-mobile-panel {
     display: none !important;
   }
 }
 
-@media (max-width: 639px) {
+@media (width < 640px) {
   .layout-toc-col[data-toc-hydration='hydrated'] [data-layout-toc-nav] {
     display: none;
   }

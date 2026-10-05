@@ -513,19 +513,19 @@ header[data-layout-header] .corpus-trigger-text {
   }
 }
 
-@media (max-width: 639px) {
+@media (width < 640px) {
   header[data-layout-header] .toc-trigger[data-visible='true'] {
     display: inline-flex;
   }
 }
 
-@media (min-width: 640px) {
+@media (width >= 640px) {
   header[data-layout-header] .toc-trigger[data-visible='true'] {
     display: none;
   }
 }
 
-@media (min-width: 1024px) {
+@media (width >= 1024px) {
   header[data-layout-header][data-note-layout='true'][data-sidebar-enabled='true'] .sidebar-toggle {
     display: none;
   }

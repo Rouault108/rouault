@@ -306,7 +306,7 @@ test.describe('note frame balance', () => {
     expect(state.horizontalOverflow).toBeLessThanOrEqual(1);
   });
 
-  test('1023px 以下では router-document-host 幅へ fixed sidebar 用 gutter を二重適用しないこと', async ({
+  test('1023px viewportでは router-document-host 幅へ fixed sidebar 用 gutter を二重適用しないこと', async ({
     page,
   }) => {
     await page.setViewportSize({ width: 1023, height: 900 });

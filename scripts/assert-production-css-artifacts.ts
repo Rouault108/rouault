@@ -6,6 +6,7 @@ import { resolveDevelopmentSiteUrlContext } from '../build/site/site-url-context
 import { stripBasePathFromPathname } from '../shared/url/normalize-rouault-url.js';
 
 import postcss, { type Rule } from 'postcss';
+import selectorParser from 'postcss-selector-parser';
 
 import {
   TOC_MOBILE_PANEL_CSS_ARTIFACT_PATH,
@@ -32,14 +33,52 @@ const HREF_RE = /\bhref=["']([^"']+)["']/iu;
 const REQUIRED_CSS_PATTERNS = [
   /\.layout-toc-mobile-panel\b/u,
   /\.layout-toc-mobile-panel\[data-hydration-state=['"]?disposed['"]?\]/u,
-  /@media\s*\(\s*min-width\s*:\s*640px\s*\)/u,
-  /@media\s*\(\s*max-width\s*:\s*639px\s*\)/u,
 ] as const;
 
 interface ExpectedDeclaration {
   readonly property: string;
   readonly value: string;
 }
+
+interface ExpectedMediaRule {
+  readonly params: string;
+  readonly selector: string;
+  readonly declarations: readonly ExpectedDeclaration[];
+}
+
+const REQUIRED_MEDIA_RULES = [
+  {
+    params: '(width < 1024px)',
+    selector: "router-document-host[data-sidebar-presence='present']",
+    declarations: [
+      { property: 'width', value: '100%' },
+      { property: 'column-gap', value: '0' },
+      { property: 'grid-template-columns', value: 'minmax(0, 1fr)' },
+    ],
+  },
+  {
+    params: '(width < 1024px)',
+    selector:
+      "[data-sidebar-enhancement-state='active'] router-document-host[data-sidebar-presence='present']",
+    declarations: [{ property: 'grid-template-columns', value: '0px minmax(0, 1fr)' }],
+  },
+  {
+    params: '(width >= 1024px)',
+    selector:
+      "header[data-layout-header][data-note-layout='true'][data-sidebar-enabled='true'] .sidebar-toggle",
+    declarations: [{ property: 'display', value: 'none' }],
+  },
+  {
+    params: '(width < 640px)',
+    selector: ".layout-toc-col[data-toc-hydration='hydrated'] [data-layout-toc-nav]",
+    declarations: [{ property: 'display', value: 'none' }],
+  },
+  {
+    params: '(width >= 640px)',
+    selector: '.layout-toc-mobile-panel',
+    declarations: [{ property: 'display', value: 'none' }],
+  },
+] as const satisfies readonly ExpectedMediaRule[];
 
 const normalizeCssValue = (value: string): string =>
   value
@@ -74,6 +113,43 @@ const ruleHasDeclarations = (
     (expected) =>
       declarations.get(expected.property)?.has(normalizeCssValue(expected.value)) === true,
   );
+};
+
+const normalizeSelector = (selector: string): string =>
+  selector
+    .replace(/\[([^=\]]+)=(['"])(.*?)\2\]/gu, '[$1=$3]')
+    .replace(/\s+/gu, ' ')
+    .trim();
+
+const ruleHasSelector = (rule: Rule, expectedSelector: string): boolean => {
+  let found = false;
+  selectorParser()
+    .astSync(rule.selector)
+    .each((selector) => {
+      if (normalizeSelector(selector.toString()) === normalizeSelector(expectedSelector))
+        found = true;
+    });
+  return found;
+};
+
+const expectMediaRuleHasDeclarations = (css: string, contract: ExpectedMediaRule): void => {
+  const rules: Rule[] = [];
+  // container queryや別featureの同じrangeだけではviewport契約の到達証拠にならない。
+  postcss.parse(css).walkAtRules('media', (media) => {
+    if (media.params.replace(/\s+/gu, '') !== contract.params.replace(/\s+/gu, '')) return;
+    media.walkRules((rule) => {
+      rules.push(rule);
+    });
+  });
+
+  const found = rules.some(
+    (rule) => ruleHasSelector(rule, contract.selector) && ruleHasDeclarations(rule, contract.declarations),
+  );
+  if (!found) {
+    throw new Error(
+      `@media ${contract.params} ${contract.selector} contract was not found in production HTML reachable CSS assets`,
+    );
+  }
 };
 
 const expectRuleHasDeclarations = (
@@ -213,6 +289,10 @@ export const assertProductionCssArtifacts = async (
 
   const cssByAsset = readReachableCss(repoRoot, reachableManifestAssets);
   const reachableCss = [...cssByAsset.values()].join('\n');
+  // 必要なmedia契約は到達可能な集合で検証し、同一assetへの同居を要求しない。
+  for (const contract of REQUIRED_MEDIA_RULES) {
+    expectMediaRuleHasDeclarations(reachableCss, contract);
+  }
   if (reachableCss.includes('--toc-item-inactive-upper-max-lines')) {
     throw new Error('deprecated TOC token was found in production HTML reachable CSS assets');
   }

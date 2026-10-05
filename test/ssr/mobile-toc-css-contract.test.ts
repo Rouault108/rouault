@@ -24,7 +24,7 @@ describe('mobile toc css contract', () => {
   });
 
   it('mobile shell collapses note TOC holder without involving about shell', () => {
-    expect(noteShellCss).toContain('@media (max-width: 639px)');
+    expect(noteShellCss).toContain('@media (width < 640px)');
 
     expect(noteShellCss).toMatch(
       /\.note-shell,\s*\.note-shell\[data-toc-presence='present'\],\s*\.note-shell\[data-toc-presence='absent'\]\s*\{\s*grid-template-columns:\s*minmax\(0, 1fr\);\s*row-gap:\s*0;/s,
@@ -50,7 +50,7 @@ describe('mobile toc css contract', () => {
     expect(
       hasDeclarationForSelectorInMedia(
         layoutTocCss,
-        (params) => /\bmax-width\s*:\s*639px\b/u.test(params),
+        (params) => /^\(\s*width\s*<\s*640px\s*\)$/u.test(params),
         ".layout-toc-col[data-toc-hydration='hydrated'] [data-layout-toc-nav]",
         'display',
         'none',

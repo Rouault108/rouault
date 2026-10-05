@@ -31,7 +31,7 @@
 
 mobile TOCを有効にするページでは、次を満たすこと。
 
-- `max-width: 639px`ではdesktop TOCを隠す
+- `width < 640px`ではdesktop TOCを隠す
 - 640px未満で隠すdesktop TOCはSSR静的navの`[data-layout-toc-nav]`を指し、`layout-toc-controller`が生成する`[data-layout-toc-mobile-panel]`と`[data-layout-toc-mobile-nav]`は対象に含めない
 - 旧fixed summary barは描画しない
 - `header[data-layout-header]`内にtriggerを描画する
@@ -202,7 +202,7 @@ runtime契約:
 - scoped headingがbuild-timeで抽出されること
 - `layout-toc-controller`がcapabilityありのときだけhydrateすること
 - `tocPresence='absent'`ではTOC DOMとhydration scopeが出ないこと
-- mobile TOC triggerが639px以下でのみ現れ、固定ラベル`目次`またはicon-onlyを表示すること
+- mobile TOC triggerが640px未満でのみ現れ、固定ラベル`目次`またはicon-onlyを表示すること
 - mobile panel headerが視覚タイトルを持たずclose-onlyであること
 - TOC navがnavigation label `目次`を持つこと
 - current headingはactive item強調で把握できること
