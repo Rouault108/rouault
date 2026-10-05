@@ -68,8 +68,10 @@ describe('production build entrypoint contract', () => {
     expect(testE2eDevJob.match(buildLabelPattern) ?? []).toHaveLength(1);
     expect(buildProductionJob.match(buildLabelPattern) ?? []).toHaveLength(1);
 
-    expect(workflow).toContain('- run: pnpm run test:e2e:production');
-    expect(workflow).toContain('- run: pnpm run test:e2e:dev');
+    expect(testE2eProductionJob).toMatch(
+      /^ {6}(?:- | {2})run: pnpm run test:e2e:production[\t ]*$/mu,
+    );
+    expect(testE2eDevJob).toMatch(/^ {6}(?:- | {2})run: pnpm run test:e2e:dev[\t ]*$/mu);
     expect(workflow).toContain('- run: pnpm build:production');
   });
 
