@@ -2,7 +2,7 @@
 
 ## Status
 
-Decision accepted by the human-approved `rouault-full-lit-removal-migration-plan-v14-final-approved.md`. 2026-10-06に、従来未記録だった手動確認について利用者から確認済みの報告を受領した。報告範囲と既存の自動検証の対応は下記「Manual Verification Record」に記録する。この追記は手動確認の記録更新であり、承認済み計画全体の完了適合性判定を代替しない。
+Decision accepted by the human-approved `rouault-full-lit-removal-migration-plan-v14-final-approved.md`. 2026-10-06に、従来未記録だった手動確認について利用者から確認済みの報告を受領した。報告範囲と既存の自動検証の対応は下記「Manual Verification Record」に記録する。同日、利用者は計画全文に対する最後の照合を行う必要はないと明示した。この判断により、追加の全文照合は不要であり、未完了作業・完了条件として残さない。全文照合を実施して合格したという記録ではない。
 
 ## Decision
 
@@ -43,7 +43,7 @@ compatibility shim、old/new parallel runtime、新規author raw HTML、content 
 - 実装時の履歴: [`df53c45d531e57a5869caf95f0d1d60b027cbe58`](https://github.com/Rouault108/rouault/commit/df53c45d531e57a5869caf95f0d1d60b027cbe58)はsection 25のphysical mobile、real fullscreen、interactive forced-colors / reduced-motionをpassedとして記録していなかった。当時のcommit messageは変更しない。
 - 利用者報告: 上記の未記録手動項目について「手動確認済み」との報告を受領した。physical mobile、real fullscreen、interactive forced-colors、interactive reduced-motionを**利用者による確認済み**として記録する。今回、記録者が再操作して合格を判定したという意味ではない。
 - 証拠の粒度: 今回受領したのは利用者の完了報告。端末名、OS / browser version、対象URL / build SHA、個別の観測結果、画像・動画は未提示であり、推測して補わない。下表の確認方法は既存報告の操作内容を再現した記録ではなく、今後の再確認時に必要な最小手順である。
-- 承認済みv14計画のsection 25全文は今回のリポジトリ内資料には含まれない。ここではcommitに明記された項目と現行契約・テストを照合し、section 25全項目や移行全体を包括的に合格と判定しない。
+- 承認済みv14計画のsection 25全文は今回のリポジトリ内資料には含まれない。今回実施した確認はcommitに明記された項目と現行契約・テストの照合である。利用者の判断により、計画全文の取得と最後の照合は不要とする。未実施の全文照合を実施済み・合格とは記録しない。
 
 ### 既存Evidenceの再利用
 
@@ -68,4 +68,4 @@ compatibility shim、old/new parallel runtime、新規author raw HTML、content 
 - 保存すべき証拠の共通項目は、対象commit / build、URLまたはfixture、日時・timezone、環境、操作、期待結果と観測結果、結果（pass / fail / 未確認 / 非対応）、関連CIまたは画像・動画の参照。今回未提示の値を後付けで作らない。
 - 同一SHA・同一条件で既存Evidenceが有効な項目は再利用する。関連実装、CSS、browser / OS、fixture、契約が変わった場合にだけ影響する範囲を再確認する。
 - workbenchはshell / routerを起動しない。shell、sidebar、TOC、URL連動Tabsの残余確認は実際の生成ページを使い、fixture URLは[`note-fixtures.ts`](../../test/e2e/support/note-fixtures.ts)から解決する。
-- この記録は現在の挙動を定義する新しいContractやCI gateではない。v14全体の完了適合性を判断する際は、承認済み計画全文と必要な残りのEvidenceを別途照合する。
+- この記録は現在の挙動を定義する新しいContractやCI gateではない。2026-10-06の利用者判断により、v14計画全文に対する最後の照合を行う必要はない。追加照合待ちとして扱わず、既存Evidenceと手動確認済みの記録を保持する。
