@@ -1765,7 +1765,11 @@ describe('static CSS contracts', () => {
     expectRuleToDeclare(css, '.filter-option-checkbox__control', [
       'pointer-events: none',
       'color: var(--fg-default)',
+      'border: var(--border-width) solid currentColor',
       'background: var(--bg-fill-muted)',
+    ]);
+    expectRuleToDeclare(css, '.filter-option-checkbox', [
+      'min-block-size: var(--control-min-touch, 24px)',
     ]);
     expectRuleToDeclare(css, '.filter-option-checkbox__icon', [
       'opacity: 0',

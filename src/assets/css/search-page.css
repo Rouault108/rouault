@@ -345,6 +345,7 @@
 .filter-option-checkbox {
   position: relative;
   min-width: 0;
+  min-block-size: var(--control-min-touch, 24px);
   display: inline-flex;
   gap: var(--space-2);
   align-items: center;
@@ -364,7 +365,7 @@
   flex: 0 0 auto;
   pointer-events: none;
   color: var(--fg-default);
-  border: var(--border-width) solid var(--border-muted);
+  border: var(--border-width) solid currentColor;
   border-radius: var(--radius-sm);
   background: var(--bg-fill-muted);
 }
