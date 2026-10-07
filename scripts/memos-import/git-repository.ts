@@ -82,16 +82,19 @@ export class GitTreeRepository {
       throw new Error('[transport] repository identity changed');
     if ((await this.git(['rev-parse', '--is-bare-repository'])).toString('utf8').trim() !== 'true')
       throw new Error('[transport] private bare Git store required');
-    const remote = (await this.git(['remote', 'get-url', 'origin'])).toString('utf8').trim();
     const repo = this.expectedIdentity.repository;
-    if (
-      ![
-        `https://github.com/${repo}`,
-        `https://github.com/${repo}.git`,
-        `git@github.com:${repo}.git`,
-      ].includes(remote)
-    )
-      throw new Error('[transport] origin does not match verified repository');
+    const allowed = [
+      `https://github.com/${repo}`,
+      `https://github.com/${repo}.git`,
+      `git@github.com:${repo}.git`,
+    ];
+    for (const direction of [[], ['--push']]) {
+      const remote = (await this.git(['remote', 'get-url', ...direction, '--all', 'origin']))
+        .toString('utf8')
+        .trim();
+      if (!allowed.includes(remote))
+        throw new Error('[transport] origin does not match verified repository');
+    }
     return actual;
   }
   async head(): Promise<string> {

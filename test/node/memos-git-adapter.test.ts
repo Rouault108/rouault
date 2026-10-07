@@ -92,6 +92,49 @@ const fixture = async (
   return { root, work, remote, local, repository, calls };
 };
 describe('concrete private Git publication adapters', () => {
+  it('refuses mismatched or multiple fetch/push destinations before any network write', async () => {
+    const f = await fixture(
+      { repository: 'Synthetic/vault', private: true, branch: 'main' },
+      { '02_notes/A.md': 'Synthetic body' },
+    );
+    try {
+      git(f.root, [
+        '--git-dir',
+        f.local,
+        'remote',
+        'set-url',
+        '--push',
+        'origin',
+        'https://github.com/Unapproved/other.git',
+      ]);
+      await expect(f.repository.head()).rejects.toThrow('origin does not match');
+      git(f.root, [
+        '--git-dir',
+        f.local,
+        'remote',
+        'set-url',
+        '--add',
+        '--push',
+        'origin',
+        'https://github.com/Synthetic/vault.git',
+      ]);
+      await expect(f.repository.head()).rejects.toThrow('origin does not match');
+      git(f.root, ['--git-dir', f.local, 'config', '--unset-all', 'remote.origin.pushurl']);
+      git(f.root, [
+        '--git-dir',
+        f.local,
+        'remote',
+        'set-url',
+        '--add',
+        'origin',
+        'https://github.com/Unapproved/other.git',
+      ]);
+      await expect(f.repository.head()).rejects.toThrow('origin does not match');
+      expect(f.calls.some((args) => args.includes('fetch') || args.includes('push'))).toBe(false);
+    } finally {
+      await rm(f.root, { recursive: true, force: true });
+    }
+  }, 20_000);
   it('reads only referenced assets and blocks all operational writes in dry-run mode', async () => {
     const root = await mkdtemp(path.join(tmpdir(), 'memos-dry-run-'));
     const publicCheckout = path.join(root, 'public-checkout');
