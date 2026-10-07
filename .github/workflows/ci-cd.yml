@@ -24,7 +24,7 @@ env:
 jobs:
   detect-changes:
     name: detect-changes
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     timeout-minutes: 5
     outputs:
       content: ${{ steps.classify.outputs.content }}
@@ -44,7 +44,7 @@ jobs:
 
   lint:
     name: lint
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     timeout-minutes: 10
     needs: [detect-changes]
     if: needs.detect-changes.outputs.app == 'true'
@@ -61,7 +61,7 @@ jobs:
 
   typecheck-app:
     name: typecheck-app
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     timeout-minutes: 10
     needs: [detect-changes]
     if: needs.detect-changes.outputs.app == 'true'
@@ -78,7 +78,7 @@ jobs:
 
   typecheck-node:
     name: typecheck-node
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     timeout-minutes: 10
     needs: [detect-changes]
     if: needs.detect-changes.outputs.app == 'true'
@@ -95,7 +95,7 @@ jobs:
 
   test-node:
     name: test-node
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     timeout-minutes: 15
     needs: [detect-changes]
     if: needs.detect-changes.outputs.app == 'true'
@@ -112,7 +112,7 @@ jobs:
 
   test-ssr:
     name: test-ssr
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     timeout-minutes: 15
     needs: [detect-changes]
     if: needs.detect-changes.outputs.build == 'true'
@@ -129,7 +129,7 @@ jobs:
 
   test-browser:
     name: test-browser
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     timeout-minutes: 25
     needs: [detect-changes]
     if: needs.detect-changes.outputs.app == 'true'
@@ -147,7 +147,7 @@ jobs:
 
   prebuild-gate:
     name: prebuild-gate
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     timeout-minutes: 5
     if: ${{ always() }}
     needs:
@@ -167,7 +167,7 @@ jobs:
 
   test-e2e-production:
     name: test-e2e-production
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     timeout-minutes: 35
     needs:
       - detect-changes
@@ -202,7 +202,7 @@ jobs:
 
   test-e2e-dev:
     name: test-e2e-dev
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     timeout-minutes: 35
     needs:
       - detect-changes
@@ -237,7 +237,7 @@ jobs:
 
   build-production:
     name: build-production
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     timeout-minutes: 20
     needs:
       - detect-changes
@@ -284,7 +284,7 @@ jobs:
 
   ci-required:
     name: ci-required
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     timeout-minutes: 5
     if: ${{ always() }}
     needs:
@@ -305,7 +305,7 @@ jobs:
 
   deploy-production:
     name: deploy-production
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     timeout-minutes: 20
     needs:
       - detect-changes
@@ -429,7 +429,7 @@ jobs:
 
   verify-production-deployment:
     name: verify-production-deployment
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     timeout-minutes: 5
     if: ${{ always() && github.event_name == 'push' && github.ref == 'refs/heads/main' }}
     needs:
