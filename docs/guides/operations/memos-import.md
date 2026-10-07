@@ -12,6 +12,10 @@
 
 画像清掃はarchive参照が確認済みの場合だけ行う。直接imageだけでなく、reference definition、frontmatterのcover、設定や例示にasset名が残る場合も保守的に保持する。所有manifestとasset本体は参照元に数えない。不要と確認できない画像は残し、指定外noteや未所有assetを変更しない。
 
+JPEGはscanの前後・間の全markerを検査する。entropy内のstuffingとrestartは符号を保持し、COM/APP metadataには位置を問わず同じ権利確認・除去を適用する。EOI後の未検証bytes、未知のmarker、検証できない色情報は停止する。画素の再圧縮は行わない。
+
+通常buildのmemo入力は`content/memos`だけであり、公開メモ0件なら一覧は「公開中のメモはありません」を表示する。合成memo fixtureはPlaywrightの検証serverが`ROUAULT_MEMO_FIXTURES=1`を明示した場合だけ、Velite・route registry・Eleventy・画像収集の共通採用入口から使う。既存notes fixtureの契約は維持する。古いfixture入りVelite JSONを通常buildで再利用した場合は停止して再buildを求める。手動取込candidateの最終production buildではfixtureを無効にする。
+
 台帳保存先はprivate `Rouault108/metis-handbook`の`publication-ledger/rouault-memos/`。`state.json`は確定entry、`operations/{operationId}.json`は承認と経過のreceiptの正本。operations viewをstateへ重複保存しない。`PublicationLedgerStore`はrepository属性・基点SHA・revisionを検証し、完了stateとreceiptを同じcommitへ渡す。backupはprivate領域にだけ保存し、hashとschemaを復元前に検証する。
 
 `PublicationPorts`は既存認証を使う実行環境側の限定write、candidate validation、deploy実測adapterの境界である。source/Rouault/ledgerのcommitは独立しており、cross-repository atomicityを保証しない。receiptを外部反映前に永続化し、未知結果は実状態を照合する。同じ操作ID・対象・内容版でだけ再開する。通常pushを用い、force pushやbranch protection回避はしない。

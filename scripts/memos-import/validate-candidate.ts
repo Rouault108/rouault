@@ -159,6 +159,7 @@ export const validateIsolatedCandidate = async (
       GITHUB_SHA: base.sha,
       ROUAULT_SITE_ORIGIN: 'http://127.0.0.1:4173',
       ROUAULT_BASE_PATH: '',
+      ROUAULT_MEMO_FIXTURES: '0',
     };
     await runRequiredScript(directory, 'verify', env);
     await runRequiredScript(directory, 'build:production', env);

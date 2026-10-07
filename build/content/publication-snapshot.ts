@@ -1,7 +1,12 @@
 import { existsSync, lstatSync, readdirSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { load } from 'js-yaml';
-import { contentCollections, type ContentCollectionConfig } from './content-collections.js';
+import {
+  contentCollections,
+  getAdoptedContentRoots,
+  type ContentCollectionConfig,
+  type ContentAdoptionOptions,
+} from './content-collections.js';
 import { ContentRouteRegistry } from './content-route-registry.js';
 import type { ContentIdentity } from './content-record.js';
 export interface AdoptedContentSource {
@@ -10,13 +15,11 @@ export interface AdoptedContentSource {
   collection: ContentCollectionConfig;
 }
 export const collectAdoptedContentSources = (
-  options: { fixtureOnly?: boolean; cwd?: string } = {},
+  options: ContentAdoptionOptions & { cwd?: string } = {},
 ): AdoptedContentSource[] => {
   const result: AdoptedContentSource[] = [];
   for (const collection of contentCollections) {
-    const roots = options.fixtureOnly
-      ? [collection.fixtureRoot]
-      : [collection.sourceRoot, collection.fixtureRoot];
+    const roots = getAdoptedContentRoots(collection.id, options);
     for (const root of roots) {
       const directory = path.resolve(options.cwd ?? process.cwd(), root);
       if (!existsSync(directory)) continue;
@@ -55,7 +58,7 @@ export const collectAdoptedContentSources = (
   return result;
 };
 export const buildPublicationRouteRegistry = (
-  options: { fixtureOnly?: boolean; cwd?: string } = {},
+  options: ContentAdoptionOptions & { cwd?: string } = {},
 ): ContentRouteRegistry =>
   new ContentRouteRegistry(
     collectAdoptedContentSources(options).map((source) => source.identity),

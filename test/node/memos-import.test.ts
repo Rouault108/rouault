@@ -57,6 +57,11 @@ const snapshot = (files: Record<string, string | Uint8Array>, sha = 'a'.repeat(4
   ),
 });
 const note = (body: string, extra = '') => `---\npublish: true\n${extra}---\n${body}`;
+const jpegSegment = (marker: number, payload: Uint8Array): Buffer => {
+  const header = Buffer.from([0xff, marker, 0, 0]);
+  header.writeUInt16BE(payload.length + 2, 2);
+  return Buffer.concat([header, payload]);
+};
 const published = (
   name: string,
   source: string,
@@ -95,6 +100,104 @@ const plan = (
     ...overrides,
   });
 describe('manual memo importer', () => {
+  it.each([
+    ['quoted', '> ## Quoted\n> [local](#Quoted)\n'],
+    ['listed', '- ## Listed\n  [local](#Listed)\n'],
+  ])('preserves original heading identity inside %s Markdown containers', async (_, body) => {
+    const output = (await transform({ '02_notes/A.md': note(body) })).get('02_notes/A.md');
+    expect(output).toBeDefined();
+    const id = Object.keys(output?.headingMap ?? {})[0];
+    expect(id).toBeTruthy();
+    expect(output?.markdown).toContain(`[local](#${id ?? ''})`);
+  });
+  it.each(['quote', 'list'])(
+    'collects reference definitions and footnotes in a %s without exposing private destinations',
+    async (container) => {
+      const prefix = container === 'quote' ? '> ' : '  ';
+      const body = [
+        `${container === 'quote' ? '> ' : '- '}[read][Secret] ![safe][Image] foot[^Case]`,
+        prefix.trimEnd(),
+        `${prefix}[secret]: private/Secret.md`,
+        `${prefix}[image]: image.png`,
+        `${prefix}[unused]: private/Secret.md`,
+        `${prefix}[^case]: note [label][secret]`,
+      ].join('\n');
+      const output = (
+        await transform({
+          '02_notes/A.md': note(body),
+          '02_notes/private/Secret.md': '---\npublish: false\n---\nPrivate synthetic body',
+        })
+      ).get('02_notes/A.md')?.markdown;
+      expect(output).toContain('read');
+      expect(output).toContain('![safe](content/_assets/memos-import/synthetic.png)');
+      expect(output).toContain('label');
+      expect(output).not.toContain('private/Secret');
+      expect(output).not.toContain('[unused]');
+    },
+  );
+  it('keeps the first definition across containers and maps repeated embedded container headings to final anchors', async () => {
+    const bodyB = note(
+      '## Part\n> ### Quoted\n> [local](#Quoted) foot[^F]\n>\n> [^f]: nested footnote\n\n- ### Listed\n  [listed](#Listed)\n',
+    );
+    const files = {
+      '02_notes/A.md': note(
+        '> [private label][Ref]\n>\n> [ref]: private/Secret.md\n\n[ref]: B.md\n\n![[B#Part]]\n![[B#Part]]\n',
+      ),
+      '02_notes/B.md': bodyB,
+      '02_notes/private/Secret.md': '---\npublish: false\n---\nSynthetic private body',
+    };
+    const ledger = emptyLedger();
+    ledger.entries['02_notes/B.md'] = published('02_notes/B.md', bodyB, {
+      part: 'Part',
+      quoted: 'Quoted',
+      listed: 'Listed',
+    });
+    const output = (await transform(files, ledger)).get('02_notes/A.md');
+    expect(Object.keys(output?.headingMap ?? {})).toEqual([
+      'part',
+      'quoted',
+      'listed',
+      'part-2',
+      'quoted-2',
+      'listed-2',
+    ]);
+    expect(output?.markdown).toContain('[local](#quoted)');
+    expect(output?.markdown).toContain('[local](#quoted-2)');
+    expect(output?.markdown).toContain('[listed](#listed)');
+    expect(output?.markdown).toContain('[listed](#listed-2)');
+    expect(output?.markdown).toContain('[^embed-1-f]');
+    expect(output?.markdown).toContain('[^embed-2-f]');
+    expect(output?.markdown).not.toContain('private/Secret');
+    expect(output?.markdown).not.toContain('[private label](/memos/B)');
+    if (!output) throw new Error('Synthetic output missing');
+    const renderer = unified()
+      .use(remarkParse)
+      .use(remarkGfm)
+      .use(remarkMath)
+      .use(remarkRehype)
+      .use(rehypeKatex)
+      .use(rehypeHeadingIds);
+    const tree: unknown = await renderer.run(renderer.parse(output.markdown));
+    const ids: string[] = [];
+    const collect = (node: unknown): void => {
+      if (typeof node !== 'object' || node === null) return;
+      if (
+        'tagName' in node &&
+        typeof node.tagName === 'string' &&
+        /^h[1-6]$/u.test(node.tagName) &&
+        'properties' in node &&
+        typeof node.properties === 'object' &&
+        node.properties !== null &&
+        'id' in node.properties &&
+        typeof node.properties.id === 'string' &&
+        node.properties.id !== 'footnote-label'
+      )
+        ids.push(node.properties.id);
+      if ('children' in node && Array.isArray(node.children)) node.children.forEach(collect);
+    };
+    collect(tree);
+    expect(ids).toEqual(Object.keys(output.headingMap));
+  });
   it('recognizes only empty root markers and refuses unowned marker data during initialization', () => {
     expect(
       verifyOwnership(snapshot({ 'content/memos/.gitkeep': '' }), undefined, true).files,
@@ -507,6 +610,116 @@ describe('manual memo importer', () => {
     expect((await sharp(result.bytes).metadata()).exif).toBeUndefined();
     expect(result.bytes.subarray(0, 2).toString('hex')).toBe('ffd8');
     expect(result.publicPath).toBe(`content/_assets/memos-import/${hashBytes(result.bytes)}.jpg`);
+  });
+  it('applies rights checks to JPEG comments after the scan and removes approved comments without recompression', async () => {
+    const image = await sharp({
+      create: { width: 4, height: 4, channels: 3, background: '#aabbcc' },
+    })
+      .jpeg()
+      .toBuffer();
+    const marker = Buffer.from('SYNTHETIC_PRIVATE_JPEG_COMMENT');
+    const comment = Buffer.alloc(marker.length + 4);
+    comment[0] = 0xff;
+    comment[1] = 0xfe;
+    comment.writeUInt16BE(marker.length + 2, 2);
+    marker.copy(comment, 4);
+    const source = snapshot({
+      'image.jpg': Buffer.concat([image.subarray(0, -2), comment, image.subarray(-2)]),
+    });
+    await expect(preparePublicAsset(source, 'image.jpg', guards, false)).rejects.toThrow(
+      'rights metadata',
+    );
+    const output = await preparePublicAsset(source, 'image.jpg', guards, true);
+    expect(output.bytes.includes(marker)).toBe(false);
+    expect(output.bytes).toEqual(image);
+  });
+  it('rejects unverified JPEG bytes after EOI even when textual metadata removal was approved', async () => {
+    const image = await sharp({
+      create: { width: 4, height: 4, channels: 3, background: '#aabbcc' },
+    })
+      .jpeg()
+      .toBuffer();
+    const source = snapshot({
+      'image.jpg': Buffer.concat([image, Buffer.from('SYNTHETIC_PRIVATE_JPEG_TRAILER')]),
+    });
+    await expect(preparePublicAsset(source, 'image.jpg', guards, true)).rejects.toThrow();
+  });
+  it.each(['pre-scan', 'inter-scan', 'post-scan'])(
+    'checks COM/APP metadata throughout progressive JPEG: %s',
+    async (position) => {
+      const image = await sharp({
+        create: { width: 16, height: 16, channels: 3, background: '#663399' },
+      })
+        .jpeg({ progressive: true })
+        .toBuffer();
+      const firstScan = image.indexOf(Buffer.from([0xff, 0xda]));
+      const secondScan = image.indexOf(Buffer.from([0xff, 0xda]), firstScan + 2);
+      expect(secondScan).toBeGreaterThan(firstScan);
+      const at =
+        position === 'pre-scan'
+          ? firstScan
+          : position === 'inter-scan'
+            ? secondScan
+            : image.length - 2;
+      const marker = Buffer.from('SYNTHETIC_PRIVATE_PROGRESSIVE_COMMENT');
+      for (const code of [0xfe, 0xe1, 0xed]) {
+        const bytes = Buffer.concat([
+          image.subarray(0, at),
+          jpegSegment(code, marker),
+          image.subarray(at),
+        ]);
+        const source = snapshot({ 'image.jpg': bytes });
+        await expect(preparePublicAsset(source, 'image.jpg', guards, false)).rejects.toThrow(
+          'rights metadata',
+        );
+        const output = await preparePublicAsset(source, 'image.jpg', guards, true);
+        expect(output.bytes.includes(marker)).toBe(false);
+        expect(output.bytes).toEqual(image);
+        expect(await sharp(output.bytes).raw().toBuffer()).toEqual(
+          await sharp(bytes).raw().toBuffer(),
+        );
+      }
+      for (const code of [0xe2, 0xee]) {
+        const bytes = Buffer.concat([
+          image.subarray(0, at),
+          jpegSegment(code, marker),
+          image.subarray(at),
+        ]);
+        await expect(
+          preparePublicAsset(snapshot({ 'image.jpg': bytes }), 'image.jpg', guards, true),
+        ).rejects.toThrow('color metadata');
+      }
+    },
+  );
+  it('preserves stuffed entropy bytes and valid restart markers without recompression', async () => {
+    const pixels = Buffer.from(
+      Array.from({ length: 64 * 64 * 3 }, (_, index) => (index * 17 + (index >> 4) * 29) % 256),
+    );
+    const stuffed = await sharp(pixels, { raw: { width: 64, height: 64, channels: 3 } })
+      .jpeg()
+      .toBuffer();
+    expect(stuffed.includes(Buffer.from([0xff, 0]))).toBe(true);
+    // DC/AC係数0の二つのgrayscale MCUをinterval=1で区切る合成JPEG。
+    const restart = Buffer.concat([
+      Buffer.from([0xff, 0xd8]),
+      jpegSegment(0xdb, Buffer.from([0, ...Array<number>(64).fill(1)])),
+      jpegSegment(0xc0, Buffer.from([8, 0, 8, 0, 16, 1, 1, 0x11, 0])),
+      jpegSegment(0xc4, Buffer.from([0, 1, ...Array<number>(15).fill(0), 0])),
+      jpegSegment(0xc4, Buffer.from([0x10, 1, ...Array<number>(15).fill(0), 0])),
+      jpegSegment(0xdd, Buffer.from([0, 1])),
+      jpegSegment(0xda, Buffer.from([1, 1, 0, 0, 63, 0])),
+      Buffer.from([0x3f, 0xff, 0xd0, 0x3f, 0xff, 0xd9]),
+    ]);
+    expect(await sharp(restart).raw().toBuffer()).toEqual(Buffer.alloc(16 * 8 * 3, 128));
+    for (const image of [stuffed, restart]) {
+      const output = await preparePublicAsset(
+        snapshot({ 'image.jpg': image }),
+        'image.jpg',
+        guards,
+        false,
+      );
+      expect(output.bytes).toEqual(image);
+    }
   });
   it('stops on missing images, format spoofing and metadata whose display safety is unverified', async () => {
     await expect(preparePublicAsset(snapshot({}), 'image.png', guards, false)).rejects.toThrow();

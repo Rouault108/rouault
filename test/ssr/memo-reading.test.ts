@@ -1,5 +1,7 @@
-import { describe, expect, it } from 'vitest';
-import { loadMemosData } from '../../build/data/memos.js';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { buildMemosCollection, loadMemosData } from '../../build/data/memos.js';
+import { collectAdoptedContentSources } from '../../build/content/publication-snapshot.js';
+import MemoIndex from '../../src/memos-index.11ty.js';
 import { buildMemoPageProjection } from '../../build/projections/memo-page-projection.js';
 import { buildMemoIndexProjection } from '../../build/projections/memo-index-projection.js';
 import { NoteLayout } from '../../src/layouts/NoteLayout.11ty.js';
@@ -11,7 +13,46 @@ import { buildProductionInternalDocumentRouteSet } from '../../build/navigation/
 import { loadNotesData, filterNotesBySurface } from '../../build/data/notes.js';
 import { normalizeRouaultPathname } from '../../shared/url/rouault-url-policy.js';
 import { contentIdentityDomKey } from '../../build/content/content-record.js';
+afterEach(() => vi.unstubAllEnvs());
+const fixtureMemos = () =>
+  buildMemosCollection([
+    {
+      sourcePath: 'test/fixtures/content/memos/example.md',
+      title: '合成メモ',
+      license: 'CC BY 4.0',
+      content: '<h2 id="synthetic-heading">合成見出し</h2><p>検証専用の合成本文です。</p>',
+    },
+    {
+      sourcePath: 'test/fixtures/content/memos/no-headings.md',
+      title: '見出しのない合成メモ',
+      license: 'CC BY 4.0',
+      content: '<p>見出しのない合成本文です。</p>',
+    },
+  ]);
 describe('memo collection and shared reading surface', () => {
+  it('ordinary generated memos, routes and title list adopt only the actual published source root', () => {
+    vi.stubEnv('ROUAULT_MEMO_FIXTURES', '');
+    const memos = loadMemosData();
+    const sources = collectAdoptedContentSources().filter(
+      (source) => source.identity.collectionId === 'memos',
+    );
+    const expected = sources
+      .map((source) => resolveContentRoute(source.identity).canonicalPathname)
+      .sort();
+    expect(memos.map((memo) => memo.canonicalPathname).sort()).toEqual(expected);
+    expect(memos.every((memo) => memo.sourceRoot === 'content/memos')).toBe(true);
+    const routes = buildProductionInternalDocumentRouteSet()
+      .routeSet.routes.filter((route) => route.startsWith('/memos/'))
+      .sort();
+    expect(routes).toEqual(['/memos/', ...expected].sort());
+    if (!sources.length) {
+      const html = new MemoIndex().render({ memos });
+      expect(html).toContain('公開中のメモはありません');
+      expect(html).not.toContain('合成メモ');
+      expect(html).not.toContain('/memos/example');
+      expect(html).not.toContain('/memos/no-headings');
+    }
+  });
   it('keeps index and body URL policies separate', () => {
     expect(
       contentIdentityDomKey({ collectionId: 'memos', sourceRelativePath: '日本.md' }),
@@ -47,7 +88,8 @@ describe('memo collection and shared reading surface', () => {
     ).not.toThrow();
   });
   it('composes common TOC/header without note sidebar or exploration surfaces', () => {
-    const memos = loadMemosData();
+    vi.stubEnv('ROUAULT_MEMO_FIXTURES', '1');
+    const memos = fixtureMemos();
     const memo = memos.find((item) => item.slug === 'example');
     expect(memo).toBeDefined();
     if (!memo) return;
@@ -76,7 +118,7 @@ describe('memo collection and shared reading surface', () => {
       ).toBe(true);
   });
   it('keeps duplicate titles and sorts the dedicated title list deterministically', () => {
-    const memos = loadMemosData();
+    const memos = fixtureMemos();
     const first = memos[0];
     if (!first) throw new Error('synthetic memo required');
     const items = buildMemoIndexProjection([

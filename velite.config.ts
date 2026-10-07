@@ -54,6 +54,7 @@ const resolveBuildLinkAnnotationOptions = () => {
 
 import {
   getContentCollection,
+  getAdoptedContentRoots,
   resolveContentSourceLocation,
 } from './build/content/content-collections.js';
 
@@ -184,10 +185,7 @@ const notes = defineCollection({
 
 const memos = defineCollection({
   name: 'Memo',
-  pattern: [
-    getContentCollection('memos').sourceRoot,
-    getContentCollection('memos').fixtureRoot,
-  ].map((root) => `${root}/**/*.md`),
+  pattern: getAdoptedContentRoots('memos').map((root) => `${root}/**/*.md`),
   schema: s
     .object({
       title: s.string().min(1),

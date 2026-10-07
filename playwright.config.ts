@@ -120,6 +120,7 @@ export default defineConfig({
     timeout: 120 * 1000,
     env: {
       ...toPlaywrightEnv(process.env),
+      ROUAULT_MEMO_FIXTURES: '1',
       ROUAULT_BUILD_LABEL: resolveE2EBuildLabel(),
       ROUAULT_SITE_ORIGIN: productionPreviewOrigin,
       NODE_OPTIONS: withNodeOption(process.env['NODE_OPTIONS'], '--max-old-space-size=4096'),

@@ -42,6 +42,23 @@ export const getContentCollection = (id: CollectionId): ContentCollectionConfig 
   if (!collection) throw new Error('[collections] unregistered collection');
   return collection;
 };
+export interface ContentAdoptionOptions {
+  fixtureOnly?: boolean;
+}
+export const getAdoptedContentRoots = (
+  id: CollectionId,
+  options: ContentAdoptionOptions = {},
+): readonly string[] => {
+  const collection = getContentCollection(id);
+  if (options.fixtureOnly) return [collection.fixtureRoot];
+  // notesの既存fixture契約を保ち、新設memo fixtureは検証入口が明示した時だけ採用する。
+  return [
+    collection.sourceRoot,
+    ...(id === 'notes' || process.env['ROUAULT_MEMO_FIXTURES'] === '1'
+      ? [collection.fixtureRoot]
+      : []),
+  ];
+};
 export const resolveContentSourceLocation = (value: string) => {
   const normalized = value.replace(/\\/gu, '/').replace(/^\.\//u, '');
   const roots = contentCollections

@@ -41,38 +41,74 @@ const stripPngMetadata = (input: Buffer, rightsConfirmed: boolean): Buffer => {
   return Buffer.concat(chunks);
 };
 const stripJpegMetadata = (input: Buffer, rightsConfirmed: boolean): Buffer => {
-  if (input.readUInt16BE(0) !== 0xffd8) throw new Error('[images] JPEG signature mismatch');
+  if (input.length < 2 || input.readUInt16BE(0) !== 0xffd8)
+    throw new Error('[images] JPEG signature mismatch');
   const chunks = [input.subarray(0, 2)];
+  const codingMarkers = new Set([
+    0xc0, 0xc1, 0xc2, 0xc3, 0xc4, 0xc5, 0xc6, 0xc7, 0xc9, 0xca, 0xcb, 0xcc, 0xcd, 0xce, 0xcf, 0xda,
+    0xdb, 0xdd,
+  ]);
   let offset = 2;
+  let scanned = false;
   while (offset < input.length) {
+    const start = offset;
     if (input[offset] !== 0xff) throw new Error('[images] invalid JPEG marker');
-    const marker = input[offset + 1];
-    if (marker === 0xda || marker === 0xd9) {
-      chunks.push(input.subarray(offset));
-      break;
+    while (input[offset] === 0xff) offset += 1;
+    const marker = input[offset++];
+    if (marker === 0xd9) {
+      if (!scanned || offset !== input.length)
+        throw new Error('[images] unverified JPEG data after EOI or missing scan');
+      chunks.push(input.subarray(start, offset));
+      return Buffer.concat(chunks);
     }
-    const length = input.readUInt16BE(offset + 2);
-    const end = offset + 2 + length;
+    if (
+      marker === undefined ||
+      !(codingMarkers.has(marker) || (marker >= 0xe0 && marker <= 0xef) || marker === 0xfe)
+    )
+      throw new Error('[images] unverified JPEG marker');
+    if (offset + 2 > input.length) throw new Error('[images] truncated JPEG');
+    const length = input.readUInt16BE(offset);
+    const end = offset + length;
     if (length < 2 || end > input.length) throw new Error('[images] truncated JPEG');
     if (marker === 0xe2 || marker === 0xee)
       throw new Error('[images] unverified JPEG color metadata');
-    if (
-      marker !== undefined &&
-      ((marker >= 0xe1 && marker <= 0xef) || marker === 0xfe) &&
-      !rightsConfirmed
-    )
+    if (((marker >= 0xe1 && marker <= 0xef) || marker === 0xfe) && !rightsConfirmed)
       throw new Error('[images] textual rights metadata requires an approved body notice');
-    if (marker !== undefined && !((marker >= 0xe1 && marker <= 0xef) || marker === 0xfe)) {
+    if (!((marker >= 0xe1 && marker <= 0xef) || marker === 0xfe)) {
       if (marker === 0xe0) {
-        const payload = input.subarray(offset + 4, end);
+        const payload = input.subarray(offset + 2, end);
         if (payload.toString('ascii', 0, 5) !== 'JFIF\0' || payload.length !== 14)
           throw new Error('[images] JPEG thumbnail metadata');
       }
-      chunks.push(input.subarray(offset, end));
+      chunks.push(input.subarray(start, end));
     }
     offset = end;
+    if (marker === 0xda) {
+      scanned = true;
+      const scanStart = offset;
+      // entropy内のstuffing/restartは画素符号として保持し、次のmarkerから全域検査を続ける。
+      while (offset < input.length) {
+        if (input[offset] !== 0xff) {
+          offset += 1;
+          continue;
+        }
+        const prefix = offset++;
+        while (input[offset] === 0xff) offset += 1;
+        const next = input[offset];
+        if (next === 0) {
+          if (offset !== prefix + 1) throw new Error('[images] invalid JPEG stuffing');
+          offset += 1;
+        } else if (next !== undefined && next >= 0xd0 && next <= 0xd7) {
+          offset += 1;
+        } else {
+          offset = prefix;
+          break;
+        }
+      }
+      chunks.push(input.subarray(scanStart, offset));
+    }
   }
-  return Buffer.concat(chunks);
+  throw new Error('[images] JPEG EOI missing');
 };
 const stripWebpMetadata = (input: Buffer, rightsConfirmed: boolean): Buffer => {
   if (input.toString('ascii', 0, 4) !== 'RIFF' || input.toString('ascii', 8, 12) !== 'WEBP')

@@ -3,6 +3,7 @@ import path from 'node:path';
 import { prepareTocHtml } from '../content/extract-toc-from-html.js';
 import {
   getContentCollection,
+  getAdoptedContentRoots,
   resolveContentSourceLocation,
 } from '../content/content-collections.js';
 import { ContentRouteRegistry } from '../content/content-route-registry.js';
@@ -64,5 +65,13 @@ export const loadMemosData = (): MemoRecord[] => {
   const file = path.join(process.cwd(), '.velite/memos.json');
   if (!existsSync(file)) return [];
   const sources: SourceMemo[] = JSON.parse(readFileSync(file, 'utf8'));
+  const roots = getAdoptedContentRoots('memos');
+  if (
+    sources.some((source) => {
+      const location = resolveContentSourceLocation(source.sourcePath);
+      return location.collection.id !== 'memos' || !roots.includes(location.sourceRoot);
+    })
+  )
+    throw new Error('[memos] generated source is outside the adopted collection; rebuild required');
   return buildMemosCollection(sources);
 };

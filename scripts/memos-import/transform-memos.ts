@@ -216,10 +216,14 @@ export const transformRequestedMemos = async (input: {
       const originalHeadings = sourceHeadings.get(name) ?? [];
       const definitions = new Map<string, Definition>();
       const footnotes = new Map<string, Extract<RootContent, { type: 'footnoteDefinition' }>>();
-      for (const node of original.children) {
-        if (node.type === 'definition') definitions.set(node.identifier.toLowerCase(), node);
-        if (node.type === 'footnoteDefinition') footnotes.set(node.identifier.toLowerCase(), node);
-      }
+      const collectDefinitions = (node: Nodes): void => {
+        if (node.type === 'definition' && !definitions.has(node.identifier.toLowerCase()))
+          definitions.set(node.identifier.toLowerCase(), node);
+        if (node.type === 'footnoteDefinition' && !footnotes.has(node.identifier.toLowerCase()))
+          footnotes.set(node.identifier.toLowerCase(), node);
+        childrenOf(node).forEach(collectDefinitions);
+      };
+      collectDefinitions(original);
       let selected = original.children;
       let levelOffset = 0;
       if (fragment) {
@@ -350,7 +354,7 @@ export const transformRequestedMemos = async (input: {
           if (!definition) throw new Error('[import] definition missing');
           return convertInline(
             node.type === 'linkReference'
-              ? { type: 'link', url: definition.url, children: structuredClone(node.children) }
+              ? { type: 'link', url: definition.url, children: node.children }
               : { type: 'image', url: definition.url, alt: node.alt },
           );
         }
@@ -375,8 +379,8 @@ export const transformRequestedMemos = async (input: {
           return [
             {
               ...structuredClone(node),
-              identifier: `${occurrence}-${node.identifier}`,
-              label: `${occurrence}-${node.identifier}`,
+              identifier: `${occurrence}-${node.identifier.toLowerCase()}`,
+              label: `${occurrence}-${node.identifier.toLowerCase()}`,
             },
           ];
         }
@@ -450,11 +454,14 @@ export const transformRequestedMemos = async (input: {
           currentLevel = depth;
           headingOrigins.set(copy, { source: name, index: originalHeading.index, occurrence });
         }
-        if (copy.type === 'paragraph' || copy.type === 'heading' || copy.type === 'tableCell') {
-          copy.children = (await Promise.all(copy.children.map(convertInline))).flat();
-        } else if ('children' in copy) {
+        if (
+          (copy.type === 'paragraph' || copy.type === 'heading' || copy.type === 'tableCell') &&
+          (node.type === 'paragraph' || node.type === 'heading' || node.type === 'tableCell')
+        ) {
+          copy.children = (await Promise.all(node.children.map(convertInline))).flat();
+        } else if ('children' in copy && 'children' in node) {
           const converted: RootContent[] = [];
-          for (const child of copy.children) converted.push(...(await convertBlock(child)));
+          for (const child of node.children) converted.push(...(await convertBlock(child)));
           copy.children = converted as typeof copy.children;
         }
         return [copy];

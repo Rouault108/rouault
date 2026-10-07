@@ -1,13 +1,25 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 import type { NavigationResult } from '../../src/router/router-types.js';
+test.describe.configure({ retries: 0 });
+const waitForMemoRouterReady = async (page: Page): Promise<void> => {
+  await page.waitForFunction(() => {
+    const host = document.querySelector('router-document-host');
+    return (
+      host instanceof HTMLElement && 'whenReady' in host && typeof host.whenReady === 'function'
+    );
+  });
+  await page.evaluate(async () => {
+    const host = document.querySelector('router-document-host') as HTMLElement & {
+      whenReady: () => Promise<void>;
+    };
+    await host.whenReady();
+  });
+};
 test('superseded memo navigation keeps the winning document and can resume ordinary reading', async ({
   page,
 }) => {
   await page.goto('/notes/testing/reader-basic');
-  await page.waitForFunction(() => {
-    const host = document.querySelector('router-document-host');
-    return host instanceof HTMLElement && 'navigate' in host && typeof host.navigate === 'function';
-  });
+  await waitForMemoRouterReady(page);
   const response = await page.request.get('/__router/memos/example/index.router.json');
   expect(response.ok()).toBe(true);
   const body = await response.body();
@@ -60,6 +72,7 @@ test('memo index, body, notes and history preserve the shared shell and TOC owne
 }) => {
   await page.goto('/memos/');
   await expect(page.getByRole('heading', { name: 'メモ', exact: true })).toBeVisible();
+  await waitForMemoRouterReady(page);
   await page.getByRole('link', { name: '合成メモ', exact: true }).click();
   await expect(page).toHaveURL(/\/memos\/example$/u);
   await expect(page.locator('.note-shell')).toHaveAttribute('data-sidebar-presence', 'absent');
@@ -90,6 +103,53 @@ test('memo index, body, notes and history preserve the shared shell and TOC owne
     .click();
   await expect(page).toHaveURL(/\/memos\/$/u);
   await expect(page.locator('aside[data-layout-sidebar-root] [data-sidebar-nav]')).toHaveCount(0);
+});
+test('delayed router bootstrap waits for readiness before preserving the memo navigation shell', async ({
+  page,
+}) => {
+  let release = (): void => {
+    throw new Error('Router module gate not initialized');
+  };
+  let reached = (): void => {
+    throw new Error('Router module arrival not initialized');
+  };
+  const gate = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  const arrival = new Promise<void>((resolve) => {
+    reached = resolve;
+  });
+  await page.route(
+    (url) => /router-document-host.*\.(?:js|ts)$/u.test(url.pathname),
+    async (route) => {
+      reached();
+      await gate;
+      await route.continue();
+    },
+  );
+  await page.goto('/memos/', { waitUntil: 'commit' });
+  await expect(page.getByRole('heading', { name: 'メモ', exact: true })).toBeVisible();
+  await arrival;
+  expect(
+    await page.evaluate(() => {
+      const host = document.querySelector('router-document-host');
+      return host instanceof HTMLElement && 'whenReady' in host;
+    }),
+  ).toBe(false);
+  const readiness = waitForMemoRouterReady(page);
+  release();
+  await readiness;
+  await page.locator('aside[data-layout-sidebar-root]').evaluate((node) => {
+    node.setAttribute('data-synthetic-identity', 'delayed-ready');
+  });
+  await page.getByRole('link', { name: '合成メモ', exact: true }).click();
+  await expect(page).toHaveURL(/\/memos\/example$/u);
+  await page.getByRole('link', { name: '別の合成メモ', exact: true }).click();
+  await expect(page).toHaveURL(/\/memos\/no-headings$/u);
+  await expect(page.locator('aside[data-layout-sidebar-root]')).toHaveAttribute(
+    'data-synthetic-identity',
+    'delayed-ready',
+  );
 });
 test('memo mobile TOC works through the existing header and keyboard contracts', async ({
   page,
