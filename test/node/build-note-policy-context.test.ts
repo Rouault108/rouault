@@ -7,7 +7,7 @@ import { buildNotePolicyContext } from '../../build/remark/directives/policy/bui
 describe('buildNotePolicyContext', () => {
   it('frontmatter が取り除かれた testing note でも path から testing/sandbox を復元すること', () => {
     const context = buildNotePolicyContext({
-      path: path.resolve(process.cwd(), 'content/testing/sandbox.md'),
+      path: path.resolve(process.cwd(), 'content/notes/testing/sandbox.md'),
       value: '::example-include{ref="sandbox/button-preview"}',
     });
 

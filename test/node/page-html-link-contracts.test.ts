@@ -11,8 +11,8 @@ describe('page HTML link contracts', () => {
   it('note HTML 後段の未注釈 source .md link を解決して本文リンク注釈を付与すること', () => {
     const annotated = annotateGeneratedPageHtmlLinkContracts({
       html: '<p><a href="../group-16/target.md">Sidebar Scroll Target</a></p>',
-      sourceLabel: 'content/testing/sidebar-scroll/group-01/source',
-      sourceFilePath: 'content/testing/sidebar-scroll/group-01/source.md',
+      sourceLabel: 'content/notes/testing/sidebar-scroll/group-01/source',
+      sourceFilePath: 'content/notes/testing/sidebar-scroll/group-01/source.md',
       siteUrlContext: { siteOrigin: 'https://example.com', basePath: '' },
       currentUrl: 'https://example.com/notes/testing/sidebar-scroll/group-01/source',
       routeClassificationMode: createManifestLoadedRouteClassificationMode({
@@ -27,7 +27,7 @@ describe('page HTML link contracts', () => {
     expect(() =>
       validateGeneratedPageHtmlLinkContracts({
         html: annotated ?? '',
-        sourceLabel: 'content/testing/sidebar-scroll/group-01/source',
+        sourceLabel: 'content/notes/testing/sidebar-scroll/group-01/source',
         siteUrlContext: { siteOrigin: 'https://example.com', basePath: '' },
         currentUrl: 'https://example.com/notes/testing/sidebar-scroll/group-01/source',
         routeClassificationMode: createManifestLoadedRouteClassificationMode({

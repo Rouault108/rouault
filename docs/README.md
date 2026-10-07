@@ -27,6 +27,8 @@
 - `docs/contracts/code-surfaces.md`
 - `docs/contracts/sidebar-state.md`
 - `docs/contracts/note-navigation.md`
+- `docs/contracts/content-collections.md`
+- `docs/contracts/memo-metadata.md`
 - `docs/contracts/note-metadata.md`
 - `docs/contracts/reading-chrome.md`
 - `docs/contracts/toc.md`

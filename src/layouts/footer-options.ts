@@ -25,6 +25,7 @@ const DEFAULT_SITE_URL = '/';
 const DEFAULT_NAV_LABEL = '補助ナビゲーション';
 
 const DEFAULT_LINKS: readonly FooterLinkItem[] = [
+  { href: '/memos/', label: 'メモ' },
   { href: '/search/', label: '検索' },
   { href: '/about/', label: 'このサイトについて' },
 ];

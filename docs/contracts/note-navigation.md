@@ -92,8 +92,8 @@
 ## 5. Failure Semantics
 
 - `slug`は公開route空間で一意でなければならない。
-- `content/<slug>.md`と`content/<slug>/index.md`の併存を禁止する。
-- `content/<slug>.md`と`content/<slug>/**`の併存を禁止する。
+- `content/notes/<slug>.md`と`content/notes/<slug>/index.md`の併存を禁止する。
+- `content/notes/<slug>.md`と`content/notes/<slug>/**`の併存を禁止する。
 - Path衝突はbuild時またはnote collection構築時にエラーとして拒否する。
 - 存在しないdirectory URLをbreadcrumb linkとして合成してはならない。
 

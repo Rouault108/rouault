@@ -4,7 +4,7 @@
 
 - Type: Normative
 - Source of truth: Markdown source frontmatter, Velite schema, metadata validators, authoring commands
-- Applies to: `content/**/*.md` note frontmatter and authoring-time source mutation
+- Applies to: `content/notes/**/*.md` note frontmatter and authoring-time source mutation
 - Non-goals: Permanent URL hash修正、既存content migration、projection/search/layout表示仕様変更
 
 ## 2. Metadata Fields
@@ -63,8 +63,8 @@ build時に`updated`を生成、補完、暗黙導出してはならない。現
 - `kind: testing`
 - `kind: demo`
 - `excludeFromPublicationSurfaces: true`
-- `content/testing/**/*.md`
-- `test/fixtures/content/**/*.md`
+- `content/notes/testing/**/*.md`
+- `test/fixtures/content/notes/**/*.md`
 - deleted file
 - untracked file
 

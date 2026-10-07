@@ -5,6 +5,7 @@ import EleventyVitePlugin from '@11ty/eleventy-plugin-vite';
 import type { Connect, ViteDevServer } from 'vite';
 import { build } from 'velite';
 
+import { loadMemosData } from './build/data/memos.js';
 import { loadNotesData } from './src/data/notes.js';
 import { loadHomeData } from './src/data/home.js';
 import { loadClientBundleData } from './src/data/clientBundle.js';
@@ -46,6 +47,7 @@ const formatErrorForConsole = (error: unknown): string => {
 
 const ensureVeliteBuild = async (isServing: boolean): Promise<void> => {
   await build({
+    strict: true,
     clean: !isServing,
     // Velite 0.3.1 は watch 時に root 全体を再帰監視するため、
     // root='.' では node_modules 配下まで監視して EMFILE を起こしやすい。
@@ -158,6 +160,7 @@ export default function configureEleventy(eleventyConfig: UserConfig) {
     key: '11ty.js',
   });
 
+  eleventyConfig.addGlobalData('memos', () => loadMemosData());
   eleventyConfig.addGlobalData('notes', () => loadNotesData());
   eleventyConfig.addGlobalData('home', () => loadHomeData());
   eleventyConfig.addGlobalData('clientBundle', () => loadClientBundleData());

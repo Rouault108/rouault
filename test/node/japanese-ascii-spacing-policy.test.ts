@@ -97,18 +97,18 @@ describe('japanese-ascii-spacing-policy', () => {
   it('include patternの重複一致ファイルを正規化し、重複除去できること', () => {
     expect(
       dedupeNormalizedFilePaths([
-        'content\\program\\_config.json',
-        './content/program/_config.json',
-        'content/testing/_config.json',
+        'content\\notes\\program\\_config.json',
+        './content/notes/program/_config.json',
+        'content/notes/testing/_config.json',
       ]),
-    ).to.deep.equal(['content/program/_config.json', 'content/testing/_config.json']);
+    ).to.deep.equal(['content/notes/program/_config.json', 'content/notes/testing/_config.json']);
 
-    expect(shouldIncludeFilePath('content/program/_config.json')).toBe(true);
-    expect(shouldIncludeFilePath('content/testing/_config.json')).toBe(true);
-    expect(shouldIncludeFilePath('content/library/_config.json')).toBe(true);
-    expect(shouldIncludeFilePath('content/program/csharp/_config.json')).toBe(true);
-    expect(shouldIncludeFilePath('content/program/javascript/_config.json')).toBe(true);
-    expect(shouldIncludeFilePath('content/testing/sidebar-scroll/_config.json')).toBe(true);
+    expect(shouldIncludeFilePath('content/notes/program/_config.json')).toBe(true);
+    expect(shouldIncludeFilePath('content/notes/testing/_config.json')).toBe(true);
+    expect(shouldIncludeFilePath('content/notes/library/_config.json')).toBe(true);
+    expect(shouldIncludeFilePath('content/notes/program/csharp/_config.json')).toBe(true);
+    expect(shouldIncludeFilePath('content/notes/program/javascript/_config.json')).toBe(true);
+    expect(shouldIncludeFilePath('content/notes/testing/sidebar-scroll/_config.json')).toBe(true);
   });
 
   it('現行workflowは対象に含め、docs/old配下は対象外にすること', () => {

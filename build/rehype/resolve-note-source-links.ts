@@ -1,7 +1,6 @@
-import {
-  isRawNotesAbsoluteHref,
-  resolveNoteSourceLink,
-} from '../markdown/note-source-link-resolver.js';
+import { resolveContentSourceLocation } from '../content/content-collections.js';
+import { resolveContentSourceLink } from '../markdown/content-source-link-resolver.js';
+import { isRawNotesAbsoluteHref } from '../markdown/note-source-link-resolver.js';
 import { type HastNode, type VFileLike } from './hast-utils.js';
 import type { NoteSourceRoot } from '../../shared/note/note-source-root.js';
 
@@ -34,12 +33,16 @@ export function rehypeResolveNoteSourceLinks(options: RehypeResolveNoteSourceLin
       if (current.type === 'element' && current.tagName === 'a') {
         const href = current.properties?.['href'];
         if (typeof href === 'string') {
-          if (isRawNotesAbsoluteHref(href)) {
+          if (
+            (options.sourceRootPaths ||
+              resolveContentSourceLocation(sourceFilePath).collection.schema === 'note') &&
+            isRawNotesAbsoluteHref(href)
+          ) {
             throw new Error(
               `[markdown] /notes/... をMarkdown本文へ直書きできません: ${sourceFilePath} href="${href}"。source file relative .md link を使ってください。`,
             );
           }
-          const resolved = resolveNoteSourceLink(
+          const resolved = resolveContentSourceLink(
             { href, sourceFilePath },
             toResolveOptions(options.sourceRootPaths),
           );

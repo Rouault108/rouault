@@ -14,7 +14,8 @@ describe('velite config', () => {
     const configPath = new URL('../../velite.config.ts', import.meta.url);
     const source = readFileSync(configPath, 'utf8');
 
-    expect(source).toContain("pattern: ['content/**/*.md', 'test/fixtures/content/**/*.md'],");
+    expect(source).toContain("getContentCollection('notes').sourceRoot");
+    expect(source).toContain("getContentCollection('notes').fixtureRoot");
     expect(source).toContain(
       "import { resolveNoteSourceLocation } from './shared/note/note-source-root.js';",
     );

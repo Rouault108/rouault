@@ -1,6 +1,6 @@
 import { createInternalDocumentRouteSet } from '../../shared/navigation/internal-document-route-set.js';
 
-export const STATIC_DOCUMENT_ROUTES = ['/', '/about/', '/search/', '/corpora/'] as const;
+export const STATIC_DOCUMENT_ROUTES = ['/', '/about/', '/search/', '/corpora/', '/memos/'] as const;
 
 export type StaticDocumentRoute = (typeof STATIC_DOCUMENT_ROUTES)[number];
 

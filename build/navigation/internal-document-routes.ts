@@ -1,3 +1,4 @@
+import { buildPublicationRouteRegistry } from '../content/publication-snapshot.js';
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import path from 'node:path';
 
@@ -50,8 +51,8 @@ interface FrontmatterMetadata {
   readonly excludeFromPublicationSurfaces?: boolean;
 }
 
-const DEFAULT_CONTENT_ROOT = path.resolve(process.cwd(), 'content');
-const DEFAULT_FIXTURE_ROOT = path.resolve(process.cwd(), 'test/fixtures/content');
+const DEFAULT_CONTENT_ROOT = path.resolve(process.cwd(), 'content/notes');
+const DEFAULT_FIXTURE_ROOT = path.resolve(process.cwd(), 'test/fixtures/content/notes');
 
 const toPosixPath = (value: string): string => value.replace(/\\/gu, '/');
 
@@ -282,6 +283,13 @@ const buildContentDerivedRoutes = (
   const routeSet = createInternalDocumentRouteSet([
     ...staticRoutes,
     ...noteRoutes.map((note) => note.permalink),
+    ...[
+      ...buildPublicationRouteRegistry({
+        fixtureOnly: routeSetKind === 'fixture',
+      }).byPathname.values(),
+    ]
+      .filter((route) => route.identity.collectionId === 'memos')
+      .map((route) => route.canonicalPathname),
     ...corpusRoutes,
     ...tagRoutes,
   ]);
@@ -302,8 +310,8 @@ export const buildProductionInternalDocumentRouteSet = (
   const contentRoot = options.contentRoot ?? DEFAULT_CONTENT_ROOT;
   const fixtureRoot = options.fixtureRoot ?? DEFAULT_FIXTURE_ROOT;
   const noteRoutes = [
-    ...resolveNoteRouteSeeds('content', contentRoot),
-    ...resolveNoteRouteSeeds('test/fixtures/content', fixtureRoot),
+    ...resolveNoteRouteSeeds('content/notes', contentRoot),
+    ...resolveNoteRouteSeeds('test/fixtures/content/notes', fixtureRoot),
   ];
   return buildContentDerivedRoutes('production', noteRoutes);
 };
@@ -312,7 +320,7 @@ export const buildFixtureInternalDocumentRouteSet = (
   options: BuildInternalDocumentRouteSetOptions = {},
 ): ContentDerivedInternalDocumentRoutes => {
   const fixtureRoot = options.fixtureRoot ?? DEFAULT_FIXTURE_ROOT;
-  const noteRoutes = resolveNoteRouteSeeds('test/fixtures/content', fixtureRoot);
+  const noteRoutes = resolveNoteRouteSeeds('test/fixtures/content/notes', fixtureRoot);
   return buildContentDerivedRoutes('fixture', noteRoutes);
 };
 
@@ -321,6 +329,6 @@ export const buildInternalDocumentRouteSetForSourceRoot = (options: {
   readonly rootPath: string;
 }): ContentDerivedInternalDocumentRoutes =>
   buildContentDerivedRoutes(
-    options.sourceRoot === 'content' ? 'production' : 'fixture',
+    options.sourceRoot === 'content/notes' ? 'production' : 'fixture',
     resolveNoteRouteSeeds(options.sourceRoot, options.rootPath),
   );

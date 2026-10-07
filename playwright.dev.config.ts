@@ -44,7 +44,11 @@ export default defineConfig({
   projects: [
     {
       name: 'chromium-dev',
-      testMatch: ['**/dev-router-artifact.spec.ts', '**/search-cutover.spec.ts'],
+      testMatch: [
+        '**/dev-router-artifact.spec.ts',
+        '**/search-cutover.spec.ts',
+        '**/memos.spec.ts',
+      ],
       use: { ...devices['Desktop Chrome'] },
     },
   ],
@@ -56,6 +60,7 @@ export default defineConfig({
     timeout: 120 * 1000,
     env: {
       ...toPlaywrightEnv(process.env),
+      ROUAULT_MEMO_FIXTURES: '1',
       NODE_OPTIONS: withNodeOption(process.env['NODE_OPTIONS'], '--max-old-space-size=4096'),
     },
   },

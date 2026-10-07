@@ -54,7 +54,7 @@ const findCanaryNote = (slug: string): IntrinsicNote => {
   const note = notes.find((entry) => entry.slug === slug);
   if (!note) {
     throw new Error(
-      `hydration canary note "${slug}" が見つかりません。pnpm run codegen:content の生成結果と content/testing/*.md を確認してください。`,
+      `hydration canary note "${slug}" が見つかりません。pnpm run codegen:content の生成結果と content/notes/testing/*.md を確認してください。`,
     );
   }
   return note;

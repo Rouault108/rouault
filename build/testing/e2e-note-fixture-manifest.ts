@@ -40,7 +40,7 @@ interface BuildE2ENoteFixtureManifestOptions {
 
 const toSafeDataId = (slug: string): string => slug.replace(/[^a-zA-Z0-9_-]/g, '-');
 
-const DEFAULT_FALLBACK_SOURCE_ROOTS = ['content', 'test/fixtures/content'] as const;
+const DEFAULT_FALLBACK_SOURCE_ROOTS = ['content/notes', 'test/fixtures/content/notes'] as const;
 
 const collectMarkdownFiles = (rootPath: string): string[] => {
   if (!existsSync(rootPath)) {

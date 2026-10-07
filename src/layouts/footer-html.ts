@@ -251,6 +251,7 @@ export const renderDefaultLayoutFooterHtml = (
   options: {
     readonly idContext?: StaticRenderIdContext;
     readonly siteUrlContext?: SiteUrlContext;
+    readonly copyrightText?: string;
   } = {},
 ): string => {
   const footer = buildLayoutFooterOptions({
@@ -259,7 +260,7 @@ export const renderDefaultLayoutFooterHtml = (
     siteName: undefined,
     siteUrl: undefined,
     siteDescription: undefined,
-    copyrightText: undefined,
+    copyrightText: options.copyrightText,
     buildLabel,
     navLabel: undefined,
     linksJson: undefined,

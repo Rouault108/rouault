@@ -324,7 +324,7 @@ describe('buildNotePageProjection', () => {
       tocCapabilitySource: 'testing-override',
       kind: 'testing',
       testingArea: 'layout',
-      sourceRoot: 'test/fixtures/content',
+      sourceRoot: 'test/fixtures/content/notes',
       e2eFixtureId: 'note.toc-static-present',
       title: 'Present Static',
       content: '<h2 id="intro">Intro</h2>',
@@ -350,7 +350,8 @@ describe('buildNotePageProjection', () => {
       kind: 'reader',
       title: 'Example',
       genre: ['testing'],
-      content: '<figure data-code-preview-root data-preview-profile="reader"><div data-code-preview-code></div></figure>',
+      content:
+        '<figure data-code-preview-root data-preview-profile="reader"><div data-code-preview-code></div></figure>',
     });
 
     expect(projection.articleHeader.genres).toEqual(['testing']);
@@ -374,7 +375,8 @@ describe('buildNotePageProjection', () => {
       kind: 'testing',
       chromeProfile: 'plain',
       title: 'Example',
-      content: '<figure data-code-preview-root data-preview-profile="demo"><div data-code-preview-code></div></figure>',
+      content:
+        '<figure data-code-preview-root data-preview-profile="demo"><div data-code-preview-code></div></figure>',
     });
 
     expect(projection.contentHtml).toContain('data-preview-profile="demo"');

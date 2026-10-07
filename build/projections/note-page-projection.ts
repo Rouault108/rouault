@@ -1,3 +1,4 @@
+import { buildReadingPageProjection } from './reading-page-projection.js';
 import { validateNoteContentContracts } from '../../build/content/note-content-contracts.js';
 import type {
   BreadcrumbItem,
@@ -14,10 +15,6 @@ import type {
   TocHeading,
   TocScopeSelection,
 } from '../../shared/toc/toc-chrome-projection.js';
-import {
-  normalizeTocCapabilities,
-  normalizeTocHeadings,
-} from '../../shared/toc/toc-normalization.js';
 import {
   DEFAULT_SIDEBAR_FIXED_BREAKPOINT_ATTRIBUTE,
   DEFAULT_SIDEBAR_ID,
@@ -82,10 +79,6 @@ export interface NotePageProjection {
   sidebar?: NotePageSidebarProjection | null;
   toc: NotePageTocProjection;
   articleHeader: NotePageArticleHeaderProjection;
-}
-
-function toSafeDataId(slug: string): string {
-  return slug.replace(/[^a-zA-Z0-9_-]/g, '-');
 }
 
 function normalizeGenres(value: unknown): string[] {
@@ -182,118 +175,47 @@ function validateNoteHydrationBudget(
   );
 }
 
-const validateTocProjectionContract = (input: {
-  slug: string;
-  tocPresence: TocPresence;
-  headings: readonly TocHeading[];
-  tocCapabilities: NotePageProjection['toc']['capabilities'];
-  tocCapabilitySource: IntrinsicNote['tocCapabilitySource'] | undefined;
-  shouldHydrateToc: boolean;
-  tocRuntimeId: string;
-  tocOwnerId: string;
-  tocSourceId: string;
-  contentRootId: string;
-}): void => {
-  if (input.tocPresence === 'absent') {
-    return;
-  }
-
-  if (
-    input.tocRuntimeId.trim().length === 0 ||
-    input.tocOwnerId.trim().length === 0 ||
-    input.tocSourceId.trim().length === 0 ||
-    input.contentRootId.trim().length === 0
-  ) {
-    throw new Error(`[projection] note "${input.slug}" の present TOC identity が不完全です。`);
-  }
-
-  if (input.tocCapabilitySource === 'testing-override') {
-    if (input.headings.length === 0) {
-      throw new Error(
-        `[projection] note "${input.slug}" の static TOC fixture に heading がありません。`,
-      );
-    }
-
-    const hasInvalidHeading = input.headings.some(
-      (heading) => heading.level < 2 || heading.level > 6,
-    );
-    if (hasInvalidHeading) {
-      throw new Error(
-        `[projection] note "${input.slug}" の static TOC fixture に h2-h6 以外があります。`,
-      );
-    }
-
-    if (
-      input.tocCapabilities.activeTracking !== false ||
-      input.tocCapabilities.dynamicScopes !== false ||
-      input.tocCapabilities.mobilePanel !== false ||
-      input.shouldHydrateToc !== false
-    ) {
-      throw new Error(`[projection] note "${input.slug}" の static TOC capabilities が不正です。`);
-    }
-    return;
-  }
-
-  if (!input.shouldHydrateToc) {
-    throw new Error(
-      `[projection] note "${input.slug}" has present TOC without hydration outside testing override.`,
-    );
-  }
-};
-
 export function buildNotePageProjection(input: NotePageProjectionInput): NotePageProjection {
   const noteKind = input.note.kind;
   const chromeProfile = resolveEffectiveNoteChromeProfile(noteKind, input.note.chromeProfile);
   const chromePolicy = resolveNoteChromePolicy(chromeProfile);
   const showSidebar = chromePolicy.sidebar;
   const slug = typeof input.note.slug === 'string' ? input.note.slug : '';
-  const dataIdBase = toSafeDataId(slug.length > 0 ? slug : 'note');
-  const tocSourceId = `toc-source-${dataIdBase}`;
-  const tocRuntimeId = tocSourceId;
-  const tocOwnerId = `toc-owner-${dataIdBase}`;
-  const tocScopeId = 'note-toc';
-  const contentRootId = `note-content-${dataIdBase}`;
-  const headings = normalizeTocHeadings(input.note.tocHeadings);
-  const tocPresence: TocPresence = headings.length > 0 ? 'present' : 'absent';
-  if (tocPresence === 'present' && tocOwnerId.trim().length === 0) {
-    throw new Error(`[projection] note "${slug}" の TOC owner candidate が空です。`);
-  }
-  const tocCapabilities = normalizeTocCapabilities(input.note.tocCapabilities);
-  const shouldHydrateToc =
-    tocCapabilities.activeTracking || tocCapabilities.dynamicScopes || tocCapabilities.mobilePanel;
-  validateTocProjectionContract({
-    slug,
-    tocPresence,
-    headings,
-    tocCapabilities,
-    tocCapabilitySource: input.note.tocCapabilitySource ?? 'inferred',
-    shouldHydrateToc,
-    tocRuntimeId,
-    tocOwnerId,
-    tocSourceId,
-    contentRootId,
-  });
   const genres = shouldRenderArticleHeaderTags(input.note) ? normalizeGenres(input.note.genre) : [];
   const contentHtml = typeof input.note.content === 'string' ? input.note.content : '';
   const siteUrlContext = process.env['ROUAULT_SITE_ORIGIN']
     ? resolveProductionSiteUrlContext()
     : resolveDevelopmentSiteUrlContext();
   const noteLinkContext = resolveNoteLinkClassificationContext({
-    sourceFilePath: `${input.note.sourceRoot ?? 'content'}/${slug}.md`,
+    sourceFilePath: `${input.note.sourceRoot ?? 'content/notes'}/${slug}.md`,
     siteUrlContext,
   });
-  validateNoteContentContracts({
-    kind: noteKind,
-    html: contentHtml,
-    sourceLabel: `${slug}:page-projection`,
+  const reading = buildReadingPageProjection({
+    validateContent: () => {
+      validateNoteContentContracts({
+        kind: noteKind,
+        html: contentHtml,
+        sourceLabel: `${slug}:page-projection`,
+        siteUrlContext,
+        currentUrl: noteLinkContext.currentUrl,
+        routeClassificationMode: noteLinkContext.routeClassificationMode,
+        ...(input.note.testingArea !== undefined ? { testingArea: input.note.testingArea } : {}),
+      });
+    },
+    identityKey: slug,
+    canonicalPathname: input.note.permalink,
+    contentHtml,
+    title: input.note.title ?? '',
+    tocHeadings: input.note.tocHeadings,
+    tocCapabilities: input.note.tocCapabilities,
+    tocCapabilitySource: input.note.tocCapabilitySource,
     siteUrlContext,
-    currentUrl: noteLinkContext.currentUrl,
     routeClassificationMode: noteLinkContext.routeClassificationMode,
-    ...(input.note.testingArea !== undefined ? { testingArea: input.note.testingArea } : {}),
+    ...(input.note.date ? { date: input.note.date } : {}),
+    ...(input.note.updated ? { updated: input.note.updated } : {}),
+    ...(input.note.license ? { license: input.note.license } : {}),
   });
-  const normalizedPublished = normalizeNoteDate(input.note.date);
   const normalizedCreated = normalizeNoteDate(input.note.created);
-  const normalizedUpdated = normalizeNoteDate(input.note.updated);
 
   if (showSidebar && input.navigation.sidebarRows.length === 0) {
     throw new Error(`[projection] note "${slug}" は sidebar enabled ですが sidebarRows が空です。`);
@@ -346,22 +268,13 @@ export function buildNotePageProjection(input: NotePageProjectionInput): NotePag
   const projection: NotePageProjection = {
     noteKind,
     noteShellSidebarPresence: showSidebar ? 'present' : 'absent',
-    tocPresence,
+    tocPresence: reading.tocPresence,
     showSidebar,
     contentHtml,
     ...(sidebarProjection !== null ? { sidebar: sidebarProjection } : {}),
-    toc: {
-      sourceId: tocSourceId,
-      runtimeId: tocRuntimeId,
-      ownerId: tocOwnerId,
-      scopeId: tocScopeId,
-      headings,
-      capabilities: tocCapabilities,
-      contentRootId,
-      homeHref: `${siteUrlContext.basePath}/`,
-      shouldHydrate: shouldHydrateToc,
-    },
+    toc: reading.toc,
     articleHeader: {
+      ...reading.articleHeader,
       heading: typeof input.note.title === 'string' ? input.note.title : '',
       ...(input.navigation.breadcrumbs.length > 0
         ? {
@@ -371,9 +284,7 @@ export function buildNotePageProjection(input: NotePageProjectionInput): NotePag
             })),
           }
         : {}),
-      ...(normalizedPublished !== null ? { published: normalizedPublished } : {}),
       ...(normalizedCreated !== null ? { created: normalizedCreated } : {}),
-      ...(normalizedUpdated !== null ? { updated: normalizedUpdated } : {}),
       ...(typeof input.note.status === 'string' && input.note.status.length > 0
         ? { status: input.note.status }
         : {}),

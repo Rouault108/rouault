@@ -2,7 +2,6 @@
 
 import { createHash } from 'node:crypto';
 import { mkdir, mkdtemp, readFile, rename, rm, writeFile } from 'node:fs/promises';
-import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { spawn } from 'node:child_process';
 
@@ -179,12 +178,16 @@ export const sha256Hex = (value: string): string =>
 export const writeJsonAtomically = async (filePath: string, value: unknown): Promise<string> => {
   const targetPath = path.resolve(filePath);
   const targetDirectory = path.dirname(targetPath);
-  const temporaryDirectory = await mkdtemp(path.join(tmpdir(), 'rouault-production-authority-'));
-  const temporaryPath = path.join(temporaryDirectory, path.basename(targetPath));
   const payload = stableJson(value);
 
+  await mkdir(targetDirectory, { recursive: true });
+  // system tempが別filesystemでもrenameの原子性を保てるよう、保存先内に作る。
+  const temporaryDirectory = await mkdtemp(
+    path.join(targetDirectory, '.rouault-production-authority-'),
+  );
+  const temporaryPath = path.join(temporaryDirectory, path.basename(targetPath));
+
   try {
-    await mkdir(targetDirectory, { recursive: true });
     await writeFile(temporaryPath, payload, { encoding: 'utf8', flag: 'wx' });
     await rename(temporaryPath, targetPath);
     const written = await readFile(targetPath, 'utf8');

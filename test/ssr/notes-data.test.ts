@@ -390,15 +390,15 @@ describe('buildNotesCollection', () => {
         {
           slug: 'e2e/layout-rich',
           title: 'Layout Rich',
-          sourceRoot: 'test/fixtures/content',
+          sourceRoot: 'test/fixtures/content/notes',
           content: '<h2 id="overview">概要</h2>',
         },
       ],
       contentRoot,
       {
         sourceRoots: {
-          content: contentRoot,
-          'test/fixtures/content': fixtureRoot,
+          'content/notes': contentRoot,
+          'test/fixtures/content/notes': fixtureRoot,
         },
       },
     );
@@ -409,7 +409,7 @@ describe('buildNotesCollection', () => {
       permalink: '/notes/e2e/layout-rich',
       sidebarRoot: 'e2e',
       sortIndex: 0,
-      sourceRoot: 'test/fixtures/content',
+      sourceRoot: 'test/fixtures/content/notes',
     });
   });
 });
@@ -421,7 +421,7 @@ describe('publication surface policy', () => {
       slug: 'e2e/fixture-reader',
       kind: 'reader',
       chromeProfile: 'plain',
-      sourceRoot: 'test/fixtures/content',
+      sourceRoot: 'test/fixtures/content/notes',
       excludeFromPublicationSurfaces: true,
     };
 

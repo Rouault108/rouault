@@ -8,7 +8,7 @@ const siteUrlContext = { siteOrigin: 'https://rouault.invalid', basePath: '' } a
 describe('resolve note current URL', () => {
   it('build-time note context では current document hash を internal-fragment として分類できること', () => {
     const context = resolveNoteLinkClassificationContext({
-      sourceFilePath: 'content/testing/sidebar-scroll/group-01/source.md',
+      sourceFilePath: 'content/notes/testing/sidebar-scroll/group-01/source.md',
       siteUrlContext,
     });
 
@@ -32,7 +32,7 @@ describe('resolve note current URL', () => {
       basePath: '/rouault',
     } as const;
     const context = resolveNoteLinkClassificationContext({
-      sourceFilePath: 'content/testing/sidebar-scroll/group-01/source.md',
+      sourceFilePath: 'content/notes/testing/sidebar-scroll/group-01/source.md',
       siteUrlContext: basePathSiteUrlContext,
     });
 
@@ -52,7 +52,7 @@ describe('resolve note current URL', () => {
 
   it('non-ASCII slug の build-time note context でも current document hash を分類できること', () => {
     const context = resolveNoteLinkClassificationContext({
-      sourceFilePath: 'content/library/collection/計算機科学・ソフトウェア開発関連書籍.md',
+      sourceFilePath: 'content/notes/library/collection/計算機科学・ソフトウェア開発関連書籍.md',
       siteUrlContext,
     });
 

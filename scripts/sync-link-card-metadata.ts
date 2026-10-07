@@ -1,3 +1,4 @@
+import { getContentCollection } from '../build/content/content-collections.js';
 import { createHash } from 'node:crypto';
 import path from 'node:path';
 import { mkdir, readdir, readFile, writeFile } from 'node:fs/promises';
@@ -438,7 +439,9 @@ const runPool = async <T>(
 };
 
 const main = async (): Promise<void> => {
-  const markdownFiles = await collectMarkdownFiles(CONTENT_ROOT);
+  const markdownFiles = await collectMarkdownFiles(
+    path.resolve(getContentCollection('notes').sourceRoot),
+  );
   const urls = new Set<string>();
 
   for (const filePath of markdownFiles) {

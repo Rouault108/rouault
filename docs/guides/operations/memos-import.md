@@ -1,0 +1,46 @@
+# 手動メモ取込
+
+設計1.4に対応する独立したMetis用moduleは`scripts/memos-import/`。Rouaultのruntimeからprivate vaultを読まない。ユーザーの一回のpublish/update/withdraw依頼を`PublicationOperation`として渡す。cron、監視webhook、日記依存は設けない。
+
+公開条件は02_notes配下のregular Markdown、boolean publish true、正確な対象指定と承認版。publishでは対象propertyだけをtrue、withdrawでは対象propertyだけを削除する。updateでflagが解除済みなら停止する。指定外の編集・flag差分を公開へ反映しない。`reconcileNoteFlags`のfingerprintとreceiptのpending/保留/否定をprivate操作UIで照合し、同じ確認を重複提示しない。
+
+`buildImportPlan`は固定SHAの完全なSnapshotから対象本文と必要画像だけを公開入力へ変換する。partial tree/API failureを空集合と扱わない。Markdown ASTでcode/escape/reference definitionを区別し、private linkはlabelまたはbasenameへ変換する。embedは承認済み内容版だけを展開し、循環、block/query/未対応syntax、heading overflowを拒否する。heading IDはRouault共通plannerを使い、最終HTMLとの一致をcandidate validatorで確認する。
+
+`ImageInputGuards`のGit経路上限・decode資源・時間とその根拠は必須。テスト用budgetを実運用の根拠にしない。入力画像は元形式を保ち、画素を再圧縮せず、不要metadataを除去して再decode比較する。PNG/JPEG/WebPに対応する。ICC・非標準orientation等の表示情報を安全に保存できない場合、およびAVIFの未知box/item/OBUやmetadata構造を検出した時は停止する。検証不能な原本の公開やPNGへの自動変換を行わない。
+
+公開manifestは`scripts/import-state/memos-owned-files.json`に公開path/hash/schemaVersionだけを置く。通常実行でmanifest欠損を初回と推定しない。`initializeEmpty`は公開管理領域とprivate台帳folderが空の場合だけ指定する。既存公開物の自動bootstrapを行わない。
+
+画像清掃はarchive参照が確認済みの場合だけ行う。直接imageだけでなく、reference definition、frontmatterのcover、設定や例示にasset名が残る場合も保守的に保持する。所有manifestとasset本体は参照元に数えない。不要と確認できない画像は残し、指定外noteや未所有assetを変更しない。
+
+JPEGはscanの前後・間の全markerを検査する。entropy内のstuffingとrestartは符号を保持し、COM/APP metadataには位置を問わず同じ権利確認・除去を適用する。EOI後の未検証bytes、未知のmarker、検証できない色情報は停止する。画素の再圧縮は行わない。
+
+通常buildのmemo入力は`content/memos`だけであり、公開メモ0件なら一覧は「公開中のメモはありません」を表示する。合成memo fixtureはPlaywrightの検証serverが`ROUAULT_MEMO_FIXTURES=1`を明示した場合だけ、Velite・route registry・Eleventy・画像収集の共通採用入口から使う。既存notes fixtureの契約は維持する。古いfixture入りVelite JSONを通常buildで再利用した場合は停止して再buildを求める。手動取込candidateの最終production buildではfixtureを無効にする。
+
+台帳保存先はprivate `Rouault108/metis-handbook`の`publication-ledger/rouault-memos/`。`state.json`は確定entry、`operations/{operationId}.json`は承認と経過のreceiptの正本。operations viewをstateへ重複保存しない。`PublicationLedgerStore`はrepository属性・基点SHA・revisionを検証し、完了stateとreceiptを同じcommitへ渡す。backupはprivate領域にだけ保存し、hashとschemaを復元前に検証する。
+
+`PublicationPorts`は既存認証を使う実行環境側の限定write、candidate validation、deploy実測adapterの境界である。source/Rouault/ledgerのcommitは独立しており、cross-repository atomicityを保証しない。receiptを外部反映前に永続化し、未知結果は実状態を照合する。同じ操作ID・対象・内容版でだけ再開する。通常pushを用い、force pushやbranch protection回避はしない。
+
+`GitTreeRepository`は既存認証で取得済みのprivate bare storeから固定SHAを読み、専用indexで限定treeを作って通常pushする。既存checkoutのindexと作業treeは変更しない。`GitLedgerRepository`は専用folderだけを書き、`createGitPublicationPorts`が台帳、source flag、Rouault差分、排他、candidate validationを接続する。Git storeはpublic checkoutの外のprivate work rootに限定する。sourceはMarkdownの参照照合に加えて必要画像だけを読み、公開差分は承認targetに限定する。private操作IDの復旧refはローカルbare storeにだけ置き、mainの通常pushへ含めない。
+
+再開時にはreceiptのcommitを実Git履歴、親commitと差分fingerprintへ照合する。公開済みなら二重pushせず、現行公開入力と承認版が異なる場合は照合を求めて停止する。未公開candidateのbaseが進んだ、またはprivate cacheが失われた場合は、固定source SHAと同じ承認内容から最新baseで再検証して組み直し、旧未公開SHAをprivate receiptへ記録する。公開済みと記録したcommitが履歴から消えた場合や、実commitのhash/modeが異なる場合は自動再公開しない。異常終了後の残存lockは他processの稼働状況とreceiptを照合してから運用側で解除する。期限やprocess終了を推測して自動削除しない。
+
+`dryRunGitPublication`は予定flagをメモリ上で変更し、`readForDryRun`で空台帳を検証する。source/Rouault/台帳へcommit・pushしない。`execution: dry-run`ではwrite portも拒否する。`validateCandidate`は隔離candidateの必須check/build/HTML・heading・route・画像検証を成功させるまで返らない。`backupAt`はprivate Git履歴の固定commitからstate/receiptのschemaと整合を再検証する。復元は実状態の照合後にだけ行う。
+
+`createGitHubDeploymentProofReader`は既存`ci-cd.yml`のmain push、固定SHA、repo identity、必須job、最新run/attemptを照合する。`rouault-dist`、`rouault-release-state-{runId}-{attempt}`、`rouault-release-verification-state`を認証済みActions経路から読み、APIのartifact digestとZIP bytes、repo/run/SHA、生成jobの時間範囲を検証する。releaseとverificationは既存のrelease schemaを使い、runtime検証以外の証跡が同一であることを確認する。ZIPはPython 3標準`zipfile`でメモリ上だけで読み、展開file数・圧縮/展開bytes・各entry上限を必須とする。path traversal、symlink、重複/case衝突、CRC不一致、超過は拒否し、checkoutへ展開しない。[Actions API仕様](https://docs.github.com/en/rest/actions/artifacts)
+
+`createGhActionsTransport`は既存gh認証を使うGETだけの実装。`AuthenticatedActionsTransport`には既存connectorの認証済み読取経路も接続できる。任意のJSONやsynthetic proofを実運用の証拠に使わない。APIの欠損・途中page・期限切れ・取得拒否・runの変化では検証済みproofを返さない。downloadが拒否された時は対象hostと操作を報告し、別経路で迂回したり許可設定を自動変更したりしない。
+
+`createMemoDeploymentVerifier`はそのproofと実HTTPのbytes、manifest/build、anchor、画像、取り下げの404/410、通常searchの非混入を照合する。job結果だけを合格にしない。取得不能はunknown、観測できた不一致はfailed。検証branchのworkflow_dispatch成功では本番配信proofを作らない。
+
+`runManualMemoRequest`がGit publication ports、proof reader、HTTP検証を接続する。`execution`は`dry-run`または`publication`を明示する。private依頼受付側で対象/action、内容版、userRequestRef、台帳revision、必要なembed/画像承認を確定した後、一回の操作として呼ぶ。返却plan/receiptはprivate操作応答だけへ渡し、public CI、public issue、共有logへ転送しない。この関数呼出し自体をユーザー承認や資格情報の追加許可の代わりにしない。
+
+導入手順は既存Metisの実環境に沿って行う。この一時的な開発環境を常設運用先と扱わない。
+
+1. 既存のprivate依頼入口と実行場所を確認する。connector経由の運用であれば、利用できるsnapshot/条件付きwrite/Actions読取能力を確認して`PublicationPorts`へ接続する。Git/gh adapterの実装だけでconnector接続済みとは扱わない。
+2. Git adapterを使う実行場所にはNode 24、pnpm 11、Git/gh、Python 3、lock内依存と必須browser/E2Eを動かせる環境を用意する。private work rootはpublic checkout外、mode 0700とし、Git store・lock・復旧情報を保持する。repoのprivate属性、main/branch protection、実write actorと限定write経路を確認する。Gitとghが同じ権限であることを推測しない。
+3. Git/image、command output/time、artifact、HTTP各budgetと根拠、site/base/media originsを実測して設定する。command output上限にはZIP読取時のbase64/JSON出力も含める。テストfixtureの数値を本番へ流用しない。
+4. 明示承認した対象だけで`execution: dry-run`を実行する。初回であることを空の公開管理領域と空のprivate台帳folderの両方で確認できた場合だけ`initializeEmpty`を指定する。dry-runは実flag/台帳を初期化しない。検証不能なら運用開始しない。
+5. 実flag/台帳初期化と初回公開の権限が別途確認された後、同じ具体的依頼の`publication`を実行する。receiptのsource flag、Rouault push、配信、台帳確定を別々に本人の既存privateチャットへ報告する。部分成功は同じ操作ID/対象/内容版で再開し、対象拡張や自動rollbackをしない。
+6. 新token、OAuth grant、secret配置、persistent access、常設workflowが必要なら具体的権限と配置を提示し承認を得る。コードによるfolder制限と、credential自体のrepo全体write権限を区別する。branch protectionを迂回しない。
+
+今回の検証branchでは実メモ公開、source flag実変更、実運用台帳初期化を実施していない。合成repositoryで実Gitを使う検証、合成CI証跡/ZIPとローカルHTTP検証を実行した。既存Metisへの実接続、実認証のwrite確認、実budget、初回private dry-run/公開/復旧は未実施であり、運用導入前提として区別する。コード検証の成功を実運用接続完了とは扱わない。
