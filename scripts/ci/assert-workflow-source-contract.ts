@@ -1,6 +1,7 @@
 /// <reference types="node" />
 
 import { readdir, readFile } from 'node:fs/promises';
+import { createRequire } from 'node:module';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -276,7 +277,8 @@ const assertDeploymentVerificationContract = (source: string): void => {
 };
 
 const assertE2EDiagnosticsContract = (source: string): void => {
-  for (const target of ['production', 'dev']) {
+  assertProductionE2EMatrixContract(source);
+  for (const target of ['dev']) {
     const steps = workflowJobSteps(source, `test-e2e-${target}`);
     const test = requiredStep(steps, 'id', `playwright-${target}`);
     const upload = requiredStep(steps, 'name', `preserve ${target} E2E diagnostics`);
@@ -294,6 +296,198 @@ const assertE2EDiagnosticsContract = (source: string): void => {
       `${target} E2E diagnostics must preserve test failure and upload only the two diagnostic directories for seven days`,
     );
   }
+};
+
+const requireWorkflowRecord = (value: unknown, location: string): Record<string, unknown> => {
+  if (!isRecord(value) || Array.isArray(value)) {
+    throw new Error(`[workflow-source-contract] ${location} must be a mapping`);
+  }
+  return value;
+};
+
+const yamlModule: unknown = createRequire(import.meta.url)('js-yaml');
+if (!isRecord(yamlModule) || typeof yamlModule['load'] !== 'function') {
+  throw new Error('[workflow-source-contract] js-yaml.load is required');
+}
+const loadWorkflowYaml = yamlModule['load'] as (source: string) => unknown;
+
+const workflowRecords = (value: unknown, location: string): readonly Record<string, unknown>[] => {
+  if (!Array.isArray(value)) {
+    throw new Error(`[workflow-source-contract] ${location} must be a sequence`);
+  }
+  return value.map((item: unknown) => requireWorkflowRecord(item, `${location}[]`));
+};
+
+const assertWorkflowNeeds = (value: unknown, expected: readonly string[]): void => {
+  assertCondition(
+    Array.isArray(value) &&
+      value.length === expected.length &&
+      expected.every((job) => value.filter((item: unknown) => item === job).length === 1),
+    'Production E2E matrix and required gate must retain their needs',
+  );
+};
+
+const normalizeWorkflowExpression = (value: unknown): string =>
+  typeof value === 'string' ? value.replace(/\s+/gu, ' ').trim() : '';
+
+// 承認された単純な引数列だけを認め、quote・shell制御・追加filterによるcoverage変化を拒否する。
+const matrixCommandArguments = (
+  value: unknown,
+  entry: Record<string, unknown>,
+): readonly string[] => {
+  assertCondition(typeof value === 'string', 'Production E2E matrix command must be a string');
+  const expanded = (typeof value === 'string' ? value : '').replace(
+    /\$\{\{\s*matrix\.(\w+)\s*\}\}/gu,
+    (_expression: string, field: string) => {
+      const replacement = entry[field];
+      assertCondition(typeof replacement === 'string', `unknown matrix command field: ${field}`);
+      return typeof replacement === 'string' ? replacement : '';
+    },
+  );
+  const command = expanded.trim();
+  assertCondition(
+    !/[\r\n]/u.test(command),
+    'Production E2E matrix exact project arguments must belong to one shell command',
+  );
+  return command.split(/\s+/u);
+};
+
+export const assertProductionE2EMatrixContract = (source: string): void => {
+  const workflow = requireWorkflowRecord(loadWorkflowYaml(source), 'workflow');
+  const jobs = requireWorkflowRecord(workflow['jobs'], 'jobs');
+  const job = requireWorkflowRecord(jobs['test-e2e-production'], 'test-e2e-production');
+  const strategy = requireWorkflowRecord(job['strategy'], 'Production E2E matrix strategy');
+  const matrix = requireWorkflowRecord(strategy['matrix'], 'Production E2E matrix');
+  assertCondition(
+    Object.keys(matrix).length === 1 && Object.hasOwn(matrix, 'include'),
+    'Production E2E matrix must use include only, without extra axes or exclude',
+  );
+  const entries = workflowRecords(matrix['include'], 'Production E2E matrix include');
+  const expectedProjects: Readonly<Record<string, readonly string[]>> = {
+    chromium: ['chromium-integration'],
+    firefox: ['firefox-final-check'],
+    webkit: ['webkit-final-check', 'webkit-mobile-final-check'],
+  };
+  assertCondition(
+    entries.length === 3 &&
+      Object.keys(expectedProjects).every(
+        (target) => entries.filter((entry) => entry['target'] === target).length === 1,
+      ),
+    'Production E2E matrix must contain exactly three unique browser targets',
+  );
+  assertCondition(
+    strategy['fail-fast'] === false &&
+      !Object.hasOwn(strategy, 'max-parallel') &&
+      !Object.hasOwn(job, 'concurrency') &&
+      !Object.hasOwn(job, 'continue-on-error') &&
+      job['runs-on'] === 'ubuntu-26.04' &&
+      typeof job['name'] === 'string' &&
+      job['name'].includes('${{ matrix.target }}'),
+    'Production E2E matrix must allow independent standard runners without failure suppression',
+  );
+  assertWorkflowNeeds(job['needs'], ['detect-changes', 'prebuild-gate']);
+  assertCondition(
+    normalizeWorkflowExpression(job['if']) ===
+      "${{ !cancelled() && needs.detect-changes.result == 'success' && needs.prebuild-gate.result == 'success' && needs.detect-changes.outputs.app == 'true' && ((github.event_name == 'push' && github.ref == 'refs/heads/main') || github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && github.base_ref == 'main')) }}",
+    'Production E2E matrix must preserve app, prerequisite, cancellation and event gates',
+  );
+  const env = requireWorkflowRecord(job['env'], 'Production E2E matrix env');
+  assertCondition(
+    env['ROUAULT_MEDIA_BASE_URL'] === '${{ vars.ROUAULT_MEDIA_BASE_URL }}',
+    'Production E2E matrix must preserve the media URL',
+  );
+  const steps = workflowRecords(job['steps'], 'Production E2E matrix steps');
+  const tests = steps.filter((step) => step['id'] === 'playwright-production');
+  const installs = steps.filter(
+    (step) => typeof step['run'] === 'string' && step['run'].includes('playwright install'),
+  );
+  assertCondition(
+    tests.length === 1 && installs.length === 1,
+    'Production E2E matrix needs one test and browser install step',
+  );
+  const test = requireWorkflowRecord(tests[0], 'Production E2E matrix test');
+  const install = requireWorkflowRecord(installs[0], 'Production E2E matrix browser install');
+  assertCondition(
+    !Object.hasOwn(test, 'if') && !Object.hasOwn(install, 'if'),
+    'Production E2E matrix must not skip its browser install or selected tests',
+  );
+  const labels = steps.filter(
+    (step) =>
+      normalizeWorkflowExpression(step['run']) ===
+      'echo "ROUAULT_BUILD_LABEL=${GITHUB_SHA::7}" >> "$GITHUB_ENV"',
+  );
+  assertCondition(
+    labels.length === 1 &&
+      steps.indexOf(labels[0] ?? {}) < steps.indexOf(test) &&
+      steps.indexOf(install) < steps.indexOf(test),
+    'Production E2E matrix build label and browser install must precede tests',
+  );
+  for (const entry of entries) {
+    const target = String(entry['target']);
+    const projects = expectedProjects[target] ?? [];
+    assertCondition(
+      entry['browser'] === target &&
+        JSON.stringify(matrixCommandArguments(install['run'], entry)) ===
+          JSON.stringify(['pnpm', 'exec', 'playwright', 'install', '--with-deps', target]) &&
+        JSON.stringify(matrixCommandArguments(test['run'], entry)) ===
+          JSON.stringify([
+            'pnpm',
+            'run',
+            'test:e2e:production',
+            ...projects.map((project) => `--project=${project}`),
+          ]),
+      'Production E2E matrix must install only its browser and pass exact project arguments directly to pnpm run',
+    );
+  }
+  const uploads = steps.filter(
+    (step) =>
+      typeof step['uses'] === 'string' && /^(?:\.\/)?actions\/upload-artifact@/u.test(step['uses']),
+  );
+  assertCondition(
+    uploads.length === 1,
+    'production E2E diagnostics must have one failure-only upload',
+  );
+  const upload = requireWorkflowRecord(uploads[0], 'production E2E diagnostics upload');
+  const options = requireWorkflowRecord(upload['with'], 'production E2E diagnostics options');
+  assertCondition(
+    upload['name'] === 'preserve production E2E diagnostics' &&
+      normalizeWorkflowExpression(upload['if']) ===
+        "${{ always() && steps.playwright-production.outcome == 'failure' }}" &&
+      steps.indexOf(test) < steps.indexOf(upload) &&
+      upload['continue-on-error'] === true &&
+      steps.every((step) => step === upload || !Object.hasOwn(step, 'continue-on-error')) &&
+      options['name'] === 'rouault-e2e-production-${{ matrix.target }}-diagnostics' &&
+      typeof options['path'] === 'string' &&
+      options['path'].trim() === 'playwright-report/\ntest-results/' &&
+      options['retention-days'] === 7 &&
+      options['if-no-files-found'] === 'warn',
+    'production E2E diagnostics must preserve test failure and upload only the two diagnostic directories for seven days with unique target names',
+  );
+  const gate = requireWorkflowRecord(jobs['ci-required'], 'ci-required');
+  assertWorkflowNeeds(gate['needs'], [
+    'detect-changes',
+    'prebuild-gate',
+    'test-e2e-production',
+    'test-e2e-dev',
+    'build-production',
+  ]);
+  const validators = workflowRecords(gate['steps'], 'ci-required.steps').filter(
+    (step) => step['run'] === 'python3 scripts/ci/validate_required_needs.py',
+  );
+  const validator = requireWorkflowRecord(validators[0], 'ci-required validator');
+  const validatorEnv = requireWorkflowRecord(validator['env'], 'ci-required validator env');
+  assertCondition(
+    normalizeWorkflowExpression(gate['if']) === '${{ always() }}' &&
+      !Object.hasOwn(gate, 'continue-on-error') &&
+      !Object.hasOwn(validator, 'continue-on-error') &&
+      !Object.hasOwn(validator, 'if') &&
+      validators.length === 1 &&
+      validatorEnv['NEEDS_JSON'] === '${{ toJson(needs) }}' &&
+      validatorEnv['GITHUB_EVENT_NAME'] === '${{ github.event_name }}' &&
+      validatorEnv['GITHUB_REF'] === '${{ github.ref }}' &&
+      validatorEnv['GITHUB_BASE_REF'] === '${{ github.base_ref }}',
+    'Production E2E matrix must preserve always-on required-result validation and skip semantics',
+  );
 };
 
 const readStringField = (

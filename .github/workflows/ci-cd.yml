@@ -166,9 +166,22 @@ jobs:
         run: python3 scripts/ci/validate_prebuild_needs.py
 
   test-e2e-production:
-    name: test-e2e-production
+    name: test-e2e-production (${{ matrix.target }})
     runs-on: ubuntu-26.04
     timeout-minutes: 35
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: chromium
+            browser: chromium
+            projects: --project=chromium-integration
+          - target: firefox
+            browser: firefox
+            projects: --project=firefox-final-check
+          - target: webkit
+            browser: webkit
+            projects: --project=webkit-final-check --project=webkit-mobile-final-check
     needs:
       - detect-changes
       - prebuild-gate
@@ -185,15 +198,15 @@ jobs:
           cache: pnpm
       - run: corepack enable
       - run: pnpm install --frozen-lockfile
-      - run: pnpm exec playwright install --with-deps
+      - run: pnpm exec playwright install --with-deps ${{ matrix.browser }}
       - id: playwright-production
-        run: pnpm run test:e2e:production
+        run: pnpm run test:e2e:production ${{ matrix.projects }}
       - name: preserve production E2E diagnostics
         if: ${{ always() && steps.playwright-production.outcome == 'failure' }}
         continue-on-error: true
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
-          name: rouault-e2e-production-diagnostics
+          name: rouault-e2e-production-${{ matrix.target }}-diagnostics
           path: |
             playwright-report/
             test-results/
