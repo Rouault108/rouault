@@ -145,16 +145,20 @@ const expectElement = <T extends Element>(element: T | null | undefined, label: 
   return element as T;
 };
 
+// Keep the production search URL as the neutral fixture state. Rewriting an
+// unchanged URL still consumes WebKit's native History API quota.
+const setSearchFixtureUrl = (href = '/search/'): void => {
+  if (new URL(href, location.href).href !== location.href) {
+    history.replaceState(history.state, '', href);
+  }
+};
+
 const renderTagOrderFixture = async (
   response: StaticExploreSearchResponse,
   tags: readonly string[] = [],
 ): Promise<HTMLElement> => {
   const initialState: SearchState = { q: '', tags: [...tags], tagMode: 'or', sort: 'relevance' };
-  history.replaceState(
-    history.state,
-    '',
-    buildSearchPageHistoryHref(initialState, DEFAULT_SITE_URL_CONTEXT),
-  );
+  setSearchFixtureUrl(buildSearchPageHistoryHref(initialState, DEFAULT_SITE_URL_CONTEXT));
   const root = document.createElement('div');
   root.innerHTML = renderSearchPageHtml({
     surface: { kind: 'search', baseline: { tags: [], corporaHref: '/corpora/' } },
@@ -218,7 +222,7 @@ describe('search-page-enhancer', () => {
   afterEach(() => {
     document.body.replaceChildren();
     document.head.replaceChildren();
-    history.replaceState(history.state, '', '/');
+    setSearchFixtureUrl();
   });
 
   it('production tag list は select / deselect / tagMode の即時同期と応答後にも sequence・node・focus・scroll を保つこと', async () => {
