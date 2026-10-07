@@ -1,6 +1,6 @@
 import path from 'node:path';
 import { realpath, stat } from 'node:fs/promises';
-import { GitTreeRepository } from './git-repository.js';
+import { GitTreeRepository, assertCommitSha } from './git-repository.js';
 import { GitLedgerRepository } from './git-ledger-repository.js';
 import { PublicationLedgerStore } from './ledger-store.js';
 import { PublicationOperationQueue } from './operation-lock.js';
@@ -19,21 +19,13 @@ import {
 import type { ImageInputGuards } from '../../build/media/validate-image-inputs.js';
 import { transformRequestedMemos } from './transform-memos.js';
 import { validateIsolatedCandidate } from './validate-candidate.js';
+import { fingerprintPublicChanges, fingerprintCommittedChanges } from './candidate-fingerprint.js';
 import type { PublicationPorts } from './publish-snapshot.js';
 import type { ImportPlan, OwnedFiles, PublicationOperation, Snapshot } from './model.js';
 const publicWritePath = (name: string): boolean =>
   (name.startsWith('content/memos/') && name.endsWith('.md')) ||
   /^content\/_assets\/memos-import\/[a-f0-9]{64}\.(png|jpg|webp|avif)$/u.test(name) ||
   name === OWNERSHIP_PATH;
-const fingerprint = (writes: ReadonlyMap<string, Uint8Array>, deletes: readonly string[]): string =>
-  hashBytes(
-    JSON.stringify([
-      [...writes]
-        .map(([name, bytes]) => [name, hashBytes(bytes)])
-        .sort(([a], [b]) => (a ?? '').localeCompare(b ?? '', 'en')),
-      [...deletes].sort(),
-    ]),
-  );
 export class GitMemoRepository {
   constructor(readonly repository: GitTreeRepository) {}
   async read(): Promise<{ snapshot: Snapshot; manifest?: OwnedFiles }> {
@@ -72,9 +64,9 @@ export class GitMemoRepository {
     base: string,
     operation: PublicationOperation,
   ): Promise<string> {
-    if (fingerprint(plan.writes, plan.deletes) !== plan.candidateHash)
+    if (fingerprintPublicChanges(plan.writes, plan.deletes) !== plan.candidateHash)
       throw new Error('[publication] candidate fingerprint mismatch');
-    const existing = await this.findOperation(operation.operationId, plan.candidateHash);
+    const existing = await this.findOperation(operation.operationId, plan.candidateHash, base);
     if (existing) return existing;
     const sha = await this.repository.commit(
       base,
@@ -83,14 +75,47 @@ export class GitMemoRepository {
       publicWritePath,
       `memos: ${operation.action} ${operation.targets.length.toString()} selected documents`,
     );
-    await this.repository.git(['update-ref', this.operationRef(operation.operationId), sha]);
+    const reference = this.operationRef(operation.operationId);
+    const previous = (
+      await this.repository.git(['for-each-ref', '--format=%(objectname)', reference])
+    )
+      .toString('utf8')
+      .trim();
+    await this.repository.git(['update-ref', reference, sha, previous || '0'.repeat(40)]);
     return sha;
   }
   private operationRef(id: string): string {
     if (!/^[a-zA-Z0-9_-]+$/u.test(id)) throw new Error('[publication] operation identity required');
     return `refs/memos-import/operations/${id}`;
   }
-  async findOperation(id: string, candidateHash: string): Promise<string | null> {
+  async inspectCommit(sha: string, headSha: string) {
+    assertCommitSha(sha);
+    assertCommitSha(headSha);
+    const history = (await this.repository.git(['rev-list', headSha]))
+      .toString('utf8')
+      .trim()
+      .split('\n');
+    const published = history.includes(sha);
+    const object = (
+      await this.repository.git(['cat-file', '--batch-check'], Buffer.from(sha + '\n'))
+    )
+      .toString('utf8')
+      .trim();
+    if (object === `${sha} missing`) return { published };
+    if (!/^[a-f0-9]{40} commit [0-9]+$/u.test(object) || object.split(' ')[0] !== sha)
+      throw new Error('[publication] recovery object invalid');
+    const parentSha = (await this.repository.git(['rev-parse', `${sha}^`])).toString('utf8').trim();
+    return {
+      published,
+      snapshot: await this.repository.snapshot(sha),
+      parent: await this.repository.snapshot(parentSha),
+    };
+  }
+  async findOperation(
+    id: string,
+    candidateHash: string,
+    expectedBase?: string,
+  ): Promise<string | null> {
     const reference = this.operationRef(id);
     const result = (
       await this.repository.git(['for-each-ref', '--format=%(refname) %(objectname)', reference])
@@ -110,6 +135,7 @@ export class GitMemoRepository {
     const base = await this.repository.snapshot(
       (await this.repository.git(['rev-parse', `${sha}^`])).toString('utf8').trim(),
     );
+    if (expectedBase && base.sha !== expectedBase) return null;
     const writes = new Map<string, Uint8Array>();
     const deletes: string[] = [];
     for (const [name, file] of current.files)
@@ -121,7 +147,7 @@ export class GitMemoRepository {
     for (const name of base.files.keys()) if (!current.files.has(name)) deletes.push(name);
     if (
       [...writes.keys(), ...deletes].some((name) => !publicWritePath(name)) ||
-      fingerprint(writes, deletes) !== candidateHash
+      fingerprintCommittedChanges(current, base) !== candidateHash
     )
       throw new Error('[publication] recovery commit differs from approved candidate');
     return sha;
@@ -282,7 +308,8 @@ export const createGitPublicationPorts = async (
       assertWrite();
       return options.rouault.push(sha, base);
     },
-    findRouaultOperation: (id, hash) => rouault.findOperation(id, hash),
+    findRouaultOperation: (id, hash, base) => rouault.findOperation(id, hash, base),
+    inspectRouaultCommit: (sha, head) => rouault.inspectCommit(sha, head),
     verifyDeployment: options.verifyDeployment,
     finalizeLedger: (state, receipt, plan, sha) => {
       assertWrite();

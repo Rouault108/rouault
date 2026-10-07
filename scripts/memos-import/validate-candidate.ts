@@ -5,6 +5,7 @@ import { parse, type DefaultTreeAdapterMap } from 'parse5';
 import { assertSafeContentPath } from '../../build/content/content-record.js';
 import { resolveContentRoute } from '../../build/content/content-route-registry.js';
 import { createPnpmInvocation } from '../run-build-process.js';
+import { parseInternalDocumentRouteManifest } from '../../shared/navigation/internal-document-route-manifest.js';
 import { assertSnapshot, hashBytes } from './source-snapshot.js';
 import type { ImportPlan, Snapshot } from './model.js';
 type HtmlNode = DefaultTreeAdapterMap['node'];
@@ -43,17 +44,12 @@ export const validateCandidateArtifacts = async (
   plan: ImportPlan,
   outputDirectory: string,
 ): Promise<void> => {
-  const manifest: unknown = JSON.parse(
-    await readFile(path.join(outputDirectory, 'assets/internal-document-routes.json'), 'utf8'),
+  const manifest = parseInternalDocumentRouteManifest(
+    JSON.parse(
+      await readFile(path.join(outputDirectory, 'assets/internal-document-routes.json'), 'utf8'),
+    ),
   );
-  if (
-    !record(manifest) ||
-    typeof manifest['buildId'] !== 'string' ||
-    !Array.isArray(manifest['routes']) ||
-    !manifest['routes'].every((route) => typeof route === 'string')
-  )
-    throw new Error('[candidate] route manifest invalid');
-  const routes = new Set<string>(manifest['routes']);
+  const routes = new Set<string>(manifest.routes);
   for (const entry of Object.values(plan.entries)) {
     const route = resolveContentRoute({
       collectionId: 'memos',
@@ -62,6 +58,24 @@ export const validateCandidateArtifacts = async (
     if (entry.status === 'withdrawn') {
       if (routes.has(route.canonicalPathname))
         throw new Error('[candidate] withdrawn route remains');
+      for (const name of [
+        route.outputPath,
+        '__router/' + route.outputPath.replace(/\.html$/u, '.router.json'),
+      ]) {
+        try {
+          await readFile(path.join(outputDirectory, name));
+        } catch (error) {
+          if (
+            typeof error === 'object' &&
+            error !== null &&
+            'code' in error &&
+            error.code === 'ENOENT'
+          )
+            continue;
+          throw error;
+        }
+        throw new Error('[candidate] withdrawn artifact remains');
+      }
       continue;
     }
     if (!routes.has(route.canonicalPathname)) throw new Error('[candidate] adopted route missing');
@@ -79,7 +93,7 @@ export const validateCandidateArtifacts = async (
         'utf8',
       ),
     );
-    if (!record(artifact) || artifact['buildId'] !== manifest['buildId'])
+    if (!record(artifact) || artifact['buildId'] !== manifest.buildId)
       throw new Error('[candidate] navigation build identity differs');
   }
 };

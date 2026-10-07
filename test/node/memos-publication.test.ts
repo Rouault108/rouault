@@ -9,6 +9,7 @@ import {
 import { aggregateLedger } from '../../scripts/memos-import/publication-ledger.js';
 import { PublicationOperationQueue } from '../../scripts/memos-import/operation-lock.js';
 import { hashBytes } from '../../scripts/memos-import/source-snapshot.js';
+import { OWNERSHIP_PATH } from '../../scripts/memos-import/build-import-plan.js';
 import type {
   PublicationLedger,
   PublicationOperation,
@@ -58,6 +59,7 @@ class Harness implements PublicationPorts {
   finalizations = 0;
   failAt:
     | 'source'
+    | 'source-response'
     | 'final-read'
     | 'candidate'
     | 'push'
@@ -68,6 +70,8 @@ class Harness implements PublicationPorts {
   marker: { operationId: string; hash: string; sha: string } | undefined;
   committed: { snapshot: Snapshot; manifest: OwnedFiles } | undefined;
   advanceRouaultAfterSource = false;
+  commits = new Map<string, { snapshot: Snapshot; parent: Snapshot }>();
+  pushCalls = 0;
   async withLock<T>(_id: string, work: () => Promise<T>): Promise<T> {
     return work();
   }
@@ -111,6 +115,7 @@ class Harness implements PublicationPorts {
           ['README.md', { mode: '100644', bytes: Buffer.from('Unrelated public change') }],
         ]),
       };
+    if (this.failAt === 'source-response') throw new Error('Synthetic source response lost');
     return this.source.sha;
   }
   async validateCandidate(_plan: ImportPlan, _base: Snapshot) {
@@ -132,9 +137,14 @@ class Harness implements PublicationPorts {
       manifest: plan.manifest,
     };
     this.marker = { operationId: id, hash: plan.candidateHash, sha: this.committed.snapshot.sha };
+    this.commits.set(this.committed.snapshot.sha, {
+      snapshot: this.committed.snapshot,
+      parent: this.rouault,
+    });
     return this.committed.snapshot.sha;
   }
   async pushRouault(sha: string, _base: string) {
+    this.pushCalls += 1;
     expect(this.receipts.some((receipt) => receipt.rouaultCommitSha === sha)).toBe(true);
     if (sha === this.rouault.sha) return;
     expect(_base).toBe(this.rouault.sha);
@@ -144,8 +154,22 @@ class Harness implements PublicationPorts {
     this.manifest = this.committed.manifest;
     if (this.failAt === 'push-response') throw new Error('synthetic response lost');
   }
-  async findRouaultOperation(id: string, hash: string) {
-    return this.marker?.operationId === id && this.marker.hash === hash ? this.marker.sha : null;
+  async findRouaultOperation(id: string, hash: string, base?: string) {
+    const matched =
+      this.marker?.operationId === id && this.marker.hash === hash ? this.marker.sha : null;
+    return matched && (!base || this.commits.get(matched)?.parent.sha === base) ? matched : null;
+  }
+  async inspectRouaultCommit(sha: string, head: string) {
+    let current: string | undefined = head;
+    let published = false;
+    while (current) {
+      if (current === sha) {
+        published = true;
+        break;
+      }
+      current = this.commits.get(current)?.parent.sha;
+    }
+    return { published, ...this.commits.get(sha) };
   }
   async verifyDeployment(sha: string, _plan: ImportPlan) {
     expect(sha).toBe(this.rouault.sha);
@@ -176,6 +200,114 @@ class Harness implements PublicationPorts {
   }
 }
 describe('manual publication transaction and recovery', () => {
+  it('stops if an already-pushed target changed instead of finalizing a stale successful deployment', async () => {
+    const ports = new Harness();
+    ports.failAt = 'deployment';
+    await executePublicationOperation(operation, ports, { guards, initializeEmpty: true });
+    const before = ports.rouault;
+    const changed = Buffer.from('---\ntitle: Changed public input\n---\nChanged body');
+    if (!ports.manifest) throw new Error('Synthetic manifest missing');
+    ports.manifest = {
+      ...ports.manifest,
+      files: { ...ports.manifest.files, 'content/memos/A.md': hashBytes(changed) },
+    };
+    ports.rouault = {
+      ...before,
+      sha: 'e'.repeat(40),
+      files: new Map([
+        ...before.files,
+        ['content/memos/A.md', { mode: '100644', bytes: changed }],
+        [
+          OWNERSHIP_PATH,
+          { mode: '100644', bytes: Buffer.from(JSON.stringify(ports.manifest, null, 2) + '\n') },
+        ],
+      ]),
+    };
+    ports.commits.set(ports.rouault.sha, { snapshot: ports.rouault, parent: before });
+    ports.failAt = undefined;
+    const resumed = await executePublicationOperation(operation, ports, { guards });
+    expect(resumed.status).toBe('partial');
+    expect(resumed.receipt.failureStage).toBe('candidate-validated');
+    expect(ports.publicCommits).toBe(1);
+    expect(ports.pushCalls).toBe(1);
+    expect(ports.finalizations).toBe(0);
+  });
+  it('rebuilds an unpublished commit on a new base after push failure and preserves unrelated changes', async () => {
+    const ports = new Harness();
+    ports.failAt = 'push';
+    const first = await executePublicationOperation(operation, ports, {
+      guards,
+      initializeEmpty: true,
+    });
+    expect(first.status).toBe('partial');
+    const before = ports.rouault;
+    ports.rouault = {
+      ...before,
+      sha: 'e'.repeat(40),
+      files: new Map([
+        ...before.files,
+        ['README.md', { mode: '100644', bytes: Buffer.from('Concurrent public change') }],
+      ]),
+    };
+    ports.commits.set(ports.rouault.sha, { snapshot: ports.rouault, parent: before });
+    ports.failAt = undefined;
+    const resumed = await executePublicationOperation(operation, ports, {
+      guards,
+      initializeEmpty: true,
+    });
+    expect(resumed.status).toBe('complete');
+    expect(resumed.receipt.rouaultBaseSha).toBe('e'.repeat(40));
+    expect(resumed.receipt.results['previousUnpublishedRouaultCommitSha']).toBe(
+      first.receipt.rouaultCommitSha,
+    );
+    expect(ports.sourceCommits).toBe(1);
+    expect(ports.publicCommits).toBe(2);
+    expect(Buffer.from(ports.rouault.files.get('README.md')?.bytes ?? []).toString()).toBe(
+      'Concurrent public change',
+    );
+  });
+  it('reconstructs a lost private unpushed candidate from persisted approval and fixed source without changing the source again', async () => {
+    const ports = new Harness();
+    ports.failAt = 'push';
+    const first = await executePublicationOperation(operation, ports, {
+      guards,
+      initializeEmpty: true,
+    });
+    ports.marker = undefined;
+    ports.committed = undefined;
+    ports.commits.clear();
+    ports.failAt = undefined;
+    const resumed = await executePublicationOperation(operation, ports, {
+      guards,
+      initializeEmpty: true,
+    });
+    expect(resumed.status).toBe('complete');
+    expect(resumed.receipt.results['previousUnpublishedRouaultCommitSha']).toBe(
+      first.receipt.rouaultCommitSha,
+    );
+    expect(ports.sourceCommits).toBe(1);
+    expect(ports.publicCommits).toBe(2);
+  });
+  it('stops if a persisted pushed commit disappeared rather than publishing it again', async () => {
+    const ports = new Harness();
+    ports.failAt = 'deployment';
+    const before = ports.rouault;
+    expect(
+      (await executePublicationOperation(operation, ports, { guards, initializeEmpty: true }))
+        .status,
+    ).toBe('partial');
+    ports.rouault = before;
+    ports.commits.clear();
+    ports.marker = undefined;
+    ports.failAt = undefined;
+    const resumed = await executePublicationOperation(operation, ports, {
+      guards,
+      initializeEmpty: true,
+    });
+    expect(resumed.status).toBe('partial');
+    expect(ports.publicCommits).toBe(1);
+    expect(ports.pushCalls).toBe(1);
+  });
   it('revalidates an unrelated Rouault head advance and records the actual commit/push base', async () => {
     const ports = new Harness();
     ports.advanceRouaultAfterSource = true;
@@ -239,6 +371,7 @@ describe('manual publication transaction and recovery', () => {
   });
   it.each([
     'source',
+    'source-response',
     'final-read',
     'candidate',
     'push',

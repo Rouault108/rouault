@@ -26,6 +26,7 @@ import {
 import { validateOperation } from './publication-ledger.js';
 import { preparePublicAsset } from './prepare-public-assets.js';
 import { transformRequestedMemos } from './transform-memos.js';
+import { fingerprintPublicChanges } from './candidate-fingerprint.js';
 import type {
   ImportPlan,
   OwnedFiles,
@@ -368,14 +369,7 @@ export const buildImportPlan = async (input: {
       dependencyVersion,
     ]),
   );
-  const candidateHash = hashBytes(
-    JSON.stringify([
-      [...writes]
-        .map(([name, bytes]) => [name, hashBytes(bytes)])
-        .sort(([a], [b]) => (a ?? '').localeCompare(b ?? '', 'en')),
-      [...deletes].sort(),
-    ]),
-  );
+  const candidateHash = fingerprintPublicChanges(writes, deletes);
   return {
     writes,
     deletes,

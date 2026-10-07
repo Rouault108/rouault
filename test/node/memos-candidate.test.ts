@@ -4,6 +4,16 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { validateCandidateArtifacts } from '../../scripts/memos-import/validate-candidate.js';
 import type { ImportPlan } from '../../scripts/memos-import/model.js';
+import { INTERNAL_DOCUMENT_ROUTE_MANIFEST_VERSION } from '../../shared/navigation/internal-document-route-manifest-path.js';
+const manifest = (routes: readonly string[]) => ({
+  version: INTERNAL_DOCUMENT_ROUTE_MANIFEST_VERSION,
+  buildId: 'synthetic',
+  buildLabel: 'synthetic',
+  generatedAt: '2026-01-01T00:00:00.000Z',
+  siteOrigin: 'https://synthetic.invalid',
+  basePath: '',
+  routes,
+});
 describe('candidate final HTML and navigation agreement', () => {
   it('requires the actual final heading IDs, route and navigation build to agree', async () => {
     const directory = await mkdtemp(path.join(tmpdir(), 'memos-artifacts-'));
@@ -32,7 +42,7 @@ describe('candidate final HTML and navigation agreement', () => {
         await mkdir(path.join(directory, folder), { recursive: true });
       await writeFile(
         path.join(directory, 'assets/internal-document-routes.json'),
-        JSON.stringify({ buildId: 'synthetic', routes: ['/memos/', '/memos/A'] }),
+        JSON.stringify(manifest(['/memos/', '/memos/A'])),
       );
       await writeFile(
         path.join(directory, '__router/memos/A/index.router.json'),
@@ -59,6 +69,15 @@ describe('candidate final HTML and navigation agreement', () => {
       await expect(validateCandidateArtifacts(plan, directory)).rejects.toThrow('identity');
       entry.status = 'withdrawn';
       await expect(validateCandidateArtifacts(plan, directory)).rejects.toThrow('withdrawn');
+      await writeFile(
+        path.join(directory, 'assets/internal-document-routes.json'),
+        JSON.stringify(manifest(['/memos/'])),
+      );
+      await expect(validateCandidateArtifacts(plan, directory)).rejects.toThrow('artifact remains');
+      await rm(path.join(directory, 'memos/A/index.html'));
+      await expect(validateCandidateArtifacts(plan, directory)).rejects.toThrow('artifact remains');
+      await rm(path.join(directory, '__router/memos/A/index.router.json'));
+      await validateCandidateArtifacts(plan, directory);
     } finally {
       await rm(directory, { recursive: true, force: true });
     }

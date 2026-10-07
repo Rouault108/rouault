@@ -5,7 +5,7 @@ export interface PrivateCommandOptions {
   maxOutputBytes: number;
 }
 export type PrivateCommand = (
-  command: 'git' | 'gh',
+  command: 'git' | 'gh' | 'python3',
   args: readonly string[],
   input?: Uint8Array,
   environment?: NodeJS.ProcessEnv,

@@ -284,6 +284,98 @@ describe('concrete private Git publication adapters', () => {
         'memos: publish 1 selected documents',
       );
       expect((await adapter.read()).manifest).toEqual(plan.manifest);
+      const observed = await adapter.inspectCommit(sha, await f.repository.head());
+      expect(observed.published).toBe(true);
+      expect(observed.parent?.sha).toBe(base.snapshot.sha);
+    } finally {
+      await rm(f.root, { recursive: true, force: true });
+    }
+  }, 20_000);
+  it('replaces only the private unpushed candidate after a concurrent head advance and survives loss of the private cache', async () => {
+    const f = await fixture(
+      { repository: 'Rouault108/rouault', private: false, branch: 'main' },
+      { 'README.md': 'Original synthetic input' },
+    );
+    try {
+      const adapter = new GitMemoRepository(f.repository);
+      const makePlan = async () => {
+        const base = await adapter.read();
+        return {
+          base,
+          plan: await buildImportPlan({
+            operation,
+            ledger: { schemaVersion: 1, revision: 0, entries: {}, operations: {} },
+            source: {
+              sha: 'a'.repeat(40),
+              complete: true,
+              files: new Map([
+                [
+                  '02_notes/A.md',
+                  {
+                    mode: '100644',
+                    bytes: Buffer.from('---\ntitle: Synthetic\npublish: true\n---\n# Heading\n'),
+                  },
+                ],
+              ]),
+            },
+            rouault: base.snapshot,
+            initializeEmpty: true,
+            guards: {
+              maxBlobBytes: 100_000,
+              maxPushBytes: 1_000_000,
+              maxPixels: 100_000,
+              memoryBytes: 8_000_000,
+              timeoutMs: 2000,
+              hostingEvidence: 'synthetic',
+              environmentEvidence: 'synthetic',
+            },
+          }),
+        };
+      };
+      const before = await makePlan();
+      const oldSha = await adapter.commitPlan(before.plan, before.base.snapshot.sha, operation);
+      await writeFile(path.join(f.work, 'README.md'), 'Concurrent synthetic change');
+      git(f.work, ['add', 'README.md']);
+      git(f.work, ['commit', '-m', 'Synthetic concurrent change']);
+      git(f.work, ['push', f.remote, 'main']);
+      const next = await makePlan();
+      expect((await adapter.inspectCommit(oldSha, next.base.snapshot.sha)).published).toBe(false);
+      expect(
+        await adapter.findOperation(
+          operation.operationId,
+          before.plan.candidateHash,
+          next.base.snapshot.sha,
+        ),
+      ).toBeNull();
+      const newSha = await adapter.commitPlan(next.plan, next.base.snapshot.sha, operation);
+      expect(newSha).not.toBe(oldSha);
+      expect(
+        await adapter.findOperation(
+          operation.operationId,
+          next.plan.candidateHash,
+          next.base.snapshot.sha,
+        ),
+      ).toBe(newSha);
+      await f.repository.push(newSha, next.base.snapshot.sha);
+      expect(git(f.root, ['--git-dir', f.remote, 'show', 'main:README.md'])).toBe(
+        'Concurrent synthetic change',
+      );
+      expect(git(f.root, ['--git-dir', f.remote, 'for-each-ref', '--format=%(refname)'])).toBe(
+        'refs/heads/main',
+      );
+      await rm(f.local, { recursive: true, force: true });
+      git(f.root, ['clone', '--bare', f.remote, f.local]);
+      git(f.root, [
+        '--git-dir',
+        f.local,
+        'remote',
+        'set-url',
+        'origin',
+        'https://github.com/Rouault108/rouault.git',
+      ]);
+      const fetched = await f.repository.head();
+      expect((await adapter.inspectCommit(newSha, fetched)).published).toBe(true);
+      expect(await adapter.inspectCommit(oldSha, fetched)).toEqual({ published: false });
     } finally {
       await rm(f.root, { recursive: true, force: true });
     }

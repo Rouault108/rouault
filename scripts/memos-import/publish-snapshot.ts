@@ -10,6 +10,7 @@ import {
 import { createReceipt, validateOperation } from './publication-ledger.js';
 import { buildImportPlan, plannedSourceSnapshot } from './build-import-plan.js';
 import { hashBytes } from './source-snapshot.js';
+import { fingerprintCommittedChanges } from './candidate-fingerprint.js';
 import type { ImageInputGuards } from '../../build/media/validate-image-inputs.js';
 export interface PublicationPorts {
   withLock<T>(operationId: string, work: () => Promise<T>): Promise<T>;
@@ -25,7 +26,15 @@ export interface PublicationPorts {
   validateCandidate(plan: ImportPlan, base: Snapshot): Promise<void>;
   commitRouault(plan: ImportPlan, expectedBaseSha: string, operationId: string): Promise<string>;
   pushRouault(commitSha: string, expectedBaseSha: string): Promise<void>;
-  findRouaultOperation(operationId: string, candidateHash: string): Promise<string | null>;
+  findRouaultOperation(
+    operationId: string,
+    candidateHash: string,
+    expectedBaseSha?: string,
+  ): Promise<string | null>;
+  inspectRouaultCommit(
+    commitSha: string,
+    headSha: string,
+  ): Promise<{ published: boolean; snapshot?: Snapshot; parent?: Snapshot }>;
   verifyDeployment(
     commitSha: string,
     plan: ImportPlan,
@@ -97,6 +106,7 @@ export const executePublicationOperation = async (
       await persist();
     };
     let activeStage: OperationReceipt['stage'] = receipt.stage;
+    let observedPublicCommit = false;
     try {
       await advance('locked');
       activeStage = 'preflight-pinned';
@@ -107,6 +117,38 @@ export const executePublicationOperation = async (
           operation.operationId,
           receipt.candidateHash,
         );
+      }
+      if (receipt.rouaultCommitSha) {
+        const recovery = await ports.inspectRouaultCommit(
+          receipt.rouaultCommitSha,
+          rouault.snapshot.sha,
+        );
+        if (
+          !receipt.noOps.includes('rouault-committed') &&
+          recovery.snapshot &&
+          recovery.parent &&
+          fingerprintCommittedChanges(recovery.snapshot, recovery.parent) !== receipt.candidateHash
+        )
+          throw new Error('[publication] recovery commit differs from approved candidate');
+        observedPublicCommit = recovery.published;
+        if (recovery.published && !recovery.snapshot)
+          throw new Error('[publication] published commit unavailable');
+        if (
+          !recovery.published &&
+          (receipt.stage === 'pushed' || receipt.stage === 'deployment-verified')
+        )
+          throw new Error('[publication] previously published commit requires reconciliation');
+        if (
+          !recovery.published &&
+          (!recovery.snapshot || recovery.parent?.sha !== rouault.snapshot.sha)
+        ) {
+          receipt.results['previousUnpublishedRouaultCommitSha'] = receipt.rouaultCommitSha;
+          receipt.rouaultCommitSha = null;
+          receipt.candidateHash = null;
+          receipt.rouaultBaseSha = rouault.snapshot.sha;
+          receipt.stage = 'source-final-pinned';
+          await persist();
+        }
       }
       receipt.sourceBeforeSha ??= source.sha;
       receipt.rouaultBaseSha ??= rouault.snapshot.sha;
@@ -172,6 +214,8 @@ export const executePublicationOperation = async (
       });
       if (finalPlan.inputHash !== receipt.approvedInputHash)
         throw new Error('[publication] final source differs from approved content');
+      if (observedPublicCommit && (finalPlan.writes.size || finalPlan.deletes.length))
+        throw new Error('[publication] published output differs; reconciliation required');
       await ports.validateCandidate(finalPlan, currentRouault.snapshot);
       if (!receipt.rouaultCommitSha) {
         if (receipt.rouaultBaseSha !== currentRouault.snapshot.sha) {
@@ -184,6 +228,7 @@ export const executePublicationOperation = async (
         const recovered = await ports.findRouaultOperation(
           operation.operationId,
           finalPlan.candidateHash,
+          currentRouault.snapshot.sha,
         );
         if (recovered) receipt.rouaultCommitSha = recovered;
         else if (finalPlan.writes.size || finalPlan.deletes.length)
@@ -200,7 +245,8 @@ export const executePublicationOperation = async (
       }
       if (OPERATION_STAGES.indexOf(receipt.stage) < OPERATION_STAGES.indexOf('pushed')) {
         activeStage = 'pushed';
-        await ports.pushRouault(receipt.rouaultCommitSha, receipt.rouaultBaseSha);
+        if (observedPublicCommit) receipt.results['publicPushObserved'] = receipt.rouaultCommitSha;
+        else await ports.pushRouault(receipt.rouaultCommitSha, receipt.rouaultBaseSha);
         await advance('pushed');
       }
       activeStage = 'deployment-verified';
