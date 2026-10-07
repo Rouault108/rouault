@@ -11,11 +11,21 @@ test('superseded memo navigation keeps the winning document and can resume ordin
   const response = await page.request.get('/__router/memos/example/index.router.json');
   expect(response.ok()).toBe(true);
   const body = await response.body();
-  const reached = Promise.withResolvers<undefined>();
-  const release = Promise.withResolvers<undefined>();
+  let markReached = (): void => {
+    throw new Error('Navigation arrival gate was not initialized');
+  };
+  let releaseResponse = (): void => {
+    throw new Error('Navigation response gate was not initialized');
+  };
+  const reached = new Promise<void>((resolve) => {
+    markReached = resolve;
+  });
+  const release = new Promise<void>((resolve) => {
+    releaseResponse = resolve;
+  });
   await page.route('**/__router/memos/example/index.router.json', async (route) => {
-    reached.resolve(undefined);
-    await release.promise;
+    markReached();
+    await release;
     try {
       await route.fulfill({ status: 200, contentType: 'application/json', body });
     } catch {
@@ -32,13 +42,12 @@ test('superseded memo navigation keeps the winning document and can resume ordin
       return host.navigate(target);
     }, url);
   const first = navigate('/memos/example');
-  await reached.promise;
+  await reached;
   const second = await navigate('/memos/no-headings');
-  release.resolve(undefined);
+  releaseResponse();
   const cancelled = await first;
   expect(second.committed).toBe(true);
-  expect(cancelled.committed).toBe(false);
-  expect(cancelled.reason).toBe('superseded');
+  expect(cancelled).toMatchObject({ committed: false, reason: 'superseded' });
   await expect(page).toHaveURL(/\/memos\/no-headings$/u);
   await expect(page.locator('.note-shell')).toHaveAttribute('data-toc-presence', 'absent');
   await expect(page.locator('.note-shell')).toHaveAttribute('data-sidebar-presence', 'absent');
