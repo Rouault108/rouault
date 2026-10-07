@@ -207,11 +207,11 @@ export const transformRequestedMemos = async (input: {
     ): Promise<RootContent[]> => {
       if (stack.includes(name) || stack.length >= 16 || occurrences > 256)
         throw new Error('[import] embed cycle or expansion limit');
-      const original = parse(name);
       const note = input.notes.get(name);
       if (!note) throw new Error('[import] note missing');
       bodyBytes += Buffer.byteLength(note.body);
       if (bodyBytes > 10 * 1024 * 1024) throw new Error('[import] body size limit');
+      const original = parse(name);
       if (name !== target) dependencies[name] = note.versionHash;
       const originalHeadings = sourceHeadings.get(name) ?? [];
       const definitions = new Map<string, Definition>();

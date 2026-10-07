@@ -323,6 +323,74 @@ describe('manual memo importer', () => {
       ),
     ).rejects.toThrow();
   });
+  it('stops on bounded recursive depth, expansion count and body bytes before publishing', async () => {
+    const ledger = emptyLedger();
+    const files: Record<string, string> = { '02_notes/A.md': note('![[N1]]') };
+    for (let index = 1; index <= 17; index += 1) {
+      const name = `02_notes/N${index.toString()}.md`;
+      const body = note(index === 17 ? 'End' : `![[N${(index + 1).toString()}]]`);
+      files[name] = body;
+      ledger.entries[name] = published(name, body);
+    }
+    await expect(transform(files, ledger)).rejects.toThrow('expansion limit');
+    const repeated = note('Repeated approved body');
+    const repeatLedger = emptyLedger();
+    repeatLedger.entries['02_notes/B.md'] = published('02_notes/B.md', repeated);
+    await expect(
+      transform(
+        {
+          '02_notes/A.md': note(Array.from({ length: 257 }, () => '![[B]]').join('\n\n')),
+          '02_notes/B.md': repeated,
+        },
+        repeatLedger,
+      ),
+    ).rejects.toThrow('expansion limit');
+    await expect(
+      transform({ '02_notes/A.md': note('x'.repeat(10 * 1024 * 1024 + 1)) }),
+    ).rejects.toThrow('body size limit');
+  });
+  it('stops a B heading update that would break unchanged C rather than editing C without approval', async () => {
+    const files = {
+      '02_notes/B.md': note('## Old\nBody'),
+      '02_notes/C.md': note('[[B#Old|Existing reference]]'),
+    };
+    const first = await buildImportPlan({
+      operation: { ...operation, targets: Object.keys(files) },
+      source: snapshot(files),
+      rouault: snapshot({}),
+      ledger: emptyLedger(),
+      initializeEmpty: true,
+      guards,
+    });
+    const ledger = emptyLedger();
+    ledger.revision = 1;
+    for (const [name, entry] of Object.entries(first.entries))
+      ledger.entries[name] = {
+        ...entry,
+        rouaultCommitSha: 'b'.repeat(40),
+        deploymentId: 'synthetic',
+      };
+    const publicInput = snapshot(Object.fromEntries(first.writes));
+    await expect(
+      buildImportPlan({
+        operation: {
+          ...operation,
+          operationId: 'test-B-update',
+          action: 'update',
+          targets: ['02_notes/B.md'],
+          expectedLedgerRevision: 1,
+        },
+        source: snapshot({ ...files, '02_notes/B.md': note('## New\nBody') }),
+        rouault: publicInput,
+        manifest: first.manifest,
+        ledger,
+        guards,
+      }),
+    ).rejects.toThrow('existing public reference would break');
+    expect(
+      Buffer.from(publicInput.files.get('content/memos/C.md')?.bytes ?? []).toString(),
+    ).toContain('/memos/B#old');
+  });
   it('does not persist operations view inside state.json', () => {
     expect(JSON.parse(serializeState(emptyLedger()))).toEqual({
       schemaVersion: 1,
@@ -388,6 +456,60 @@ describe('manual memo importer', () => {
       false,
     );
     expect(safe.bytes.equals(png)).toBe(true);
+  });
+  it('removes synthesized WebP EXIF while preserving lossless alpha pixels and stops on unapproved rights metadata', async () => {
+    const image = await sharp({
+      create: { width: 4, height: 4, channels: 4, background: '#44556680' },
+    })
+      .webp({ lossless: true })
+      .withExif({ IFD0: { Copyright: 'SYNTHETIC_WEBP_PRIVATE_NOTICE' } })
+      .toBuffer();
+    expect(image.includes(Buffer.from('SYNTHETIC_WEBP_PRIVATE_NOTICE'))).toBe(true);
+    const source = snapshot({ 'image.webp': image });
+    await expect(preparePublicAsset(source, 'image.webp', guards, false)).rejects.toThrow(
+      'rights metadata',
+    );
+    const result = await preparePublicAsset(source, 'image.webp', guards, true);
+    expect(result.bytes.toString('ascii', 0, 4)).toBe('RIFF');
+    expect(result.bytes.includes(Buffer.from('SYNTHETIC_WEBP_PRIVATE_NOTICE'))).toBe(false);
+    expect((await sharp(result.bytes).metadata()).exif).toBeUndefined();
+    expect((await sharp(result.bytes).metadata()).hasAlpha).toBe(true);
+    expect(await sharp(result.bytes).raw().toBuffer()).toEqual(await sharp(image).raw().toBuffer());
+  });
+  it('stops on orientation and ICC display metadata even when textual rights removal is approved', async () => {
+    const base = () =>
+      sharp({ create: { width: 4, height: 2, channels: 3, background: '#663399' } }).jpeg();
+    const orientation = await base()
+      .withExif({ IFD0: { Orientation: '6' } })
+      .toBuffer();
+    // Sharp normalizes new EXIF Orientation; construct the unsafe source tag directly.
+    const tiff = orientation.indexOf(Buffer.from('Exif\0\0')) + 6;
+    const littleEndian = orientation.toString('ascii', tiff, tiff + 2) === 'II';
+    const read16 = (at: number) =>
+      littleEndian ? orientation.readUInt16LE(at) : orientation.readUInt16BE(at);
+    const firstIfd =
+      tiff +
+      (littleEndian ? orientation.readUInt32LE(tiff + 4) : orientation.readUInt32BE(tiff + 4));
+    let found = false;
+    for (let index = 0; index < read16(firstIfd); index += 1) {
+      const at = firstIfd + 2 + index * 12;
+      if (read16(at) !== 0x0112) continue;
+      if (littleEndian) orientation.writeUInt16LE(6, at + 8);
+      else orientation.writeUInt16BE(6, at + 8);
+      found = true;
+      break;
+    }
+    expect(found).toBe(true);
+    expect((await sharp(orientation).metadata()).icc).toBeUndefined();
+    expect((await sharp(orientation).metadata()).orientation).toBe(6);
+    await expect(
+      preparePublicAsset(snapshot({ 'rotated.jpg': orientation }), 'rotated.jpg', guards, true),
+    ).rejects.toThrow('display metadata');
+    const color = await base().withMetadata().toBuffer();
+    expect((await sharp(color).metadata()).icc).toBeDefined();
+    await expect(
+      preparePublicAsset(snapshot({ 'profile.jpg': color }), 'profile.jpg', guards, true),
+    ).rejects.toThrow('display metadata');
   });
   it('keeps a verified metadata-free AVIF byte-for-byte and rejects EXIF or unknown boxes', async () => {
     const create = () =>
