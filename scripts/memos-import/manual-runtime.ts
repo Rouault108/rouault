@@ -29,6 +29,9 @@ export const runManualMemoRequest = async (
     archiveReferencesVerified?: boolean;
   },
 ) => {
+  const execution: unknown = input.execution;
+  if (execution !== 'dry-run' && execution !== 'publication')
+    throw new Error('[publication] explicit execution mode required');
   const verifyDeployment = createMemoDeploymentVerifier({
     readVerifiedProof: createGitHubDeploymentProofReader({
       actions: input.actions,
@@ -52,8 +55,6 @@ export const runManualMemoRequest = async (
   };
   if (input.execution === 'dry-run')
     return { execution: 'dry-run' as const, plan: await dryRunGitPublication(options, config) };
-  if (input.execution !== 'publication')
-    throw new Error('[publication] explicit execution mode required');
   const ports = await createGitPublicationPorts(options);
   return {
     execution: 'publication' as const,
