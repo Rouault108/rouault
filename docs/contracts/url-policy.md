@@ -112,3 +112,7 @@ Permanent URLは内容固定参照を所有する。通常navigation、search、
 - `GeneratedDocumentRouteSet`と`resolveRouaultContentPath()`が公開canonicalを定義しないことが明記されている。
 - SearchStateUrl、SearchCanonicalPathname、SearchRenderHrefが分離されている。
 - 既存URL挙動を変更しない。
+
+## メモURL
+
+`/memos/`はslash付きの専用一覧。`/memos`もここへ正規化する。配下本文はslashlessであり、prefix全体をslash付きへ変更しない。route registryがsegmentごとに一度だけencodeする。HTML outputのfilesystem pathはdecodeされたsegmentを使う。メモarchiveを生成しない。

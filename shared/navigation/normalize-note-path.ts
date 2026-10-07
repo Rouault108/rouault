@@ -1,3 +1,4 @@
+import { resolveContentRoute } from '../../build/content/content-route-registry.js';
 import type { NormalizeNotePathInput, NormalizedNotePath } from './navigation-types.js';
 
 const trimSlashes = (value: string): string => value.trim().replace(/^\/+|\/+$/gu, '');
@@ -30,7 +31,10 @@ export const normalizeNotePath = ({
     return {
       rawSlug: `${normalized}/index`,
       slug: normalized,
-      permalink: `/notes/${normalized}`,
+      permalink: resolveContentRoute({
+        collectionId: 'notes',
+        sourceRelativePath: `${normalized}${hasDirectoryIndex ? '/index' : ''}.md`,
+      }).canonicalPathname,
       kind: 'directory-index',
       directoryPath: normalized,
     };
@@ -39,7 +43,10 @@ export const normalizeNotePath = ({
   return {
     rawSlug: normalized,
     slug: normalized,
-    permalink: `/notes/${normalized}`,
+    permalink: resolveContentRoute({
+      collectionId: 'notes',
+      sourceRelativePath: `${normalized}${hasDirectoryIndex ? '/index' : ''}.md`,
+    }).canonicalPathname,
     kind: 'leaf',
   };
 };

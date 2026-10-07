@@ -80,7 +80,7 @@ describe('search build helpers', () => {
           date: '2026-04-25',
           kind: 'reader',
           chromeProfile: 'plain',
-          sourceRoot: 'test/fixtures/content',
+          sourceRoot: 'test/fixtures/content/notes',
           excludeFromPublicationSurfaces: true,
         },
       ]),

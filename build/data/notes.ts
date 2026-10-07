@@ -150,7 +150,7 @@ const normalizeTocCapabilitiesOverride = (
       ? note.e2eFixtureId.trim()
       : undefined;
   if (
-    sourceRoot !== 'test/fixtures/content' ||
+    sourceRoot !== 'test/fixtures/content/notes' ||
     testingArea !== 'layout' ||
     e2eFixtureId !== 'note.toc-static-present'
   ) {
@@ -343,8 +343,8 @@ export const buildNotesCollection = (
   const resolveSourceRootPath = (note: SourceNote): string => {
     const normalizedSourceRoot = normalizeNoteSourceRoot(note.sourceRoot);
 
-    if (normalizedSourceRoot === undefined || normalizedSourceRoot === 'content') {
-      return sourceRoots['content'] ?? contentRoot;
+    if (normalizedSourceRoot === undefined || normalizedSourceRoot === 'content/notes') {
+      return sourceRoots['content/notes'] ?? contentRoot;
     }
 
     return sourceRoots[normalizedSourceRoot] ?? join(process.cwd(), normalizedSourceRoot);
@@ -474,7 +474,7 @@ export const buildNotesCollection = (
 
       const preparedToc = prepareTocHtml(typeof note.content === 'string' ? note.content : '');
       const noteLinkContext = resolveNoteLinkClassificationContext({
-        sourceFilePath: `${normalizeNoteSourceRoot(note.sourceRoot) ?? 'content'}/${sourceSlug}.md`,
+        sourceFilePath: `${normalizeNoteSourceRoot(note.sourceRoot) ?? 'content/notes'}/${sourceSlug}.md`,
         siteUrlContext,
       });
       validateNoteContentContracts({
@@ -595,11 +595,11 @@ export const loadNotesData = (): IntrinsicNotesCollection => {
   }
 
   const notes = readNotesFile(velitePath);
-  const contentRoot = join(process.cwd(), 'content');
+  const contentRoot = join(process.cwd(), 'content/notes');
   const enriched = buildNotesCollection(notes, contentRoot, {
     sourceRoots: {
-      content: contentRoot,
-      'test/fixtures/content': join(process.cwd(), 'test/fixtures/content'),
+      'content/notes': contentRoot,
+      'test/fixtures/content/notes': join(process.cwd(), 'test/fixtures/content/notes'),
     },
   });
 

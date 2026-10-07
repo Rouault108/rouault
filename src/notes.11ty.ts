@@ -37,7 +37,7 @@ export class NotePages {
         title: (data: NotePageData) => data.note?.title,
         permalink: (data: NotePageData) => {
           if (!data.note?.permalink) return false;
-          return `${data.note.permalink}/index.html`;
+          return `${decodeURI(data.note.permalink)}/index.html`;
         },
         notePage: (data: NotePageData) => {
           const note = data.note;

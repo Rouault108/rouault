@@ -206,7 +206,7 @@ describe('rehypePreviewSandbox', () => {
       ],
     };
 
-    rehypePreviewSandbox()(tree, { path: 'content/testing/sandbox.md' });
+    rehypePreviewSandbox()(tree, { path: 'content/notes/testing/sandbox.md' });
 
     const sandbox = tree.children?.[0]?.children?.[0];
     expect(sandbox?.children?.[0]?.tagName).to.equal('template');
@@ -232,8 +232,8 @@ describe('rehypePreviewSandbox', () => {
       ],
     };
 
-    expect(() => rehypePreviewSandbox()(tree, { path: 'content/testing/sandbox.md' })).toThrow(
-      /invalid-preview-sandbox-link-url/u,
-    );
+    expect(() =>
+      rehypePreviewSandbox()(tree, { path: 'content/notes/testing/sandbox.md' }),
+    ).toThrow(/invalid-preview-sandbox-link-url/u);
   });
 });

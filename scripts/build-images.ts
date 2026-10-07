@@ -1,3 +1,4 @@
+import { collectAdoptedContentSources } from '../build/content/publication-snapshot.js';
 import { createHash } from 'node:crypto';
 import { mkdir, readFile, readdir, rm, stat, writeFile } from 'node:fs/promises';
 import path from 'node:path';
@@ -165,7 +166,7 @@ const loadLinkCardThumbnailSourcePaths = async (): Promise<string[]> => {
 
 const collectReferencedSourcePaths = async (): Promise<string[]> => {
   const markdownFiles = [
-    ...(await collectMarkdownFiles(CONTENT_ROOT)),
+    ...collectAdoptedContentSources().map((source) => source.sourceFilePath),
     ...(await collectMarkdownFiles(EXAMPLES_ROOT)),
   ];
   const references = new Set<string>();

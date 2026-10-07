@@ -52,9 +52,17 @@ const resolveBuildLinkAnnotationOptions = () => {
   return { siteUrlContext };
 };
 
+import {
+  getContentCollection,
+  resolveContentSourceLocation,
+} from './build/content/content-collections.js';
+
 const notes = defineCollection({
   name: 'Note',
-  pattern: ['content/**/*.md', 'test/fixtures/content/**/*.md'],
+  pattern: [
+    getContentCollection('notes').sourceRoot,
+    getContentCollection('notes').fixtureRoot,
+  ].map((root) => `${root}/**/*.md`),
   schema: s
     .object({
       title: s.string(),
@@ -127,7 +135,7 @@ const notes = defineCollection({
       if (
         hasTocCapabilitiesOverride &&
         !(
-          sourceRoot === 'test/fixtures/content' &&
+          sourceRoot === 'test/fixtures/content/notes' &&
           testingArea === 'layout' &&
           e2eFixtureId === 'note.toc-static-present'
         )
@@ -174,6 +182,52 @@ const notes = defineCollection({
     }),
 });
 
+const memos = defineCollection({
+  name: 'Memo',
+  pattern: [
+    getContentCollection('memos').sourceRoot,
+    getContentCollection('memos').fixtureRoot,
+  ].map((root) => `${root}/**/*.md`),
+  schema: s
+    .object({
+      title: s.string().min(1),
+      slug: s.path(),
+      date: s.isodate().optional(),
+      updated: s.isodate().optional(),
+      license: s.literal('CC BY 4.0'),
+      content: s.markdown(),
+    })
+    .strict()
+    .transform((data) => {
+      const sourcePath = data.slug.endsWith('.md') ? data.slug : `${data.slug}.md`;
+      const context = resolveNoteLinkClassificationContext({
+        sourceFilePath: sourcePath,
+        siteUrlContext: resolveBuildLinkAnnotationOptions().siteUrlContext,
+      });
+      resolveContentSourceLocation(sourcePath);
+      const content = normalizeRouaultStaticSurfaceHtml(data.content, {
+        namespace: sourcePath,
+        previewProfile: 'reader',
+        documentUrl: context.currentUrl,
+      });
+      return {
+        title: data.title,
+        sourcePath,
+        license: data.license,
+        ...(data.date ? { date: data.date } : {}),
+        ...(data.updated ? { updated: data.updated } : {}),
+        content: annotateGeneratedPageHtmlLinkContracts({
+          html: content,
+          sourceLabel: sourcePath,
+          sourceFilePath: sourcePath,
+          siteUrlContext: resolveBuildLinkAnnotationOptions().siteUrlContext,
+          currentUrl: context.currentUrl,
+          routeClassificationMode: context.routeClassificationMode,
+        }),
+      };
+    }),
+});
+
 export default defineConfig({
   root: '.',
   output: {
@@ -183,7 +237,7 @@ export default defineConfig({
     name: '[name]-[hash:6].[ext]',
     clean: true,
   },
-  collections: { notes },
+  collections: { notes, memos },
   markdown: {
     copyLinkedFiles: false,
     remarkPlugins: [

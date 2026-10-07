@@ -11,7 +11,7 @@ import {
 
 const createFixture = () => {
   const root = mkdtempSync(path.join(tmpdir(), 'rouault-note-links-'));
-  const content = path.join(root, 'content');
+  const content = path.join(root, 'content', 'notes');
   const fixtures = path.join(root, 'fixtures-content');
   mkdirSync(path.join(content, 'program', 'csharp'), { recursive: true });
   mkdirSync(path.join(content, 'program', 'directory'), { recursive: true });
@@ -24,8 +24,8 @@ const createFixture = () => {
     fixtures,
     sourceFilePath: path.join(content, 'program', 'csharp', 'index.md'),
     sourceRootPaths: {
-      content,
-      'test/fixtures/content': fixtures,
+      'content/notes': content,
+      'test/fixtures/content/notes': fixtures,
     },
   };
 };
@@ -44,8 +44,8 @@ describe('note source link resolver', () => {
     expect(result.href).to.equal('/notes/program/csharp/target?tab=rust#section');
     expect(result.permalink).to.equal('/notes/program/csharp/target');
     expect(result.requestedSlug).to.equal('program/csharp/target');
-    expect(result.sourceFileDisplayPath).to.equal('content/program/csharp/index.md');
-    expect(result.targetSourceFileDisplayPath).to.equal('content/program/csharp/target.md');
+    expect(result.sourceFileDisplayPath).to.equal('content/notes/program/csharp/index.md');
+    expect(result.targetSourceFileDisplayPath).to.equal('content/notes/program/csharp/target.md');
   });
 
   it('directory-index note への相対 .md link を permalink に変換すること', () => {

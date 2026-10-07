@@ -9,7 +9,7 @@ describe('remarkExpandExampleIncludes', () => {
     const tree = unified().use(remarkParse).parse('::example-include{ref="code/core"}');
 
     await remarkExpandExampleIncludes()(tree, {
-      path: 'content/testing/code.md',
+      path: 'content/notes/testing/code.md',
     });
 
     const root = tree as { children?: { type?: string; children?: { value?: string }[] }[] };
@@ -22,7 +22,7 @@ describe('remarkExpandExampleIncludes', () => {
 
     const run = async (): Promise<void> => {
       await remarkExpandExampleIncludes()(tree, {
-        path: 'content/testing/code.md',
+        path: 'content/notes/testing/code.md',
       });
     };
 
@@ -32,7 +32,7 @@ describe('remarkExpandExampleIncludes', () => {
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       expect(message).to.equal(
-        '[markdown] example-include の ref "missing/example" は未登録です: content/testing/code.md:1:1',
+        '[markdown] example-include の ref "missing/example" は未登録です: content/notes/testing/code.md:1:1',
       );
     }
   });
@@ -41,7 +41,7 @@ describe('remarkExpandExampleIncludes', () => {
     const tree = unified().use(remarkParse).parse('::example-include{ref="markdown-basic/core"}');
 
     await remarkExpandExampleIncludes()(tree, {
-      path: 'content/testing/markdown-basic.md',
+      path: 'content/notes/testing/markdown-basic.md',
     });
 
     const root = tree as {

@@ -10,6 +10,7 @@ const hasTrailingSlashCanonicalPrefix = (pathname: string): boolean =>
 
 export const normalizeRouaultPathname = (pathname: string): string => {
   const normalized = pathname.startsWith('/') ? pathname : `/${pathname}`;
+  if (normalized === '/memos' || normalized === '/memos/') return '/memos/';
   if (normalized === '/') {
     return normalized;
   }

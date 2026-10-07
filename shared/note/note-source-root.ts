@@ -1,4 +1,8 @@
-export const NOTE_SOURCE_ROOTS = ['content', 'test/fixtures/content'] as const;
+import { contentCollections } from '../../build/content/content-collections.js';
+export const NOTE_SOURCE_ROOTS = [
+  contentCollections[0].sourceRoot,
+  contentCollections[0].fixtureRoot,
+] as const;
 
 export type NoteSourceRoot = (typeof NOTE_SOURCE_ROOTS)[number];
 

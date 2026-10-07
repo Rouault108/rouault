@@ -2,11 +2,18 @@ import path from 'node:path';
 import type { SiteUrlContext } from '../../shared/site/site-url-context.js';
 import { normalizeRouaultPathname } from '../../shared/url/rouault-url-policy.js';
 
-export const STATIC_GENERATED_DOCUMENT_ROUTES = ['/', '/about/', '/search/', '/corpora/'] as const;
+export const STATIC_GENERATED_DOCUMENT_ROUTES = [
+  '/',
+  '/about/',
+  '/search/',
+  '/corpora/',
+  '/memos/',
+] as const;
 
 export interface GeneratedDocumentRouteSource {
   readonly pageUrl?: unknown;
   readonly notePermalink?: unknown;
+  readonly memos?: readonly { readonly permalink?: unknown }[];
   readonly notes?: readonly {
     readonly permalink?: unknown;
     readonly genre?: unknown;
@@ -60,6 +67,7 @@ export const buildGeneratedDocumentRouteSet = (
   const routes = new Set<string>(STATIC_GENERATED_DOCUMENT_ROUTES);
   addGeneratedRoute(routes, source.pageUrl);
   addGeneratedRoute(routes, source.notePermalink);
+  for (const memo of source.memos ?? []) addGeneratedRoute(routes, memo.permalink);
 
   for (const note of source.notes ?? []) {
     addGeneratedRoute(routes, note.permalink);

@@ -4,6 +4,7 @@ import { defineConfig, devices } from '@playwright/test';
 import process from 'node:process';
 
 const crossBrowserFinalCheck = [
+  '**/memos.spec.ts',
   '**/search-cutover.spec.ts',
   '**/app-shell.spec.ts',
   '**/not-found-page.spec.ts',

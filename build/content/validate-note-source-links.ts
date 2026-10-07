@@ -330,8 +330,8 @@ const sourceRootPathsForValidation = (
   sourceRootPaths?: Partial<Record<NoteSourceRoot, string>>,
 ): Partial<Record<NoteSourceRoot, string>> =>
   sourceRootPaths ?? {
-    content: path.resolve(process.cwd(), 'content'),
-    'test/fixtures/content': path.resolve(process.cwd(), 'test/fixtures/content'),
+    'content/notes': path.resolve(process.cwd(), 'content/notes'),
+    'test/fixtures/content/notes': path.resolve(process.cwd(), 'test/fixtures/content/notes'),
   };
 
 const sourcePathForNote = (

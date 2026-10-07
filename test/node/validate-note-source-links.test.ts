@@ -12,7 +12,7 @@ import {
 
 const createFixture = () => {
   const root = mkdtempSync(path.join(tmpdir(), 'rouault-validate-links-'));
-  const content = path.join(root, 'content');
+  const content = path.join(root, 'content', 'notes');
   const fixtures = path.join(root, 'fixtures-content');
   mkdirSync(path.join(content, 'testing'), { recursive: true });
   mkdirSync(fixtures, { recursive: true });
@@ -22,8 +22,8 @@ const createFixture = () => {
   return {
     sourceFilePath,
     sourceRootPaths: {
-      content,
-      'test/fixtures/content': fixtures,
+      'content/notes': content,
+      'test/fixtures/content/notes': fixtures,
     },
   };
 };
@@ -51,7 +51,7 @@ describe('validate note source links', () => {
       bodyStartLine: stripped.bodyStartLine,
       frontmatter: stripped.frontmatter,
       sourceFilePath: fixture.sourceFilePath,
-      sourceFileDisplayPath: 'content/testing/index.md',
+      sourceFileDisplayPath: 'content/notes/testing/index.md',
     });
 
     expect(links).to.have.length(1);
@@ -66,7 +66,7 @@ describe('validate note source links', () => {
       bodyStartLine: 1,
       frontmatter: null,
       sourceFilePath: fixture.sourceFilePath,
-      sourceFileDisplayPath: 'content/testing/index.md',
+      sourceFileDisplayPath: 'content/notes/testing/index.md',
     });
 
     expect(() =>
@@ -81,7 +81,7 @@ describe('validate note source links', () => {
       bodyStartLine: 1,
       frontmatter: null,
       sourceFilePath: fixture.sourceFilePath,
-      sourceFileDisplayPath: 'content/testing/index.md',
+      sourceFileDisplayPath: 'content/notes/testing/index.md',
     });
 
     validateCollectedAuthoringLinks(links, { sourceRootPaths: fixture.sourceRootPaths });

@@ -44,7 +44,11 @@ export default defineConfig({
   projects: [
     {
       name: 'chromium-dev',
-      testMatch: ['**/dev-router-artifact.spec.ts', '**/search-cutover.spec.ts'],
+      testMatch: [
+        '**/dev-router-artifact.spec.ts',
+        '**/search-cutover.spec.ts',
+        '**/memos.spec.ts',
+      ],
       use: { ...devices['Desktop Chrome'] },
     },
   ],

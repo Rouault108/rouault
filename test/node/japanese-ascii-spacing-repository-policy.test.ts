@@ -381,9 +381,15 @@ describe('japanese-ascii-spacing repository policy', () => {
     expect(classifyRepositoryPolicyPath('docs/workflows/proportionality-and-review.md').kind).toBe(
       'report-only',
     );
-    expect(classifyRepositoryPolicyPath('content/program/_config.json').kind).toBe('report-only');
-    expect(classifyRepositoryPolicyPath('content/testing/_config.json').kind).toBe('report-only');
-    expect(classifyRepositoryPolicyPath('content/library/_config.json').kind).toBe('report-only');
+    expect(classifyRepositoryPolicyPath('content/notes/program/_config.json').kind).toBe(
+      'report-only',
+    );
+    expect(classifyRepositoryPolicyPath('content/notes/testing/_config.json').kind).toBe(
+      'report-only',
+    );
+    expect(classifyRepositoryPolicyPath('content/notes/library/_config.json').kind).toBe(
+      'report-only',
+    );
     expect(classifyRepositoryPolicyPath('src/components/layout-sidebar.ts').kind).toBe(
       'report-only',
     );

@@ -1,6 +1,3 @@
-import { existsSync, statSync } from 'node:fs';
-import path from 'node:path';
-
 import {
   buildFixtureInternalDocumentRouteSet,
   buildProductionInternalDocumentRouteSet,
@@ -10,8 +7,8 @@ import {
   createManifestLoadedRouteClassificationMode,
   type RouteClassificationMode,
 } from '../../shared/link/link-annotation.js';
-import { resolveNotePermalink } from '../../shared/note/resolve-note-permalink.js';
-import { resolveNoteSourceLocation } from '../../shared/note/note-source-root.js';
+import { resolveContentSourceLocation } from './content-collections.js';
+import { resolveContentRoute } from './content-route-registry.js';
 import type { SiteUrlContext } from '../../shared/site/site-url-context.js';
 import { normalizeRouaultPathname } from '../../shared/url/rouault-url-policy.js';
 
@@ -43,8 +40,8 @@ export const resolveRouteSetKindForNoteSourcePath = (
   sourceFilePath: string | undefined,
 ): ContentRouteSetKind => {
   const sourcePath = assertSourceFilePath(sourceFilePath);
-  const { sourceRoot } = resolveNoteSourceLocation(sourcePath);
-  return sourceRoot === 'test/fixtures/content' ? 'fixture' : 'production';
+  const { sourceRoot } = resolveContentSourceLocation(sourcePath);
+  return sourceRoot.startsWith('test/fixtures/') ? 'fixture' : 'production';
 };
 
 const getRouteSetForKind = (kind: ContentRouteSetKind) =>
@@ -59,19 +56,12 @@ export const resolveNoteCanonicalPathnameFromSourcePath = (
   sourceFilePath: string | undefined,
 ): string => {
   const sourcePath = assertSourceFilePath(sourceFilePath);
-  const { sourceRoot, slug } = resolveNoteSourceLocation(sourcePath);
-  const requestedSlug = slug.replace(/\.md$/u, '').replace(/\/index$/u, '');
-  if (requestedSlug.length === 0) {
-    throw new NoteCurrentUrlContractError(`Unable to resolve note permalink for ${sourcePath}.`);
-  }
-
-  const rootPath = path.resolve(process.cwd(), sourceRoot);
-  const leafPath = path.join(rootPath, `${requestedSlug}.md`);
-  const directoryIndexPath = path.join(rootPath, requestedSlug, 'index.md');
-  return resolveNotePermalink({
-    requestedSlug,
-    hasLeaf: existsSync(leafPath) && statSync(leafPath).isFile(),
-    hasDirectoryIndex: existsSync(directoryIndexPath) && statSync(directoryIndexPath).isFile(),
+  const { collection, sourceRelativePath } = resolveContentSourceLocation(sourcePath);
+  return resolveContentRoute({
+    collectionId: collection.id,
+    sourceRelativePath: sourceRelativePath.endsWith('.md')
+      ? sourceRelativePath
+      : `${sourceRelativePath}.md`,
   }).canonicalPathname;
 };
 

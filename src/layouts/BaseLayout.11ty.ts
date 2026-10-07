@@ -52,6 +52,7 @@ export interface BaseLayoutData {
   description?: string;
   content: string;
   notePage?: NotePageProjection;
+  footerCopyrightText?: string;
   note?: NoteNavigationEntry;
   notes?: NoteNavigationEntry[];
   corpusPages?: readonly CorpusPageEntry[];
@@ -178,6 +179,7 @@ export class BaseLayout {
       data.page?.url ? `shell:${data.page.url}` : `shell:${title}`,
     );
     const footerHtml = renderDefaultLayoutFooterHtml(buildMetadata.buildLabel, {
+      ...(data.footerCopyrightText ? { copyrightText: data.footerCopyrightText } : {}),
       idContext,
       siteUrlContext,
     });

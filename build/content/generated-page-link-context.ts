@@ -12,6 +12,7 @@ export interface GeneratedPageLinkContextSource {
   readonly page?: { readonly url?: unknown };
   readonly note?: { readonly permalink?: unknown };
   readonly notes?: readonly { readonly permalink?: unknown; readonly genre?: unknown }[];
+  readonly memos?: readonly { readonly permalink?: unknown }[];
   readonly corpusPages?: readonly { readonly href?: unknown }[];
   readonly tagPages?: readonly { readonly tag?: unknown }[];
 }
@@ -30,6 +31,7 @@ export const buildGeneratedPageLinkClassificationContext = (
     ...(data.page?.url !== undefined ? { pageUrl: data.page.url } : {}),
     ...(data.note?.permalink !== undefined ? { notePermalink: data.note.permalink } : {}),
     ...(data.notes !== undefined ? { notes: data.notes } : {}),
+    ...(data.memos !== undefined ? { memos: data.memos } : {}),
     ...(data.corpusPages !== undefined ? { corpusPages: data.corpusPages } : {}),
     ...(data.tagPages !== undefined ? { tagPages: data.tagPages } : {}),
   });

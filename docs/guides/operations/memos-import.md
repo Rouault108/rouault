@@ -1,0 +1,19 @@
+# 手動メモ取込
+
+設計1.4に対応する独立したMetis用moduleは`scripts/memos-import/`。Rouaultのruntimeからprivate vaultを読まない。ユーザーの一回のpublish/update/withdraw依頼を`PublicationOperation`として渡す。cron、監視webhook、日記依存は設けない。
+
+公開条件は02_notes配下のregular Markdown、boolean publish true、正確な対象指定と承認版。publishでは対象propertyだけをtrue、withdrawでは対象propertyだけを削除する。updateでflagが解除済みなら停止する。指定外の編集・flag差分を公開へ反映しない。`reconcileNoteFlags`のfingerprintとreceiptのpending/保留/否定をprivate操作UIで照合し、同じ確認を重複提示しない。
+
+`buildImportPlan`は固定SHAの完全なSnapshotから対象本文と必要画像だけを公開入力へ変換する。partial tree/API failureを空集合と扱わない。Markdown ASTでcode/escape/reference definitionを区別し、private linkはlabelまたはbasenameへ変換する。embedは承認済み内容版だけを展開し、循環、block/query/未対応syntax、heading overflowを拒否する。heading IDはRouault共通plannerを使い、最終HTMLとの一致をcandidate validatorで確認する。
+
+`ImageInputGuards`のGit経路上限・decode資源・時間とその根拠は必須。テスト用budgetを実運用の根拠にしない。入力画像は元形式を保ち、画素を再圧縮せず、不要metadataを除去して再decode比較する。PNG/JPEG/WebPに対応する。ICC・非標準orientation等の表示情報を安全に保存できない場合、およびAVIFの未知box/item/OBUやmetadata構造を検出した時は停止する。検証不能な原本の公開やPNGへの自動変換を行わない。
+
+公開manifestは`scripts/import-state/memos-owned-files.json`に公開path/hash/schemaVersionだけを置く。通常実行でmanifest欠損を初回と推定しない。`initializeEmpty`は公開管理領域とprivate台帳folderが空の場合だけ指定する。既存公開物の自動bootstrapを行わない。
+
+台帳保存先はprivate `Rouault108/metis-handbook`の`publication-ledger/rouault-memos/`。`state.json`は確定entry、`operations/{operationId}.json`は承認と経過のreceiptの正本。operations viewをstateへ重複保存しない。`PublicationLedgerStore`はrepository属性・基点SHA・revisionを検証し、完了stateとreceiptを同じcommitへ渡す。backupはprivate領域にだけ保存し、hashとschemaを復元前に検証する。
+
+`PublicationPorts`は既存認証を使う実行環境側の限定write、candidate validation、deploy実測adapterの境界である。source/Rouault/ledgerのcommitは独立しており、cross-repository atomicityを保証しない。receiptを外部反映前に永続化し、未知結果は実状態を照合する。同じ操作ID・対象・内容版でだけ再開する。通常pushを用い、force pushやbranch protection回避はしない。
+
+実運用adapterは、最新headに対する条件付きcommit、source flagだけの更新、公開本文・対象asset・manifestを同一commitにすること、commit応答消失時の実Git照合、実配信SHAと各受入条件の検証を提供する必要がある。`validateCandidate`は隔離candidateの必須check/build/HTML・heading・route・画像検証を成功させるまで返らない。`findRouaultOperation`はprivate receiptの既知SHAと公開差分hashから操作を照合し、private操作IDをpublic commit messageへ書かない。
+
+今回の検証branchでは実メモ公開、source flag実変更、実運用台帳初期化を実施していない。初回運用前にはMetis実行場所・限定write経路・guard根拠・実deploy確認adapterを接続し、明示された対象のprivate dry-runと一回の手動公開を別途承認する。

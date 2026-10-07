@@ -5,7 +5,7 @@ import { createNoteDirectiveUrlPolicyContext } from './directive-url-policy-cont
 import { normalizeTestingArea } from '../../../../shared/note/testing-area.js';
 
 const FRONTMATTER_PATTERN = /^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)/u;
-const TESTING_NOTE_PATH_PATTERN = /(?:^|\/)content\/testing\/([^/]+)\.md$/u;
+const TESTING_NOTE_PATH_PATTERN = /(?:^|\/)content\/notes\/testing\/([^/]+)\.md$/u;
 
 const pickFrontmatterValue = (frontmatter: string, key: string): string | undefined => {
   const pattern = new RegExp(`^\\s*${key}\\s*:\\s*(.+?)\\s*$`, 'mu');

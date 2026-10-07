@@ -14,7 +14,7 @@ interface HastNode {
 
 const createFixture = () => {
   const root = mkdtempSync(path.join(tmpdir(), 'rouault-rehype-links-'));
-  const content = path.join(root, 'content');
+  const content = path.join(root, 'content', 'notes');
   const fixtures = path.join(root, 'fixtures-content');
   mkdirSync(path.join(content, 'testing'), { recursive: true });
   mkdirSync(fixtures, { recursive: true });
@@ -24,8 +24,8 @@ const createFixture = () => {
   return {
     sourceFilePath,
     sourceRootPaths: {
-      content,
-      'test/fixtures/content': fixtures,
+      'content/notes': content,
+      'test/fixtures/content/notes': fixtures,
     },
   };
 };

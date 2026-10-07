@@ -158,3 +158,7 @@
 - Search return-to-readingが検索UIとrouterのimport boundaryを壊さない。
 - Production CSS artifactとimport-boundary assertionがfinal validationに含まれている。
 - Design System pattern docsは機能Contractを上書きせず、読書面での見え方とintrusion判断だけを扱う。
+
+## 共通reading projection
+
+本文・共通article header・TOC identity/capability・読書検証のownerは`build/projections/reading-page-projection.ts`。note/memo projectionはこれをcompositionする。note sidebar、corpus、tags、archiveとprivate import状態は共通層へ持ち込まない。memosはsidebar absent、breadcrumbと見出し由来desktop/mobile TOCを持つ。scheduler/registryがruntime triggerを所有する契約は維持する。notes↔memos移動でもpersistent sidebar hostを維持し、旧TOC stateを持ち越さない。

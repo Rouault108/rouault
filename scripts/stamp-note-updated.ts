@@ -151,7 +151,8 @@ export const runStampNoteUpdated = (options: RunOptions): StampRunResult => {
   const stampDate = args.date ?? todayInTokyo(options.now);
 
   try {
-    const candidates = args.files.length > 0 ? candidatesFromFiles(cwd, args.files) : candidatesFromGit(cwd);
+    const candidates =
+      args.files.length > 0 ? candidatesFromFiles(cwd, args.files) : candidatesFromGit(cwd);
     const mode = args.mode;
 
     if (mode === 'check') {
@@ -160,10 +161,12 @@ export const runStampNoteUpdated = (options: RunOptions): StampRunResult => {
       }
     } else {
       for (const candidate of candidates) {
-        results.push(stampCandidate(cwd, candidate, stampDate, {
-          dryRun: mode === 'dry-run',
-          explicitDate: args.date !== undefined,
-        }));
+        results.push(
+          stampCandidate(cwd, candidate, stampDate, {
+            dryRun: mode === 'dry-run',
+            explicitDate: args.date !== undefined,
+          }),
+        );
       }
     }
 
@@ -229,7 +232,15 @@ const candidatesFromFiles = (cwd: string, files: readonly string[]): Candidate[]
 
 const candidatesFromGit = (cwd: string): Candidate[] => {
   const uxb = parseGitNameStatusZ(
-    execGit(cwd, ['diff', '--name-status', '-z', '--diff-filter=UXB', 'HEAD', '--', 'content']),
+    execGit(cwd, [
+      'diff',
+      '--name-status',
+      '-z',
+      '--diff-filter=UXB',
+      'HEAD',
+      '--',
+      'content/notes',
+    ]),
   ).filter((entry) => isContentMarkdownPath(entry.path));
 
   if (uxb.length > 0) {
@@ -247,7 +258,7 @@ const candidatesFromGit = (cwd: string): Candidate[] => {
       '--diff-filter=AMRT',
       'HEAD',
       '--',
-      'content',
+      'content/notes',
     ]),
   );
 
@@ -355,13 +366,25 @@ const checkCandidate = (cwd: string, candidate: Candidate): StampResult => {
   }
 
   const oldText = readHeadFile(cwd, candidate.oldPath ?? candidate.path);
-  const oldFrontmatter = oldText === undefined ? undefined : parseFrontmatter(oldText, { requireTitle: false });
-  const changed = hasReaderFacingChange(candidate, oldText, oldFrontmatter, classification.frontmatter);
+  const oldFrontmatter =
+    oldText === undefined ? undefined : parseFrontmatter(oldText, { requireTitle: false });
+  const changed = hasReaderFacingChange(
+    candidate,
+    oldText,
+    oldFrontmatter,
+    classification.frontmatter,
+  );
   if (!changed) {
-    return { path: candidate.path, action: 'ok', currentUpdated: updated, reason: 'no reader-facing change' };
+    return {
+      path: candidate.path,
+      action: 'ok',
+      currentUpdated: updated,
+      reason: 'no reader-facing change',
+    };
   }
 
-  const oldUpdated = oldFrontmatter === undefined ? undefined : getFieldValue(oldFrontmatter, 'updated');
+  const oldUpdated =
+    oldFrontmatter === undefined ? undefined : getFieldValue(oldFrontmatter, 'updated');
   if (updated !== undefined && updated !== oldUpdated) {
     return { path: candidate.path, action: 'ok', currentUpdated: updated };
   }
@@ -534,7 +557,11 @@ const hasReaderFacingChange = (
   oldFrontmatter: ParsedFrontmatter | undefined,
   nextFrontmatter: ParsedFrontmatter,
 ): boolean => {
-  if (candidate.status === 'R' && candidate.oldPath !== undefined && candidate.oldPath !== candidate.path) {
+  if (
+    candidate.status === 'R' &&
+    candidate.oldPath !== undefined &&
+    candidate.oldPath !== candidate.path
+  ) {
     return true;
   }
   if (oldText === undefined || oldFrontmatter === undefined) return true;
@@ -597,21 +624,22 @@ const getFieldValue = (frontmatter: ParsedFrontmatter, key: string): string | un
   frontmatter.fields.get(key)?.value;
 
 const getPathLevelSkipReason = (sourcePath: string): string | undefined => {
-  if (sourcePath.startsWith('test/fixtures/content/')) return 'test fixture path';
-  if (sourcePath.startsWith('content/testing/')) return 'content/testing path';
+  if (sourcePath.startsWith('test/fixtures/content/notes/')) return 'test fixture path';
+  if (sourcePath.startsWith('content/notes/testing/')) return 'content/testing path';
   if (!isContentMarkdownPath(sourcePath)) return 'outside content Markdown';
   return undefined;
 };
 
 const isContentMarkdownPath = (sourcePath: string): boolean =>
-  sourcePath.startsWith('content/') && sourcePath.endsWith('.md');
+  sourcePath.startsWith('content/notes/') && sourcePath.endsWith('.md');
 
 const normalizeInputPath = (cwd: string, inputPath: string): string => {
   const resolved = path.isAbsolute(inputPath) ? inputPath : path.resolve(cwd, inputPath);
   return toPosixPath(path.relative(cwd, resolved));
 };
 
-const toPosixPath = (value: string): string => value.replaceAll(path.sep, '/').replaceAll('\\', '/');
+const toPosixPath = (value: string): string =>
+  value.replaceAll(path.sep, '/').replaceAll('\\', '/');
 const fromPosixPath = (value: string): string => value.split('/').join(path.sep);
 
 const isReadableFile = (absolutePath: string): boolean => {

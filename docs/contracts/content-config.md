@@ -4,7 +4,7 @@
 
 - Type: Normative
 - Source of truth: content config loader、schema validation、projection tests
-- Applies to: `content/**/_config.json`の入力仕様
+- Applies to: `content/notes/**/_config.json`の入力仕様
 - Non-goals: breadcrumb label consumption、sidebar表示規則、設定例
 
 ## 2. Ownership
@@ -28,7 +28,7 @@
 
 ### Inputs
 
-- `content/**/_config.json`。
+- `content/notes/**/_config.json`。
 
 ### Outputs
 
