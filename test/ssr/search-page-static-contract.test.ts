@@ -5,7 +5,7 @@ import { parseFragment, type DefaultTreeAdapterMap } from 'parse5';
 import { describe, expect, it } from 'vitest';
 
 import { buildStaticExploreResponse } from '../../build/search/build-static-explore-response.js';
-import type { SearchState } from '../../shared/search/search-types.js';
+import type { SearchState, StaticExploreSearchResponse } from '../../shared/search/search-types.js';
 import {
   createSiteUrlContext,
   DEFAULT_SITE_URL_CONTEXT,
@@ -47,6 +47,72 @@ const collectElements = (
 const elementChildren = (node: ElementNode): ElementNode[] => node.childNodes.filter(isElementNode);
 
 describe('renderSearchPageHtml static contract', () => {
+  it('tag browse order は allTagCounts、日本語照合、code unit に従い表示件数は tagCounts に従うこと', () => {
+    const initialState: SearchState = {
+      q: '',
+      tags: ['security', 'absent'],
+      tagMode: 'or',
+      sort: 'relevance',
+    };
+    const initialResponse: StaticExploreSearchResponse = {
+      ...buildStaticExploreResponse({ state: initialState }),
+      allTagCounts: {
+        music: 4,
+        architecture: 3,
+        security: 1,
+        é: 1,
+        'e\u0301': 1,
+        建築: 1,
+        音楽: 1,
+        Ａ: 1,
+        A: 1,
+      },
+      tagCounts: { architecture: 2, music: 0 },
+    };
+    const rendered = parseFragment(
+      renderSearchPageHtml({
+        surface: { kind: 'search', baseline: { tags: [], corporaHref: '/corpora/' } },
+        initialState,
+        initialResponse,
+        siteUrlContext: DEFAULT_SITE_URL_CONTEXT,
+      }),
+    );
+    const rows = collectElements(
+      rendered,
+      (node) => getAttribute(node, 'data-filter-option') !== null,
+    );
+    expect(rows.map((row) => getAttribute(row, 'data-filter-tag'))).toEqual([
+      'music',
+      'architecture',
+      'A',
+      'Ａ',
+      'e\u0301',
+      'é',
+      'security',
+      '音楽',
+      '建築',
+      'absent',
+    ]);
+    for (const row of rows) {
+      const tag = getAttribute(row, 'data-filter-tag') ?? '';
+      const selected = initialState.tags.includes(tag);
+      const count = initialResponse.tagCounts[tag] ?? 0;
+      const input = collectElements(row, (node) => node.tagName === 'input')[0];
+      expect(input).toBeDefined();
+      if (!input) throw new Error('Missing tag checkbox');
+      expect(getAttribute(input, 'name')).toBe('tag');
+      expect(getAttribute(input, 'type')).toBe('checkbox');
+      expect(getAttribute(input, 'value')).toBe(tag);
+      expect(getAttribute(input, 'checked') !== null).toBe(selected);
+      expect(getAttribute(input, 'disabled') !== null).toBe(!selected && count === 0);
+      expect(getAttribute(row, 'data-filter-count')).toBe(String(count));
+      expect(
+        collectElements(row, (node) => hasClass(node, 'filter-option-count'))[0]?.childNodes,
+      ).toMatchObject([{ nodeName: '#text', value: `${String(count)}件` }]);
+      expect(collectElements(row, (node) => node.tagName === 'label')).toHaveLength(1);
+    }
+  });
+
   it('production templates require and pass siteUrlContext without renderer fallback', () => {
     const searchTemplate = readFileSync(resolve(process.cwd(), 'src/search.11ty.ts'), 'utf8');
     const tagsTemplate = readFileSync(resolve(process.cwd(), 'src/tags.11ty.ts'), 'utf8');

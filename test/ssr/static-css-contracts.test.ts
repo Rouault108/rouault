@@ -1745,7 +1745,12 @@ describe('static CSS contracts', () => {
       '.filter-details[open] > .filter-details__summary .filter-details__chevron',
     );
     expectRuleToDeclare(css, '.filter-list', ['max-block-size:', 'overflow-y:']);
-    expectRuleToDeclare(css, '.selected-tag', ['border:', 'border-radius:']);
+    expectRuleToDeclare(css, '.selected-tag', [
+      'color: var(--fg-default)',
+      'border: var(--border-width) solid currentColor',
+      'border-radius:',
+      'background: transparent',
+    ]);
     expectRuleToDeclare(css, '.selected-tag__remove', [
       'inline-size: 1.75rem',
       'block-size: 1.75rem',
@@ -1757,16 +1762,28 @@ describe('static CSS contracts', () => {
       'inline-size: 16px',
       'block-size: 16px',
     ]);
-    expectRuleToDeclare(css, '.filter-option-checkbox__control', ['pointer-events: none']);
-    expectRuleToDeclare(css, '.filter-option-checkbox__icon', ['opacity: 0']);
+    expectRuleToDeclare(css, '.filter-option-checkbox__control', [
+      'pointer-events: none',
+      'color: var(--fg-default)',
+      'background: var(--bg-fill-muted)',
+    ]);
+    expectRuleToDeclare(css, '.filter-option-checkbox__icon', [
+      'opacity: 0',
+      'color: currentColor',
+    ]);
+    expectRuleToDeclare(
+      css,
+      '.filter-option-checkbox__input:checked + .filter-option-checkbox__control',
+      ['background: var(--bg-default)', 'border-color: currentColor'],
+    );
     expectRuleToDeclare(
       css,
       '.filter-option-checkbox__input:checked + .filter-option-checkbox__control .filter-option-checkbox__icon',
       ['opacity: 1'],
     );
     expectRuleToDeclare(css, ".filter-option[data-selected='true']", [
-      'background: var(--bg-accent-muted, var(--bg-fill-muted))',
-      'border-color: var(--border-accent, var(--border-default))',
+      'background: var(--bg-fill-muted)',
+      'border-color: var(--border-default)',
     ]);
     expectRuleToDeclare(css, '.search-page__spinner', [
       'box-sizing: border-box',
@@ -1782,14 +1799,31 @@ describe('static CSS contracts', () => {
     expectRuleToDeclare(atRuleBlock(css, '@media (max-width: 640px)'), '.toolbar-row', [
       'align-items: stretch',
     ]);
-    expect(css).to.contain('@media (prefers-color-scheme: dark)');
+    expect(css).not.to.contain('@media (prefers-color-scheme: dark)');
+    for (const alias of [
+      'fg-accent',
+      'fg-link',
+      'fg-on-accent',
+      'border-accent',
+      'bg-accent-muted',
+    ]) {
+      expect(css).not.to.contain(`var(--${alias}`);
+    }
     expectRuleToDeclare(
-      atRuleBlock(css, '@media (prefers-color-scheme: dark)'),
-      ".filter-option[data-selected='true']",
-      [
-        'background: var(--bg-fill-muted)',
-        'border-color: var(--border-accent, var(--border-default))',
-      ],
+      atRuleBlock(css, '@media (forced-colors: active)'),
+      '.filter-option-checkbox__control',
+      ['color: CanvasText', 'background: Canvas', 'border-color: CanvasText'],
+    );
+    expectRuleToDeclare(css, ".filter-option[data-disabled='true']", ['opacity: 0.68']);
+    expectRuleToDeclare(
+      css,
+      '.filter-option-checkbox__input:disabled + .filter-option-checkbox__control',
+      ['cursor: not-allowed'],
+    );
+    expectRuleToDeclare(
+      css,
+      '.filter-option-checkbox__input:focus-visible + .filter-option-checkbox__control',
+      ['outline:', 'outline-offset:'],
     );
   });
 

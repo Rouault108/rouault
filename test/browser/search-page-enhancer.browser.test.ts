@@ -1,8 +1,15 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { userEvent } from 'vitest/browser';
+import { fetchCssText } from './helpers/fetch-css-text.js';
 
 import { DEFAULT_SITE_URL_CONTEXT } from '../../shared/site/site-url-context.js';
 import { normalizeSearchCanonicalPathname } from '../../shared/search/document-url.js';
-import type { ExploreSearchResponse } from '../../shared/search/search-types.js';
+import type {
+  ExploreSearchResponse,
+  SearchState,
+  StaticExploreSearchResponse,
+} from '../../shared/search/search-types.js';
+import { renderSearchPageHtml } from '../../src/layouts/search-page-html.js';
 import { enhanceSearchPage } from '../../src/client/post-hydrate/search-page-enhancer.js';
 import {
   areSearchStatesCanonicallyEqual,
@@ -138,6 +145,70 @@ const expectElement = <T extends Element>(element: T | null | undefined, label: 
   return element as T;
 };
 
+const renderTagOrderFixture = async (
+  response: StaticExploreSearchResponse,
+  tags: readonly string[] = [],
+): Promise<HTMLElement> => {
+  const initialState: SearchState = { q: '', tags: [...tags], tagMode: 'or', sort: 'relevance' };
+  history.replaceState(
+    history.state,
+    '',
+    buildSearchPageHistoryHref(initialState, DEFAULT_SITE_URL_CONTEXT),
+  );
+  const root = document.createElement('div');
+  root.innerHTML = renderSearchPageHtml({
+    surface: { kind: 'search', baseline: { tags: [], corporaHref: '/corpora/' } },
+    initialState,
+    initialResponse: response,
+    siteUrlContext: DEFAULT_SITE_URL_CONTEXT,
+  });
+  const iconStyle = document.createElement('style');
+  iconStyle.textContent = (
+    await Promise.all([
+      fetchCssText('/src/assets/css/tokens.css'),
+      fetchCssText('/src/assets/css/static-icons.css'),
+      fetchCssText('/src/assets/css/search-page.css'),
+    ])
+  ).join('\n');
+  root.prepend(iconStyle);
+  document.body.append(root);
+  const details = expectElement(
+    root.querySelector<HTMLDetailsElement>('.filter-details'),
+    'filter details',
+  );
+  details.open = true;
+  return root;
+};
+
+const tagSequence = (root: ParentNode): string[] =>
+  [...root.querySelectorAll<HTMLElement>('[data-filter-option]')].map(
+    (row) => row.dataset['filterTag'] ?? '',
+  );
+
+const tagInput = (root: ParentNode, tag: string): HTMLInputElement =>
+  expectElement(
+    [...root.querySelectorAll<HTMLInputElement>('[data-search-tag-checkbox]')].find(
+      (input) => input.value === tag,
+    ),
+    tag,
+  );
+
+const deferredTagRuntime = () => {
+  const pending: ((response: ExploreSearchResponse) => void)[] = [];
+  return {
+    core: createSearchRuntime(() => new Promise((resolve) => pending.push(resolve))),
+    async finish(root: ParentNode, response: ExploreSearchResponse): Promise<void> {
+      await expect.poll(() => pending.length).toBe(1);
+      const resolve = pending.shift();
+      if (!resolve) throw new Error('Missing pending search');
+      resolve(response);
+      await expect
+        .poll(() => root.querySelector<HTMLElement>('[data-search-page-loading]')?.hidden)
+        .toBe(true);
+    },
+  };
+};
+
 describe('search-page-enhancer', () => {
   beforeEach(() => {
     document.head.replaceChildren();
@@ -148,6 +219,340 @@ describe('search-page-enhancer', () => {
     document.body.replaceChildren();
     document.head.replaceChildren();
     history.replaceState(history.state, '', '/');
+  });
+
+  it('production tag list は select / deselect / tagMode の即時同期と応答後にも sequence・node・focus・scroll を保つこと', async () => {
+    const response: ExploreSearchResponse = {
+      ...staticResponse,
+      allTagCounts: { music: 4, architecture: 3, security: 1 },
+      tagCounts: { music: 4, architecture: 3, security: 1 },
+    };
+    const root = await renderTagOrderFixture(response);
+    const runtime = deferredTagRuntime();
+    const controller = enhanceWithRuntime(root, undefined, runtime.core);
+    await expect
+      .poll(
+        () =>
+          root.querySelector<HTMLElement>('[data-search-page-root]')?.dataset[
+            'searchPageCapability'
+          ],
+      )
+      .toBe('ready');
+    const expected = ['music', 'architecture', 'security'];
+    expect(tagSequence(root)).toEqual(expected);
+    const architecture = tagInput(root, 'architecture');
+    const security = tagInput(root, 'security');
+    const list = expectElement(
+      root.querySelector<HTMLElement>('[data-search-filter-list]'),
+      'list',
+    );
+    list.style.cssText = 'height: 60px; overflow-y: auto';
+    for (const row of root.querySelectorAll<HTMLElement>('[data-filter-option]'))
+      row.style.minHeight = '60px';
+    await userEvent.click(expectElement(architecture.closest('label'), 'native label'));
+    expect(architecture.checked).toBe(true);
+    expect(document.activeElement).toBe(architecture);
+    expect(tagSequence(root)).toEqual(expected);
+    list.scrollTop = 40;
+    await runtime.finish(root, {
+      ...response,
+      tagCounts: { music: 0, architecture: 2, security: 1 },
+    });
+    expect(tagSequence(root)).toEqual(expected);
+    expect(tagInput(root, 'architecture')).toBe(architecture);
+    expect(document.activeElement).toBe(architecture);
+    expect(list.scrollTop).toBe(40);
+    expect(
+      root.querySelector('[data-filter-tag="architecture"]')?.getAttribute('data-selected'),
+    ).toBe('true');
+    await userEvent.keyboard(' ');
+    expect(architecture.checked).toBe(false);
+    expect(document.activeElement).toBe(architecture);
+    expect(tagSequence(root)).toEqual(expected);
+    await runtime.finish(root, response);
+    expect(document.activeElement).toBe(architecture);
+    await userEvent.tab();
+    expect(document.activeElement).toBe(security);
+    await userEvent.tab({ shift: true });
+    expect(document.activeElement).toBe(architecture);
+    await userEvent.click(
+      expectElement(
+        root.querySelector('[data-search-choice-menu="tag-mode"] summary'),
+        'mode trigger',
+      ),
+    );
+    await userEvent.click(
+      expectElement(
+        root.querySelector('[data-search-choice-menu="tag-mode"] [data-value="and"]'),
+        'and',
+      ),
+    );
+    expect(tagSequence(root)).toEqual(expected);
+    await runtime.finish(root, response);
+    expect(tagSequence(root)).toEqual(expected);
+    expect(new URL(location.href).searchParams.get('tagMode')).toBe('and');
+    controller?.dispose();
+  });
+
+  it('SSR と runtime は同じ counts・identity で固定順になり表示/disabled は F の件数を使うこと', async () => {
+    const response: ExploreSearchResponse = {
+      ...staticResponse,
+      allTagCounts: {
+        music: 4,
+        architecture: 3,
+        security: 1,
+        é: 1,
+        'e\u0301': 1,
+        建築: 1,
+        音楽: 1,
+        Ａ: 1,
+        A: 1,
+      },
+      tagCounts: { architecture: 2, music: 0 },
+    };
+    const root = await renderTagOrderFixture(response, ['security', 'absent']);
+    const expected = [
+      'music',
+      'architecture',
+      'A',
+      'Ａ',
+      'e\u0301',
+      'é',
+      'security',
+      '音楽',
+      '建築',
+      'absent',
+    ];
+    expect(tagSequence(root)).toEqual(expected);
+    const runtime = deferredTagRuntime();
+    const controller = enhanceWithRuntime(root, undefined, runtime.core);
+    expect(tagSequence(root)).toEqual(expected);
+    expect(root.querySelector('[data-filter-tag="music"] .filter-option-count')?.textContent).toBe(
+      '0件',
+    );
+    expect(tagInput(root, 'music').disabled).toBe(true);
+    expect(tagInput(root, 'security').disabled).toBe(false);
+    expect(tagInput(root, 'absent').disabled).toBe(false);
+    const music = tagInput(root, 'music');
+    await userEvent.click(
+      expectElement(
+        music.closest('label')?.querySelector('.filter-option-label'),
+        'disabled label text',
+      ),
+      { force: true },
+    );
+    expect(music.checked).toBe(false);
+    await userEvent.click(
+      expectElement(tagInput(root, 'security').closest('label'), 'selected zero label'),
+    );
+    expect(tagInput(root, 'security').checked).toBe(false);
+    expect(tagInput(root, 'security').disabled).toBe(true);
+    await runtime.finish(root, response);
+    expect(tagSequence(root)).toEqual(expected);
+    await userEvent.click(
+      expectElement(
+        root.querySelector('[data-search-selected-tag-remove="absent"]'),
+        'absent chip',
+      ),
+    );
+    expect(tagSequence(root)).toEqual(expected.filter((tag) => tag !== 'absent'));
+    await runtime.finish(root, response);
+    expect(tagSequence(root)).toEqual(expected.filter((tag) => tag !== 'absent'));
+    controller?.dispose();
+  });
+
+  it('必要な row 再構成だけ残存する可視 enabled checkbox の focus を保持し外部 focus を奪わないこと', async () => {
+    const response: ExploreSearchResponse = {
+      ...staticResponse,
+      allTagCounts: { music: 4, architecture: 3, security: 1 },
+      tagCounts: { music: 4, architecture: 3, security: 1 },
+    };
+    const root = await renderTagOrderFixture(response);
+    const runtime = deferredTagRuntime();
+    const controller = enhanceWithRuntime(root, undefined, runtime.core);
+    const architecture = tagInput(root, 'architecture');
+    await userEvent.click(expectElement(architecture.closest('label'), 'label'));
+    await runtime.finish(root, {
+      ...response,
+      allTagCounts: { security: 8, architecture: 3, music: 1, added: 1 },
+    });
+    expect(tagSequence(root)).toEqual(['security', 'architecture', 'added', 'music']);
+    expect(tagInput(root, 'architecture')).toBe(architecture);
+    expect(document.activeElement).toBe(architecture);
+    await userEvent.keyboard(' ');
+    await runtime.finish(root, {
+      ...response,
+      tagCounts: { music: 1, architecture: 0, security: 1 },
+    });
+    expect(architecture.disabled).toBe(true);
+    expect(document.activeElement).not.toBe(architecture);
+    const query = expectElement(
+      root.querySelector<HTMLInputElement>('[data-search-query-input]'),
+      'query',
+    );
+    await userEvent.click(
+      expectElement(tagInput(root, 'security').closest('label'), 'security label'),
+    );
+    query.focus();
+    await runtime.finish(root, {
+      ...response,
+      allTagCounts: { music: 9, architecture: 3, security: 1 },
+    });
+    expect(document.activeElement).toBe(query);
+    controller?.dispose();
+  });
+
+  it('local filter の substring・hidden subset・visible count と応答時の行同期を維持すること', async () => {
+    const response: ExploreSearchResponse = {
+      ...staticResponse,
+      allTagCounts: { music: 4, architecture: 3, security: 1 },
+      tagCounts: { music: 4, architecture: 3, security: 1 },
+    };
+    const root = await renderTagOrderFixture(response);
+    const runtime = deferredTagRuntime();
+    const controller = enhanceWithRuntime(root, undefined, runtime.core);
+    await userEvent.click(
+      expectElement(tagInput(root, 'architecture').closest('label'), 'architecture label'),
+    );
+    const filter = expectElement(
+      root.querySelector<HTMLInputElement>('[data-search-filter-input]'),
+      'local filter',
+    );
+    await userEvent.fill(filter, 'MUS');
+    expect(tagSequence(root)).toEqual(['music', 'architecture', 'security']);
+    expect(
+      [...root.querySelectorAll<HTMLElement>('[data-filter-option]')]
+        .filter((row) => !row.hidden)
+        .map((row) => row.dataset['filterTag']),
+    ).toEqual(['music']);
+    expect(root.querySelector('[data-filter-visible-count]')?.textContent).toBe('1 / 3タグ');
+    tagInput(root, 'music').focus();
+    await runtime.finish(root, {
+      ...response,
+      allTagCounts: { architecture: 8, music: 4, security: 1, musical: 1 },
+      tagCounts: { music: 2, architecture: 1, musical: 1 },
+    });
+    expect(tagSequence(root)).toEqual(['architecture', 'music', 'musical', 'security']);
+    expect(document.activeElement).toBe(tagInput(root, 'music'));
+    expect(root.querySelector('[data-filter-visible-count]')?.textContent).toBe('2 / 4タグ');
+    expect(root.querySelector('[data-filter-tag="music"] .filter-option-count')?.textContent).toBe(
+      '2件',
+    );
+    controller?.dispose();
+  });
+
+  it('順次選択・解除・chip解除・実 history 復帰で URL/chip は preferred/保持順に従うこと', async () => {
+    const response: ExploreSearchResponse = {
+      ...staticResponse,
+      allTagCounts: { music: 4, architecture: 3, security: 1 },
+      tagCounts: { music: 4, architecture: 3, security: 1 },
+    };
+    const root = await renderTagOrderFixture(response);
+    const runtime = deferredTagRuntime();
+    const controller = enhanceWithRuntime(root, undefined, runtime.core);
+    const selected = () =>
+      [...root.querySelectorAll<HTMLElement>('[data-selected-tag]')].map(
+        (chip) => chip.dataset['selectedTag'],
+      );
+    const assertSelected = (tags: string[], chipTags: string[] = tags, responseApplied = true) => {
+      const url = new URL(location.href);
+      expect(url.pathname).toBe(tags.length === 1 ? `/tags/${tags[0] ?? ''}/` : '/search/');
+      if (tags.length > 1) expect(url.searchParams.getAll('tag')).toEqual(tags);
+      expect(selected()).toEqual(chipTags);
+      if (responseApplied) expect(tagSequence(root)).toEqual(['music', 'architecture', 'security']);
+    };
+    for (const [tag, urlTags, immediateChips] of [
+      ['security', ['security'], ['security']],
+      ['architecture', ['architecture', 'security'], ['architecture', 'security']],
+      ['music', ['architecture', 'music', 'security'], ['music', 'architecture', 'security']],
+    ] as const) {
+      await userEvent.click(expectElement(tagInput(root, tag).closest('label'), tag));
+      assertSelected([...urlTags], [...immediateChips]);
+      await runtime.finish(root, response);
+      assertSelected([...urlTags]);
+    }
+    await userEvent.click(
+      expectElement(tagInput(root, 'architecture').closest('label'), 'deselect'),
+    );
+    assertSelected(['music', 'security']);
+    await runtime.finish(root, response);
+    await userEvent.click(
+      expectElement(root.querySelector('[data-search-selected-tag-remove="music"]'), 'chip remove'),
+    );
+    assertSelected(['security']);
+    await runtime.finish(root, response);
+    history.back();
+    await expect.poll(() => selected()).toEqual(['music', 'security']);
+    assertSelected(['music', 'security'], ['music', 'security'], false);
+    await runtime.finish(root, response);
+    assertSelected(['music', 'security']);
+    history.forward();
+    await expect.poll(() => selected()).toEqual(['security']);
+    assertSelected(['security'], ['security'], false);
+    await runtime.finish(root, response);
+    assertSelected(['security']);
+    controller?.dispose();
+  });
+
+  it('同一 node 列の同期は先頭タグ操作でも checkbox を再接続せず focus を保つこと', async () => {
+    const response: ExploreSearchResponse = {
+      ...staticResponse,
+      allTagCounts: { music: 4, architecture: 3 },
+      tagCounts: { music: 4, architecture: 3 },
+    };
+    const root = await renderTagOrderFixture(response, ['music']);
+    const runtime = deferredTagRuntime();
+    const controller = enhanceWithRuntime(root, undefined, runtime.core);
+    const list = expectElement(root.querySelector('[data-search-filter-list]'), 'list');
+    let rowReconnects = 0;
+    const observer = new MutationObserver((records) => {
+      rowReconnects += records.length;
+    });
+    observer.observe(list, { childList: true });
+    const music = tagInput(root, 'music');
+    music.focus();
+    await userEvent.keyboard(' ');
+    expect(tagSequence(root)).toEqual(['music', 'architecture']);
+    expect(document.activeElement).toBe(music);
+    await runtime.finish(root, response);
+    expect(document.activeElement).toBe(music);
+    expect(rowReconnects + observer.takeRecords().length).toBe(0);
+    observer.disconnect();
+    controller?.dispose();
+  });
+
+  it('必要な再構成で local filter に隠れる行や削除された行へ focus を強制しないこと', async () => {
+    const response: ExploreSearchResponse = {
+      ...staticResponse,
+      allTagCounts: { music: 4, architecture: 3 },
+      tagCounts: { music: 4, architecture: 3 },
+    };
+    const root = await renderTagOrderFixture(response, ['absent']);
+    const runtime = deferredTagRuntime();
+    const controller = enhanceWithRuntime(root, undefined, runtime.core);
+    const absent = tagInput(root, 'absent');
+    await userEvent.click(expectElement(absent.closest('label'), 'absent label'));
+    expect(root.contains(absent)).toBe(false);
+    expect(document.activeElement).not.toBe(absent);
+    await runtime.finish(root, response);
+    await userEvent.click(
+      expectElement(tagInput(root, 'architecture').closest('label'), 'architecture label'),
+    );
+    const music = tagInput(root, 'music');
+    music.focus();
+    const filter = expectElement(
+      root.querySelector<HTMLInputElement>('[data-search-filter-input]'),
+      'filter',
+    );
+    // 応答待ち中に変わった local 条件を、focus 保持より先に反映する。
+    filter.value = 'architecture';
+    await runtime.finish(root, {
+      ...response,
+      allTagCounts: { architecture: 8, music: 4, added: 1 },
+    });
+    expect(root.querySelector<HTMLElement>('[data-filter-tag="music"]')?.hidden).toBe(true);
+    expect(document.activeElement).not.toBe(music);
+    controller?.dispose();
   });
 
   it('clear button の hidden 同期と FormData 契約に沿った URL 同期を行うこと', () => {

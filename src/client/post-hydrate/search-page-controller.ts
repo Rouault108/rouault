@@ -26,6 +26,7 @@ import {
   getInitializedSearchCore,
   type SearchBootstrapState,
 } from '../../search/bootstrap.js';
+import { orderSearchPageTags } from '../../search/search-page-tag-order.js';
 import { SEARCH_DEBOUNCE_MS } from '../../search/search-constants.js';
 import type { SearchCore } from '../../search/search-core.js';
 import { buildSearchResultRenderHref } from '../../search/normalize-search-result-url.js';
@@ -301,10 +302,10 @@ const createFilterOption = (document: Document, tag: string): HTMLElement => {
 const syncFilterOptionsFromRuntimeState = (
   page: HTMLElement,
   runtimeState: SearchPageRuntimeState,
-): void => {
+): HTMLInputElement | null => {
   const list = page.querySelector<HTMLElement>('[data-search-filter-list]');
   if (!list) {
-    return;
+    return null;
   }
   const existingOptions = new Map(
     [...list.querySelectorAll<HTMLElement>('[data-filter-option]')].map((option) => [
@@ -312,22 +313,14 @@ const syncFilterOptionsFromRuntimeState = (
       option,
     ]),
   );
-  const tags = [
-    ...new Set([
-      ...Object.keys(runtimeState.allTagCounts),
-      ...Object.keys(runtimeState.tagCounts),
-      ...runtimeState.selectedTags,
-    ]),
-  ].sort((left, right) => {
-    const leftSelected = runtimeState.selectedTags.includes(left);
-    const rightSelected = runtimeState.selectedTags.includes(right);
-    if (leftSelected !== rightSelected) {
-      return leftSelected ? -1 : 1;
-    }
-    const countDifference =
-      (runtimeState.tagCounts[right] ?? 0) - (runtimeState.tagCounts[left] ?? 0);
-    return countDifference !== 0 ? countDifference : left.localeCompare(right, 'ja');
-  });
+  const activeElement = page.ownerDocument.activeElement;
+  const focusedCheckbox =
+    activeElement instanceof HTMLInputElement &&
+    activeElement.matches('[data-search-tag-checkbox]') &&
+    list.contains(activeElement)
+      ? activeElement
+      : null;
+  const tags = orderSearchPageTags(runtimeState);
   const options = tags.map((tag) => {
     const option = existingOptions.get(tag) ?? createFilterOption(page.ownerDocument, tag);
     const count = runtimeState.tagCounts[tag] ?? 0;
@@ -346,7 +339,19 @@ const syncFilterOptionsFromRuntimeState = (
       ?.replaceChildren(`${String(count)}件`);
     return option;
   });
+  const currentNodes = [...list.childNodes];
+  if (
+    currentNodes.length === options.length &&
+    currentNodes.every((node, index) => node === options[index])
+  ) {
+    return null;
+  }
   list.replaceChildren(...options);
+  return focusedCheckbox &&
+    list.contains(focusedCheckbox) &&
+    page.ownerDocument.activeElement !== focusedCheckbox
+    ? focusedCheckbox
+    : null;
 };
 
 const syncFilterDomFromForm = (
@@ -355,7 +360,7 @@ const syncFilterDomFromForm = (
   runtimeState: SearchPageRuntimeState,
   preferredTag?: string,
 ): void => {
-  syncFilterOptionsFromRuntimeState(page, runtimeState);
+  const focusToKeep = syncFilterOptionsFromRuntimeState(page, runtimeState);
   const selectedTags = orderedSelectedTagValues(form, preferredTag);
   const tagMode =
     readFormString(new FormData(form).get('tagMode')) === 'and' ? 'すべて' : 'いずれか';
@@ -428,6 +433,10 @@ const syncFilterDomFromForm = (
   const filterEmpty = page.querySelector<HTMLElement>('[data-search-filter-empty]');
   if (filterEmpty) {
     filterEmpty.hidden = visibleCount > 0;
+  }
+  // local filter 適用後に可視性を判定し、隠れた行へ focus を戻さない。
+  if (focusToKeep && !focusToKeep.disabled && focusToKeep.getClientRects().length > 0) {
+    focusToKeep.focus({ preventScroll: true });
   }
   syncStaticSearchFieldClearButtons(page);
 };

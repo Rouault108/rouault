@@ -1,6 +1,7 @@
 import type { SearchState, StaticExploreSearchResponse } from '../../shared/search/search-types.js';
 import type { SiteUrlContext } from '../../shared/site/site-url-context.js';
 import type { SearchStaticBaselineProjection } from '../../build/projections/search-static-baseline-projection.js';
+import { orderSearchPageTags } from '../search/search-page-tag-order.js';
 import { buildSearchResultRenderHref } from '../search/normalize-search-result-url.js';
 import { renderStaticIconHtml } from '../../shared/icons/render-static-icon-html.js';
 import {
@@ -95,33 +96,18 @@ const renderTagCheckboxes = (
   response: StaticExploreSearchResponse,
   selectedTags: readonly string[],
 ): string => {
-  const allTags = new Map<string, number>(Object.entries(response.allTagCounts));
-  for (const [tag, count] of Object.entries(response.tagCounts)) {
-    allTags.set(tag, count);
-  }
-  for (const tag of selectedTags) {
-    if (!allTags.has(tag)) {
-      allTags.set(tag, 0);
-    }
-  }
-
-  const entries = [...allTags.entries()].sort((left, right) => {
-    const leftSelected = selectedTags.includes(left[0]);
-    const rightSelected = selectedTags.includes(right[0]);
-    if (leftSelected !== rightSelected) {
-      return leftSelected ? -1 : 1;
-    }
-    if (left[1] !== right[1]) {
-      return right[1] - left[1];
-    }
-    return left[0].localeCompare(right[0], 'ja');
+  const tags = orderSearchPageTags({
+    allTagCounts: response.allTagCounts,
+    tagCounts: response.tagCounts,
+    selectedTags,
   });
-  if (entries.length === 0) {
+  if (tags.length === 0) {
     return '<p class="filter-empty">選択できるタグはまだありません。</p>';
   }
 
-  return entries
-    .map(([tag, count]) => {
+  return tags
+    .map((tag) => {
+      const count = response.tagCounts[tag] ?? 0;
       const selected = selectedTags.includes(tag);
       const disabled = !selected && count === 0;
       return `
