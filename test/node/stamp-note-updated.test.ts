@@ -587,7 +587,7 @@ describe('stamp-note-updated', () => {
       /\[\s*'diff',\s*'--name-status',\s*'-z',\s*'-M',\s*'--diff-filter=AMRT',\s*'HEAD',\s*'--',\s*'content\/notes',\s*\]/,
     );
     expect(source).toMatch(
-      /\[\s*'diff',\s*'--name-status',\s*'-z',\s*'--diff-filter=UXB',\s*'HEAD',\s*'--',\s*'content\/notes'\s*\]/,
+      /\[\s*'diff',\s*'--name-status',\s*'-z',\s*'--diff-filter=UXB',\s*'HEAD',\s*'--',\s*'content\/notes'\s*,?\s*\]/,
     );
   });
 

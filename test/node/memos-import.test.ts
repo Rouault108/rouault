@@ -21,6 +21,13 @@ import type {
   Snapshot,
   PublicationEntry,
 } from '../../scripts/memos-import/model.js';
+import { unified } from 'unified';
+import remarkParse from 'remark-parse';
+import remarkGfm from 'remark-gfm';
+import remarkMath from 'remark-math';
+import remarkRehype from 'remark-rehype';
+import rehypeKatex from 'rehype-katex';
+import { rehypeHeadingIds } from '../../build/rehype/rehype-heading-ids.js';
 const guards = {
   maxBlobBytes: 2_000_000,
   maxPushBytes: 10_000_000,
@@ -88,6 +95,48 @@ const plan = (
     ...overrides,
   });
 describe('manual memo importer', () => {
+  it('plans final heading anchors after math and footnote semantics using the actual Rouault plugin', async () => {
+    const result = (
+      await transform({
+        '02_notes/A.md': note(
+          '## Math $x^2$\n## Note[^a]\n## Math $x^2$\n\n[^a]: Synthetic footnote',
+        ),
+      })
+    ).get('02_notes/A.md');
+    if (!result) throw new Error('synthetic output missing');
+    const renderer = unified()
+      .use(remarkParse)
+      .use(remarkGfm)
+      .use(remarkMath)
+      .use(remarkRehype)
+      .use(rehypeKatex)
+      .use(rehypeHeadingIds);
+    const tree: unknown = await renderer.run(renderer.parse(result.markdown));
+    const ids: string[] = [];
+    const inspect = (node: unknown): void => {
+      if (typeof node !== 'object' || node === null) return;
+      if (
+        'tagName' in node &&
+        typeof node.tagName === 'string' &&
+        /^h[1-6]$/u.test(node.tagName) &&
+        'properties' in node &&
+        typeof node.properties === 'object' &&
+        node.properties !== null &&
+        'id' in node.properties &&
+        typeof node.properties.id === 'string' &&
+        node.properties.id !== 'footnote-label'
+      )
+        ids.push(node.properties.id);
+      if ('children' in node && Array.isArray(node.children))
+        node.children.forEach((child) => {
+          inspect(child);
+        });
+    };
+    inspect(tree);
+    expect(Object.keys(result.headingMap)).toEqual(ids);
+    expect(ids[0]).not.toBe('math-x2');
+    expect(ids[2]).toBe(`${ids[0] ?? ''}-2`);
+  });
   it('expands multiple inline note embeds and inline images while preserving escaped tokens independently', async () => {
     const files = {
       '02_notes/A.md': note('Before ![[B]] between ![[B]] after ![[image.png]]\n\\[[B]] [[B]]'),

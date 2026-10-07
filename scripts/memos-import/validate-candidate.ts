@@ -13,6 +13,8 @@ const headings = (html: string): string[] => {
   const walk = (node: HtmlNode, inArticle = false): void => {
     if ('tagName' in node) {
       if (node.tagName === 'header') return;
+      if (node.attrs.some((attr) => ['data-link-card', 'data-syntax-card'].includes(attr.name)))
+        return;
       const inside =
         inArticle ||
         node.attrs.some(
@@ -21,7 +23,7 @@ const headings = (html: string): string[] => {
       if (inside && /^h[1-6]$/u.test(node.tagName)) {
         const id = node.attrs.find((attr) => attr.name === 'id')?.value;
         if (!id) throw new Error('[candidate] heading ID missing');
-        result.push(id);
+        if (!(node.tagName === 'h2' && id === 'footnote-label')) result.push(id);
       }
       if ('childNodes' in node)
         node.childNodes.forEach((child) => {

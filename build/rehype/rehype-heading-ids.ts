@@ -1,4 +1,7 @@
-import { createUniqueHeadingId } from '../content/heading-anchor-planner.js';
+import {
+  createUniqueHeadingId,
+  getHeadingTextContent as getTextContent,
+} from '../content/heading-anchor-planner.js';
 import { type HastNode, getOrCreateProperties } from './hast-utils.js';
 import { createStaticIconHast } from './static-icon-hast.js';
 
@@ -16,16 +19,6 @@ const isPermalinkHeadingElement = (node: HastNode): boolean =>
   node.type === 'element' &&
   typeof node.tagName === 'string' &&
   PERMALINK_HEADING_TAG_PATTERN.test(node.tagName);
-
-const getTextContent = (node: HastNode): string => {
-  if (node.type === 'text') {
-    return typeof node.value === 'string' ? node.value : '';
-  }
-  if (!Array.isArray(node.children)) {
-    return '';
-  }
-  return node.children.map((child) => getTextContent(child)).join('');
-};
 
 const getClassNames = (node: HastNode): string[] => {
   const raw = node.properties?.['className'];

@@ -4,8 +4,13 @@ import remarkParse from 'remark-parse';
 import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
 import remarkStringify from 'remark-stringify';
+import remarkRehype from 'remark-rehype';
+import rehypeKatex from 'rehype-katex';
 import type { Root, Nodes, RootContent, PhrasingContent, Heading, Link, Definition } from 'mdast';
-import { createUniqueHeadingId } from '../../build/content/heading-anchor-planner.js';
+import {
+  createUniqueHeadingId,
+  getHeadingTextContent,
+} from '../../build/content/heading-anchor-planner.js';
 import { resolveContentRoute } from '../../build/content/content-route-registry.js';
 import { parseRawHref } from '../../build/markdown/note-source-link-resolver.js';
 import { hashBytes, isNotePath, resolveVaultReference, type VaultNote } from './source-snapshot.js';
@@ -15,6 +20,7 @@ const processor = unified()
   .use(remarkGfm, { singleTilde: false })
   .use(remarkMath)
   .use(remarkStringify);
+const semanticProcessor = unified().use(remarkRehype).use(rehypeKatex);
 const childrenOf = (node: Nodes): Nodes[] => ('children' in node ? node.children : []);
 const textOf = (node: Nodes): string =>
   'value' in node ? node.value : childrenOf(node).map(textOf).join('');
@@ -54,17 +60,51 @@ interface HeadingRef {
   id: string;
 }
 const headingsOf = (tree: Root): HeadingRef[] => {
-  const result: HeadingRef[] = [];
-  const counters = new Map<string, number>();
-  const walk = (node: Nodes): void => {
-    if (node.type === 'heading') {
-      const text = textOf(node);
-      result.push({ node, index: result.length, text, id: createUniqueHeadingId(text, counters) });
-    }
-    childrenOf(node).forEach(walk);
+  const source: Heading[] = [];
+  const collect = (node: Nodes): void => {
+    if (node.type === 'heading') source.push(node);
+    childrenOf(node).forEach(collect);
   };
-  walk(tree);
-  return result;
+  collect(tree);
+  const copy = structuredClone(tree);
+  let marker = 0;
+  const mark = (node: Nodes): void => {
+    if (node.type === 'heading') {
+      node.data ??= {};
+      node.data.hProperties = { ...node.data.hProperties, dataMemoHeading: marker++ };
+    }
+    childrenOf(node).forEach(mark);
+  };
+  mark(copy);
+  const ids = new Map<number, string>();
+  const counters = new Map<string, number>();
+  const rendered: unknown = semanticProcessor.runSync(copy);
+  const inspect = (node: unknown): void => {
+    if (typeof node !== 'object' || node === null) return;
+    if (
+      'tagName' in node &&
+      typeof node.tagName === 'string' &&
+      /^h[1-6]$/u.test(node.tagName) &&
+      'properties' in node &&
+      typeof node.properties === 'object' &&
+      node.properties !== null &&
+      'dataMemoHeading' in node.properties &&
+      typeof node.properties.dataMemoHeading === 'number'
+    )
+      ids.set(
+        node.properties.dataMemoHeading,
+        createUniqueHeadingId(getHeadingTextContent(node), counters),
+      );
+    if ('children' in node && Array.isArray(node.children))
+      node.children.forEach((child) => {
+        inspect(child);
+      });
+  };
+  inspect(rendered);
+  return source.flatMap((node, index) => {
+    const id = ids.get(index);
+    return id ? [{ node, index, text: textOf(node), id }] : [];
+  });
 };
 const selectHeading = (headings: readonly HeadingRef[], fragment: string): HeadingRef => {
   let decoded: string;

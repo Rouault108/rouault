@@ -15,3 +15,10 @@ export const createUniqueHeadingId = (text: string, counters: Map<string, number
   counters.set(base, count);
   return count === 1 ? base : `${base}-${count.toString()}`;
 };
+export const getHeadingTextContent = (node: unknown): string => {
+  if (typeof node !== 'object' || node === null) return '';
+  if ('type' in node && node.type === 'text' && 'value' in node && typeof node.value === 'string')
+    return node.value;
+  if (!('children' in node) || !Array.isArray(node.children)) return '';
+  return node.children.map((child) => getHeadingTextContent(child)).join('');
+};
