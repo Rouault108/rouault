@@ -8,6 +8,7 @@ import {
 } from '../../scripts/memos-import/publish-snapshot.js';
 import { aggregateLedger } from '../../scripts/memos-import/publication-ledger.js';
 import { PublicationOperationQueue } from '../../scripts/memos-import/operation-lock.js';
+import { hashBytes } from '../../scripts/memos-import/source-snapshot.js';
 import type {
   PublicationLedger,
   PublicationOperation,
@@ -66,6 +67,7 @@ class Harness implements PublicationPorts {
     | undefined;
   marker: { operationId: string; hash: string; sha: string } | undefined;
   committed: { snapshot: Snapshot; manifest: OwnedFiles } | undefined;
+  advanceRouaultAfterSource = false;
   async withLock<T>(_id: string, work: () => Promise<T>): Promise<T> {
     return work();
   }
@@ -94,7 +96,21 @@ class Harness implements PublicationPorts {
     ).toBe(true);
     if (this.failAt === 'source') throw new Error('synthetic source conflict');
     this.sourceCommits += 1;
-    this.source = { ...planned, sha: 'c'.repeat(40) };
+    this.source = {
+      ...planned,
+      sha: hashBytes(
+        JSON.stringify([...planned.files].map(([name, file]) => [name, hashBytes(file.bytes)])),
+      ).slice(0, 40),
+    };
+    if (this.advanceRouaultAfterSource)
+      this.rouault = {
+        ...this.rouault,
+        sha: 'e'.repeat(40),
+        files: new Map([
+          ...this.rouault.files,
+          ['README.md', { mode: '100644', bytes: Buffer.from('Unrelated public change') }],
+        ]),
+      };
     return this.source.sha;
   }
   async validateCandidate(_plan: ImportPlan, _base: Snapshot) {
@@ -108,7 +124,11 @@ class Harness implements PublicationPorts {
     for (const [name, bytes] of plan.writes) files.set(name, { mode: '100644', bytes });
     this.publicCommits += 1;
     this.committed = {
-      snapshot: { ...this.rouault, files, sha: 'd'.repeat(40) },
+      snapshot: {
+        ...this.rouault,
+        files,
+        sha: hashBytes(expectedBase + plan.candidateHash).slice(0, 40),
+      },
       manifest: plan.manifest,
     };
     this.marker = { operationId: id, hash: plan.candidateHash, sha: this.committed.snapshot.sha };
@@ -116,6 +136,8 @@ class Harness implements PublicationPorts {
   }
   async pushRouault(sha: string, _base: string) {
     expect(this.receipts.some((receipt) => receipt.rouaultCommitSha === sha)).toBe(true);
+    if (sha === this.rouault.sha) return;
+    expect(_base).toBe(this.rouault.sha);
     if (this.failAt === 'push') throw new Error('synthetic push rejected');
     if (!this.committed) throw new Error('missing committed candidate');
     this.rouault = this.committed.snapshot;
@@ -154,6 +176,51 @@ class Harness implements PublicationPorts {
   }
 }
 describe('manual publication transaction and recovery', () => {
+  it('revalidates an unrelated Rouault head advance and records the actual commit/push base', async () => {
+    const ports = new Harness();
+    ports.advanceRouaultAfterSource = true;
+    const result = await executePublicationOperation(operation, ports, {
+      guards,
+      initializeEmpty: true,
+    });
+    expect(result.status).toBe('complete');
+    expect(result.receipt.rouaultBaseSha).toBe('e'.repeat(40));
+    expect(result.receipt.results['rouaultPreflightBaseSha']).toBe('b'.repeat(40));
+    expect(Buffer.from(ports.rouault.files.get('README.md')?.bytes ?? []).toString()).toBe(
+      'Unrelated public change',
+    );
+  });
+  it.each(['update', 'withdraw'] as const)(
+    'resumes %s after deployment or ledger failure without repeating the public commit',
+    async (action) => {
+      for (const failure of ['deployment', 'finalize'] as const) {
+        const ports = new Harness();
+        expect(
+          (await executePublicationOperation(operation, ports, { guards, initializeEmpty: true }))
+            .status,
+        ).toBe('complete');
+        const next: PublicationOperation = {
+          ...operation,
+          action,
+          operationId: `synthetic-${action}`,
+          userRequestRef: `private:synthetic-${action}`,
+          expectedLedgerRevision: 1,
+        };
+        ports.failAt = failure;
+        const first = await executePublicationOperation(next, ports, { guards });
+        expect(first.status).toBe('partial');
+        ports.failAt = undefined;
+        const commits = ports.publicCommits;
+        const resumed = await executePublicationOperation(next, ports, { guards });
+        expect(resumed.status).toBe('complete');
+        expect(ports.publicCommits).toBe(commits);
+        expect(ports.ledger.entries['02_notes/A.md']?.status).toBe(
+          action === 'withdraw' ? 'withdrawn' : 'published',
+        );
+        expect(ports.rouault.files.has('content/memos/A.md')).toBe(action !== 'withdraw');
+      }
+    },
+  );
   it('persists approval before side effects and finalizes state with the completed receipt', async () => {
     const ports = new Harness();
     const result = await executePublicationOperation(operation, ports, {

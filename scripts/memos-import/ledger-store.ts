@@ -190,6 +190,15 @@ export class PublicationLedgerStore {
       receipt.deploymentStatus !== 'verified' ||
       !receipt.rouaultCommitSha ||
       !receipt.deploymentId ||
+      !receipt.sourceFinalSha ||
+      receipt.approvedInputHash !== plan.inputHash ||
+      JSON.stringify([...receipt.operation.targets].sort()) !==
+        JSON.stringify(Object.keys(plan.entries).sort()) ||
+      Object.values(plan.entries).some(
+        (entry) =>
+          entry.approvedSourceSha !== receipt.sourceFinalSha ||
+          entry.approvedRequestRef !== receipt.operation.userRequestRef,
+      ) ||
       ledger.revision !== receipt.operation.expectedLedgerRevision
     )
       throw new Error('[ledger] incomplete finalization');

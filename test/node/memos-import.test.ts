@@ -95,6 +95,17 @@ const plan = (
     ...overrides,
   });
 describe('manual memo importer', () => {
+  it('recognizes only empty root markers and refuses unowned marker data during initialization', () => {
+    expect(
+      verifyOwnership(snapshot({ 'content/memos/.gitkeep': '' }), undefined, true).files,
+    ).toEqual({});
+    expect(() =>
+      verifyOwnership(snapshot({ 'content/memos/.gitkeep': 'unowned data' }), undefined, true),
+    ).toThrow();
+    expect(() =>
+      verifyOwnership(snapshot({ 'content/memos/nested/.gitkeep': '' }), undefined, true),
+    ).toThrow();
+  });
   it('plans final heading anchors after math and footnote semantics using the actual Rouault plugin', async () => {
     const result = (
       await transform({

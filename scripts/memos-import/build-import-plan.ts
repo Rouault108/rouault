@@ -47,7 +47,14 @@ export const verifyOwnership = (
       (name) =>
         name.startsWith('content/memos/') || name.startsWith('content/_assets/memos-import/'),
     )
-    .filter((name) => !name.endsWith('/.gitkeep'));
+    .filter((name) => {
+      const file = snapshot.files.get(name);
+      return !(
+        ['content/memos/.gitkeep', 'content/_assets/memos-import/.gitkeep'].includes(name) &&
+        file?.mode === '100644' &&
+        file.bytes.length === 0
+      );
+    });
   if (!manifest) {
     if (!initializeEmpty || managed.length) throw new Error('[import] ownership manifest missing');
     return { schemaVersion: 1, files: {} };
@@ -154,6 +161,7 @@ export const buildImportPlan = async (input: {
   guards: ImageInputGuards;
   rightsConfirmedFor?: ReadonlySet<string>;
   archiveReferencesVerified?: boolean;
+  recoveringCommittedOperation?: boolean;
 }): Promise<ImportPlan> => {
   validateOperation(input.operation, input.ledger);
   validateImageGuards(input.guards);
@@ -232,9 +240,13 @@ export const buildImportPlan = async (input: {
         )
           throw new Error('[import] withdrawal has an unapproved embed dependent');
       }
-      if (old?.publicPath !== publicPath || !owned[publicPath])
+      const alreadyRemoved =
+        input.recoveringCommittedOperation === true &&
+        !input.rouault.files.has(publicPath) &&
+        !owned[publicPath];
+      if (old?.publicPath !== publicPath || (!owned[publicPath] && !alreadyRemoved))
         throw new Error('[import] withdrawal ownership mismatch');
-      deletes.push(publicPath);
+      if (!alreadyRemoved) deletes.push(publicPath);
       owned = Object.fromEntries(Object.entries(owned).filter(([name]) => name !== publicPath));
       entries[target] = {
         ...old,

@@ -119,6 +119,7 @@ export const executePublicationOperation = async (
         source: planned,
         rouault: rouault.snapshot,
         ledger,
+        recoveringCommittedOperation: receipt.rouaultCommitSha !== null,
         ...(rouault.manifest ? { manifest: rouault.manifest } : {}),
       });
       if (receipt.approvedInputHash && receipt.approvedInputHash !== plan.inputHash)
@@ -166,12 +167,17 @@ export const executePublicationOperation = async (
         source: finalSource,
         rouault: currentRouault.snapshot,
         ledger,
+        recoveringCommittedOperation: receipt.rouaultCommitSha !== null,
         ...(currentRouault.manifest ? { manifest: currentRouault.manifest } : {}),
       });
       if (finalPlan.inputHash !== receipt.approvedInputHash)
         throw new Error('[publication] final source differs from approved content');
       await ports.validateCandidate(finalPlan, currentRouault.snapshot);
       if (!receipt.rouaultCommitSha) {
+        if (receipt.rouaultBaseSha !== currentRouault.snapshot.sha) {
+          receipt.results['rouaultPreflightBaseSha'] = receipt.rouaultBaseSha;
+          receipt.rouaultBaseSha = currentRouault.snapshot.sha;
+        }
         receipt.candidateHash = finalPlan.candidateHash;
         await advance('candidate-validated');
         activeStage = 'rouault-committed';
