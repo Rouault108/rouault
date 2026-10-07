@@ -23,6 +23,25 @@ export const readSourceFile = (snapshot: Snapshot, name: string): Uint8Array => 
   if (!file || file.mode === '120000') throw new Error('[import] required regular file missing');
   return file.bytes;
 };
+export const resolveVaultAssetReference = (
+  reference: string,
+  origin: string,
+  availablePaths: ReadonlySet<string>,
+): string => {
+  if (
+    /^[a-z][a-z0-9+.-]*:/iu.test(reference) ||
+    /[?#]/u.test(reference) ||
+    reference.startsWith('/')
+  )
+    throw new Error('[import] remote or unsafe image');
+  const relative = path.posix.normalize(path.posix.join(path.posix.dirname(origin), reference));
+  const matches = [...new Set([relative, path.posix.normalize(reference)])].filter((name) =>
+    availablePaths.has(name),
+  );
+  if (matches.length !== 1 || !matches[0]) throw new Error('[import] missing or ambiguous image');
+  assertSafeContentPath(matches[0]);
+  return matches[0];
+};
 export const isNotePath = (name: string): boolean =>
   name.startsWith('02_notes/') && name.endsWith('.md');
 export interface VaultNote {

@@ -147,6 +147,19 @@ export class PublicationLedgerStore {
     initializeEmpty = false,
     publicRegionEmpty = false,
   ): Promise<{ ledger: PublicationLedger; commitSha: string }> {
+    return this.load(initializeEmpty, publicRegionEmpty, true);
+  }
+  async readForDryRun(
+    initializeEmpty = false,
+    publicRegionEmpty = false,
+  ): Promise<{ ledger: PublicationLedger; commitSha: string }> {
+    return this.load(initializeEmpty, publicRegionEmpty, false);
+  }
+  private async load(
+    initializeEmpty: boolean,
+    publicRegionEmpty: boolean,
+    persistInitialization: boolean,
+  ): Promise<{ ledger: PublicationLedger; commitSha: string }> {
     await this.assertRepository();
     const commitSha = await this.repository.head();
     const folder = await this.repository.readFolder(commitSha, ledgerStorage.ledgerRoot);
@@ -156,6 +169,7 @@ export class PublicationLedgerStore {
       if (!initializeEmpty || !publicRegionEmpty || folder.files.size)
         throw new Error('[ledger] state missing; recovery required');
       const state: PublicationLedgerState = { schemaVersion: 1, revision: 0, entries: {} };
+      if (!persistInitialization) return { ledger: aggregateLedger(state, []), commitSha };
       const nextSha = await this.repository.commitFiles(
         commitSha,
         new Map([[`${ledgerStorage.ledgerRoot}/state.json`, Buffer.from(serializeState(state))]]),
@@ -168,6 +182,7 @@ export class PublicationLedgerStore {
     await this.assertRepository();
     if (!/^[a-zA-Z0-9_-]+$/u.test(receipt.operation.operationId))
       throw new Error('[ledger] unsafe operation ID');
+    assertReceipt(receipt, `operations/${receipt.operation.operationId}.json`);
     return this.repository.commitFiles(
       expectedHead,
       new Map([
@@ -230,11 +245,17 @@ export class PublicationLedgerStore {
     stateHash: string;
     files: ReadonlyMap<string, Uint8Array>;
   }> {
+    return this.backupAt(await this.repository.head());
+  }
+  async backupAt(
+    commitSha: string,
+  ): Promise<{ commitSha: string; stateHash: string; files: ReadonlyMap<string, Uint8Array> }> {
     await this.assertRepository();
-    const commitSha = await this.repository.head();
+    if (!sha(commitSha)) throw new Error('[ledger] pinned backup commit required');
     const folder = await this.repository.readFolder(commitSha, ledgerStorage.ledgerRoot);
     const state = folder.files.get('state.json');
     if (!state || !folder.complete) throw new Error('[ledger] backup incomplete');
+    parseFolder(folder.files);
     return { commitSha, stateHash: hashBytes(state), files: folder.files };
   }
   async restoreBackup(

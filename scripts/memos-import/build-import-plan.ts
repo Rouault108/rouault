@@ -17,6 +17,7 @@ import {
   hashBytes,
   assertSnapshot,
   readSourceFile,
+  resolveVaultAssetReference,
   readVaultNotes,
   isNotePath,
   updateSourceFlag,
@@ -178,23 +179,16 @@ export const buildImportPlan = async (input: {
     origin: string,
     dependencies: Record<string, string>,
   ): Promise<string> => {
-    if (
-      /^[a-z][a-z0-9+.-]*:/iu.test(reference) ||
-      /[?#]/u.test(reference) ||
-      reference.startsWith('/')
-    )
-      throw new Error('[import] remote or unsafe image');
-    const relative = path.posix.normalize(path.posix.join(path.posix.dirname(origin), reference));
-    const alternatives = [...new Set([relative, path.posix.normalize(reference)])].filter((name) =>
-      input.source.files.has(name),
+    const assetPath = resolveVaultAssetReference(
+      reference,
+      origin,
+      new Set(input.source.files.keys()),
     );
-    if (alternatives.length !== 1 || !alternatives[0])
-      throw new Error('[import] missing or ambiguous image');
     const asset = await preparePublicAsset(
       input.source,
-      alternatives[0],
+      assetPath,
       input.guards,
-      input.rightsConfirmedFor?.has(alternatives[0]) === true,
+      input.rightsConfirmedFor?.has(assetPath) === true,
     );
     const entry = input.ledger.entries[origin];
     if (

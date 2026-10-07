@@ -8,7 +8,7 @@ import { createPnpmInvocation } from '../run-build-process.js';
 import { assertSnapshot, hashBytes } from './source-snapshot.js';
 import type { ImportPlan, Snapshot } from './model.js';
 type HtmlNode = DefaultTreeAdapterMap['node'];
-const headings = (html: string): string[] => {
+export const collectFinalHeadingIds = (html: string): string[] => {
   const result: string[] = [];
   const walk = (node: HtmlNode, inArticle = false): void => {
     if ('tagName' in node) {
@@ -66,7 +66,7 @@ export const validateCandidateArtifacts = async (
     }
     if (!routes.has(route.canonicalPathname)) throw new Error('[candidate] adopted route missing');
     const html = await readFile(path.join(outputDirectory, route.outputPath), 'utf8');
-    const ids = headings(html);
+    const ids = collectFinalHeadingIds(html);
     if (JSON.stringify(ids) !== JSON.stringify(Object.keys(entry.headingMap)))
       throw new Error('[candidate] final HTML anchor map differs');
     const artifact: unknown = JSON.parse(

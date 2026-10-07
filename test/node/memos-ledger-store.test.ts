@@ -34,6 +34,14 @@ class Repository implements PrivateLedgerRepository {
   }
 }
 describe('private ledger persistence and recovery', () => {
+  it('previews explicit empty initialization without any ledger commit', async () => {
+    const repository = new Repository();
+    const result = await new PublicationLedgerStore(repository).readForDryRun(true, true);
+    expect(result.ledger.revision).toBe(0);
+    expect(result.commitSha).toBe(repository.sha);
+    expect(repository.commits).toHaveLength(0);
+    expect(repository.files.size).toBe(0);
+  });
   it('requires explicit empty initialization, complete reads and the fixed private identity', async () => {
     const repository = new Repository();
     const store = new PublicationLedgerStore(repository);
