@@ -328,7 +328,17 @@ export const buildImportPlan = async (input: {
   }
   if (input.archiveReferencesVerified === true) {
     for (const name of Object.keys(manifest.files)) {
-      if (name.startsWith('content/_assets/memos-import/') && !references.has(name)) {
+      if (!name.startsWith('content/_assets/memos-import/') || references.has(name)) continue;
+      // Keep uncertain references (definitions, frontmatter, configs and examples) conservatively.
+      // The ownership manifest itself names every asset and is not a consumer.
+      const token = Buffer.from(path.posix.basename(name));
+      const sourceReference = [...candidate].some(
+        ([consumer, file]) =>
+          consumer !== OWNERSHIP_PATH &&
+          !consumer.startsWith('content/_assets/') &&
+          Buffer.from(file.bytes).includes(token),
+      );
+      if (!sourceReference) {
         deletes.push(name);
         writes.delete(name);
         owned = Object.fromEntries(Object.entries(owned).filter(([key]) => key !== name));

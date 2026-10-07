@@ -411,6 +411,75 @@ describe('manual memo importer', () => {
     expect(second.deletes).toEqual([]);
     expect(second.inputHash).toBe(first.inputHash);
   });
+  it.each(['reference-image', 'frontmatter-cover'])(
+    'retains owned assets used by an unchanged note through %s and removes only a verified orphan',
+    async (kind) => {
+      const image = await sharp({
+        create: { width: 2, height: 2, channels: 3, background: '#445566' },
+      })
+        .png()
+        .toBuffer();
+      const source = snapshot({
+        '02_notes/A.md': note('![Original](../assets/image.png)'),
+        'assets/image.png': image,
+      });
+      const first = await buildImportPlan({
+        operation,
+        source,
+        rouault: snapshot({}),
+        ledger: emptyLedger(),
+        initializeEmpty: true,
+        guards,
+      });
+      const asset = [...first.writes.keys()].find((name) =>
+        name.startsWith('content/_assets/memos-import/'),
+      );
+      const entry = first.entries['02_notes/A.md'];
+      if (!asset || !entry) throw new Error('Synthetic asset entry missing');
+      const ledger = emptyLedger();
+      ledger.revision = 1;
+      ledger.entries['02_notes/A.md'] = {
+        ...entry,
+        rouaultCommitSha: 'b'.repeat(40),
+        deploymentId: 'synthetic',
+      };
+      const updated: PublicationOperation = {
+        ...operation,
+        action: 'update',
+        operationId: `test-${kind}`,
+        expectedLedgerRevision: 1,
+      };
+      const sharedNote =
+        kind === 'reference-image'
+          ? `![Shared][asset]\n\n[asset]: ${asset}\n`
+          : `---\ncover: ${asset}\n---\nUnchanged existing note\n`;
+      const input = {
+        operation: updated,
+        source: snapshot({ '02_notes/A.md': note('Updated body without image') }),
+        ledger,
+        manifest: first.manifest,
+        guards,
+        archiveReferencesVerified: true,
+      };
+      const publicFiles = Object.fromEntries(first.writes);
+      const withConsumer = await buildImportPlan({
+        ...input,
+        rouault: snapshot({ ...publicFiles, 'content/notes/Synthetic.md': sharedNote }),
+      });
+      expect(withConsumer.deletes).not.toContain(asset);
+      expect(withConsumer.manifest.files[asset]).toBe(first.manifest.files[asset]);
+      expect(withConsumer.writes.has('content/notes/Synthetic.md')).toBe(false);
+      const orphan = await buildImportPlan({ ...input, rouault: snapshot(publicFiles) });
+      expect(orphan.deletes).toContain(asset);
+      expect(orphan.manifest.files[asset]).toBeUndefined();
+      const uncertainArchive = await buildImportPlan({
+        ...input,
+        archiveReferencesVerified: false,
+        rouault: snapshot(publicFiles),
+      });
+      expect(uncertainArchive.deletes).not.toContain(asset);
+    },
+  );
   it('rejects resource guards without verified evidence and push aggregate overflow', () => {
     expect(() =>
       validatePushInput([Buffer.from('x')], 1, { ...guards, hostingEvidence: '' }),

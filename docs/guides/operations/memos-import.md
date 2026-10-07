@@ -10,6 +10,8 @@
 
 公開manifestは`scripts/import-state/memos-owned-files.json`に公開path/hash/schemaVersionだけを置く。通常実行でmanifest欠損を初回と推定しない。`initializeEmpty`は公開管理領域とprivate台帳folderが空の場合だけ指定する。既存公開物の自動bootstrapを行わない。
 
+画像清掃はarchive参照が確認済みの場合だけ行う。直接imageだけでなく、reference definition、frontmatterのcover、設定や例示にasset名が残る場合も保守的に保持する。所有manifestとasset本体は参照元に数えない。不要と確認できない画像は残し、指定外noteや未所有assetを変更しない。
+
 台帳保存先はprivate `Rouault108/metis-handbook`の`publication-ledger/rouault-memos/`。`state.json`は確定entry、`operations/{operationId}.json`は承認と経過のreceiptの正本。operations viewをstateへ重複保存しない。`PublicationLedgerStore`はrepository属性・基点SHA・revisionを検証し、完了stateとreceiptを同じcommitへ渡す。backupはprivate領域にだけ保存し、hashとschemaを復元前に検証する。
 
 `PublicationPorts`は既存認証を使う実行環境側の限定write、candidate validation、deploy実測adapterの境界である。source/Rouault/ledgerのcommitは独立しており、cross-repository atomicityを保証しない。receiptを外部反映前に永続化し、未知結果は実状態を照合する。同じ操作ID・対象・内容版でだけ再開する。通常pushを用い、force pushやbranch protection回避はしない。
