@@ -1800,7 +1800,7 @@ describe('static CSS contracts', () => {
       'pointer-events: none',
       'color: var(--fg-control-affordance, var(--fg-subtle))',
       'border: var(--border-width) solid currentColor',
-      'background: var(--bg-fill-muted)',
+      'background: var(--bg-default)',
     ]);
     expectRuleToDeclare(css, '.filter-option-checkbox', [
       'min-block-size: var(--control-min-touch, 24px)',

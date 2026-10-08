@@ -422,7 +422,7 @@
   color: var(--fg-control-affordance, var(--fg-subtle));
   border: var(--border-width) solid currentColor;
   border-radius: var(--radius-sm);
-  background: var(--bg-fill-muted);
+  background: var(--bg-default);
 }
 .filter-option-checkbox__control::before {
   content: '';

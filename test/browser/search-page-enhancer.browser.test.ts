@@ -299,6 +299,7 @@ describe('search-page-enhancer', () => {
             controlStyle.backgroundColor,
             controlStyle.borderTopColor,
           );
+          expect(controlStyle.backgroundColor).toBe(resolvedColor('--bg-default'));
           expect(controlStyle.borderTopColor).toBe(resolvedColor('--fg-control-affordance'));
           expect(
             contrast(border, outer),
