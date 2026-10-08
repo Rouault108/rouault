@@ -7,6 +7,8 @@ import { createReceipt, ledgerStorage } from '../../scripts/memos-import/publica
 import { hashBytes } from '../../scripts/memos-import/source-snapshot.js';
 class Repository implements PrivateLedgerRepository {
   repository = 'Rouault108/metis-handbook';
+  repositoryId = 1402900612;
+  owner = 'Rouault108';
   private = true;
   branch = 'main';
   sha = 'a'.repeat(40);
@@ -14,7 +16,13 @@ class Repository implements PrivateLedgerRepository {
   files = new Map<string, Uint8Array>();
   commits: ReadonlyMap<string, Uint8Array>[] = [];
   async identity() {
-    return { repository: this.repository, private: this.private, branch: this.branch };
+    return {
+      repository: this.repository,
+      repositoryId: this.repositoryId,
+      owner: this.owner,
+      private: this.private,
+      branch: this.branch,
+    };
   }
   async head() {
     return this.sha;
@@ -53,6 +61,15 @@ describe('private ledger persistence and recovery', () => {
     repository.private = false;
     await expect(store.read(true, true)).rejects.toThrow('identity');
     repository.private = true;
+    repository.repositoryId += 1;
+    await expect(store.read(true, true)).rejects.toThrow('identity');
+    repository.repositoryId = 1402900612;
+    repository.owner = 'OtherOwner';
+    await expect(store.read(true, true)).rejects.toThrow('identity');
+    repository.owner = 'Rouault108';
+    repository.repository = 'Rouault108/other-private-repository';
+    await expect(store.read(true, true)).rejects.toThrow('identity');
+    repository.repository = 'Rouault108/metis-workspace';
     const loaded = await store.read(true, true);
     expect(loaded.ledger.revision).toBe(0);
     expect(repository.commits).toHaveLength(1);

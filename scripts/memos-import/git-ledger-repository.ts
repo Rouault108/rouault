@@ -1,15 +1,11 @@
 import type { PrivateLedgerRepository } from './ledger-store.js';
-import { ledgerStorage } from './publication-ledger.js';
+import { isLedgerRepositoryIdentity, ledgerStorage } from './publication-ledger.js';
 import { GitTreeRepository } from './git-repository.js';
 export class GitLedgerRepository implements PrivateLedgerRepository {
   constructor(private readonly repository: GitTreeRepository) {}
   async identity() {
     const identity = await this.repository.identity();
-    if (
-      identity.repository !== ledgerStorage.ledgerRepository ||
-      !identity.private ||
-      identity.branch !== 'main'
-    )
+    if (!isLedgerRepositoryIdentity(identity))
       throw new Error('[ledger] private repository identity mismatch');
     return identity;
   }
