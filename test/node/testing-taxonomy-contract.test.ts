@@ -228,14 +228,19 @@ describe('final testing taxonomy contract', () => {
         groupOrder: 1,
       },
       {
-        name: 'browser-webkit-url-state',
+        name: 'browser-webkit-search-state',
         fileParallelism: false,
         groupOrder: 2,
       },
       {
-        name: 'browser-webkit-navigation-state',
+        name: 'browser-webkit-url-state',
         fileParallelism: false,
         groupOrder: 3,
+      },
+      {
+        name: 'browser-webkit-navigation-state',
+        fileParallelism: false,
+        groupOrder: 4,
       },
     ]);
 

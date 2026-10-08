@@ -5,10 +5,12 @@ const canonicalOrder: readonly BrowserTestBrowser[] = ['chromium', 'firefox', 'w
 export interface WebkitBrowserTestShard {
   readonly name:
     | 'browser-webkit-general'
+    | 'browser-webkit-search-state'
     | 'browser-webkit-url-state'
     | 'browser-webkit-navigation-state';
   readonly projectName:
     | 'browser-webkit-general-project'
+    | 'browser-webkit-search-state-project'
     | 'browser-webkit-url-state-project'
     | 'browser-webkit-navigation-state-project';
   readonly include: readonly string[];
@@ -20,8 +22,11 @@ export interface WebkitBrowserTestShard {
 // WebKitのHistory API rate limitをtop-level sessionごとに分離する。
 // History／URL stateを高頻度に変更するtestは、責務に応じて
 // URL stateまたはNavigation stateへ明示的に分類する。
-const webkitUrlStateTestFiles = [
+const webkitSearchStateTestFiles = [
   'test/browser/search-page-enhancer.browser.test.ts',
+] as const;
+
+const webkitUrlStateTestFiles = [
   'test/browser/tabs.browser.test.ts',
   'test/browser/url-hash.browser.test.ts',
 ] as const;
@@ -34,6 +39,7 @@ const webkitNavigationStateTestFiles = [
 ] as const;
 
 const webkitHistoryStateTestFiles = [
+  ...webkitSearchStateTestFiles,
   ...webkitUrlStateTestFiles,
   ...webkitNavigationStateTestFiles,
 ] as const;
@@ -50,12 +56,20 @@ export const webkitBrowserTestShards = [
     groupOrder: 1,
   },
   {
+    name: 'browser-webkit-search-state',
+    projectName: 'browser-webkit-search-state-project',
+    include: webkitSearchStateTestFiles,
+    exclude: [],
+    fileParallelism: false,
+    groupOrder: 2,
+  },
+  {
     name: 'browser-webkit-url-state',
     projectName: 'browser-webkit-url-state-project',
     include: webkitUrlStateTestFiles,
     exclude: [],
     fileParallelism: false,
-    groupOrder: 2,
+    groupOrder: 3,
   },
   {
     name: 'browser-webkit-navigation-state',
@@ -63,7 +77,7 @@ export const webkitBrowserTestShards = [
     include: webkitNavigationStateTestFiles,
     exclude: [],
     fileParallelism: false,
-    groupOrder: 3,
+    groupOrder: 4,
   },
 ] as const satisfies readonly WebkitBrowserTestShard[];
 
