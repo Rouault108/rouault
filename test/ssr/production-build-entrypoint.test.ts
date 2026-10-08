@@ -5,6 +5,7 @@ import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 import { PRODUCTION_BUILD_PNPM_ARGS, RUN_BUILD_STEPS } from '../../scripts/run-build-process.js';
+import { assertProductionE2EMatrixContract } from '../../scripts/ci/assert-workflow-source-contract.js';
 
 const projectRoot = process.cwd();
 const workflowPath = path.resolve(projectRoot, '.github/workflows/ci-cd.yml');
@@ -68,7 +69,7 @@ const runLines = (step: Record<string, unknown>): readonly string[] => {
 const buildLabelCommand = 'echo "ROUAULT_BUILD_LABEL=${GITHUB_SHA::7}" >> "$GITHUB_ENV"';
 const mediaBaseUrl = '${{ vars.ROUAULT_MEDIA_BASE_URL }}';
 const buildJobCommands = [
-  ['test-e2e-production', 'pnpm run test:e2e:production'],
+  ['test-e2e-production', 'pnpm run test:e2e:production ${{ matrix.projects }}'],
   ['test-e2e-dev', 'pnpm run test:e2e:dev'],
   ['build-production', 'pnpm build:production'],
 ] as const;
@@ -117,6 +118,54 @@ const assertEventGates = (source: string): void => {
 };
 
 describe('production build entrypoint contract', () => {
+  it('CI matrixはproject optionを直接転送し、local入口は全projectを維持すること', () => {
+    const source = readFileSync(workflowPath, 'utf8');
+    assertProductionE2EMatrixContract(source);
+    const packageJson = requireRecord(JSON.parse(readFileSync(packageJsonPath, 'utf8')), 'package');
+    const scripts = requireRecord(packageJson['scripts'], 'package.scripts');
+    expect(scripts['test:e2e:production']).toBe(
+      'pnpm run codegen:icons && pnpm run codegen:content && pnpm exec playwright test',
+    );
+    const job = readJob(readWorkflowJobs(source), 'test-e2e-production');
+    const matrix = requireRecord(requireRecord(job['strategy'], 'strategy')['matrix'], 'matrix');
+    const entries: unknown = matrix['include'];
+    if (!Array.isArray(entries)) throw new Error('matrix.includeはsequenceである必要があります');
+    const test = readSteps(job).find((step) => step['id'] === 'playwright-production');
+    expect(test?.['run']).toBe('pnpm run test:e2e:production ${{ matrix.projects }}');
+    const commands = entries.map((entry: unknown) => {
+      const fields = requireRecord(entry, 'matrix.include[]');
+      return `pnpm run test:e2e:production ${String(fields['projects'])}`.split(/\s+/u);
+    });
+    expect(commands).toEqual([
+      ['pnpm', 'run', 'test:e2e:production', '--project=chromium-integration'],
+      ['pnpm', 'run', 'test:e2e:production', '--project=firefox-final-check'],
+      [
+        'pnpm',
+        'run',
+        'test:e2e:production',
+        '--project=webkit-final-check',
+        '--project=webkit-mobile-final-check',
+      ],
+    ]);
+  });
+
+  it('余分なstandalone --とWebKit project optionのまとめquoteを拒否すること', () => {
+    const source = readFileSync(workflowPath, 'utf8');
+    for (const mutated of [
+      source.replace(
+        'test:e2e:production ${{ matrix.projects }}',
+        'test:e2e:production -- ${{ matrix.projects }}',
+      ),
+      source.replace(
+        'test:e2e:production ${{ matrix.projects }}',
+        'test:e2e:production "${{ matrix.projects }}"',
+      ),
+    ]) {
+      expect(mutated).not.toBe(source);
+      expect(() => assertProductionE2EMatrixContract(mutated)).toThrow(/exact project arguments/u);
+    }
+  });
+
   it('Playwright preview 起動前に共有 production build entrypoint を使うこと', () => {
     const playwrightConfig = readFileSync(playwrightConfigPath, 'utf8');
     const normalizedPlaywrightConfig = playwrightConfig.replace(/\s+/g, ' ');

@@ -1,10 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { mkdir, mkdtemp, readFile, writeFile } from 'node:fs/promises';
+import { createRequire } from 'node:module';
 import os from 'node:os';
 import path from 'node:path';
 import { runInNewContext } from 'node:vm';
 
 import {
+  assertProductionE2EMatrixContract,
   assertWorkflowSourceContract,
   collectWorkflowUses,
 } from '../../scripts/ci/assert-workflow-source-contract.js';
@@ -48,6 +50,438 @@ const conditionHolds = (step: string, state: Readonly<Record<string, string>>): 
   expect(typeof result).toBe('boolean');
   return result === true;
 };
+
+const workflowRecord = (value: unknown): Record<string, unknown> => {
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) {
+    throw new Error('workflow fixture must be a mapping');
+  }
+  return value as Record<string, unknown>;
+};
+
+interface YamlApi {
+  readonly load: (source: string) => unknown;
+  readonly dump: (
+    value: unknown,
+    options?: { readonly indent?: number; readonly sortKeys?: boolean },
+  ) => string;
+}
+const yamlModule: unknown = createRequire(import.meta.url)('js-yaml');
+const yamlRecord = workflowRecord(yamlModule);
+if (typeof yamlRecord['load'] !== 'function' || typeof yamlRecord['dump'] !== 'function') {
+  throw new Error('js-yaml.load/dump is required');
+}
+const yaml = yamlModule as YamlApi;
+
+const matrixFixture = async () => {
+  const workflow = workflowRecord(yaml.load(await readFile(repositoryWorkflowPath, 'utf8')));
+  const jobs = workflowRecord(workflow['jobs']);
+  const job = workflowRecord(jobs['test-e2e-production']);
+  const strategy = workflowRecord(job['strategy']);
+  const matrix = workflowRecord(strategy['matrix']);
+  const readRecords = (value: unknown): Record<string, unknown>[] => {
+    if (!Array.isArray(value)) throw new Error('workflow fixture must be a sequence');
+    return value.map(workflowRecord);
+  };
+  const entries = readRecords(matrix['include']);
+  const steps = readRecords(job['steps']);
+  job['steps'] = steps;
+  const test = workflowRecord(steps.find((step) => step['id'] === 'playwright-production'));
+  const verification = workflowRecord(steps.find((step) => step['id'] === 'verify-e2e-container'));
+  const upload = workflowRecord(
+    steps.find((step) => step['name'] === 'preserve production E2E diagnostics'),
+  );
+  const options = workflowRecord(upload['with']);
+  const gate = workflowRecord(jobs['ci-required']);
+  const validator = workflowRecord(
+    readRecords(gate['steps']).find(
+      (step) => step['run'] === 'python3 scripts/ci/validate_required_needs.py',
+    ),
+  );
+  return {
+    workflow,
+    job,
+    container: workflowRecord(job['container']),
+    strategy,
+    matrix,
+    entries,
+    steps,
+    test,
+    verification,
+    upload,
+    options,
+    gate,
+    validator,
+    validatorEnv: workflowRecord(validator['env']),
+  };
+};
+
+type MatrixFixture = Awaited<ReturnType<typeof matrixFixture>>;
+const mutateEntry = (fixture: MatrixFixture, target: string): Record<string, unknown> =>
+  workflowRecord(fixture.entries.find((entry) => entry['target'] === target));
+
+describe('production E2E matrix structural contract', () => {
+  it.each([2, 4])(
+    'accepts reordered YAML mappings and include entries at indent=%i',
+    async (indent) => {
+      const fixture = await matrixFixture();
+      fixture.matrix['include'] = [...fixture.entries].reverse();
+      expect(() =>
+        assertProductionE2EMatrixContract(yaml.dump(fixture.workflow, { indent, sortKeys: true })),
+      ).not.toThrow();
+    },
+  );
+
+  const mutations: readonly [string, (fixture: MatrixFixture) => void][] = [
+    [
+      'separate shell command',
+      (f) => {
+        f.test['run'] = 'pnpm run test:e2e:production\n${{ matrix.projects }}';
+      },
+    ],
+    [
+      'entry newline',
+      (f) => {
+        mutateEntry(f, 'webkit')['projects'] =
+          '--project=webkit-final-check\n--project=webkit-mobile-final-check';
+      },
+    ],
+    [
+      'conditional test skip',
+      (f) => {
+        f.test['if'] = '${{ false }}';
+      },
+    ],
+    [
+      'conditional container verification skip',
+      (f) => {
+        f.verification['if'] = '${{ false }}';
+      },
+    ],
+    [
+      'conditional validator skip',
+      (f) => {
+        f.validator['if'] = '${{ false }}';
+      },
+    ],
+    [
+      'missing mobile WebKit',
+      (f) => {
+        mutateEntry(f, 'webkit')['projects'] = '--project=webkit-final-check';
+      },
+    ],
+    [
+      'duplicate project',
+      (f) => {
+        mutateEntry(f, 'webkit')['projects'] =
+          '--project=webkit-final-check --project=webkit-mobile-final-check --project=webkit-final-check';
+      },
+    ],
+    [
+      'wrong project group',
+      (f) => {
+        mutateEntry(f, 'firefox')['projects'] = '--project=chromium-integration';
+      },
+    ],
+    [
+      'missing variation',
+      (f) => {
+        f.matrix['include'] = f.entries.slice(0, 2);
+      },
+    ],
+    [
+      'duplicate target',
+      (f) => {
+        mutateEntry(f, 'webkit')['target'] = 'chromium';
+      },
+    ],
+    [
+      'fourth variation',
+      (f) => {
+        f.matrix['include'] = [...f.entries, f.entries[0]];
+      },
+    ],
+    [
+      'extra axis',
+      (f) => {
+        f.matrix['os'] = ['ubuntu-latest', 'ubuntu-24.04'];
+      },
+    ],
+    [
+      'exclude',
+      (f) => {
+        f.matrix['exclude'] = [{ target: 'firefox' }];
+      },
+    ],
+    [
+      'fail-fast',
+      (f) => {
+        f.strategy['fail-fast'] = true;
+      },
+    ],
+    [
+      'max-parallel',
+      (f) => {
+        f.strategy['max-parallel'] = 1;
+      },
+    ],
+    [
+      'shared concurrency',
+      (f) => {
+        f.job['concurrency'] = { group: 'production-e2e' };
+      },
+    ],
+    [
+      'job failure suppression',
+      (f) => {
+        f.job['continue-on-error'] = true;
+      },
+    ],
+    [
+      'test failure suppression',
+      (f) => {
+        f.test['continue-on-error'] = true;
+      },
+    ],
+    [
+      'container verification failure suppression',
+      (f) => {
+        f.verification['continue-on-error'] = true;
+      },
+    ],
+    [
+      'wrong runner',
+      (f) => {
+        f.job['runs-on'] = 'paid-runner';
+      },
+    ],
+    [
+      'targetless display name',
+      (f) => {
+        f.job['name'] = 'test-e2e-production';
+      },
+    ],
+    [
+      'wrong browser mapping',
+      (f) => {
+        mutateEntry(f, 'firefox')['browser'] = 'chromium';
+      },
+    ],
+    [
+      'browser reinstall',
+      (f) => {
+        f.verification['run'] = 'pnpm exec playwright install --with-deps chromium';
+      },
+    ],
+    [
+      'all browser reinstall',
+      (f) => {
+        f.verification['run'] = 'pnpm exec playwright install --with-deps';
+      },
+    ],
+    [
+      'mutable container tag',
+      (f) => {
+        f.container['image'] = 'mcr.microsoft.com/playwright:v1.63.0-resolute';
+      },
+    ],
+    [
+      'wrong container digest',
+      (f) => {
+        f.container['image'] =
+          'mcr.microsoft.com/playwright:v1.63.0-resolute@sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
+      },
+    ],
+    [
+      'container options',
+      (f) => {
+        f.container['options'] = '--privileged';
+      },
+    ],
+    [
+      'missing container options',
+      (f) => {
+        delete f.container['options'];
+      },
+    ],
+    [
+      'standalone --',
+      (f) => {
+        f.test['run'] = 'pnpm run test:e2e:production -- ${{ matrix.projects }}';
+      },
+    ],
+    [
+      'quoted project options',
+      (f) => {
+        f.test['run'] = 'pnpm run test:e2e:production "${{ matrix.projects }}"';
+      },
+    ],
+    [
+      'quoted matrix entry',
+      (f) => {
+        mutateEntry(f, 'webkit')['projects'] =
+          '"--project=webkit-final-check --project=webkit-mobile-final-check"';
+      },
+    ],
+    [
+      'extra filter',
+      (f) => {
+        f.test['run'] = 'pnpm run test:e2e:production ${{ matrix.projects }} --grep=search';
+      },
+    ],
+    [
+      'entry filter',
+      (f) => {
+        mutateEntry(f, 'chromium')['projects'] = '--project=chromium-integration router.spec.ts';
+      },
+    ],
+    [
+      'hidden exit failure',
+      (f) => {
+        f.test['run'] = 'pnpm run test:e2e:production ${{ matrix.projects }} || true';
+      },
+    ],
+    [
+      'targetless artifact',
+      (f) => {
+        f.options['name'] = 'rouault-e2e-production-diagnostics';
+      },
+    ],
+    [
+      'success upload',
+      (f) => {
+        f.upload['if'] = '${{ always() }}';
+      },
+    ],
+    [
+      'long retention',
+      (f) => {
+        f.options['retention-days'] = 30;
+      },
+    ],
+    [
+      'extra diagnostic path',
+      (f) => {
+        f.options['path'] = 'playwright-report/\ntest-results/\n.env';
+      },
+    ],
+    [
+      'blocking diagnostics',
+      (f) => {
+        delete f.upload['continue-on-error'];
+      },
+    ],
+    [
+      'missing-file error',
+      (f) => {
+        f.options['if-no-files-found'] = 'error';
+      },
+    ],
+    [
+      'second artifact',
+      (f) => {
+        f.steps.push({ ...f.upload, if: '${{ always() }}' });
+      },
+    ],
+    [
+      'serial dependency',
+      (f) => {
+        f.job['needs'] = ['detect-changes', 'prebuild-gate', 'test-e2e-dev'];
+      },
+    ],
+    [
+      'app gate',
+      (f) => {
+        f.job['if'] = String(f.job['if']).replace(
+          "needs.detect-changes.outputs.app == 'true'",
+          'true',
+        );
+      },
+    ],
+    [
+      'event gate',
+      (f) => {
+        f.job['if'] = String(f.job['if']).replace("github.base_ref == 'main'", 'true');
+      },
+    ],
+    [
+      'prerequisite gate',
+      (f) => {
+        f.job['if'] = String(f.job['if']).replace(
+          "needs.prebuild-gate.result == 'success'",
+          'true',
+        );
+      },
+    ],
+    [
+      'cancellation gate',
+      (f) => {
+        f.job['if'] = String(f.job['if']).replace('!cancelled()', 'true');
+      },
+    ],
+    [
+      'media URL',
+      (f) => {
+        workflowRecord(f.job['env'])['ROUAULT_MEDIA_BASE_URL'] = 'https://wrong.example';
+      },
+    ],
+    [
+      'late build label',
+      (f) => {
+        f.steps.push(...f.steps.splice(1, 1));
+      },
+    ],
+    [
+      'missing required Production',
+      (f) => {
+        f.gate['needs'] = ['detect-changes', 'prebuild-gate', 'test-e2e-dev', 'build-production'];
+      },
+    ],
+    [
+      'conditional required gate',
+      (f) => {
+        f.gate['if'] = '${{ success() }}';
+      },
+    ],
+    [
+      'gate failure suppression',
+      (f) => {
+        f.gate['continue-on-error'] = true;
+      },
+    ],
+    [
+      'validator failure suppression',
+      (f) => {
+        f.validator['continue-on-error'] = true;
+      },
+    ],
+    [
+      'result model bypass',
+      (f) => {
+        f.validator['run'] = 'true';
+      },
+    ],
+    [
+      'needs input',
+      (f) => {
+        f.validatorEnv['NEEDS_JSON'] = '{}';
+      },
+    ],
+    [
+      'skip event context',
+      (f) => {
+        delete f.validatorEnv['GITHUB_EVENT_NAME'];
+      },
+    ],
+  ];
+  it.each(mutations)('rejects %s', async (_name, mutate) => {
+    const fixture = await matrixFixture();
+    const before = yaml.dump(fixture.workflow);
+    mutate(fixture);
+    const after = yaml.dump(fixture.workflow);
+    expect(after).not.toBe(before);
+    expect(() => assertProductionE2EMatrixContract(after)).toThrow();
+  });
+});
 
 const writeWorkflowContractFixture = async (options: {
   readonly workflowUses?: string;
@@ -226,6 +660,7 @@ const writeWorkflowContractFixture = async (options: {
   const orchestrationJobs = [
     'test-e2e-production',
     'test-e2e-dev',
+    'ci-required',
     'verify-production-deployment',
   ].map((job) => {
     const source = new RegExp(`^  ${job}:[\\s\\S]*?(?=^  [\\w-]+:|(?![\\s\\S]))`, 'mu').exec(
@@ -242,7 +677,7 @@ const writeWorkflowContractFixture = async (options: {
       '    steps:',
       options.actionStepSource ?? `      - uses: ${workflowUses}`,
       options.extraRun ? `      - run: ${options.extraRun}` : '',
-      ...workflowDeploySteps,
+      ...workflowDeploySteps.map((line) => line.replace(/^ {6}(release-state-)/u, '        $1')),
       ...orchestrationJobs,
       '',
     ].join('\n'),
@@ -625,7 +1060,7 @@ describe('workflow source contract', () => {
     async (target) => {
       const steps = jobSteps(await readFile(repositoryWorkflowPath, 'utf8'), `test-e2e-${target}`);
       const upload =
-        steps.find((step) => step.includes(`name: rouault-e2e-${target}-diagnostics`)) ?? '';
+        steps.find((step) => step.includes(`name: preserve ${target} E2E diagnostics`)) ?? '';
       for (const outcome of ['success', 'failure', 'skipped', 'cancelled']) {
         expect(conditionHolds(upload, { [`steps.playwright-${target}.outcome`]: outcome })).toBe(
           outcome === 'failure',

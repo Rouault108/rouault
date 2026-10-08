@@ -166,7 +166,10 @@ Cloudflare Pages projectでは次を確認する。
 
 - `prebuild-gate`は、変更分類に応じてbuild前のprerequisite jobが成功または正しくskippedになっていることを検証する。
 - `ci-required`は、PR merge gateのrequired status checkとして扱う。
+- `test-e2e-production`は、CI上ではChromium、Firefox、WebKit（desktop + mobile）の3-entry matrixとして実行する。既存のE2E実行条件を満たすrunでは全variationの成功を必要とし、対象外runのjob skipを維持する。`ci-required`は引き続き同じjob IDをrequired inputとして扱う。
 - `verify-production-deployment`は、`main` push後のproduction deploy監視jobとして扱う。
+
+Production E2Eのmatrix化はcoverageを維持したままwall-clockを短縮するためのorchestration変更である。各variationは`mcr.microsoft.com/playwright:v1.63.0-resolute@sha256:b022639ae9197f864040f92eef7b57c6d4b47db2190f77c909d8a5d902dd4b7e`を`--ipc=host`付きjob containerとして使い、browserやOS packageをjob内で再installしない。Nodeはworkflowの`NODE_VERSION`、pnpmは`packageManager`のexact versionを維持し、container内のbrowser path、bash、Node、pnpm、対象browser解決をtest前に検証する。failure diagnosticsは失敗したvariationのtarget固有artifactへ、`playwright-report/`と`test-results/`だけを7日保存する。成功時のdiagnostics artifactは追加しない。
 
 `verify-production-deployment`はPRでは実行されないため、branch protectionのrequired status checkへ無条件に登録しない。
 
