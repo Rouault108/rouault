@@ -17,13 +17,14 @@ export const resolveContentRoute = (identity: ContentIdentity): ContentRoute => 
   const rawSlug = identity.sourceRelativePath.slice(0, -3);
   if (rawSlug === 'index') throw new Error('[routes] root index conflicts with collection index');
   const slug = rawSlug.replace(/\/index$/u, '');
-  const canonicalPathname = `${getContentCollection(identity.collectionId).urlPrefix}/${slug.split('/').map(encodeURIComponent).join('/')}`;
+  const urlPrefix = getContentCollection(identity.collectionId).urlPrefix;
+  const canonicalPathname = `${urlPrefix}/${slug.split('/').map(encodeURIComponent).join('/')}`;
   return {
     identity,
     rawSlug,
     slug,
     canonicalPathname,
-    outputPath: `${decodeURI(canonicalPathname).slice(1)}/index.html`,
+    outputPath: `${urlPrefix.slice(1)}/${slug}/index.html`,
   };
 };
 export class ContentRouteRegistry {
@@ -34,7 +35,9 @@ export class ContentRouteRegistry {
     for (const identity of identities) {
       const route = resolveContentRoute(identity);
       const key = contentIdentityKey(identity);
-      const compatibilityKey = decodeURI(route.canonicalPathname).normalize('NFC').toLowerCase();
+      const compatibilityKey = `/${route.outputPath.slice(0, -'/index.html'.length)}`
+        .normalize('NFC')
+        .toLowerCase();
       if (this.byIdentity.has(key) || compatible.has(compatibilityKey))
         throw new Error('[routes] source or route collision');
       compatible.add(compatibilityKey);

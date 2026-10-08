@@ -43,6 +43,7 @@ export const buildMemosCollection = (sources: readonly SourceMemo[]): MemoRecord
       rawSlug: route.rawSlug,
       slug: route.slug,
       canonicalPathname: route.canonicalPathname,
+      outputPath: route.outputPath,
       permalink: route.canonicalPathname,
       sourceRoot: resolveContentSourceLocation(source.sourcePath).sourceRoot,
       title: source.title,

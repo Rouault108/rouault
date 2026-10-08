@@ -28,6 +28,7 @@ export interface PublishedContentRecord {
   rawSlug: string;
   slug: string;
   canonicalPathname: string;
+  outputPath: string;
   title: string;
   contentHtml: string;
   surfaces: PublicationSurfaces;

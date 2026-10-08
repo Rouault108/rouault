@@ -7,6 +7,7 @@ import {
   buildGeneratedDocumentRouteSet,
   resolveGeneratedDocumentCurrentUrl,
 } from './generated-document-route-set.js';
+import { buildTagPageCanonicalPathname } from '../../shared/search/tag-page-route.js';
 
 export interface GeneratedPageLinkContextSource {
   readonly page?: { readonly url?: unknown };
@@ -15,6 +16,7 @@ export interface GeneratedPageLinkContextSource {
   readonly memos?: readonly { readonly permalink?: unknown }[];
   readonly corpusPages?: readonly { readonly href?: unknown }[];
   readonly tagPages?: readonly { readonly tag?: unknown }[];
+  readonly tagPage?: { readonly tag?: unknown };
 }
 
 export interface GeneratedPageLinkClassificationContext {
@@ -36,10 +38,15 @@ export const buildGeneratedPageLinkClassificationContext = (
     ...(data.tagPages !== undefined ? { tagPages: data.tagPages } : {}),
   });
 
+  const currentTagPathname =
+    typeof data.tagPage?.tag === 'string'
+      ? buildTagPageCanonicalPathname(data.tagPage.tag)
+      : undefined;
+
   return {
     routeSet,
     currentUrl: resolveGeneratedDocumentCurrentUrl({
-      pathname: data.note?.permalink,
+      pathname: data.note?.permalink ?? currentTagPathname,
       fallbackPathname: data.page?.url,
       siteUrlContext,
     }),

@@ -3,6 +3,7 @@ import { resolveContentRoute } from '../../build/content/content-route-registry.
 import { parseInternalDocumentRouteManifest } from '../../shared/navigation/internal-document-route-manifest.js';
 import { createSiteUrlContext } from '../../shared/site/site-url-context.js';
 import { resolveRouterArtifactPathname } from '../../shared/navigation/router-artifact-path.js';
+import { buildTagPageDocumentRoute } from '../../shared/search/tag-page-route.js';
 import { collectFinalHeadingIds } from './validate-candidate.js';
 import { hashBytes } from './source-snapshot.js';
 import type { PublicationPorts } from './publish-snapshot.js';
@@ -196,7 +197,11 @@ export const createMemoDeploymentVerifier = (options: {
         throw new Error('[deployment] memo adopted by ordinary search');
       for (const route of manifest.routes)
         if (route.startsWith('/tags/') || route.startsWith('/corpora/')) {
-          const output = `${decodeURI(route).replace(/^\//u, '').replace(/\/$/u, '')}/index.html`;
+          const output = route.startsWith('/tags/')
+            ? buildTagPageDocumentRoute(
+                decodeURIComponent(route.slice('/tags/'.length).replace(/\/$/u, '')),
+              ).outputPath
+            : `${decodeURI(route).replace(/^\//u, '').replace(/\/$/u, '')}/index.html`;
           await file(output, route, 'text/html');
         }
       for (const entry of Object.values(plan.entries)) {

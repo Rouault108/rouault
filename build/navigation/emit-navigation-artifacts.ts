@@ -8,7 +8,6 @@ import {
   assertValidSidebarId,
   assertValidSidebarStateScopeId,
 } from '../../shared/navigation/sidebar-identity-contract.js';
-import { resolveRouterArtifactPathname } from '../../shared/navigation/router-artifact-path.js';
 import type { SiteUrlContext } from '../../shared/site/site-url-context.js';
 
 import {
@@ -37,8 +36,8 @@ import { normalizeRouaultPathname } from '../../shared/url/rouault-url-policy.js
 import {
   STATIC_GENERATED_DOCUMENT_ROUTES,
   resolveContentPathnameFromHtmlFile,
-  resolveContentPathnameFromHtmlFileOrThrow,
   resolveGeneratedDocumentCurrentUrlFromHtmlFile,
+  resolveRouterArtifactFilePathFromHtmlFile,
 } from '../content/generated-document-route-set.js';
 
 type Parse5Node = DefaultTreeAdapterMap['node'];
@@ -577,9 +576,11 @@ export const createNavigationEnvelopeFromHtml = (
 };
 
 const resolveArtifactPath = (outputDir: string, htmlFilePath: string): string => {
-  const contentPathname = resolveContentPathnameFromHtmlFileOrThrow(outputDir, htmlFilePath);
-  const artifactPathname = resolveRouterArtifactPathname(contentPathname);
-  return path.join(outputDir, artifactPathname.slice(1));
+  const artifactPath = resolveRouterArtifactFilePathFromHtmlFile(outputDir, htmlFilePath);
+  if (artifactPath === null) {
+    throw new Error(`HTML file does not map to a router artifact path: ${htmlFilePath}`);
+  }
+  return artifactPath;
 };
 
 const collectHtmlFiles = async (rootDirectory: string): Promise<string[]> => {

@@ -3,6 +3,7 @@ import { expect, test, type Page } from '@playwright/test';
 const notePath = '/notes/program/csharp/what-is-csharp';
 const noteCanonicalPath = '/notes/program/csharp/';
 const publicTagPagePath = '/tags/Programming/';
+const csharpTagPagePath = '/tags/C%23/';
 const targetTitle = 'C#とは何か';
 
 const waitForRouterDocumentHostReady = async (page: Page): Promise<void> => {
@@ -94,6 +95,36 @@ const clickSearchResultLink = async (page: Page, title: string): Promise<void> =
 };
 
 test.describe('Tag Page', () => {
+  test('reserved characterを含むcanonical tag URLを直接表示できること', async ({ page }) => {
+    const response = await page.goto(csharpTagPagePath);
+
+    expect(response?.status()).toBe(200);
+    await expect(page).toHaveURL(csharpTagPagePath);
+    await expect(page.locator('[data-search-page-dynamic-hero] h1')).toHaveText('#C#');
+    await expect(page.locator('#main-content')).toContainText(targetTitle);
+  });
+
+  test('reserved characterを含むタグへrouter artifactで遷移できること', async ({ page }) => {
+    await page.goto(noteCanonicalPath);
+    await page.evaluate(() => {
+      (window as typeof window & { __csharpTagProbe?: { alive: boolean } }).__csharpTagProbe = {
+        alive: true,
+      };
+    });
+
+    await clickArticleHeaderTag(page, csharpTagPagePath);
+
+    await expect(page).toHaveURL(csharpTagPagePath);
+    await expect(page.locator('[data-search-page-dynamic-hero] h1')).toHaveText('#C#');
+    expect(
+      await page.evaluate(
+        () =>
+          (window as typeof window & { __csharpTagProbe?: { alive: boolean } }).__csharpTagProbe
+            ?.alive === true,
+      ),
+    ).toBe(true);
+  });
+
   test('タグリンクから SPA でタグページへ遷移できること', async ({ page }) => {
     await page.goto(noteCanonicalPath);
 

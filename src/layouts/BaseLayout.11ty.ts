@@ -57,6 +57,7 @@ export interface BaseLayoutData {
   notes?: NoteNavigationEntry[];
   corpusPages?: readonly CorpusPageEntry[];
   tagPages?: readonly { readonly tag?: string }[];
+  tagPage?: { readonly tag?: string };
   currentCorpusKey?: string;
   buildMetadata?: BuildMetadataData;
   siteUrlContext?: SiteUrlContextData;

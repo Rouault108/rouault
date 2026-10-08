@@ -1,6 +1,7 @@
 import type { IconName } from '../../shared/icons/icon-paths.js';
 import { isIconName } from '../../shared/icons/icon-paths.js';
 import type { NoteStatus } from '../types/article-status.js';
+import { buildTagPageCanonicalPathname } from '../../shared/search/tag-page-route.js';
 
 export const ARTICLE_HEADER_ICON_NAMES = [
   'archive',
@@ -110,7 +111,7 @@ export const normalizeArticleHeaderTag = (value: string): string | null => {
 };
 
 export const toArticleHeaderTagHref = (value: string): string =>
-  `/tags/${encodeURIComponent(value.trim())}/`;
+  buildTagPageCanonicalPathname(value);
 
 export const normalizeArticleHeaderBreadcrumbLabel = (value: string): string | null => {
   const normalized = value.trim();

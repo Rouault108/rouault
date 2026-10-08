@@ -1,4 +1,5 @@
 import type { SearchSortMode, SearchState, SearchStateUrl, SearchTagMode } from './search-types.js';
+import { buildTagPageCanonicalPathname } from './tag-page-route.js';
 
 export type { SearchSortMode, SearchState, SearchTagMode } from './search-types.js';
 
@@ -142,7 +143,7 @@ export function buildSearchStateUrl(state: SearchState): SearchStateUrl {
 }
 
 export function buildTagPageUrl(tag: string): string {
-  return `/tags/${encodeURIComponent(tag.trim())}/`;
+  return buildTagPageCanonicalPathname(tag);
 }
 
 export const buildTagHref = buildTagPageUrl;

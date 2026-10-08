@@ -98,4 +98,18 @@ describe('generated page link classification context', () => {
     expect(internalResource.kind).toBe('internal-resource');
     expect(internalResource.routerInterceptionPolicy).toBe('passthrough');
   });
+
+  it('tag pageのraw filesystem URLよりcanonical tag routeをcurrentUrlに優先すること', () => {
+    const context = buildGeneratedPageLinkClassificationContext(
+      {
+        page: { url: '/tags/C#/' },
+        tagPage: { tag: 'C#' },
+        tagPages: [{ tag: 'C#' }],
+      },
+      siteUrlContext,
+    );
+
+    expect(context.currentUrl).toBe('https://example.com/tags/C%23/');
+    expect(context.routeSet.has('/tags/C%23/')).toBe(true);
+  });
 });

@@ -63,6 +63,12 @@ describe('memo collection and shared reading surface', () => {
       resolveContentRoute({ collectionId: 'memos', sourceRelativePath: '日本 語/index.md' })
         .canonicalPathname,
     ).toBe('/memos/%E6%97%A5%E6%9C%AC%20%E8%AA%9E');
+    expect(
+      resolveContentRoute({ collectionId: 'memos', sourceRelativePath: 'C#? & 100%.md' }),
+    ).toMatchObject({
+      canonicalPathname: '/memos/C%23%3F%20%26%20100%25',
+      outputPath: 'memos/C#? & 100%/index.html',
+    });
   });
   it('rejects root index, leaf/index collisions, case/NFC ambiguity, traversal and static collisions', () => {
     const identity = (sourceRelativePath: string) => ({

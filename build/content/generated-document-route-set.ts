@@ -1,6 +1,7 @@
 import path from 'node:path';
 import type { SiteUrlContext } from '../../shared/site/site-url-context.js';
 import { normalizeRouaultPathname } from '../../shared/url/rouault-url-policy.js';
+import { buildTagPageCanonicalPathname } from '../../shared/search/tag-page-route.js';
 
 export const STATIC_GENERATED_DOCUMENT_ROUTES = [
   '/',
@@ -85,7 +86,7 @@ export const buildGeneratedDocumentRouteSet = (
 
   for (const tagPage of source.tagPages ?? []) {
     if (typeof tagPage.tag === 'string' && tagPage.tag.trim().length > 0) {
-      addGeneratedRoute(routes, `/tags/${encodeURIComponent(tagPage.tag.trim())}/`);
+      addGeneratedRoute(routes, buildTagPageCanonicalPathname(tagPage.tag));
     }
   }
 
@@ -106,25 +107,65 @@ export const resolveGeneratedDocumentCurrentUrl = (options: {
 
 const normalizeRelativePath = (value: string): string => value.split(path.sep).join('/');
 
+const resolveRelativeHtmlPath = (outputDir: string, htmlFilePath: string): string | null => {
+  const relativeHtmlPath = normalizeRelativePath(path.relative(outputDir, htmlFilePath));
+  if (
+    relativeHtmlPath.length === 0 ||
+    relativeHtmlPath === '..' ||
+    relativeHtmlPath.startsWith('../') ||
+    path.isAbsolute(relativeHtmlPath)
+  ) {
+    return null;
+  }
+  return relativeHtmlPath;
+};
+
+const encodeFilesystemPathSegments = (relativePathname: string): string =>
+  relativePathname.split('/').map(encodeURIComponent).join('/');
+
 export const resolveContentPathnameFromHtmlFile = (
   outputDir: string,
   htmlFilePath: string,
 ): string | null => {
-  const relativeHtmlPath = normalizeRelativePath(path.relative(outputDir, htmlFilePath));
+  const relativeHtmlPath = resolveRelativeHtmlPath(outputDir, htmlFilePath);
+  if (relativeHtmlPath === null) {
+    return null;
+  }
 
   if (relativeHtmlPath === 'index.html') {
     return '/';
   }
 
   if (relativeHtmlPath.endsWith('/index.html')) {
-    return `/${relativeHtmlPath.slice(0, -'/index.html'.length)}/`;
+    const relativeDirectory = relativeHtmlPath.slice(0, -'/index.html'.length);
+    return `/${encodeFilesystemPathSegments(relativeDirectory)}/`;
   }
 
   const extension = path.extname(relativeHtmlPath);
   const basename =
     extension.length > 0 ? relativeHtmlPath.slice(0, -extension.length) : relativeHtmlPath;
 
-  return normalizeGeneratedDocumentRoutePathname(`/${basename}`);
+  return normalizeGeneratedDocumentRoutePathname(`/${encodeFilesystemPathSegments(basename)}`);
+};
+
+export const resolveRouterArtifactFilePathFromHtmlFile = (
+  outputDir: string,
+  htmlFilePath: string,
+): string | null => {
+  const relativeHtmlPath = resolveRelativeHtmlPath(outputDir, htmlFilePath);
+  if (relativeHtmlPath === null) {
+    return null;
+  }
+
+  if (relativeHtmlPath === 'index.html') {
+    return path.join(outputDir, '__router', 'index.router.json');
+  }
+
+  const relativeContentPath = relativeHtmlPath.endsWith('/index.html')
+    ? relativeHtmlPath.slice(0, -'/index.html'.length)
+    : relativeHtmlPath.slice(0, -path.extname(relativeHtmlPath).length);
+
+  return path.join(outputDir, '__router', relativeContentPath, 'index.router.json');
 };
 
 export const resolveContentPathnameFromHtmlFileOrThrow = (

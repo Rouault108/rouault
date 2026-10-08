@@ -9,6 +9,7 @@ import {
 import {
   resolveContentPathnameFromHtmlFile,
   resolveGeneratedDocumentCurrentUrlFromHtmlFile,
+  resolveRouterArtifactFilePathFromHtmlFile,
 } from '../../build/content/generated-document-route-set.js';
 import { EMPTY_CORPUS_NAVIGATION_PROJECTION_PAYLOAD } from '../../shared/navigation/corpus-navigation-projection.js';
 import { NAVIGATION_ENVELOPE_SCHEMA_VERSION } from '../../shared/navigation/navigation-envelope.js';
@@ -101,6 +102,11 @@ describe('navigation artifacts static header contract', () => {
         pathname: '/about/',
         currentUrl: 'https://rouault.invalid/base/about/',
       },
+      {
+        htmlFilePath: path.join(dir, 'tags', 'C#', 'index.html'),
+        pathname: '/tags/C%23/',
+        currentUrl: 'https://rouault.invalid/base/tags/C%23/',
+      },
     ] as const;
 
     for (const testCase of cases) {
@@ -115,6 +121,10 @@ describe('navigation artifacts static header contract', () => {
         }),
       ).toBe(testCase.currentUrl);
     }
+
+    expect(
+      resolveRouterArtifactFilePathFromHtmlFile(dir, path.join(dir, 'tags', 'C#', 'index.html')),
+    ).toBe(path.join(dir, '__router', 'tags', 'C#', 'index.router.json'));
 
     expect(resolveContentPathnameFromHtmlFile(dir, path.join(dir, '404.html'))).toBeNull();
     expect(() =>
@@ -232,6 +242,9 @@ describe('navigation artifacts static header contract', () => {
       const unicodeNoteDir = path.join(dir, 'notes', '日本語');
       mkdirSync(unicodeNoteDir, { recursive: true });
       writeFileSync(path.join(unicodeNoteDir, 'index.html'), html(), 'utf8');
+      const csharpTagDir = path.join(dir, 'tags', 'C#');
+      mkdirSync(csharpTagDir, { recursive: true });
+      writeFileSync(path.join(csharpTagDir, 'index.html'), html(), 'utf8');
       writeFileSync(path.join(dir, 'about.html'), html(), 'utf8');
       writeFileSync(path.join(dir, '404.html'), html(), 'utf8');
 
@@ -248,8 +261,15 @@ describe('navigation artifacts static header contract', () => {
       const aboutArtifact = JSON.parse(
         readFileSync(path.join(dir, '__router', 'about', 'index.router.json'), 'utf8'),
       ) as { readonly shell: { readonly headerHtml: string } };
+      const csharpTagArtifact = JSON.parse(
+        readFileSync(path.join(dir, '__router', 'tags', 'C#', 'index.router.json'), 'utf8'),
+      ) as { readonly buildId: string };
       expect(artifact.shell.headerHtml).toContain('/base/search/');
       expect(aboutArtifact.shell.headerHtml).toContain('/base/search/');
+      expect(csharpTagArtifact.buildId).toBe('build-test');
+      expect(() =>
+        readFileSync(path.join(dir, '__router', 'tags', 'C%23', 'index.router.json'), 'utf8'),
+      ).toThrow();
       expect(
         resolveGeneratedDocumentCurrentUrlFromHtmlFile({
           outputDir: dir,
@@ -257,6 +277,13 @@ describe('navigation artifacts static header contract', () => {
           siteUrlContext,
         }),
       ).toBe('https://rouault.invalid/base/notes/example/');
+      expect(
+        resolveGeneratedDocumentCurrentUrlFromHtmlFile({
+          outputDir: dir,
+          htmlFilePath: path.join(csharpTagDir, 'index.html'),
+          siteUrlContext,
+        }),
+      ).toBe('https://rouault.invalid/base/tags/C%23/');
       expect(() =>
         readFileSync(path.join(dir, '__router', '404', 'index.router.json'), 'utf8'),
       ).toThrow();

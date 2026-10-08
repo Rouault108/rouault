@@ -5,6 +5,7 @@ import {
   buildStaticSearchState,
 } from '../build/search/build-static-explore-response.js';
 import { renderSearchPageHtml } from './layouts/search-page-html.js';
+import { buildTagPageOutputPath } from '../shared/search/tag-page-route.js';
 
 interface TagPagesPaginationData extends TagPageTemplateData {
   tagPages?: TagPageEntry[];
@@ -54,7 +55,7 @@ export class TagPagesTemplate {
             return false;
           }
 
-          return `/tags/${encodeURIComponent(data.tagPage.tag)}/index.html`;
+          return buildTagPageOutputPath(data.tagPage.tag);
         },
       },
     };

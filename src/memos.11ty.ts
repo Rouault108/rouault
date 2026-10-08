@@ -15,8 +15,7 @@ export default class MemoPages {
       footerCopyrightText: MEMO_RIGHTS_NOTICE,
       eleventyComputed: {
         title: (data: MemoPageData) => data.memo?.title,
-        permalink: (data: MemoPageData) =>
-          data.memo ? `${decodeURI(data.memo.permalink)}/index.html` : false,
+        permalink: (data: MemoPageData) => data.memo?.outputPath ?? false,
         notePage: (data: MemoPageData) =>
           data.memo ? buildMemoPageProjection(data.memo, data.memos ?? []) : undefined,
       },

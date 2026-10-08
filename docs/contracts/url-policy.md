@@ -67,6 +67,9 @@ Surface URLの所有Contractは`url-policy.md`および該当page/surface contra
 - `GeneratedDocumentRouteSet`はURL意味分類ではなく、静的生成済みrouteのpresence判定集合である。
 - routeSetに含まれることは、そのrouteの意味分類を変更しない。
 - `resolveRouaultContentPath()`はfetch target pathを導出する関数であり、公開canonicalを定義しない。
+- tag pageの公開canonicalは`/tags/{encodeURIComponent(tag)}/`であり、filesystem outputは安全なraw tag segmentを使う`tags/{tag}/index.html`である。公開canonicalをoutput filenameとして再利用してはならない。
+- tag segmentは空、`.`、`..`、path separator、ASCII controlを拒否する。`#`、`?`、`%`、Unicode等の有効な単一segmentは公開URLで一度だけencodeし、filesystemではraw segmentとして保持する。
+- router artifactの公開pathnameはcanonical routeから導出する一方、artifactのfilesystem outputは対応するHTMLのraw filesystem segmentから導出する。
 
 ### Permanent URL
 

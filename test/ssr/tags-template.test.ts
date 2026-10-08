@@ -9,6 +9,18 @@ describe('TagPagesTemplate', () => {
     const data = template.data();
 
     expect(data.pagination.data).toBe('tagPages');
+    expect(
+      data.eleventyComputed.permalink({
+        siteUrlContext: DEFAULT_SITE_URL_CONTEXT,
+        tagPage: {
+          tag: 'C#',
+          searchHref: '/tags/C%23/',
+          searchRenderHref: '/tags/C%23/',
+          noteCount: 0,
+          notes: [],
+        },
+      }),
+    ).toBe('tags/C#/index.html');
   });
 
   it('タグ専用の search-page 初期表示を描画すること', () => {

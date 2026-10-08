@@ -12,6 +12,7 @@ import { resolveNotePermalink } from '../../shared/note/resolve-note-permalink.j
 import type { NoteSourceRoot } from '../../shared/note/note-source-root.js';
 import { resolveEffectiveNotePublicationPolicy } from '../../shared/note/note-publication-policy.js';
 import { normalizeRouaultPathname } from '../../shared/url/rouault-url-policy.js';
+import { buildTagPageCanonicalPathname } from '../../shared/search/tag-page-route.js';
 
 export type InternalDocumentRouteSource = 'static' | 'note' | 'corpus' | 'tag';
 export type ContentRouteSetKind = 'production' | 'fixture';
@@ -241,7 +242,7 @@ const toCorpusRoute = (key: string): InternalDocumentRoutePathname =>
   `/corpora/${encodePathSegment(key)}/`;
 
 const toTagRoute = (tag: string): InternalDocumentRoutePathname =>
-  `/tags/${encodePathSegment(tag)}/`;
+  buildTagPageCanonicalPathname(tag);
 
 const getSurfaceVisibleNoteRoutes = (
   noteRoutes: readonly NoteRouteSeed[],
