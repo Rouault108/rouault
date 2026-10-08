@@ -56,7 +56,7 @@
 - Browser project mapの単一正本は`vitest.config.ts`、browser selection policyの正本は`scripts/testing/browser-test-matrix.ts`とする。
 - 公開selectionは`ROUAULT_BROWSER_TEST_BROWSERS`で指定し、値は`chromium`、`firefox`、`webkit`に限定する。
 - selection未指定のlocal実行はChromium + Firefox、CI実行はChromium + Firefox + WebKitとする。
-- WebKitはHistory API quotaをsession単位で分離するため、内部的にgeneral、URL state、navigation stateの3 projectへ展開し、この順で逐次実行する。内部project名は公開selectionではない。
+- WebKitはHistory API quotaをsession単位で分離するため、内部的にgeneral、search state、URL state、navigation stateの4 projectへ展開し、この順で逐次実行する。内部project名は公開selectionではない。
 - `pnpm run test:browser`は選択されたbrowserの全suiteをone-shotで実行する。
 - `pnpm run test:browser -- <file>`はbrowser selectionを変えず、指定fileだけを所属projectで実行する。
 - Fixture入口は`test/browser/harness/browser-fixture.ts`、cleanup hookは`test/browser/setup.ts`が所有する。fixtureはstring HTMLまたはNodeを受け、documentへmountした実HTMLElementを返す。AbortControllerとcleanupを共通harnessが管理する。
