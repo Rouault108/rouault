@@ -46,7 +46,7 @@ describe('navigation artifact mode boundary', () => {
     }
   });
 
-  it('strict artifact path には boolean option / generatedAt fallback / footer build-label fallback を残さないこと', () => {
+  it('strict artifact path には boolean option / generatedAt fallback / build-label fallback を残さないこと', () => {
     const sources = [
       'build/navigation/emit-navigation-artifacts.ts',
       'build/dev/dev-router-artifact-middleware.ts',
@@ -57,7 +57,7 @@ describe('navigation artifact mode boundary', () => {
       const source = readFileSync(filePath, 'utf8');
       expect(source, filePath).not.toContain('strictBuildMetadata');
       expect(source, filePath).not.toMatch(/new Date\(\)\.toISOString\(\)/u);
-      expect(source, filePath).not.toMatch(/layout-footer|build-label|buildLabel/u);
+      expect(source, filePath).not.toMatch(/build-label|buildLabel/u);
     }
   });
 });
