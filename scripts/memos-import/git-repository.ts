@@ -5,6 +5,9 @@ import type { Snapshot } from './model.js';
 import type { PrivateCommand } from './private-command.js';
 export interface RepositoryIdentity {
   repository: string;
+  requestedRepository: string;
+  repositoryId: number;
+  owner: string;
   private: boolean;
   branch: string;
 }
@@ -29,14 +32,32 @@ export const readGitHubRepositoryIdentity = async (
     typeof value !== 'object' ||
     value === null ||
     !('full_name' in value) ||
+    !('id' in value) ||
+    !('owner' in value) ||
     !('private' in value) ||
     !('default_branch' in value) ||
-    value.full_name !== repository ||
+    typeof value.full_name !== 'string' ||
+    !/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/u.test(value.full_name) ||
+    !Number.isSafeInteger(value.id) ||
+    Number(value.id) <= 0 ||
+    typeof value.owner !== 'object' ||
+    value.owner === null ||
+    !('login' in value.owner) ||
+    typeof value.owner.login !== 'string' ||
+    value.owner.login !== repository.split('/')[0] ||
+    value.full_name.split('/')[0] !== value.owner.login ||
     typeof value.private !== 'boolean' ||
     value.default_branch !== 'main'
   )
     throw new Error('[transport] verified repository identity mismatch');
-  return { repository, private: value.private, branch: 'main' };
+  return {
+    repository: value.full_name,
+    requestedRepository: repository,
+    repositoryId: Number(value.id),
+    owner: value.owner.login,
+    private: value.private,
+    branch: 'main',
+  };
 };
 export class GitTreeRepository {
   constructor(
@@ -50,6 +71,11 @@ export class GitTreeRepository {
       !path.isAbsolute(gitDirectory) ||
       expectedIdentity.branch !== 'main' ||
       !/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/u.test(expectedIdentity.repository) ||
+      !/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/u.test(expectedIdentity.requestedRepository) ||
+      !Number.isSafeInteger(expectedIdentity.repositoryId) ||
+      expectedIdentity.repositoryId <= 0 ||
+      expectedIdentity.owner !== expectedIdentity.repository.split('/')[0] ||
+      expectedIdentity.owner !== expectedIdentity.requestedRepository.split('/')[0] ||
       !author.name.trim() ||
       !author.email.trim() ||
       /[\r\n\0]/u.test(author.name + author.email)
@@ -75,19 +101,27 @@ export class GitTreeRepository {
   async identity(): Promise<RepositoryIdentity> {
     const actual = await this.probeIdentity();
     if (
-      actual.repository !== this.expectedIdentity.repository ||
+      actual.repositoryId !== this.expectedIdentity.repositoryId ||
+      actual.owner !== this.expectedIdentity.owner ||
+      actual.owner !== actual.repository.split('/')[0] ||
+      actual.owner !== actual.requestedRepository.split('/')[0] ||
       actual.private !== this.expectedIdentity.private ||
       actual.branch !== this.expectedIdentity.branch
     )
       throw new Error('[transport] repository identity changed');
     if ((await this.git(['rev-parse', '--is-bare-repository'])).toString('utf8').trim() !== 'true')
       throw new Error('[transport] private bare Git store required');
-    const repo = this.expectedIdentity.repository;
-    const allowed = [
+    const repositories = new Set([
+      this.expectedIdentity.repository,
+      this.expectedIdentity.requestedRepository,
+      actual.repository,
+      actual.requestedRepository,
+    ]);
+    const allowed = [...repositories].flatMap((repo) => [
       `https://github.com/${repo}`,
       `https://github.com/${repo}.git`,
       `git@github.com:${repo}.git`,
-    ];
+    ]);
     for (const direction of [[], ['--push']]) {
       const remote = (await this.git(['remote', 'get-url', ...direction, '--all', 'origin']))
         .toString('utf8')

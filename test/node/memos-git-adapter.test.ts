@@ -5,6 +5,7 @@ import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
   GitTreeRepository,
+  readGitHubRepositoryIdentity,
   type RepositoryIdentity,
 } from '../../scripts/memos-import/git-repository.js';
 import {
@@ -38,11 +39,25 @@ const git = (cwd: string, args: string[]): string =>
     ['-c', `user.name=${actor.name}`, '-c', `user.email=${actor.email}`, ...args],
     { cwd, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] },
   ).trim();
+type FixtureIdentity = Pick<RepositoryIdentity, 'repository' | 'private' | 'branch'> &
+  Partial<Pick<RepositoryIdentity, 'requestedRepository' | 'repositoryId' | 'owner'>>;
 const fixture = async (
-  identity: RepositoryIdentity,
+  identitySource: FixtureIdentity,
   files: Record<string, string>,
   parent = tmpdir(),
 ) => {
+  const owner = identitySource.owner ?? identitySource.repository.split('/')[0] ?? '';
+  const identity: RepositoryIdentity = {
+    ...identitySource,
+    requestedRepository: identitySource.requestedRepository ?? identitySource.repository,
+    repositoryId:
+      identitySource.repositoryId ??
+      (identitySource.repository === 'Rouault108/metis-handbook' ||
+      identitySource.repository === 'Rouault108/metis-workspace'
+        ? 1402900612
+        : 1),
+    owner,
+  };
   const root = await mkdtemp(path.join(parent, 'memos-git-test-'));
   const work = path.join(root, 'work');
   await mkdir(work);
@@ -92,6 +107,69 @@ const fixture = async (
   return { root, work, remote, local, repository, calls };
 };
 describe('concrete private Git publication adapters', () => {
+  it('accepts the ledger rename redirect only when immutable identity, owner and privacy match', async () => {
+    const command: PrivateCommand = async (name, args) => {
+      expect(name).toBe('gh');
+      expect(args).toEqual(['api', 'repos/Rouault108/metis-handbook']);
+      return Buffer.from(
+        JSON.stringify({
+          id: 1402900612,
+          full_name: 'Rouault108/metis-workspace',
+          owner: { login: 'Rouault108' },
+          private: true,
+          default_branch: 'main',
+        }),
+      );
+    };
+    const identity = await readGitHubRepositoryIdentity(command, 'Rouault108/metis-handbook');
+    expect(identity).toEqual({
+      repository: 'Rouault108/metis-workspace',
+      requestedRepository: 'Rouault108/metis-handbook',
+      repositoryId: 1402900612,
+      owner: 'Rouault108',
+      private: true,
+      branch: 'main',
+    });
+
+    const f = await fixture(identity, { 'README.md': 'Renamed ledger' });
+    try {
+      git(f.root, [
+        '--git-dir',
+        f.local,
+        'remote',
+        'set-url',
+        'origin',
+        'https://github.com/Rouault108/metis-handbook.git',
+      ]);
+      await expect(new GitLedgerRepository(f.repository).identity()).resolves.toEqual(identity);
+    } finally {
+      await rm(f.root, { recursive: true, force: true });
+    }
+  });
+
+  it('rejects incomplete or ownership-changing GitHub rename metadata', async () => {
+    const metadata = {
+      id: 1402900612,
+      full_name: 'Rouault108/metis-workspace',
+      owner: { login: 'Rouault108' },
+      private: true,
+      default_branch: 'main',
+    };
+    for (const override of [
+      { id: null },
+      { id: 0 },
+      { owner: { login: 'OtherOwner' } },
+      { full_name: 'OtherOwner/metis-workspace' },
+      { default_branch: 'develop' },
+    ]) {
+      const command: PrivateCommand = async () =>
+        Buffer.from(JSON.stringify({ ...metadata, ...override }));
+      await expect(
+        readGitHubRepositoryIdentity(command, 'Rouault108/metis-handbook'),
+      ).rejects.toThrow('verified repository identity mismatch');
+    }
+  });
+
   it('refuses mismatched or multiple fetch/push destinations before any network write', async () => {
     const f = await fixture(
       { repository: 'Synthetic/vault', private: true, branch: 'main' },

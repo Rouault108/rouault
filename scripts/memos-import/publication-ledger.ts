@@ -6,10 +6,29 @@ import type {
   PublicationOperation,
 } from './model.js';
 export const ledgerStorage = {
+  // 先に旧名で互換コードを配備し、rename後のredirectを同一IDで検証してから参照名を切り替える。
   ledgerRepository: 'Rouault108/metis-handbook',
+  ledgerRepositories: ['Rouault108/metis-handbook', 'Rouault108/metis-workspace'],
+  ledgerRepositoryId: 1402900612,
+  ledgerRepositoryOwner: 'Rouault108',
   ledgerBranch: 'main',
   ledgerRoot: 'publication-ledger/rouault-memos',
 } as const;
+export interface LedgerRepositoryIdentity {
+  readonly repository: string;
+  readonly repositoryId: number;
+  readonly owner: string;
+  readonly private: boolean;
+  readonly branch: string;
+}
+export const isLedgerRepositoryIdentity = (identity: LedgerRepositoryIdentity): boolean =>
+  ledgerStorage.ledgerRepositories.includes(
+    identity.repository as (typeof ledgerStorage.ledgerRepositories)[number],
+  ) &&
+  identity.repositoryId === ledgerStorage.ledgerRepositoryId &&
+  identity.owner === ledgerStorage.ledgerRepositoryOwner &&
+  identity.private &&
+  identity.branch === ledgerStorage.ledgerBranch;
 export const validateOperation = (
   operation: PublicationOperation,
   ledger: PublicationLedger,

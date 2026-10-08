@@ -1,4 +1,10 @@
-import { aggregateLedger, ledgerStorage, serializeState } from './publication-ledger.js';
+import {
+  aggregateLedger,
+  isLedgerRepositoryIdentity,
+  ledgerStorage,
+  serializeState,
+  type LedgerRepositoryIdentity,
+} from './publication-ledger.js';
 import { hashBytes } from './source-snapshot.js';
 import type {
   ImportPlan,
@@ -9,7 +15,7 @@ import type {
 import { OPERATION_STAGES } from './model.js';
 import { assertSafeContentPath } from '../../build/content/content-record.js';
 export interface PrivateLedgerRepository {
-  identity(): Promise<{ repository: string; private: boolean; branch: string }>;
+  identity(): Promise<LedgerRepositoryIdentity>;
   head(): Promise<string>;
   readFolder(
     commitSha: string,
@@ -136,11 +142,7 @@ export class PublicationLedgerStore {
   constructor(private readonly repository: PrivateLedgerRepository) {}
   private async assertRepository(): Promise<void> {
     const identity = await this.repository.identity();
-    if (
-      identity.repository !== ledgerStorage.ledgerRepository ||
-      !identity.private ||
-      identity.branch !== ledgerStorage.ledgerBranch
-    )
+    if (!isLedgerRepositoryIdentity(identity))
       throw new Error('[ledger] private repository identity mismatch');
   }
   async read(
