@@ -769,7 +769,7 @@ describe('static CSS contracts', () => {
     }
   });
 
-  it('about lead keeps natural wrapping while isolating only the terminal keep phrase', () => {
+  it('about lead keeps natural wrapping for the complete introduction', () => {
     const css = readCss('about-shell.css');
 
     expect(declarationValuesForSelector(css, '.about-shell', '--about-lead-measure')).toContain(
@@ -783,9 +783,8 @@ describe('static CSS contracts', () => {
     ).toContain('min(100%, var(--about-lead-measure))');
     expect(declarationValuesForSelector(css, '.about-lead', 'text-wrap')).toContain('pretty');
     expect(declarationValuesForSelector(css, '.about-lead', 'white-space')).toEqual([]);
-    expect(declarationValuesForSelector(css, '.about-lead__keep', 'white-space')).toContain(
-      'nowrap',
-    );
+    expect(css).not.toContain('.about-lead__keep');
+    expect(css).not.toContain('.about-summary');
   });
 
   it('home lead keeps natural wrapping while isolating only the terminal keep phrase', () => {
@@ -1725,6 +1724,19 @@ describe('static CSS contracts', () => {
       'font-weight: var(--font-semibold)',
     ]);
     expectRuleToDeclare(css, '.search-choice-field', ['display: grid', 'gap: var(--space-1)']);
+    expectRuleToDeclare(css, '.toolbar-row', [
+      'display: grid',
+      'grid-template-columns: repeat(3, minmax(0, 1fr))',
+      'row-gap: var(--space-4)',
+    ]);
+    expectRuleToDeclare(css, '.toolbar-result-count', [
+      'min-inline-size: 0',
+      'min-block-size: 1.5em',
+    ]);
+    expectRuleToDeclare(css, '.tag-mode-count-description', [
+      'min-block-size: 3em',
+      'text-align: center',
+    ]);
     expect(css).not.to.contain('.sort-select');
     expect(css).not.to.contain('.tag-mode-select');
     expectRuleToDeclare(css, '.search-input-clear', ['cursor: pointer']);
@@ -1801,6 +1813,7 @@ describe('static CSS contracts', () => {
     expect(css).to.contain('@keyframes rouault-static-spinner-rotate');
     expect(css).to.contain('@media (max-width: 640px)');
     expectRuleToDeclare(atRuleBlock(css, '@media (max-width: 640px)'), '.toolbar-row', [
+      'grid-template-columns: minmax(0, 1fr)',
       'align-items: stretch',
     ]);
     expect(css).not.to.contain('@media (prefers-color-scheme: dark)');
@@ -1818,11 +1831,34 @@ describe('static CSS contracts', () => {
       '.filter-option-checkbox__control',
       ['color: CanvasText', 'background: Canvas', 'border-color: CanvasText'],
     );
-    expectRuleToDeclare(css, ".filter-option[data-disabled='true']", ['opacity: 0.68']);
+    expectRuleToDeclare(css, ".filter-option[data-state='disabled']", [
+      'background:',
+      'border-color:',
+      'border-style: dashed',
+    ]);
+    expectRuleToDeclare(css, ".filter-option[data-state='pending']", [
+      'background:',
+      'border-color:',
+    ]);
+    expectRuleToDeclare(css, ".filter-option[data-state='error']", [
+      'background:',
+      'border-color:',
+      'border-style: dotted',
+    ]);
+    expectRuleToDeclare(
+      css,
+      ".filter-option[data-state='pending'] .filter-option-checkbox__control",
+      ['border-style: solid', 'cursor: progress'],
+    );
+    expectRuleToDeclare(
+      css,
+      ".filter-option[data-state='error'] .filter-option-checkbox__control",
+      ['border-style: dotted', 'cursor: pointer'],
+    );
     expectRuleToDeclare(
       css,
       '.filter-option-checkbox__input:disabled + .filter-option-checkbox__control',
-      ['cursor: not-allowed'],
+      ['cursor: not-allowed', 'background:', 'border-style: dashed'],
     );
     expectRuleToDeclare(
       css,

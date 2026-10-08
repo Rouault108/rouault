@@ -27,6 +27,11 @@ import {
   type SearchBootstrapState,
 } from '../../search/bootstrap.js';
 import { orderSearchPageTags } from '../../search/search-page-tag-order.js';
+import {
+  getSearchPageTagModeCountDescription,
+  getSearchPageTagModeLabel,
+  getSearchPageTagOptionPresentation,
+} from '../../search/search-page-tag-option.js';
 import { SEARCH_DEBOUNCE_MS } from '../../search/search-constants.js';
 import type { SearchCore } from '../../search/search-core.js';
 import { buildSearchResultRenderHref } from '../../search/normalize-search-result-url.js';
@@ -50,8 +55,8 @@ const DYNAMIC_SEARCH_CONTROL_SELECTOR = [
 
 const searchChoiceLabels = {
   tagMode: {
-    or: 'いずれか',
-    and: 'すべて',
+    or: getSearchPageTagModeLabel('or'),
+    and: getSearchPageTagModeLabel('and'),
   },
   sort: {
     relevance: '関連度順',
@@ -115,6 +120,7 @@ interface SearchPageRuntimeState {
   items: SearchPageRenderableItem[];
   tagCounts: Record<string, number>;
   allTagCounts: Record<string, number>;
+  countsStatus: 'ready' | 'pending' | 'error';
   loaded: boolean;
 }
 
@@ -217,6 +223,7 @@ const createRuntimeState = (
   items: response ? [...response.items] : [],
   tagCounts: response ? { ...response.tagCounts } : {},
   allTagCounts: response ? { ...response.allTagCounts } : {},
+  countsStatus: response === undefined ? 'pending' : 'ready',
   loaded: response !== undefined,
 });
 
@@ -299,6 +306,32 @@ const createFilterOption = (document: Document, tag: string): HTMLElement => {
   return option;
 };
 
+let tagOptionStatusId = 0;
+
+const syncFilterOptionPresentation = (
+  option: HTMLElement,
+  checkbox: HTMLInputElement | null,
+  presentation: ReturnType<typeof getSearchPageTagOptionPresentation>,
+): void => {
+  option.dataset['filterCount'] = presentation.count === null ? '' : String(presentation.count);
+  option.dataset['selected'] = String(presentation.state === 'selected');
+  option.dataset['disabled'] = String(presentation.disabled);
+  option.dataset['state'] = presentation.state;
+  option.dataset['countStatus'] = presentation.countStatus;
+  if (checkbox) {
+    checkbox.checked = presentation.state === 'selected';
+    checkbox.disabled = presentation.disabled;
+  }
+  const status = option.querySelector<HTMLElement>('.filter-option-count');
+  if (!status) return;
+  status.replaceChildren(presentation.statusText);
+  if (!status.id) {
+    tagOptionStatusId += 1;
+    status.id = `search-page-tag-status-runtime-${String(tagOptionStatusId)}`;
+  }
+  checkbox?.setAttribute('aria-describedby', status.id);
+};
+
 const syncFilterOptionsFromRuntimeState = (
   page: HTMLElement,
   runtimeState: SearchPageRuntimeState,
@@ -320,23 +353,40 @@ const syncFilterOptionsFromRuntimeState = (
     list.contains(activeElement)
       ? activeElement
       : null;
-  const tags = orderSearchPageTags(runtimeState);
+  const hasKnownCountMaps =
+    Object.keys(runtimeState.allTagCounts).length > 0 ||
+    Object.keys(runtimeState.tagCounts).length > 0;
+  const tags =
+    runtimeState.countsStatus !== 'ready'
+      ? [
+          ...new Set([
+            ...[...existingOptions.keys()].filter(
+              (tag) =>
+                !hasKnownCountMaps ||
+                Object.hasOwn(runtimeState.allTagCounts, tag) ||
+                Object.hasOwn(runtimeState.tagCounts, tag),
+            ),
+            ...runtimeState.selectedTags,
+          ]),
+        ]
+      : orderSearchPageTags(runtimeState);
+  list.setAttribute('aria-busy', String(runtimeState.countsStatus === 'pending'));
+  list.dataset['countStatus'] = runtimeState.countsStatus;
   const options = tags.map((tag) => {
     const option = existingOptions.get(tag) ?? createFilterOption(page.ownerDocument, tag);
-    const count = runtimeState.tagCounts[tag] ?? 0;
-    const selected = runtimeState.selectedTags.includes(tag);
-    const disabled = !selected && count === 0;
-    option.dataset['filterCount'] = String(count);
-    option.dataset['selected'] = String(selected);
-    option.dataset['disabled'] = String(disabled);
     const checkbox = option.querySelector<HTMLInputElement>('[data-search-tag-checkbox]');
-    if (checkbox) {
-      checkbox.checked = selected;
-      checkbox.disabled = disabled;
-    }
-    option
-      .querySelector<HTMLElement>('.filter-option-count')
-      ?.replaceChildren(`${String(count)}件`);
+    syncFilterOptionPresentation(
+      option,
+      checkbox,
+      getSearchPageTagOptionPresentation({
+        tag,
+        tagMode: runtimeState.tagMode,
+        selectedTags: runtimeState.selectedTags,
+        tagCounts: runtimeState.tagCounts,
+        allTagCounts: runtimeState.allTagCounts,
+        countStatus: runtimeState.countsStatus,
+      }),
+    );
     return option;
   });
   const currentNodes = [...list.childNodes];
@@ -362,8 +412,7 @@ const syncFilterDomFromForm = (
 ): void => {
   const focusToKeep = syncFilterOptionsFromRuntimeState(page, runtimeState);
   const selectedTags = orderedSelectedTagValues(form, preferredTag);
-  const tagMode =
-    readFormString(new FormData(form).get('tagMode')) === 'and' ? 'すべて' : 'いずれか';
+  const tagMode = getSearchPageTagModeLabel(runtimeState.tagMode);
   const selectedTagsRoot = page.querySelector<HTMLElement>('[data-selected-tags]');
   if (selectedTagsRoot) {
     selectedTagsRoot.replaceChildren();
@@ -411,14 +460,18 @@ const syncFilterDomFromForm = (
   for (const option of options) {
     const checkbox = option.querySelector<HTMLInputElement>('[data-search-tag-checkbox]');
     const tag = option.dataset['filterTag'] ?? checkbox?.value ?? '';
-    const selected = checkbox?.checked === true;
-    const count = Number.parseInt(option.dataset['filterCount'] ?? '0', 10);
-    const disabled = !selected && count === 0;
-    if (checkbox) {
-      checkbox.disabled = disabled;
-    }
-    option.dataset['selected'] = String(selected);
-    option.dataset['disabled'] = String(disabled);
+    syncFilterOptionPresentation(
+      option,
+      checkbox,
+      getSearchPageTagOptionPresentation({
+        tag,
+        tagMode: runtimeState.tagMode,
+        selectedTags: runtimeState.selectedTags,
+        tagCounts: runtimeState.tagCounts,
+        allTagCounts: runtimeState.allTagCounts,
+        countStatus: runtimeState.countsStatus,
+      }),
+    );
     const matches = !filterQuery || tag.toLocaleLowerCase().includes(filterQuery);
     option.hidden = !matches;
     option.dataset['filterHidden'] = String(!matches);
@@ -467,8 +520,8 @@ const createSearchPageEmptyState = (document: Document, state: SearchState): HTM
   const description = document.createElement('p');
   description.className = 'empty-hint__description';
   description.textContent = hasConditions
-    ? '検索語を変えるか、タグの組み合わせや演算子を見直してください。'
-    : 'ヘッダーのダイアログは即時検索、ここではタグ演算子も含めて一覧で比較できます。';
+    ? '検索語を変えるか、タグの組み合わせを見直してください。'
+    : 'ヘッダーのダイアログは即時検索、ここではタグの組み合わせも含めて一覧で比較できます。';
   message.append(illustration, icon, heading, description);
   const actions = document.createElement('div');
   actions.className = 'empty-hint__actions';
@@ -682,6 +735,7 @@ export class SearchPageController {
     } else {
       this.runtimeState = createRuntimeState(urlState);
       this.syncFormFromRuntimeState(this.form);
+      syncFilterDomFromForm(this.page, this.form, this.runtimeState);
       this.syncHeroFromRuntimeState();
     }
     this.bindReadyListeners(this.form);
@@ -900,6 +954,10 @@ export class SearchPageController {
   }
 
   private showRequestError(): void {
+    if (this.runtimeState?.countsStatus === 'pending') {
+      this.runtimeState.countsStatus = 'error';
+      if (this.form) syncFilterDomFromForm(this.page, this.form, this.runtimeState);
+    }
     this.clearCurrentResults();
     this.showStatus(
       'error',
@@ -914,6 +972,7 @@ export class SearchPageController {
     this.runtimeState.items = response.items.map(dynamicItemToRenderableItem);
     this.runtimeState.tagCounts = { ...response.tagCounts };
     this.runtimeState.allTagCounts = { ...response.allTagCounts };
+    this.runtimeState.countsStatus = 'ready';
     this.runtimeState.loaded = true;
     this.showStatus(null);
     renderSearchPageResults(this.page, this.runtimeState);
@@ -1014,6 +1073,9 @@ export class SearchPageController {
     }
     this.syncSearchChoiceMenu(form, 'tagMode', state.tagMode);
     this.syncSearchChoiceMenu(form, 'sort', state.sort);
+    this.page
+      .querySelector<HTMLElement>('[data-search-tag-mode-description]')
+      ?.replaceChildren(getSearchPageTagModeCountDescription(state.tagMode));
   }
 
   private setSearchChoiceMenusDisabled(disabled: boolean): void {
@@ -1122,6 +1184,7 @@ export class SearchPageController {
       method: 'pushState' | 'replaceState',
       search: 'debounced' | 'immediate',
       preferredTag?: string,
+      invalidateCounts = true,
     ): void => {
       if (this.disposed || this.runtimeState === null || this.searchRuntime === null) {
         return;
@@ -1135,6 +1198,7 @@ export class SearchPageController {
       );
       this.runtimeState.tagMode = normalizeSearchTagMode(readFormString(data.get('tagMode')));
       this.runtimeState.sort = normalizeSearchSort(readFormString(data.get('sort')));
+      if (invalidateCounts) this.runtimeState.countsStatus = 'pending';
       this.commitUrl(method);
       this.syncSearchChoiceMenusFromRuntimeState(form);
       syncFilterDom(preferredTag);
@@ -1210,7 +1274,7 @@ export class SearchPageController {
         if (input) {
           input.value = value;
         }
-        commitFormState('pushState', 'immediate');
+        commitFormState('pushState', 'immediate', undefined, name !== 'sort');
         this.closeSearchChoiceMenu(details, true);
       },
       listenerOptions,

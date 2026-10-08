@@ -67,14 +67,15 @@ const renderSearchPageFixture = (): HTMLElement => {
         <input type="hidden" name="sort" value="relevance" data-search-choice-value data-search-sort-value>
         <details data-search-choice-menu="tag-mode">
           <summary aria-expanded="false" aria-labelledby="tag-mode-label tag-mode-current" data-static-choice-trigger>
-            <span id="tag-mode-label">タグ演算子</span>
-            <span id="tag-mode-current" data-static-choice-current-label>いずれか</span>
+            <span id="tag-mode-label">タグの組み合わせ</span>
+            <span id="tag-mode-current" data-static-choice-current-label>いずれかに一致</span>
           </summary>
           <div data-static-choice-panel>
-            <button type="button" data-static-choice-item data-value="or" data-selected="true" aria-pressed="true">いずれか</button>
-            <button type="button" data-static-choice-item data-value="and" data-selected="false" aria-pressed="false">すべて</button>
+            <button type="button" data-static-choice-item data-value="or" data-selected="true" aria-pressed="true">いずれかに一致</button>
+            <button type="button" data-static-choice-item data-value="and" data-selected="false" aria-pressed="false">すべてに一致</button>
           </div>
         </details>
+        <p data-search-tag-mode-description></p>
         <details data-search-choice-menu="sort">
           <summary aria-expanded="false" aria-labelledby="sort-label sort-current" data-static-choice-trigger>
             <span id="sort-label">並び順</span>
@@ -156,8 +157,9 @@ const setSearchFixtureUrl = (href = '/search/'): void => {
 const renderTagOrderFixture = async (
   response: StaticExploreSearchResponse,
   tags: readonly string[] = [],
+  tagMode: SearchState['tagMode'] = 'or',
 ): Promise<HTMLElement> => {
-  const initialState: SearchState = { q: '', tags: [...tags], tagMode: 'or', sort: 'relevance' };
+  const initialState: SearchState = { q: '', tags: [...tags], tagMode, sort: 'relevance' };
   setSearchFixtureUrl(buildSearchPageHistoryHref(initialState, DEFAULT_SITE_URL_CONTEXT));
   const root = document.createElement('div');
   root.innerHTML = renderSearchPageHtml({
@@ -396,7 +398,7 @@ describe('search-page-enhancer', () => {
     controller?.dispose();
   });
 
-  it('SSR と runtime は同じ counts・identity で固定順になり表示/disabled は F の件数を使うこと', async () => {
+  it('SSR と runtime は同じ identity・固定順を保ちOR候補件数はQを使うこと', async () => {
     const response: ExploreSearchResponse = {
       ...staticResponse,
       allTagCounts: {
@@ -430,25 +432,16 @@ describe('search-page-enhancer', () => {
     const controller = enhanceWithRuntime(root, undefined, runtime.core);
     expect(tagSequence(root)).toEqual(expected);
     expect(root.querySelector('[data-filter-tag="music"] .filter-option-count')?.textContent).toBe(
-      '0件',
+      '4件',
     );
-    expect(tagInput(root, 'music').disabled).toBe(true);
+    expect(tagInput(root, 'music').disabled).toBe(false);
     expect(tagInput(root, 'security').disabled).toBe(false);
     expect(tagInput(root, 'absent').disabled).toBe(false);
-    const music = tagInput(root, 'music');
-    await userEvent.click(
-      expectElement(
-        music.closest('label')?.querySelector('.filter-option-label'),
-        'disabled label text',
-      ),
-      { force: true },
-    );
-    expect(music.checked).toBe(false);
     await userEvent.click(
       expectElement(tagInput(root, 'security').closest('label'), 'selected zero label'),
     );
     expect(tagInput(root, 'security').checked).toBe(false);
-    expect(tagInput(root, 'security').disabled).toBe(true);
+    expect(tagInput(root, 'security').disabled).toBe(false);
     await runtime.finish(root, response);
     expect(tagSequence(root)).toEqual(expected);
     await userEvent.click(
@@ -460,6 +453,93 @@ describe('search-page-enhancer', () => {
     expect(tagSequence(root)).toEqual(expected.filter((tag) => tag !== 'absent'));
     await runtime.finish(root, response);
     expect(tagSequence(root)).toEqual(expected.filter((tag) => tag !== 'absent'));
+    controller?.dispose();
+  });
+
+  it('OR/AND 切替で候補件数の集合だけを切り替え、選択済み0件は解除可能に保つこと', async () => {
+    const response: ExploreSearchResponse = {
+      ...staticResponse,
+      allTagCounts: { architecture: 9, music: 4, selectedZero: 0 },
+      tagCounts: { architecture: 2, music: 0, selectedZero: 0 },
+    };
+    const root = await renderTagOrderFixture(response, ['selectedZero']);
+    const runtime = deferredTagRuntime();
+    const controller = enhanceWithRuntime(root, undefined, runtime.core);
+    const sequence = tagSequence(root);
+    const status = (tag: string) =>
+      root.querySelector(`[data-filter-tag="${tag}"] .filter-option-count`)?.textContent;
+    const state = (tag: string) =>
+      root.querySelector<HTMLElement>(`[data-filter-tag="${tag}"]`)?.dataset['state'];
+
+    expect(status('architecture')).toBe('9件');
+    expect(status('music')).toBe('4件');
+    expect(status('selectedZero')).toBe('0件・選択中');
+    expect(tagInput(root, 'selectedZero').disabled).toBe(false);
+    expect(state('selectedZero')).toBe('selected');
+    expect(root.querySelector('[data-search-tag-mode-description]')?.textContent).toContain(
+      '増加件数ではありません',
+    );
+
+    await userEvent.click(
+      expectElement(
+        root.querySelector('[data-search-choice-menu="tag-mode"] summary'),
+        'mode trigger',
+      ),
+    );
+    await userEvent.click(
+      expectElement(
+        root.querySelector('[data-search-choice-menu="tag-mode"] [data-value="and"]'),
+        'and',
+      ),
+    );
+    expect(status('architecture')).toBe('件数を計算中');
+    expect(status('music')).toBe('件数を計算中');
+    expect(tagInput(root, 'music').disabled).toBe(false);
+    expect(state('music')).toBe('pending');
+    expect(status('selectedZero')).toBe('選択中・件数を計算中');
+    expect(tagInput(root, 'selectedZero').disabled).toBe(false);
+    expect(root.querySelector('[data-search-filter-list]')?.getAttribute('aria-busy')).toBe('true');
+    await runtime.finish(root, response);
+    expect(status('architecture')).toBe('2件');
+    expect(status('music')).toBe('0件・選択不可');
+    expect(tagInput(root, 'music').disabled).toBe(true);
+    expect(state('music')).toBe('disabled');
+    expect(status('selectedZero')).toBe('0件・選択中');
+    expect(tagInput(root, 'selectedZero').disabled).toBe(false);
+    expect(tagSequence(root)).toEqual(sequence);
+    expect(root.querySelector('[data-search-tag-mode-description]')?.textContent).toContain(
+      '追加した後の結果件数',
+    );
+
+    history.back();
+    await expect
+      .poll(() => root.querySelector<HTMLInputElement>('[data-search-tag-mode-value]')?.value)
+      .toBe('or');
+    expect(status('music')).toBe('件数を計算中');
+    await runtime.finish(root, response);
+    expect(status('music')).toBe('4件');
+    expect(root.querySelector('[data-search-tag-mode-description]')?.textContent).toContain(
+      '増加件数ではありません',
+    );
+    history.forward();
+    await expect
+      .poll(() => root.querySelector<HTMLInputElement>('[data-search-tag-mode-value]')?.value)
+      .toBe('and');
+    expect(status('music')).toBe('件数を計算中');
+    await runtime.finish(root, response);
+    expect(status('music')).toBe('0件・選択不可');
+
+    await userEvent.click(
+      expectElement(
+        root.querySelector('[data-search-selected-tag-remove="selectedZero"]'),
+        'selected zero remove',
+      ),
+    );
+    expect(tagInput(root, 'selectedZero').checked).toBe(false);
+    expect(tagInput(root, 'selectedZero').disabled).toBe(false);
+    expect(status('selectedZero')).toBe('件数を計算中');
+    await runtime.finish(root, response);
+    expect(status('selectedZero')).toBe('0件・選択不可');
     controller?.dispose();
   });
 
@@ -485,6 +565,7 @@ describe('search-page-enhancer', () => {
     await runtime.finish(root, {
       ...response,
       tagCounts: { music: 1, architecture: 0, security: 1 },
+      allTagCounts: { music: 4, architecture: 0, security: 1 },
     });
     expect(architecture.disabled).toBe(true);
     expect(document.activeElement).not.toBe(architecture);
@@ -538,7 +619,7 @@ describe('search-page-enhancer', () => {
     expect(document.activeElement).toBe(tagInput(root, 'music'));
     expect(root.querySelector('[data-filter-visible-count]')?.textContent).toBe('2 / 4タグ');
     expect(root.querySelector('[data-filter-tag="music"] .filter-option-count')?.textContent).toBe(
-      '2件',
+      '4件',
     );
     controller?.dispose();
   });
@@ -1125,10 +1206,34 @@ describe('search-page-enhancer', () => {
     await waitForDebounce();
     expect(abortSignals).to.have.length(2);
 
+    const countStatus = () =>
+      root.querySelector<HTMLElement>('[data-filter-option][data-filter-tag="music"]')?.dataset[
+        'countStatus'
+      ];
+    const countText = () =>
+      root.querySelector('[data-filter-option][data-filter-tag="music"] .filter-option-count')
+        ?.textContent;
+    expect(countStatus()).to.equal('pending');
+    resolvers[0]?.({
+      ...staticResponse,
+      tagCounts: { architecture: 91, music: 91 },
+      allTagCounts: { architecture: 91, music: 91 },
+    });
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(countStatus()).to.equal('pending');
+    expect(countText()).to.equal('件数を計算中');
+
+    resolvers[1]?.({
+      ...staticResponse,
+      tagCounts: { architecture: 7, music: 7 },
+      allTagCounts: { architecture: 7, music: 7 },
+    });
+    await expect.poll(countStatus).toBe('ready');
+    expect(countText()).to.equal('7件');
+
     controller?.dispose();
-    expect(abortSignals[1]?.aborted).to.equal(true);
-    resolvers[0]?.(staticResponse);
-    resolvers[1]?.(staticResponse);
+    expect(abortSignals[1]?.aborted).to.equal(false);
     await Promise.resolve();
   });
 
@@ -1262,7 +1367,7 @@ describe('search-page-enhancer', () => {
       tagCounts: { architecture: 2, music: 0 },
       allTagCounts: { architecture: 3, music: 4, security: 1 },
     };
-    history.replaceState(history.state, '', '/search/?q=counts');
+    history.replaceState(history.state, '', '/search/?q=counts&tagMode=and');
     const root = renderSearchPageFixture();
     root
       .querySelector<HTMLElement>('[data-search-page-root]')
@@ -1292,7 +1397,7 @@ describe('search-page-enhancer', () => {
 
   it('status region は SSR container を再利用し loading / error / unavailable を排他的に表示すること', async () => {
     let rejectSearch: ((reason: Error) => void) | undefined;
-    history.replaceState(history.state, '', '/search/?q=error');
+    history.replaceState(history.state, '', '/search/?q=error&tag=architecture');
     const root = renderSearchPageFixture();
     root
       .querySelector<HTMLElement>('[data-search-page-root]')
@@ -1315,6 +1420,23 @@ describe('search-page-enhancer', () => {
     expect(error?.hidden).to.equal(true);
     expect(unavailable?.hidden).to.equal(true);
     expect(loading?.dataset['statusVariant']).to.equal('loading');
+    expect(
+      root.querySelector<HTMLElement>('[data-search-filter-list]')?.getAttribute('aria-busy'),
+    ).to.equal('true');
+    expect(
+      root.querySelector<HTMLElement>('[data-filter-option][data-filter-tag="architecture"]')
+        ?.dataset['state'],
+    ).to.equal('selected');
+    expect(
+      root.querySelector<HTMLInputElement>(
+        '[data-filter-option][data-filter-tag="architecture"] [data-search-tag-checkbox]',
+      )?.disabled,
+    ).to.equal(false);
+    expect(
+      root.querySelector(
+        '[data-filter-option][data-filter-tag="architecture"] .filter-option-count',
+      )?.textContent,
+    ).to.equal('選択中・件数を計算中');
     rejectSearch?.(new Error('failure'));
     await Promise.resolve();
     await Promise.resolve();
@@ -1325,6 +1447,37 @@ describe('search-page-enhancer', () => {
     );
     expect(error?.dataset['statusVariant']).to.equal('error');
     expect(unavailable?.hidden).to.equal(true);
+    expect(
+      root.querySelector<HTMLElement>('[data-search-filter-list]')?.getAttribute('aria-busy'),
+    ).to.equal('false');
+    expect(
+      root.querySelector<HTMLElement>('[data-filter-option][data-filter-tag="architecture"]')
+        ?.dataset['state'],
+    ).to.equal('selected');
+    expect(
+      root.querySelector<HTMLInputElement>(
+        '[data-filter-option][data-filter-tag="architecture"] [data-search-tag-checkbox]',
+      )?.disabled,
+    ).to.equal(false);
+    expect(
+      root.querySelector(
+        '[data-filter-option][data-filter-tag="architecture"] .filter-option-count',
+      )?.textContent,
+    ).to.equal('選択中・件数を取得できません');
+    expect(
+      root.querySelector<HTMLElement>('[data-filter-option][data-filter-tag="music"]')?.dataset[
+        'state'
+      ],
+    ).to.equal('error');
+    expect(
+      root.querySelector<HTMLInputElement>(
+        '[data-filter-option][data-filter-tag="music"] [data-search-tag-checkbox]',
+      )?.disabled,
+    ).to.equal(false);
+    expect(
+      root.querySelector('[data-filter-option][data-filter-tag="music"] .filter-option-count')
+        ?.textContent,
+    ).to.equal('件数を取得できません');
   });
 
   it('bootstrap unavailable 中も tag filter input / clear は URL と results を変えないこと', () => {

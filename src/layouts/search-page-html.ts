@@ -2,6 +2,12 @@ import type { SearchState, StaticExploreSearchResponse } from '../../shared/sear
 import type { SiteUrlContext } from '../../shared/site/site-url-context.js';
 import type { SearchStaticBaselineProjection } from '../../build/projections/search-static-baseline-projection.js';
 import { orderSearchPageTags } from '../search/search-page-tag-order.js';
+import {
+  getSearchPageTagModeCountDescription,
+  getSearchPageTagModeLabel,
+  getSearchPageTagOptionPresentation,
+  SEARCH_PAGE_TAG_MODE_OPTIONS,
+} from '../search/search-page-tag-option.js';
 import { buildSearchResultRenderHref } from '../search/normalize-search-result-url.js';
 import { renderStaticIconHtml } from '../../shared/icons/render-static-icon-html.js';
 import {
@@ -13,11 +19,6 @@ import { escapeHtmlAttribute, escapeHtmlText, serializeHtmlAttributes } from './
 const sortOptions = [
   ['relevance', '関連度順'],
   ['date-desc', '新しい順'],
-] as const;
-
-const tagModeOptions = [
-  ['or', 'いずれか'],
-  ['and', 'すべて'],
 ] as const;
 
 const optionLabel = (
@@ -36,6 +37,7 @@ const renderSearchChoiceMenu = (options: {
     readonly panel: string;
   };
   readonly valueDataAttribute: 'data-search-tag-mode-value' | 'data-search-sort-value';
+  readonly describedBy?: string;
 }): string => {
   const currentLabel = optionLabel(options.items, options.selectedValue);
   const choiceKind = options.name === 'tagMode' ? 'tag-mode' : 'sort';
@@ -53,6 +55,7 @@ const renderSearchChoiceMenu = (options: {
         <summary
           class="static-choice-menu__trigger"
           aria-labelledby="${options.ids.label} ${options.ids.current}"
+          ${options.describedBy ? `aria-describedby="${options.describedBy}"` : ''}
           aria-controls="${options.ids.panel}"
           aria-expanded="false"
           data-static-choice-trigger
@@ -95,6 +98,9 @@ const renderSearchChoiceMenu = (options: {
 const renderTagCheckboxes = (
   response: StaticExploreSearchResponse,
   selectedTags: readonly string[],
+  tagMode: SearchState['tagMode'],
+  statusIdPrefix: string,
+  countPending: boolean,
 ): string => {
   const tags = orderSearchPageTags({
     allTagCounts: response.allTagCounts,
@@ -106,19 +112,28 @@ const renderTagCheckboxes = (
   }
 
   return tags
-    .map((tag) => {
-      const count = response.tagCounts[tag] ?? 0;
-      const selected = selectedTags.includes(tag);
-      const disabled = !selected && count === 0;
+    .map((tag, index) => {
+      const presentation = getSearchPageTagOptionPresentation({
+        tag,
+        tagMode,
+        selectedTags,
+        tagCounts: response.tagCounts,
+        allTagCounts: response.allTagCounts,
+        countStatus: countPending ? 'pending' : 'ready',
+      });
+      const selected = presentation.state === 'selected';
+      const statusId = `${statusIdPrefix}-${String(index + 1)}`;
       return `
         <div
           class="filter-option"
           role="listitem"
           data-selected="${String(selected)}"
-          data-disabled="${String(disabled)}"
+          data-disabled="${String(presentation.disabled)}"
+          data-state="${presentation.state}"
+          data-count-status="${presentation.countStatus}"
           data-filter-option
           data-filter-tag="${escapeHtmlAttribute(tag)}"
-          data-filter-count="${count.toString()}"
+          data-filter-count="${presentation.count === null ? '' : presentation.count.toString()}"
         >
           <label class="filter-option-checkbox">
             <input
@@ -127,7 +142,8 @@ const renderTagCheckboxes = (
               name="tag"
               value="${escapeHtmlAttribute(tag)}"
               ${selected ? 'checked' : ''}
-              ${disabled ? 'disabled' : ''}
+              ${presentation.disabled ? 'disabled' : ''}
+              aria-describedby="${statusId}"
               data-search-tag-checkbox
             >
             <span class="filter-option-checkbox__control" aria-hidden="true">
@@ -135,7 +151,7 @@ const renderTagCheckboxes = (
             </span>
             <span class="filter-option-label">${escapeHtmlText(tag)}</span>
           </label>
-          <span class="filter-option-count">${count.toString()}件</span>
+          <span id="${statusId}" class="filter-option-count">${presentation.statusText}</span>
         </div>
       `;
     })
@@ -178,8 +194,8 @@ const renderEmptyState = (state: SearchState): string => {
     ? '一致するメモが見つかりません'
     : 'キーワードまたはタグで絞り込めます';
   const description = hasConditions
-    ? '検索語を変えるか、タグの組み合わせや演算子を見直してください。'
-    : 'ヘッダーのダイアログは即時検索、ここではタグ演算子も含めて一覧で比較できます。';
+    ? '検索語を変えるか、タグの組み合わせを見直してください。'
+    : 'ヘッダーのダイアログは即時検索、ここではタグの組み合わせも含めて一覧で比較できます。';
   return `
     <section class="empty-hint" data-empty-state data-search-empty-state data-empty-variant="search">
       <div class="empty-hint__message" data-announce="off">
@@ -258,6 +274,11 @@ export const renderSearchPageHtml = (options: {
   const tagModeLabelId = idContext.reserveId('search-page', 'search-page-tag-mode-label');
   const tagModeCurrentId = idContext.reserveId('search-page', 'search-page-tag-mode-current');
   const tagModePanelId = idContext.reserveId('search-page', 'search-page-tag-mode-panel');
+  const tagModeDescriptionId = idContext.reserveId(
+    'search-page',
+    'search-page-tag-mode-description',
+  );
+  const tagStatusIdPrefix = idContext.reserveId('search-page', 'search-page-tag-status');
   const sortLabelId = idContext.reserveId('search-page', 'search-page-sort-label');
   const sortCurrentId = idContext.reserveId('search-page', 'search-page-sort-current');
   const sortPanelId = idContext.reserveId('search-page', 'search-page-sort-panel');
@@ -338,18 +359,19 @@ export const renderSearchPageHtml = (options: {
           </div>
 
           <div class="toolbar-row">
-            <div class="meta-row"><span data-search-page-result-count>${initialResponse.total.toString()}件の結果</span></div>
+            <div class="meta-row toolbar-result-count"><span data-search-page-result-count>${initialResponse.total.toString()} 件の結果</span></div>
             ${renderSearchChoiceMenu({
               name: 'tagMode',
-              label: 'タグ演算子',
+              label: 'タグの組み合わせ',
               selectedValue: initialState.tagMode,
-              items: tagModeOptions,
+              items: SEARCH_PAGE_TAG_MODE_OPTIONS,
               ids: {
                 label: tagModeLabelId,
                 current: tagModeCurrentId,
                 panel: tagModePanelId,
               },
               valueDataAttribute: 'data-search-tag-mode-value',
+              describedBy: tagModeDescriptionId,
             })}
             ${renderSearchChoiceMenu({
               name: 'sort',
@@ -364,6 +386,7 @@ export const renderSearchPageHtml = (options: {
               valueDataAttribute: 'data-search-sort-value',
             })}
           </div>
+          <p id="${tagModeDescriptionId}" class="tag-mode-count-description" data-search-tag-mode-description>${escapeHtmlText(getSearchPageTagModeCountDescription(initialState.tagMode))}</p>
 
           <details class="filter-details" data-details data-variant="bordered">
             <summary class="filter-details__summary">
@@ -372,7 +395,7 @@ export const renderSearchPageHtml = (options: {
                 <span class="filter-summary-meta">
                   <span class="filter-summary-state">${
                     initialState.tags.length > 0
-                      ? `${initialState.tags.length.toString()}タグ選択中 / ${initialState.tagMode === 'and' ? 'すべて' : 'いずれか'}`
+                      ? `${initialState.tags.length.toString()}タグ選択中 / ${getSearchPageTagModeLabel(initialState.tagMode)}`
                       : 'すべてのタグ'
                   }</span>
                   <span class="filter-summary-detail">${escapeHtmlText(renderFilterSummaryDetail(initialState.tags))}</span>
@@ -401,7 +424,7 @@ export const renderSearchPageHtml = (options: {
                     ${renderStaticIconHtml('x', 'filter-search-field__clear-icon')}
                   </button>
                 </div>
-                <div class="filter-list" role="list" data-search-filter-list>${renderTagCheckboxes(initialResponse, initialState.tags)}</div>
+                <div class="filter-list" role="list" ${loading ? 'aria-busy="true"' : ''} data-search-filter-list>${renderTagCheckboxes(initialResponse, initialState.tags, initialState.tagMode, tagStatusIdPrefix, loading)}</div>
                 <p class="filter-empty" hidden data-search-filter-empty>一致するタグはありません。</p>
               </section>
             </div>
