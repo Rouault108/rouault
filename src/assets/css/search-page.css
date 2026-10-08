@@ -297,7 +297,15 @@
 .selected-tags {
   display: flex;
   flex-wrap: wrap;
+  align-items: center;
+  align-content: flex-start;
   gap: var(--space-2);
+  min-block-size: calc(1.75rem + var(--border-width) + var(--border-width));
+}
+.selected-tags > .filter-empty {
+  align-self: center;
+  margin: 0;
+  line-height: 1.75rem;
 }
 .selected-tag {
   max-inline-size: 100%;
@@ -318,13 +326,26 @@
   padding-inline-start: var(--space-2);
 }
 .selected-tag__remove {
+  box-sizing: border-box;
   inline-size: 1.75rem;
   block-size: 1.75rem;
+  display: inline-grid;
+  flex-shrink: 0;
+  place-items: center;
+  padding: 0;
+  font: inherit;
+  line-height: 1;
   border: 0;
   border-radius: var(--radius-full);
   cursor: pointer;
   color: inherit;
   background: transparent;
+}
+.selected-tag__remove-icon {
+  display: block;
+  inline-size: var(--icon-sm, 14px);
+  block-size: var(--icon-sm, 14px);
+  flex: none;
 }
 .selected-tag__remove-icon,
 .selected-tag__remove-icon * {
@@ -363,7 +384,7 @@
   border-color: var(--border-default);
 }
 .filter-option[data-state='disabled'] {
-  background: color-mix(in oklab, var(--bg-surface-2) 82%, var(--fg-disabled) 18%);
+  background: var(--bg-default);
   border-color: var(--border-muted);
   border-style: dashed;
 }
@@ -398,7 +419,7 @@
   block-size: 16px;
   flex: 0 0 auto;
   pointer-events: none;
-  color: var(--fg-default);
+  color: var(--fg-control-affordance, var(--fg-subtle));
   border: var(--border-width) solid currentColor;
   border-radius: var(--radius-sm);
   background: var(--bg-fill-muted);
@@ -416,8 +437,9 @@
   color: currentColor;
 }
 .filter-option-checkbox__input:checked + .filter-option-checkbox__control {
+  color: var(--fg-default);
   background: var(--bg-default);
-  border-color: currentColor;
+  border-color: var(--fg-control-affordance, var(--fg-subtle));
 }
 .filter-option-checkbox__input:checked
   + .filter-option-checkbox__control
@@ -516,6 +538,7 @@
   .search-input-field,
   .filter-search-field,
   .filter-option,
+  .filter-option[data-selected='true'],
   .filter-option-checkbox__control {
     color: CanvasText;
     background: Canvas;

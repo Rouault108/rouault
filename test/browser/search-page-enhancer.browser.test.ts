@@ -247,6 +247,12 @@ describe('search-page-enhancer', () => {
       control.querySelector<HTMLElement>('.filter-option-checkbox__icon'),
       'icon',
     );
+    const colorProbe = document.createElement('span');
+    root.append(colorProbe);
+    const resolvedColor = (token: string): string => {
+      colorProbe.style.color = `var(${token})`;
+      return getComputedStyle(colorProbe).color;
+    };
     const luminance = (rgb: readonly number[]): number =>
       rgb
         .map((value) => value / 255)
@@ -293,6 +299,7 @@ describe('search-page-enhancer', () => {
             controlStyle.backgroundColor,
             controlStyle.borderTopColor,
           );
+          expect(controlStyle.borderTopColor).toBe(resolvedColor('--fg-control-affordance'));
           expect(
             contrast(border, outer),
             `${theme}/${String(checked)} border/row`,
@@ -302,6 +309,7 @@ describe('search-page-enhancer', () => {
             `${theme}/${String(checked)} border/inside`,
           ).toBeGreaterThanOrEqual(3);
           if (checked) {
+            expect(getComputedStyle(icon).color).toBe(resolvedColor('--fg-default'));
             expect(
               contrast(
                 composite(
@@ -320,6 +328,146 @@ describe('search-page-enhancer', () => {
       }
     } finally {
       controller?.dispose();
+      if (previousTheme === undefined) delete document.documentElement.dataset['theme'];
+      else document.documentElement.dataset['theme'] = previousTheme;
+    }
+  });
+
+  it('selected tags は空・1行・解除で後続位置を固定し、wrap と remove icon の中央配置を保つこと', async () => {
+    const tags = [
+      'architecture',
+      'continuous-alphanumeric-tag-1234567890',
+      'music',
+      'performance',
+      'security',
+    ];
+    const counts = Object.fromEntries(tags.map((tag, index) => [tag, index + 1]));
+    const response: ExploreSearchResponse = {
+      ...staticResponse,
+      allTagCounts: counts,
+      tagCounts: counts,
+    };
+    const root = await renderTagOrderFixture(response);
+    root.style.inlineSize = '320px';
+    const controller = enhanceWithRuntime(root, undefined, createSearchRuntime(async () => response));
+    const selectedTags = expectElement(
+      root.querySelector<HTMLElement>('[data-selected-tags]'),
+      'selected tags',
+    );
+    const filterInput = expectElement(
+      root.querySelector<HTMLElement>('.filter-search-field'),
+      'filter input field',
+    );
+    const initialSelectedHeight = selectedTags.getBoundingClientRect().height;
+    const followingGap = (): number =>
+      filterInput.getBoundingClientRect().top - selectedTags.getBoundingClientRect().bottom;
+    const initialFollowingGap = followingGap();
+
+    await userEvent.click(tagInput(root, 'architecture'));
+    await expect.poll(() => selectedTags.querySelectorAll('[data-selected-tag]').length).toBe(1);
+    expect(selectedTags.getBoundingClientRect().height).toBe(initialSelectedHeight);
+    expect(Math.abs(followingGap() - initialFollowingGap)).toBeLessThan(0.5);
+
+    const remove = expectElement(
+      selectedTags.querySelector<HTMLButtonElement>('.selected-tag__remove'),
+      'remove button',
+    );
+    const icon = expectElement(
+      remove.querySelector<HTMLElement>('.selected-tag__remove-icon'),
+      'remove icon',
+    );
+    const removeRect = remove.getBoundingClientRect();
+    const iconRect = icon.getBoundingClientRect();
+    expect(removeRect.width).toBeGreaterThanOrEqual(24);
+    expect(removeRect.height).toBeGreaterThanOrEqual(24);
+    expect(
+      Math.abs(iconRect.left + iconRect.width / 2 - (removeRect.left + removeRect.width / 2)),
+    ).toBeLessThan(0.5);
+    expect(
+      Math.abs(iconRect.top + iconRect.height / 2 - (removeRect.top + removeRect.height / 2)),
+    ).toBeLessThan(0.5);
+
+    remove.focus();
+    await userEvent.keyboard(' ');
+    await expect.poll(() => selectedTags.querySelectorAll('[data-selected-tag]').length).toBe(0);
+    expect(selectedTags.getBoundingClientRect().height).toBe(initialSelectedHeight);
+    expect(Math.abs(followingGap() - initialFollowingGap)).toBeLessThan(0.5);
+    controller?.dispose();
+    root.remove();
+
+    const wrappedRoot = await renderTagOrderFixture(response, tags, 'or');
+    wrappedRoot.style.inlineSize = '320px';
+    const wrappedController = enhanceWithRuntime(
+      wrappedRoot,
+      undefined,
+      createSearchRuntime(async () => response),
+    );
+    const wrappedSelectedTags = expectElement(
+      wrappedRoot.querySelector<HTMLElement>('[data-selected-tags]'),
+      'wrapped selected tags',
+    );
+    await expect
+      .poll(() => wrappedSelectedTags.querySelectorAll('[data-selected-tag]').length)
+      .toBe(5);
+    expect(wrappedSelectedTags.getBoundingClientRect().height).toBeGreaterThan(initialSelectedHeight);
+    expect(getComputedStyle(wrappedSelectedTags).overflow).toBe('visible');
+
+    wrappedRoot.style.zoom = '2';
+    const zoomedRemove = expectElement(
+      wrappedSelectedTags.querySelector<HTMLButtonElement>('.selected-tag__remove'),
+      'zoomed remove button',
+    );
+    expect(zoomedRemove.getBoundingClientRect().width).toBeGreaterThanOrEqual(48);
+    expect(zoomedRemove.getBoundingClientRect().height).toBeGreaterThanOrEqual(48);
+    wrappedController?.dispose();
+  });
+
+  it('selected / disabled / normal row は light / dark で意味どおりの面を使うこと', async () => {
+    const root = await renderTagOrderFixture(
+      {
+        ...staticResponse,
+        allTagCounts: { architecture: 4, music: 3, security: 2 },
+        tagCounts: { architecture: 4, music: 0, security: 2 },
+      },
+      ['architecture'],
+      'and',
+    );
+    const previousTheme = document.documentElement.dataset['theme'];
+    const probe = document.createElement('span');
+    root.append(probe);
+    const colorFor = (token: string): string => {
+      probe.style.background = `var(${token})`;
+      return getComputedStyle(probe).backgroundColor;
+    };
+    try {
+      for (const theme of ['light', 'dark']) {
+        document.documentElement.dataset['theme'] = theme;
+        await Promise.all(
+          root
+            .getAnimations({ subtree: true })
+            .filter((animation) => animation.effect?.getComputedTiming().iterations !== Infinity)
+            .map((animation) => animation.finished),
+        );
+        const selected = expectElement(
+          root.querySelector<HTMLElement>("[data-filter-tag='architecture']"),
+          'selected row',
+        );
+        const disabled = expectElement(
+          root.querySelector<HTMLElement>("[data-filter-tag='music']"),
+          'disabled row',
+        );
+        const available = expectElement(
+          root.querySelector<HTMLElement>("[data-filter-tag='security']"),
+          'available row',
+        );
+        expect(getComputedStyle(selected).backgroundColor).toBe(colorFor('--bg-fill-muted'));
+        expect(getComputedStyle(disabled).backgroundColor).toBe(colorFor('--bg-default'));
+        expect(getComputedStyle(disabled).borderStyle).toBe('dashed');
+        expect(getComputedStyle(available).backgroundColor).toBe(colorFor('--bg-surface-2'));
+        expect(tagInput(root, 'architecture').checked).toBe(true);
+        expect(tagInput(root, 'music').disabled).toBe(true);
+      }
+    } finally {
       if (previousTheme === undefined) delete document.documentElement.dataset['theme'];
       else document.documentElement.dataset['theme'] = previousTheme;
     }

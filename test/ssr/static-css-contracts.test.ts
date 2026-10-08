@@ -1763,12 +1763,34 @@ describe('static CSS contracts', () => {
       'border-radius:',
       'background: transparent',
     ]);
+    expectRuleToDeclare(css, '.selected-tags', [
+      'display: flex',
+      'flex-wrap: wrap',
+      'align-items: center',
+      'align-content: flex-start',
+      'min-block-size: calc(1.75rem + var(--border-width) + var(--border-width))',
+    ]);
+    expectRuleToDeclare(css, '.selected-tags > .filter-empty', [
+      'align-self: center',
+      'margin: 0',
+      'line-height: 1.75rem',
+    ]);
     expectRuleToDeclare(css, '.selected-tag__remove', [
       'inline-size: 1.75rem',
       'block-size: 1.75rem',
+      'display: inline-grid',
+      'flex-shrink: 0',
+      'place-items: center',
+      'padding: 0',
+      'line-height: 1',
       'cursor: pointer',
     ]);
-    expectRuleToDeclare(css, '.selected-tag__remove-icon', ['pointer-events: none']);
+    expectRuleToDeclare(css, '.selected-tag__remove-icon', [
+      'display: block',
+      'inline-size: var(--icon-sm, 14px)',
+      'block-size: var(--icon-sm, 14px)',
+      'pointer-events: none',
+    ]);
     expectRuleToDeclare(css, '.selected-tag__remove-icon *', ['pointer-events: none']);
     expectRuleToDeclare(css, '.filter-option-checkbox__control', [
       'inline-size: 16px',
@@ -1776,7 +1798,7 @@ describe('static CSS contracts', () => {
     ]);
     expectRuleToDeclare(css, '.filter-option-checkbox__control', [
       'pointer-events: none',
-      'color: var(--fg-default)',
+      'color: var(--fg-control-affordance, var(--fg-subtle))',
       'border: var(--border-width) solid currentColor',
       'background: var(--bg-fill-muted)',
     ]);
@@ -1790,7 +1812,11 @@ describe('static CSS contracts', () => {
     expectRuleToDeclare(
       css,
       '.filter-option-checkbox__input:checked + .filter-option-checkbox__control',
-      ['background: var(--bg-default)', 'border-color: currentColor'],
+      [
+        'color: var(--fg-default)',
+        'background: var(--bg-default)',
+        'border-color: var(--fg-control-affordance, var(--fg-subtle))',
+      ],
     );
     expectRuleToDeclare(
       css,
@@ -1831,8 +1857,13 @@ describe('static CSS contracts', () => {
       '.filter-option-checkbox__control',
       ['color: CanvasText', 'background: Canvas', 'border-color: CanvasText'],
     );
+    expectRuleToDeclare(
+      atRuleBlock(css, '@media (forced-colors: active)'),
+      ".filter-option[data-selected='true']",
+      ['color: CanvasText', 'background: Canvas', 'border-color: CanvasText'],
+    );
     expectRuleToDeclare(css, ".filter-option[data-state='disabled']", [
-      'background:',
+      'background: var(--bg-default)',
       'border-color:',
       'border-style: dashed',
     ]);
