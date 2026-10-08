@@ -109,7 +109,7 @@ test('memo index uses the shared page shell across widths and color schemes', as
   browser,
   baseURL,
 }) => {
-  expect(baseURL).toBeTruthy();
+  if (baseURL === undefined) throw new Error('production E2E baseURL is required');
   for (const viewport of [
     { name: 'wide', width: 1280, height: 900 },
     { name: 'narrow', width: 390, height: 844 },
