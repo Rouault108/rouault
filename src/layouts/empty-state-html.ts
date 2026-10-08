@@ -47,7 +47,6 @@ export const renderEmptyStateHtml = ({
   return `
     <section class="empty-hint" data-empty-state data-empty-variant="${normalizeVariant(variant)}">
       <div class="empty-hint__message" ${announceAttributes}>
-        <div class="empty-hint__icon" aria-hidden="true"></div>
         <h2 class="empty-hint__heading">${escapeHtmlText(heading)}</h2>
         ${renderDescription(description)}
       </div>

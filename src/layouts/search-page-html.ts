@@ -200,7 +200,6 @@ const renderEmptyState = (state: SearchState): string => {
     <section class="empty-hint" data-empty-state data-search-empty-state data-empty-variant="search">
       <div class="empty-hint__message" data-announce="off">
         <div class="empty-hint__illustration" aria-hidden="true" hidden></div>
-        <div class="empty-hint__icon" aria-hidden="true" hidden></div>
         <h2 class="empty-hint__heading">${escapeHtmlText(heading)}</h2>
         <p class="empty-hint__description">${escapeHtmlText(description)}</p>
       </div>

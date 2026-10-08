@@ -1510,6 +1510,36 @@ describe('search-page-enhancer', () => {
     );
   });
 
+  it('client-side empty state は文言とwrapperを保ち装飾用の円要素を生成しないこと', async () => {
+    history.replaceState(history.state, '', '/search/?q=missing');
+    const root = renderSearchPageFixture();
+    root
+      .querySelector<HTMLElement>('[data-search-page-root]')
+      ?.setAttribute('initial-search-response-json', '{');
+    enhanceWithRuntime(
+      root,
+      undefined,
+      createSearchRuntime(async () => staticResponse),
+    );
+
+    await expect.poll(() => root.querySelector('[data-search-empty-state]')).not.toBeNull();
+    const empty = expectElement(
+      root.querySelector<HTMLElement>('[data-search-empty-state]'),
+      'search empty state',
+    );
+    expect(empty.querySelector('.empty-hint__message')?.getAttribute('data-announce')).to.equal(
+      'off',
+    );
+    expect(empty.querySelector('.empty-hint__heading')?.textContent).to.equal(
+      '一致するメモが見つかりません',
+    );
+    expect(empty.querySelector('.empty-hint__description')?.textContent).to.equal(
+      '検索語を変えるか、タグの組み合わせを見直してください。',
+    );
+    expect(empty.querySelector('.empty-hint__actions')?.hasAttribute('hidden')).to.equal(true);
+    expect(empty.querySelector('.empty-hint__icon')).to.equal(null);
+  });
+
   it('tagCounts / allTagCounts から option count、disabled、visible count を更新すること', async () => {
     const response: ExploreSearchResponse = {
       ...staticResponse,
