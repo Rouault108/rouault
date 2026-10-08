@@ -392,20 +392,34 @@ describe('search-page-enhancer', () => {
     await expect.poll(() => selectedTags.querySelectorAll('[data-selected-tag]').length).toBe(0);
     expect(selectedTags.getBoundingClientRect().height).toBe(initialSelectedHeight);
     expect(Math.abs(followingGap() - initialFollowingGap)).toBeLessThan(0.5);
+    controller?.dispose();
+    root.remove();
 
-    for (const tag of tags) await userEvent.click(tagInput(root, tag));
-    await expect.poll(() => selectedTags.querySelectorAll('[data-selected-tag]').length).toBe(5);
-    expect(selectedTags.getBoundingClientRect().height).toBeGreaterThan(initialSelectedHeight);
-    expect(getComputedStyle(selectedTags).overflow).toBe('visible');
+    const wrappedRoot = await renderTagOrderFixture(response, tags, 'or');
+    wrappedRoot.style.inlineSize = '320px';
+    const wrappedController = enhanceWithRuntime(
+      wrappedRoot,
+      undefined,
+      createSearchRuntime(async () => response),
+    );
+    const wrappedSelectedTags = expectElement(
+      wrappedRoot.querySelector<HTMLElement>('[data-selected-tags]'),
+      'wrapped selected tags',
+    );
+    await expect
+      .poll(() => wrappedSelectedTags.querySelectorAll('[data-selected-tag]').length)
+      .toBe(5);
+    expect(wrappedSelectedTags.getBoundingClientRect().height).toBeGreaterThan(initialSelectedHeight);
+    expect(getComputedStyle(wrappedSelectedTags).overflow).toBe('visible');
 
-    root.style.zoom = '2';
+    wrappedRoot.style.zoom = '2';
     const zoomedRemove = expectElement(
-      selectedTags.querySelector<HTMLButtonElement>('.selected-tag__remove'),
+      wrappedSelectedTags.querySelector<HTMLButtonElement>('.selected-tag__remove'),
       'zoomed remove button',
     );
     expect(zoomedRemove.getBoundingClientRect().width).toBeGreaterThanOrEqual(48);
     expect(zoomedRemove.getBoundingClientRect().height).toBeGreaterThanOrEqual(48);
-    controller?.dispose();
+    wrappedController?.dispose();
   });
 
   it('selected / disabled / normal row は light / dark で意味どおりの面を使うこと', async () => {
