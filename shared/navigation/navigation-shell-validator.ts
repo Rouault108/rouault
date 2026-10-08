@@ -22,6 +22,7 @@ import {
 export type NavigationShellValidationReason =
   | 'invalid-shell'
   | 'invalid-header-html'
+  | 'invalid-footer-copyright-text'
   | 'invalid-sidebar'
   | 'payload-present-false'
   | 'runtime-absent-non-canonical'
@@ -243,6 +244,16 @@ export const validateNavigationEnvelopeShell = (value: unknown): NavigationShell
   if (!isString(headerHtml) || headerHtml.trim().length === 0) {
     fail('shell.headerHtml must be a non-empty string.', 'invalid-header-html');
   }
+  const footerCopyrightText = record['footerCopyrightText'];
+  if (
+    footerCopyrightText !== undefined &&
+    (!isString(footerCopyrightText) || footerCopyrightText.trim().length === 0)
+  ) {
+    fail(
+      'shell.footerCopyrightText must be a non-empty string when present.',
+      'invalid-footer-copyright-text',
+    );
+  }
 
   return {
     headerHtml,
@@ -250,5 +261,6 @@ export const validateNavigationEnvelopeShell = (value: unknown): NavigationShell
       record['sidebarProjection'] === null
         ? null
         : validatePayloadSidebar(record['sidebarProjection']),
+    ...(footerCopyrightText !== undefined ? { footerCopyrightText } : {}),
   };
 };

@@ -2,6 +2,7 @@ import { validateCommittedRuntimeDomLinkContracts } from './dom-link-contract.js
 import type { RouterRuntimeUrlDependencies } from './router-types.js';
 import { STATIC_HEADER_ROOT_SELECTOR } from '../../shared/navigation/static-header-contract.js';
 import { readCanonicalStaticHeaderHtml } from '../components/app/shell/static-header-shell-mutation.js';
+import { readLayoutFooterCopyrightText } from '../components/app/shell/footer-shell-mutation.js';
 import {
   readSidebarShellSnapshot,
   SIDEBAR_ROOT_SELECTOR,
@@ -40,6 +41,7 @@ export const validateInitialAppShell = (options: {
     shell: {
       headerHtml,
       sidebarProjection: sidebar?.present ? sidebar : null,
+      footerCopyrightText: readLayoutFooterCopyrightText(),
     },
     shellCommitId: 0,
     linkValidationContext,

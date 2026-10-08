@@ -11,10 +11,28 @@ describe('navigation shell validator', () => {
     const shell = validateNavigationEnvelopeShell({
       headerHtml: '<header class="layout-header" data-layout-header="true"></header>',
       sidebarProjection: null,
+      footerCopyrightText: '© Example',
     });
 
     expect(shell.headerHtml).toContain('data-layout-header');
     expect(shell.sidebarProjection).toBeNull();
+    expect(shell.footerCopyrightText).toBe('© Example');
+  });
+
+  it('footerCopyrightText は省略可能だが空文字を拒否すること', () => {
+    expect(
+      validateNavigationEnvelopeShell({
+        headerHtml: '<header class="layout-header" data-layout-header="true"></header>',
+        sidebarProjection: null,
+      }).footerCopyrightText,
+    ).toBeUndefined();
+    expect(() =>
+      validateNavigationEnvelopeShell({
+        headerHtml: '<header class="layout-header" data-layout-header="true"></header>',
+        sidebarProjection: null,
+        footerCopyrightText: '   ',
+      }),
+    ).toThrow(/invalid-footer-copyright-text/u);
   });
 
   it('空の headerHtml を拒否すること', () => {

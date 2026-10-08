@@ -207,6 +207,7 @@ export type RuntimeSidebarShellSnapshot = SharedRuntimeSidebarShellSnapshot;
 export interface RuntimeDocumentShellSnapshot {
   headerHtml: string;
   sidebar: RuntimeSidebarShellSnapshot | null;
+  footerCopyrightText?: string;
 }
 
 export type { PresentSidebarShellProjection, AbsentRuntimeSidebarShellProjection };

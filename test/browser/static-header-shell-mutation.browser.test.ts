@@ -4,6 +4,10 @@ import {
   prepareStaticHeaderMutation,
 } from '../../src/components/app/shell/static-header-shell-mutation.js';
 import {
+  prepareFooterCopyrightMutation,
+  readLayoutFooterCopyrightText,
+} from '../../src/components/app/shell/footer-shell-mutation.js';
+import {
   STATIC_HEADER_CONTRACT_ACCEPTED_HTML,
   STATIC_HEADER_CONTRACT_ACCEPTED_TOC_ABSENT_HTML,
   STATIC_HEADER_CONTRACT_REJECTED_CASES,
@@ -55,5 +59,18 @@ describe('static-header-shell-mutation', () => {
     expect(document.querySelector('header')?.textContent).to.contain('next');
     mutation.rollback();
     expect(document.querySelector('header')?.textContent).to.contain('previous');
+  });
+
+  it('footer copyright の commit と rollback を同じ静的shell上で行うこと', () => {
+    document.body.innerHTML =
+      '<footer data-layout-footer><p class="ui-footer__copyright">previous</p></footer>';
+    const mutation = prepareFooterCopyrightMutation('next');
+    mutation.commit();
+    expect(readLayoutFooterCopyrightText()).to.equal('next');
+    mutation.rollback();
+    expect(readLayoutFooterCopyrightText()).to.equal('previous');
+    expect(() => prepareFooterCopyrightMutation('   ')).to.throw(
+      'shell.footerCopyrightText must be non-empty',
+    );
   });
 });

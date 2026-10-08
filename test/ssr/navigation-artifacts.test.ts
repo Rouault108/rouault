@@ -155,6 +155,24 @@ describe('navigation artifacts static header contract', () => {
     expect(envelope.document.html).toContain('<article>本文</article>');
   });
 
+  it('static footer copyright を shell projection に格納すること', () => {
+    const envelope = createNavigationEnvelopeFromHtml(
+      html().replace(
+        '</body>',
+        '<footer data-layout-footer><p class="ui-footer__copyright">Memo rights</p></footer></body>',
+      ),
+      '/dist/memos/index.html',
+      {
+        mode: 'strict-artifact',
+        buildId: 'build-test',
+        generatedAt: '2026-01-01T00:00:00.000Z',
+      },
+      context,
+    );
+
+    expect(envelope.shell.footerCopyrightText).toBe('Memo rights');
+  });
+
   it('static header 内の script と data-hydration-key を拒否すること', () => {
     expect(() =>
       createNavigationEnvelopeFromHtml(

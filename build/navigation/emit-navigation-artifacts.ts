@@ -66,6 +66,9 @@ const getAttribute = (element: Parse5Element, name: string): string | null =>
 const hasAttribute = (element: Parse5Element, name: string): boolean =>
   element.attrs.some((attribute) => attribute.name === name);
 
+const hasClassToken = (element: Parse5Element, token: string): boolean =>
+  (getAttribute(element, 'class') ?? '').split(/\s+/u).includes(token);
+
 const getTextContent = (node: Parse5Node): string => {
   if ('value' in node && typeof node.value === 'string') {
     return node.value;
@@ -333,6 +336,47 @@ const extractLayoutHeaderHtml = (
   return headerHtml;
 };
 
+const extractFooterCopyrightText = (
+  document: Parse5Document,
+  htmlFilePath: string,
+): string | undefined => {
+  const footers = findAllElements(document, (candidate) =>
+    hasAttribute(candidate, 'data-layout-footer'),
+  );
+  if (footers.length === 0) {
+    return undefined;
+  }
+  if (footers.length !== 1) {
+    throw new Error(
+      `[navigation-artifact] ${htmlFilePath} requires at most one [data-layout-footer].`,
+    );
+  }
+  const footer = footers[0];
+  if (footer === undefined) {
+    throw new Error(`[navigation-artifact] ${htmlFilePath} footer extraction failed.`);
+  }
+  const copyrightElements = findAllElements(
+    footer,
+    (candidate) => candidate.tagName === 'p' && hasClassToken(candidate, 'ui-footer__copyright'),
+  );
+  if (copyrightElements.length !== 1) {
+    throw new Error(
+      `[navigation-artifact] ${htmlFilePath} footer requires exactly one .ui-footer__copyright.`,
+    );
+  }
+  const copyrightElement = copyrightElements[0];
+  if (copyrightElement === undefined) {
+    throw new Error(`[navigation-artifact] ${htmlFilePath} footer copyright extraction failed.`);
+  }
+  const copyrightText = getTextContent(copyrightElement).trim();
+  if (copyrightText.length === 0) {
+    throw new Error(
+      `[navigation-artifact] ${htmlFilePath} footer copyright text must be non-empty.`,
+    );
+  }
+  return copyrightText;
+};
+
 const extractSidebarProjection = (
   document: Parse5Document,
 ): PayloadSidebarShellProjection | null => {
@@ -552,10 +596,12 @@ export const createNavigationEnvelopeFromHtml = (
   );
   const headerHtml = extractLayoutHeaderHtml(document, htmlFilePath, context);
   const sidebarProjection = extractSidebarProjection(document);
+  const footerCopyrightText = extractFooterCopyrightText(document, htmlFilePath);
   assertHeaderSidebarConsistency(document, sidebarProjection);
   const shell = validateNavigationEnvelopeShell({
     headerHtml,
     sidebarProjection,
+    ...(footerCopyrightText !== undefined ? { footerCopyrightText } : {}),
   });
   const hydrationPlan = collectHydrationPlan(document);
 

@@ -104,6 +104,12 @@ test('memo index, body, notes and history preserve the shared shell and TOC owne
     .click();
   await expect(page).toHaveURL(/\/memos\/$/u);
   await expect(page.locator('aside[data-layout-sidebar-root] [data-sidebar-nav]')).toHaveCount(0);
+  await expect(page.locator('#main-content').getByText(MEMO_RIGHTS_NOTICE, { exact: true })).toHaveCount(
+    0,
+  );
+  await expect(
+    page.locator('[data-layout-footer]').getByText(MEMO_RIGHTS_NOTICE, { exact: true }),
+  ).toHaveCount(1);
 });
 test('memo index uses the shared page shell across widths and color schemes', async ({
   browser,

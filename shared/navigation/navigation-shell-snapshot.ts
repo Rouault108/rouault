@@ -42,4 +42,5 @@ export type RuntimeSidebarShellSnapshot =
 export interface NavigationShellSnapshot {
   headerHtml: string;
   sidebarProjection: PayloadSidebarShellProjection | null;
+  footerCopyrightText?: string;
 }
