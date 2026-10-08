@@ -769,7 +769,7 @@ describe('static CSS contracts', () => {
     }
   });
 
-  it('about lead keeps natural wrapping while isolating only the terminal keep phrase', () => {
+  it('about lead keeps natural wrapping for the complete introduction', () => {
     const css = readCss('about-shell.css');
 
     expect(declarationValuesForSelector(css, '.about-shell', '--about-lead-measure')).toContain(
@@ -783,9 +783,8 @@ describe('static CSS contracts', () => {
     ).toContain('min(100%, var(--about-lead-measure))');
     expect(declarationValuesForSelector(css, '.about-lead', 'text-wrap')).toContain('pretty');
     expect(declarationValuesForSelector(css, '.about-lead', 'white-space')).toEqual([]);
-    expect(declarationValuesForSelector(css, '.about-lead__keep', 'white-space')).toContain(
-      'nowrap',
-    );
+    expect(css).not.toContain('.about-lead__keep');
+    expect(css).not.toContain('.about-summary');
   });
 
   it('home lead keeps natural wrapping while isolating only the terminal keep phrase', () => {

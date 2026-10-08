@@ -46,15 +46,6 @@
   border-bottom: var(--border-width) solid var(--border-default);
 }
 
-.about-eyebrow {
-  margin: 0;
-  color: var(--fg-default);
-  font-family: var(--font-mono);
-  font-size: var(--text-xs);
-  letter-spacing: var(--tracking-wide);
-  text-transform: uppercase;
-}
-
 .about-title {
   margin: 0;
   font-size: clamp(var(--text-2xl), 3.2vw, var(--text-3xl));
@@ -69,34 +60,4 @@
   font-size: var(--text-base);
   line-height: var(--line-height-relaxed);
   text-wrap: pretty;
-}
-
-.about-lead__keep {
-  white-space: nowrap;
-}
-
-.about-summary {
-  display: grid;
-  gap: var(--space-3);
-  padding-inline-start: var(--space-4);
-  border-inline-start: var(--border-width-thick) solid var(--border-default);
-}
-
-.about-summary-label {
-  margin: 0;
-  color: var(--fg-default);
-  font-family: var(--font-mono);
-  font-size: var(--text-xs);
-  letter-spacing: var(--tracking-wide);
-  text-transform: uppercase;
-}
-
-.about-summary-list {
-  margin: 0;
-  padding-left: 1.25rem;
-  color: var(--fg-default);
-}
-
-.about-summary-list li + li {
-  margin-top: var(--space-2);
 }

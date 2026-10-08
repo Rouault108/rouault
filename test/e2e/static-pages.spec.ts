@@ -8,8 +8,18 @@ test.describe('Static pages', () => {
     const heading = mainContent.getByRole('heading', { level: 1 });
 
     await expect(heading).toHaveCount(1);
-    await expect(heading).toHaveText(/\S/);
-    await expect(mainContent.locator('.about-summary[aria-label]')).toBeVisible();
+    await expect(heading).toHaveText('このサイトについて');
+    await expect(mainContent.locator('.about-lead')).toHaveText(
+      'Rouaultは、ソフトウェア、計算機科学、設計、読書を通じて調べたことや考えたことを、後から辿れる形で残す個人の公開ノートです。一定のまとまりを持った文章を本文中心に読み込める、静かな読書環境を目指しています。',
+    );
+    await expect(mainContent.getByRole('heading', { level: 2 })).toHaveText([
+      'ノートについて',
+      'ノートの探し方',
+      '作者について',
+      'このサイトのつくり',
+      '利用について',
+    ]);
+    await expect(mainContent.locator('.about-summary')).toHaveCount(0);
   });
 
   test('corpora 一覧ページが主要見出しまで表示されること', async ({ page }) => {
