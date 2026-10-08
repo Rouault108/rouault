@@ -2,7 +2,10 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { buildMemosCollection, loadMemosData } from '../../build/data/memos.js';
 import { collectAdoptedContentSources } from '../../build/content/publication-snapshot.js';
 import MemoIndex from '../../src/memos-index.11ty.js';
-import { buildMemoPageProjection } from '../../build/projections/memo-page-projection.js';
+import {
+  buildMemoPageProjection,
+  MEMO_RIGHTS_NOTICE,
+} from '../../build/projections/memo-page-projection.js';
 import { buildMemoIndexProjection } from '../../build/projections/memo-index-projection.js';
 import { NoteLayout } from '../../src/layouts/NoteLayout.11ty.js';
 import {
@@ -129,5 +132,36 @@ describe('memo collection and shared reading surface', () => {
       { title: '同名', href: '/memos/a' },
       { title: '同名', href: '/memos/b' },
     ]);
+  });
+  it('renders the memo index in the shared page shell without duplicating the footer rights notice', () => {
+    const template = new MemoIndex();
+    const data = template.data();
+    expect(data.footerCopyrightText).toBe(MEMO_RIGHTS_NOTICE);
+
+    const empty = template.render({ memos: [] });
+    expect(empty).toContain(
+      '<section class="memo-index page-shell" aria-labelledby="memo-index-title">',
+    );
+    expect(empty).toContain('<div class="hero">');
+    expect(empty).toContain('<h1 id="memo-index-title" class="heading">メモ</h1>');
+    expect(empty).toContain('<div class="meta-row"><span>0件のメモ</span></div>');
+    expect(empty).toContain('data-empty-state');
+    expect(empty).toContain('公開中のメモはありません');
+    expect(empty).not.toContain('container-reading');
+    expect(empty).not.toContain(MEMO_RIGHTS_NOTICE);
+
+    const populated = template.render({
+      memos: fixtureMemos(),
+      siteUrlContext: { basePath: '/preview' },
+    });
+    expect(populated).toContain('<div class="meta-row"><span>2件のメモ</span></div>');
+    expect(populated).toContain('<ol class="results-list memo-index__list">');
+    expect(populated).toContain('<article class="result-card" data-result-card>');
+    expect(populated).toContain('class="result-link"');
+    expect(populated).toContain('data-link-surface="card"');
+    expect(populated).toContain('href="/preview/memos/example"');
+    expect(populated).toContain('<h2 class="result-title">合成メモ</h2>');
+    expect(populated).not.toContain('data-empty-state');
+    expect(populated).not.toContain(MEMO_RIGHTS_NOTICE);
   });
 });
