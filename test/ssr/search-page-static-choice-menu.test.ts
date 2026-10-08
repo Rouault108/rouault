@@ -171,9 +171,12 @@ describe('search page static choice menu contract', () => {
       expect(getTextContent(current as ElementNode).trim()).toBe(
         hasAttribute(menu, 'data-search-choice-menu') &&
           getAttribute(menu, 'data-search-choice-menu') === 'tag-mode'
-          ? 'すべて'
+          ? 'すべてに一致'
           : '新しい順',
       );
+      if (getAttribute(menu, 'data-search-choice-menu') === 'tag-mode') {
+        expect(getAttribute(summary as ElementNode, 'aria-describedby')).not.toBe(null);
+      }
     }
   });
 });

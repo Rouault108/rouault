@@ -47,7 +47,7 @@ const collectElements = (
 const elementChildren = (node: ElementNode): ElementNode[] => node.childNodes.filter(isElementNode);
 
 describe('renderSearchPageHtml static contract', () => {
-  it('tag browse order は allTagCounts、日本語照合、code unit に従い表示件数は tagCounts に従うこと', () => {
+  it('tag browse order は allTagCounts、日本語照合、code unit に従いOR候補件数はQに従うこと', () => {
     const initialState: SearchState = {
       q: '',
       tags: ['security', 'absent'],
@@ -96,7 +96,7 @@ describe('renderSearchPageHtml static contract', () => {
     for (const row of rows) {
       const tag = getAttribute(row, 'data-filter-tag') ?? '';
       const selected = initialState.tags.includes(tag);
-      const count = initialResponse.tagCounts[tag] ?? 0;
+      const count = initialResponse.allTagCounts[tag] ?? 0;
       const input = collectElements(row, (node) => node.tagName === 'input')[0];
       expect(input).toBeDefined();
       if (!input) throw new Error('Missing tag checkbox');
@@ -106,9 +106,19 @@ describe('renderSearchPageHtml static contract', () => {
       expect(getAttribute(input, 'checked') !== null).toBe(selected);
       expect(getAttribute(input, 'disabled') !== null).toBe(!selected && count === 0);
       expect(getAttribute(row, 'data-filter-count')).toBe(String(count));
-      expect(
-        collectElements(row, (node) => hasClass(node, 'filter-option-count'))[0]?.childNodes,
-      ).toMatchObject([{ nodeName: '#text', value: `${String(count)}件` }]);
+      expect(getAttribute(row, 'data-state')).toBe(
+        selected ? 'selected' : count === 0 ? 'disabled' : 'available',
+      );
+      const status = collectElements(row, (node) => hasClass(node, 'filter-option-count'))[0];
+      expect(status?.childNodes).toMatchObject([
+        {
+          nodeName: '#text',
+          value: selected ? `${String(count)}件・選択中` : `${String(count)}件`,
+        },
+      ]);
+      expect(getAttribute(input, 'aria-describedby')).toBe(
+        getAttribute(status as ElementNode, 'id'),
+      );
       expect(collectElements(row, (node) => node.tagName === 'label')).toHaveLength(1);
     }
   });
@@ -164,6 +174,10 @@ describe('renderSearchPageHtml static contract', () => {
     expect(rendered).toContain('data-search-query-clear');
     expect(rendered).toContain('name="q"');
     expect(rendered).toContain('data-search-choice-menu="tag-mode"');
+    expect(rendered).toContain('タグの組み合わせ');
+    expect(rendered).toContain('いずれかに一致');
+    expect(rendered).toContain('すべてに一致');
+    expect(rendered).toContain('data-search-tag-mode-description');
     expect(rendered).toContain('data-search-tag-mode-value');
     expect(rendered).toContain('name="tagMode"');
     expect(rendered).toContain('data-search-choice-menu="sort"');
@@ -224,6 +238,27 @@ describe('renderSearchPageHtml static contract', () => {
     expect(loading).toContain('class="search-page__loading-label"');
     expect(loading).toContain('data-search-page-loading');
     expect(loading).not.toContain('hidden data-search-page-loading');
+
+    const loadingWithTags = renderSearchPageHtml({
+      surface: { kind: 'search', baseline: { tags: [], corporaHref: '/corpora/' } },
+      initialState: { ...initialState, tags: ['architecture'], tagMode: 'and' },
+      initialResponse: buildStaticExploreResponse({
+        notes: [
+          {
+            title: 'Architecture',
+            permalink: '/notes/architecture/',
+            tags: ['architecture', 'music'],
+          },
+        ],
+      }),
+      siteUrlContext: DEFAULT_SITE_URL_CONTEXT,
+      loading: true,
+    });
+    expect(loadingWithTags).toContain('aria-busy="true" data-search-filter-list');
+    expect(loadingWithTags).toContain('data-state="pending"');
+    expect(loadingWithTags).toContain('data-count-status="pending"');
+    expect(loadingWithTags).toContain('件数を計算中');
+    expect(loadingWithTags).toContain('選択中・件数を計算中');
   });
 
   it('SSR result href は siteUrlContext の basePath を反映し、snippet matched segment を mark にすること', () => {
@@ -349,9 +384,7 @@ describe('renderSearchPageHtml static contract', () => {
 
     expect(emptyRendered).toContain('キーワードまたはタグで絞り込めます');
     expect(filteredRendered).toContain('一致するメモが見つかりません');
-    expect(filteredRendered).toContain(
-      '検索語を変えるか、タグの組み合わせや演算子を見直してください。',
-    );
+    expect(filteredRendered).toContain('検索語を変えるか、タグの組み合わせを見直してください。');
     expect(filteredRendered).toContain('class="empty-hint__icon" aria-hidden="true" hidden');
   });
 });

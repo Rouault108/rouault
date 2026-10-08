@@ -73,6 +73,16 @@ sourceReliabilityによる候補評価・tie-breakは終了する。単独Catalo
 SSRの`buildStaticExploreResponse`はcallerから渡されたpublication projectionだけを集計する。
 query評価やruntimeのQ/F集合を生成せず、`tagCounts`と`allTagCounts`は同じ静的集合を数える。
 runtimeはquery一致集合Qから`allTagCounts`、tag演算後の集合Fから`tagCounts`を生成する。
+検索ページの候補件数は、OR（「いずれかに一致」）では選択中タグの絞り込みを外したQの
+`allTagCounts`を表示し、追加後の増分や選択後総数として扱わない。AND（「すべてに一致」）では
+現在のFへ未選択タグを追加した結果件数として`tagCounts`を表示する。未選択0件だけを選択不可とし、
+選択済みタグは0件でも解除可能に保つ。タグ名のローカル絞り込みは候補行の可視性だけを変更し、
+Q/F、結果一覧、候補件数、候補順を変更しない。
+検索語・タグ・組み合わせの変更後から新しいresponseを受け取るまでは旧count mapを新条件へ
+再解釈しない。候補行を`aria-busy`な「件数を計算中」とし、候補操作と選択済み候補の解除は
+継続できるようにする。検索失敗時も旧件数を新条件の件数として表示しない。
+検索失敗後は`aria-busy`を解除して「件数を取得できません」へ移り、候補操作と選択済み候補の
+解除は継続できるようにする。新しい検索開始時だけ再び「件数を計算中」へ移る。
 静的responseへ`catalog-fallback`を付けず、runtime fallbackのsource diagnosticsと混同しない。
 
 artifact/body 15秒、Worker init/search各30秒、store 15秒、lexical全体45秒、Catalog 15秒を有限deadlineとする。
