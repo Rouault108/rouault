@@ -135,7 +135,16 @@ def assert_lexical_descriptor(origin: str, base_path: str, descriptor: object) -
 def router_artifact_pathname(route: str) -> str:
     if route == "/":
         return "/__router/index.router.json"
-    return f"/__router{route.rstrip('/')}/index.router.json"
+    # JavaScript の encodeURI(decodeURI(pathname)) と同じく、公開URLで予約文字を
+    # 表す percent triplet だけをもう一段escapeする。
+    uri_reserved = frozenset(";,/?:@&=+$#")
+
+    def escape_reserved_triplet(match: re.Match[str]) -> str:
+        value = chr(int(match.group(1), 16))
+        return f"%25{match.group(1).upper()}" if value in uri_reserved else match.group(0)
+
+    artifact_route = re.sub(r"%([0-9A-Fa-f]{2})", escape_reserved_triplet, route)
+    return f"/__router{artifact_route.rstrip('/')}/index.router.json"
 
 
 def validate_route_manifest(payload: object) -> tuple[list[str], str, str]:

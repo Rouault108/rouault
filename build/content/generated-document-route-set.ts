@@ -1,4 +1,5 @@
 import path from 'node:path';
+import { resolveRouterArtifactStoragePathname } from '../../shared/navigation/router-artifact-path.js';
 import type { SiteUrlContext } from '../../shared/site/site-url-context.js';
 import { normalizeRouaultPathname } from '../../shared/url/rouault-url-policy.js';
 import { buildTagPageCanonicalPathname } from '../../shared/search/tag-page-route.js';
@@ -152,18 +153,19 @@ export const resolveRouterArtifactFilePathFromHtmlFile = (
   outputDir: string,
   htmlFilePath: string,
 ): string | null => {
-  const relativeHtmlPath = resolveRelativeHtmlPath(outputDir, htmlFilePath);
-  if (relativeHtmlPath === null) {
+  const contentPathname = resolveContentPathnameFromHtmlFile(outputDir, htmlFilePath);
+  if (contentPathname === null) {
     return null;
   }
 
-  if (relativeHtmlPath === 'index.html') {
+  if (contentPathname === '/') {
     return path.join(outputDir, '__router', 'index.router.json');
   }
 
-  const relativeContentPath = relativeHtmlPath.endsWith('/index.html')
-    ? relativeHtmlPath.slice(0, -'/index.html'.length)
-    : relativeHtmlPath.slice(0, -path.extname(relativeHtmlPath).length);
+  const relativeContentPath = resolveRouterArtifactStoragePathname(contentPathname).replace(
+    /^\/+|\/+$/gu,
+    '',
+  );
 
   return path.join(outputDir, '__router', relativeContentPath, 'index.router.json');
 };

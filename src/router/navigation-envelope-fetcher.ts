@@ -9,6 +9,7 @@ import {
   NavigationEnvelopeContractError,
   NavigationEnvelopeHttpStatusError,
 } from './navigation-envelope-errors.js';
+import { resolveRouterArtifactPathname } from '../../shared/navigation/router-artifact-path.js';
 
 export interface FetchNavigationEnvelopeArtifactOptions {
   readonly normalizedUrl: InternalDocumentNormalizedUrl;
@@ -25,11 +26,9 @@ export const resolveNavigationEnvelopeArtifactUrl = (options: {
     publicUrl.pathname,
     options.siteUrlContext.basePath,
   );
-  const artifactPathname = routePathname.endsWith('/')
-    ? `${routePathname}index.router.json`
-    : `${routePathname}/index.router.json`;
+  const artifactPathname = resolveRouterArtifactPathname(routePathname);
   return applyBasePathToRenderHref({
-    pathname: `/__router${artifactPathname}`,
+    pathname: artifactPathname,
     search: publicUrl.search,
     hash: '',
     siteUrlContext: options.siteUrlContext,

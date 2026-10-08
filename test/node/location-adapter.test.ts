@@ -145,6 +145,9 @@ describe('LocationAdapter', () => {
         '/__router/notes/example/index.router.json?tab=overview',
       );
       expect(adapter.resolveSnapshotUrl('/')).to.equal('/__router/index.router.json');
+      expect(adapter.resolveSnapshotUrl('/tags/C%23/')).to.equal(
+        '/__router/tags/C%2523/index.router.json',
+      );
     });
   });
 

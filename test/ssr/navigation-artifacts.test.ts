@@ -124,7 +124,7 @@ describe('navigation artifacts static header contract', () => {
 
     expect(
       resolveRouterArtifactFilePathFromHtmlFile(dir, path.join(dir, 'tags', 'C#', 'index.html')),
-    ).toBe(path.join(dir, '__router', 'tags', 'C#', 'index.router.json'));
+    ).toBe(path.join(dir, '__router', 'tags', 'C%23', 'index.router.json'));
 
     expect(resolveContentPathnameFromHtmlFile(dir, path.join(dir, '404.html'))).toBeNull();
     expect(() =>
@@ -262,13 +262,13 @@ describe('navigation artifacts static header contract', () => {
         readFileSync(path.join(dir, '__router', 'about', 'index.router.json'), 'utf8'),
       ) as { readonly shell: { readonly headerHtml: string } };
       const csharpTagArtifact = JSON.parse(
-        readFileSync(path.join(dir, '__router', 'tags', 'C#', 'index.router.json'), 'utf8'),
+        readFileSync(path.join(dir, '__router', 'tags', 'C%23', 'index.router.json'), 'utf8'),
       ) as { readonly buildId: string };
       expect(artifact.shell.headerHtml).toContain('/base/search/');
       expect(aboutArtifact.shell.headerHtml).toContain('/base/search/');
       expect(csharpTagArtifact.buildId).toBe('build-test');
       expect(() =>
-        readFileSync(path.join(dir, '__router', 'tags', 'C%23', 'index.router.json'), 'utf8'),
+        readFileSync(path.join(dir, '__router', 'tags', 'C#', 'index.router.json'), 'utf8'),
       ).toThrow();
       expect(
         resolveGeneratedDocumentCurrentUrlFromHtmlFile({

@@ -12,4 +12,13 @@ describe('navigation envelope fetcher', () => {
       }),
     ).toBe('/__router/about/index.router.json');
   });
+
+  it('予約文字を含むdocument URLとは別のartifact URLを導出すること', () => {
+    expect(
+      resolveNavigationEnvelopeArtifactUrl({
+        normalizedUrl: toInternalDocumentNormalizedUrl('/tags/C%23/'),
+        siteUrlContext: createSiteUrlContext({ siteOrigin: 'https://example.com' }),
+      }),
+    ).toBe('/__router/tags/C%2523/index.router.json');
+  });
 });

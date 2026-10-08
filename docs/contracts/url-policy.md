@@ -69,7 +69,7 @@ Surface URLの所有Contractは`url-policy.md`および該当page/surface contra
 - `resolveRouaultContentPath()`はfetch target pathを導出する関数であり、公開canonicalを定義しない。
 - tag pageの公開canonicalは`/tags/{encodeURIComponent(tag)}/`であり、filesystem outputは安全なraw tag segmentを使う`tags/{tag}/index.html`である。公開canonicalをoutput filenameとして再利用してはならない。
 - tag segmentは空、`.`、`..`、path separator、ASCII controlを拒否する。`#`、`?`、`%`、Unicode等の有効な単一segmentは公開URLで一度だけencodeし、filesystemではraw segmentとして保持する。
-- router artifactの公開pathnameはcanonical routeから導出する一方、artifactのfilesystem outputは対応するHTMLのraw filesystem segmentから導出する。
+- router artifactは公開document pathnameと独立した内部URLを使う。予約文字のpercent tripletは内部URLでもう一段escapeし（例: `/tags/C%23/` → `/__router/tags/C%2523/index.router.json`）、artifact outputは`decodeURI`相当の安全な表現（例: `__router/tags/C%23/index.router.json`）へ置く。
 
 ### Permanent URL
 
