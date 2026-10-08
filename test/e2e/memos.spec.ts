@@ -2,6 +2,19 @@ import { expect, test, type Page } from '@playwright/test';
 import type { NavigationResult } from '../../src/router/router-types.js';
 import { MEMO_RIGHTS_NOTICE } from '../../build/projections/memo-page-projection.js';
 test.describe.configure({ retries: 0 });
+const DEFAULT_FOOTER_COPYRIGHT = `© ${new Date().getFullYear().toString()} Ruo Miyata. CC BY 4.0.`;
+
+const expectSharedDefaultFooter = async (page: Page): Promise<void> => {
+  const footer = page.locator('[data-layout-footer]');
+  await expect(footer.locator('.ui-footer__copyright')).toHaveText(DEFAULT_FOOTER_COPYRIGHT);
+  await expect(footer.locator('.ui-footer__build')).toHaveCount(1);
+  await expect(footer.locator('.ui-footer__build')).not.toHaveText('');
+  for (const label of ['メモ', '検索', 'このサイトについて']) {
+    await expect(footer.getByRole('link', { name: label, exact: true })).toHaveCount(1);
+  }
+  await expect(footer.getByText(MEMO_RIGHTS_NOTICE, { exact: true })).toHaveCount(0);
+};
+
 const waitForMemoRouterReady = async (page: Page): Promise<void> => {
   await page.waitForFunction(() => {
     const host = document.querySelector('router-document-host');
@@ -73,15 +86,24 @@ test('memo index, body, notes and history preserve the shared shell and TOC owne
 }) => {
   await page.goto('/memos/');
   await expect(page.getByRole('heading', { name: 'メモ', exact: true })).toBeVisible();
+  await expectSharedDefaultFooter(page);
   await waitForMemoRouterReady(page);
   await page.getByRole('link', { name: '合成メモ', exact: true }).click();
   await expect(page).toHaveURL(/\/memos\/example$/u);
+  await expectSharedDefaultFooter(page);
   await expect(page.locator('.note-shell')).toHaveAttribute('data-sidebar-presence', 'absent');
   await expect(page.locator('[data-layout-toc-nav]')).toBeVisible();
+  await expect(
+    page.locator('#main-content').getByText(MEMO_RIGHTS_NOTICE, { exact: true }),
+  ).toHaveCount(0);
+  await expect(page.locator('#main-content').getByText('CC BY 4.0', { exact: true })).toHaveCount(
+    1,
+  );
   await page.locator('aside[data-layout-sidebar-root]').evaluate((node) => {
     node.setAttribute('data-synthetic-identity', 'persistent');
   });
   await page.getByRole('link', { name: '別の合成メモ', exact: true }).click();
+  await expectSharedDefaultFooter(page);
   await expect(page.locator('.note-shell')).toHaveAttribute('data-toc-presence', 'absent');
   await expect(page.locator('aside[data-layout-sidebar-root]')).toHaveAttribute(
     'data-synthetic-identity',
@@ -89,27 +111,47 @@ test('memo index, body, notes and history preserve the shared shell and TOC owne
   );
   await page.goBack();
   await expect(page).toHaveURL(/\/memos\/example$/u);
+  await expectSharedDefaultFooter(page);
   await expect(page.locator('[data-layout-toc-nav]')).toBeVisible();
   await page.goForward();
   await expect(page).toHaveURL(/\/memos\/no-headings$/u);
+  await expectSharedDefaultFooter(page);
   await page.reload();
   await expect(
     page.getByRole('heading', { name: '見出しのない合成メモ', exact: true }),
   ).toBeVisible();
+  await expectSharedDefaultFooter(page);
   await page.goto('/notes/testing/reader-basic');
   await expect(page.locator('.note-shell')).toHaveAttribute('data-sidebar-presence', 'present');
+  await expectSharedDefaultFooter(page);
   await page
     .locator('[data-layout-footer]')
     .getByRole('link', { name: 'メモ', exact: true })
     .click();
   await expect(page).toHaveURL(/\/memos\/$/u);
+  await expectSharedDefaultFooter(page);
   await expect(page.locator('aside[data-layout-sidebar-root] [data-sidebar-nav]')).toHaveCount(0);
-  await expect(page.locator('#main-content').getByText(MEMO_RIGHTS_NOTICE, { exact: true })).toHaveCount(
-    0,
-  );
   await expect(
-    page.locator('[data-layout-footer]').getByText(MEMO_RIGHTS_NOTICE, { exact: true }),
-  ).toHaveCount(1);
+    page.locator('#main-content').getByText(MEMO_RIGHTS_NOTICE, { exact: true }),
+  ).toHaveCount(0);
+  await page.getByRole('link', { name: '合成メモ', exact: true }).click();
+  await expect(page).toHaveURL(/\/memos\/example$/u);
+  await expectSharedDefaultFooter(page);
+  await page.goBack();
+  await expect(page).toHaveURL(/\/memos\/$/u);
+  await expectSharedDefaultFooter(page);
+  await page.goBack();
+  await expect(page).toHaveURL(/\/notes\/testing\/reader-basic$/u);
+  await expectSharedDefaultFooter(page);
+  await page.goForward();
+  await expect(page).toHaveURL(/\/memos\/$/u);
+  await expectSharedDefaultFooter(page);
+  await page.goForward();
+  await expect(page).toHaveURL(/\/memos\/example$/u);
+  await expectSharedDefaultFooter(page);
+  await page.locator('[data-layout-footer] .ui-footer__site a').click();
+  await expect.poll(() => new URL(page.url()).pathname).toBe('/');
+  await expectSharedDefaultFooter(page);
 });
 test('memo index uses the shared page shell across widths and color schemes', async ({
   browser,
@@ -144,9 +186,7 @@ test('memo index uses the shared page shell across widths and color schemes', as
         );
         await expect(shell.locator('.container-reading')).toHaveCount(0);
         await expect(shell.getByText(MEMO_RIGHTS_NOTICE, { exact: true })).toHaveCount(0);
-        await expect(
-          page.locator('[data-layout-footer]').getByText(MEMO_RIGHTS_NOTICE, { exact: true }),
-        ).toHaveCount(1);
+        await expectSharedDefaultFooter(page);
 
         const geometry = await page.evaluate(() => {
           const shellElement = document.querySelector<HTMLElement>('#main-content .memo-index');
@@ -170,6 +210,14 @@ test('memo index uses the shared page shell across widths and color schemes', as
         expect(geometry.separated, `${viewport.name}/${colorScheme} hero/results spacing`).toBe(
           true,
         );
+
+        await shell.getByRole('link', { name: '合成メモ', exact: true }).click();
+        await expect(page).toHaveURL(/\/memos\/example$/u);
+        await expect(page.locator('html')).toHaveAttribute('data-resolved-theme', colorScheme);
+        await expectSharedDefaultFooter(page);
+        await expect(
+          page.locator('#main-content').getByText('CC BY 4.0', { exact: true }),
+        ).toHaveCount(1);
       } finally {
         await context.close();
       }
@@ -228,6 +276,7 @@ test('memo mobile TOC works through the existing header and keyboard contracts',
 }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/memos/example');
+  await expectSharedDefaultFooter(page);
   const trigger = page.locator('header[data-layout-header] [data-toc-trigger]');
   await expect(trigger).toHaveAttribute('data-toc-trigger-interactive', 'true');
   await trigger.focus();
@@ -247,5 +296,6 @@ test.describe('memo no-JS reading', () => {
     await expect(
       page.locator('[data-layout-footer]').getByRole('link', { name: 'メモ', exact: true }),
     ).toBeVisible();
+    await expectSharedDefaultFooter(page);
   });
 });

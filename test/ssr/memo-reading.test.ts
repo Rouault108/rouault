@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { buildMemosCollection, loadMemosData } from '../../build/data/memos.js';
 import { collectAdoptedContentSources } from '../../build/content/publication-snapshot.js';
 import MemoIndex from '../../src/memos-index.11ty.js';
+import MemoPages from '../../src/memos.11ty.js';
 import {
   buildMemoPageProjection,
   MEMO_RIGHTS_NOTICE,
@@ -107,6 +108,8 @@ describe('memo collection and shared reading surface', () => {
     expect(projection.tocPresence).toBe('present');
     expect(projection.toc.capabilities.mobilePanel).toBe(true);
     expect(projection.articleHeader.genres).toEqual([]);
+    expect(projection.articleHeader.license).toBe('CC BY 4.0');
+    expect(projection.rightsNotice).toBe(MEMO_RIGHTS_NOTICE);
     const html = new NoteLayout().render({ notePage: projection });
     expect(html).toContain('data-sidebar-presence="absent"');
     expect(html).toContain('data-layout-toc-nav');
@@ -139,10 +142,10 @@ describe('memo collection and shared reading surface', () => {
       { title: '同名', href: '/memos/b' },
     ]);
   });
-  it('renders the memo index in the shared page shell without duplicating the footer rights notice', () => {
+  it('uses shared default footer metadata for memo index and body templates', () => {
     const template = new MemoIndex();
-    const data = template.data();
-    expect(data.footerCopyrightText).toBe(MEMO_RIGHTS_NOTICE);
+    expect(template.data()).not.toHaveProperty('footerCopyrightText');
+    expect(new MemoPages().data()).not.toHaveProperty('footerCopyrightText');
 
     const empty = template.render({ memos: [] });
     expect(empty).toContain(
@@ -153,6 +156,7 @@ describe('memo collection and shared reading surface', () => {
     expect(empty).toContain('<div class="meta-row"><span>0件のメモ</span></div>');
     expect(empty).toContain('data-empty-state');
     expect(empty).toContain('公開中のメモはありません');
+    expect(empty).not.toContain('empty-hint__icon');
     expect(empty).not.toContain('container-reading');
     expect(empty).not.toContain(MEMO_RIGHTS_NOTICE);
 

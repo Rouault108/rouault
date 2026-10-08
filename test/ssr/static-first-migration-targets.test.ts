@@ -81,7 +81,7 @@ const EXPECTED_MIGRATION_TARGETS = [
     status: 'static-helper',
     functionalCompatibility: 'partial',
     replacementContract:
-      'Corpus pages render empty-hint[data-empty-state] through static empty-state HTML for the supported page-local variants.',
+      'Corpus pages and the memo index render empty-hint[data-empty-state] through static empty-state HTML for the supported page-local variants.',
     retainedDesignContract:
       'Empty states stay calm, page-local reading aids with escaped heading and description content.',
     removedDesignContract: [

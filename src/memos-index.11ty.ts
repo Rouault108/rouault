@@ -1,6 +1,5 @@
 import type { MemoRecord } from '../build/data/memos.js';
 import { buildMemoIndexProjection } from '../build/projections/memo-index-projection.js';
-import { MEMO_RIGHTS_NOTICE } from '../build/projections/memo-page-projection.js';
 import { renderEmptyStateHtml } from './layouts/empty-state-html.js';
 import { escapeHtmlText, escapeHtmlAttribute } from './layouts/html-output.js';
 
@@ -38,7 +37,6 @@ export default class MemoIndex {
       layout: 'base',
       title: 'メモ',
       permalink: '/memos/index.html',
-      footerCopyrightText: MEMO_RIGHTS_NOTICE,
     };
   }
   render(data: { memos?: MemoRecord[]; siteUrlContext?: { basePath: string } }) {

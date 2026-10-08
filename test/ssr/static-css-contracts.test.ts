@@ -3388,6 +3388,10 @@ describe('static CSS contracts', () => {
 
     const empty = readCss('empty-state.css');
     expectRuleToDeclare(empty, '.empty-hint__message', ['inline-size: min(100%, 40ch)']);
+    expectRuleToDeclare(empty, ".empty-hint[data-empty-variant='error'] .empty-hint__heading", [
+      'color:',
+    ]);
+    expect(empty).not.to.contain('.empty-hint__icon');
     expect(empty).to.contain('@keyframes empty-state-enter');
 
     const corpora = readCss('page-corpora.css');

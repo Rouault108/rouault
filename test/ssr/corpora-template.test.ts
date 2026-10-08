@@ -107,7 +107,7 @@ describe('CorpusPagesTemplate', () => {
       '<section class="empty-hint" data-empty-state data-empty-variant="default">',
     );
     expect(rendered).toContain('<div class="empty-hint__message" data-announce="off">');
-    expect(rendered).toContain('<div class="empty-hint__icon" aria-hidden="true"></div>');
+    expect(rendered).not.toContain('empty-hint__icon');
     expect(rendered).toContain(
       '<h2 class="empty-hint__heading">このコーパスの公開ノートはまだありません</h2>',
     );

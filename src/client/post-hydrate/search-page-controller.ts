@@ -508,10 +508,6 @@ const createSearchPageEmptyState = (document: Document, state: SearchState): HTM
   illustration.className = 'empty-hint__illustration';
   illustration.setAttribute('aria-hidden', 'true');
   illustration.hidden = true;
-  const icon = document.createElement('div');
-  icon.className = 'empty-hint__icon';
-  icon.setAttribute('aria-hidden', 'true');
-  icon.hidden = true;
   const heading = document.createElement('h2');
   heading.className = 'empty-hint__heading';
   heading.textContent = hasConditions
@@ -522,7 +518,7 @@ const createSearchPageEmptyState = (document: Document, state: SearchState): HTM
   description.textContent = hasConditions
     ? '検索語を変えるか、タグの組み合わせを見直してください。'
     : 'ヘッダーのダイアログは即時検索、ここではタグの組み合わせも含めて一覧で比較できます。';
-  message.append(illustration, icon, heading, description);
+  message.append(illustration, heading, description);
   const actions = document.createElement('div');
   actions.className = 'empty-hint__actions';
   actions.hidden = true;

@@ -2,9 +2,9 @@
 
 ## 位置づけ
 
-Static empty stateは、旧`ui-empty-state` custom elementを復活させずに、静的HTMLとしてcorpus系の空状態を出力するための契約である。
+Static empty stateは、旧`ui-empty-state` custom elementを復活させずに、静的HTMLとしてcorpus系とmemo indexの空状態を出力するための契約である。
 
-正本のrendererは`src/layouts/empty-state-html.ts`の`renderEmptyStateHtml()`とする。このrendererは`corpus-page`と`corpora-overview`の空状態だけを対象にし、search pageのsearch empty stateには適用しない。
+正本のrendererは`src/layouts/empty-state-html.ts`の`renderEmptyStateHtml()`とする。このrendererは`corpus-page`、`corpora-overview`、`memo-index`の空状態を対象にし、search pageのsearch empty stateには適用しない。
 
 ## API
 
@@ -29,7 +29,7 @@ rendererは次の静的構造を維持する。
 
 - wrapperは`.empty-hint[data-empty-state][data-empty-variant="default"]`を持つ。
 - message wrapperは`.empty-hint__message`を持つ。
-- icon wrapperは空の`.empty-hint__icon[aria-hidden="true"]`として出力する。
+- 装飾用のicon wrapperは出力しない。
 - actions regionは空の`.empty-hint__actions[hidden]`として出力する。
 - `ui-empty-state` custom elementは出力しない。
 
@@ -45,7 +45,7 @@ rendererは次の静的構造を維持する。
 
 search pageのempty stateは`src/layouts/search-page-html.ts`とpost-hydrate search controllerの契約に属する。`renderEmptyStateHtml()`はsearch variant、search-specific data attribute、search result stateの文言分岐を所有しない。
 
-## Corpus Examples
+## Corpus and Memo Examples
 
 `corpus-page`では、公開ノートがない場合に次の文脈で使用する。
 
@@ -61,6 +61,14 @@ renderEmptyStateHtml({
 renderEmptyStateHtml({
   heading: '公開コーパスはまだありません',
   description: 'コーパス対象のノートが公開されると、ここにコーパス一覧が表示されます。',
+});
+```
+
+`memo-index`では、公開メモがない場合に次の文脈で使用する。
+
+```ts
+renderEmptyStateHtml({
+  heading: '公開中のメモはありません',
 });
 ```
 

@@ -7,12 +7,12 @@ import {
 } from '../../src/layouts/empty-state-html.js';
 
 describe('static empty state html renderer', () => {
-  it('exposes only the corpus static empty-state variant and announce values', () => {
+  it('exposes only the shared static empty-state variant and announce values', () => {
     expect(EMPTY_STATE_VARIANTS).toEqual(['default']);
     expect(EMPTY_STATE_ANNOUNCE_VALUES).toEqual(['off', 'polite']);
   });
 
-  it('renders the corpus empty-state structure without restoring ui-empty-state', () => {
+  it('renders the shared empty-state structure without a decorative icon or ui-empty-state', () => {
     const rendered = renderEmptyStateHtml({
       heading: '公開コーパスはまだありません',
       description: 'コーパス対象のノートが公開されると、ここにコーパス一覧が表示されます。',
@@ -22,7 +22,7 @@ describe('static empty state html renderer', () => {
       '<section class="empty-hint" data-empty-state data-empty-variant="default">',
     );
     expect(rendered).toContain('<div class="empty-hint__message" data-announce="off">');
-    expect(rendered).toContain('<div class="empty-hint__icon" aria-hidden="true"></div>');
+    expect(rendered).not.toContain('empty-hint__icon');
     expect(rendered).toContain('<h2 class="empty-hint__heading">公開コーパスはまだありません</h2>');
     expect(rendered).toContain(
       '<p class="empty-hint__description">コーパス対象のノートが公開されると、ここにコーパス一覧が表示されます。</p>',

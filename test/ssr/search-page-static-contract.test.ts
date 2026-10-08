@@ -385,6 +385,7 @@ describe('renderSearchPageHtml static contract', () => {
     expect(emptyRendered).toContain('キーワードまたはタグで絞り込めます');
     expect(filteredRendered).toContain('一致するメモが見つかりません');
     expect(filteredRendered).toContain('検索語を変えるか、タグの組み合わせを見直してください。');
-    expect(filteredRendered).toContain('class="empty-hint__icon" aria-hidden="true" hidden');
+    expect(emptyRendered).not.toContain('empty-hint__icon');
+    expect(filteredRendered).not.toContain('empty-hint__icon');
   });
 });
