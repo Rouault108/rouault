@@ -105,53 +105,68 @@ test('memo index, body, notes and history preserve the shared shell and TOC owne
   await expect(page).toHaveURL(/\/memos\/$/u);
   await expect(page.locator('aside[data-layout-sidebar-root] [data-sidebar-nav]')).toHaveCount(0);
 });
-test('memo index uses the shared page shell across widths and color schemes', async ({ page }) => {
+test('memo index uses the shared page shell across widths and color schemes', async ({
+  browser,
+  baseURL,
+}) => {
+  expect(baseURL).toBeTruthy();
   for (const viewport of [
     { name: 'wide', width: 1280, height: 900 },
     { name: 'narrow', width: 390, height: 844 },
   ] as const) {
     for (const colorScheme of ['light', 'dark'] as const) {
-      await page.setViewportSize(viewport);
-      await page.emulateMedia({ colorScheme });
-      const response = await page.goto('/memos/');
-      expect(response?.ok(), `${viewport.name}/${colorScheme} HTTP response`).toBe(true);
-
-      const shell = page.locator('#main-content .memo-index.page-shell');
-      await expect(shell).toBeVisible();
-      await expect(page.locator('html')).toHaveAttribute('data-resolved-theme', colorScheme);
-      await expect(shell.getByRole('heading', { name: 'メモ', level: 1 })).toBeVisible();
-      await expect(shell.locator('.meta-row')).toHaveText('2件のメモ');
-      await expect(shell.locator('.memo-index__list > .memo-index__item')).toHaveCount(2);
-      await expect(shell.locator('.result-card')).toHaveCount(2);
-      await expect(shell.getByRole('link', { name: '合成メモ', exact: true })).toHaveAttribute(
-        'data-link-surface',
-        'card',
-      );
-      await expect(shell.locator('.container-reading')).toHaveCount(0);
-      await expect(shell.getByText(MEMO_RIGHTS_NOTICE, { exact: true })).toHaveCount(0);
-      await expect(
-        page.locator('[data-layout-footer]').getByText(MEMO_RIGHTS_NOTICE, { exact: true }),
-      ).toHaveCount(1);
-
-      const geometry = await page.evaluate(() => {
-        const shellElement = document.querySelector<HTMLElement>('#main-content .memo-index');
-        const hero = shellElement?.querySelector<HTMLElement>('.hero');
-        const results = shellElement?.querySelector<HTMLElement>('.results-section');
-        const heroRect = hero?.getBoundingClientRect();
-        const resultsRect = results?.getBoundingClientRect();
-        return {
-          clientWidth: document.documentElement.clientWidth,
-          scrollWidth: document.documentElement.scrollWidth,
-          separated:
-            heroRect !== undefined &&
-            resultsRect !== undefined &&
-            resultsRect.top > heroRect.bottom,
-        };
+      const context = await browser.newContext({
+        baseURL,
+        viewport: { width: viewport.width, height: viewport.height },
+        colorScheme,
       });
-      expect(geometry.scrollWidth, `${viewport.name}/${colorScheme} horizontal overflow`).toBeLessThanOrEqual(
-        geometry.clientWidth,
-      );
-      expect(geometry.separated, `${viewport.name}/${colorScheme} hero/results spacing`).toBe(true);
+      const page = await context.newPage();
+      try {
+        const response = await page.goto('/memos/');
+        expect(response?.status(), `${viewport.name}/${colorScheme} HTTP status`).toBe(200);
+
+        const shell = page.locator('#main-content .memo-index.page-shell');
+        await expect(shell).toBeVisible();
+        await expect(page.locator('html')).toHaveAttribute('data-resolved-theme', colorScheme);
+        await expect(shell.getByRole('heading', { name: 'メモ', level: 1 })).toBeVisible();
+        await expect(shell.locator('.meta-row')).toHaveText('2件のメモ');
+        await expect(shell.locator('.memo-index__list > .memo-index__item')).toHaveCount(2);
+        await expect(shell.locator('.result-card')).toHaveCount(2);
+        await expect(shell.getByRole('link', { name: '合成メモ', exact: true })).toHaveAttribute(
+          'data-link-surface',
+          'card',
+        );
+        await expect(shell.locator('.container-reading')).toHaveCount(0);
+        await expect(shell.getByText(MEMO_RIGHTS_NOTICE, { exact: true })).toHaveCount(0);
+        await expect(
+          page.locator('[data-layout-footer]').getByText(MEMO_RIGHTS_NOTICE, { exact: true }),
+        ).toHaveCount(1);
+
+        const geometry = await page.evaluate(() => {
+          const shellElement = document.querySelector<HTMLElement>('#main-content .memo-index');
+          const hero = shellElement?.querySelector<HTMLElement>('.hero');
+          const results = shellElement?.querySelector<HTMLElement>('.results-section');
+          const heroRect = hero?.getBoundingClientRect();
+          const resultsRect = results?.getBoundingClientRect();
+          return {
+            clientWidth: document.documentElement.clientWidth,
+            scrollWidth: document.documentElement.scrollWidth,
+            separated:
+              heroRect !== undefined &&
+              resultsRect !== undefined &&
+              resultsRect.top > heroRect.bottom,
+          };
+        });
+        expect(
+          geometry.scrollWidth,
+          `${viewport.name}/${colorScheme} horizontal overflow`,
+        ).toBeLessThanOrEqual(geometry.clientWidth);
+        expect(geometry.separated, `${viewport.name}/${colorScheme} hero/results spacing`).toBe(
+          true,
+        );
+      } finally {
+        await context.close();
+      }
     }
   }
 });
