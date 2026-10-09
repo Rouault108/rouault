@@ -4,7 +4,7 @@ import {
 } from '../navigation/history-entry.js';
 import {
   captureFeatureSource,
-  beginFeatureNavigation,
+  beginNativeNavigation,
   readContentContext,
 } from '../navigation/content-navigation-context.js';
 import {
@@ -127,7 +127,13 @@ export class RouterLinkInterceptor {
         nativeTarget.search === location.search &&
         nativeTarget.hash
       ) {
-        if (readContentContext() && !beginFeatureNavigation(captureFeatureSource(anchor)))
+        if (
+          readContentContext() &&
+          !beginNativeNavigation(
+            captureFeatureSource(anchor),
+            nativeTarget.pathname + nativeTarget.search + nativeTarget.hash,
+          )
+        )
           event.preventDefault();
         else document.dispatchEvent(new Event('reading-position:native-start'));
       }
@@ -167,7 +173,14 @@ export class RouterLinkInterceptor {
     const normalizedCurrentWithoutHash = this.location.stripHash(currentAbsoluteUrl);
 
     if (normalizedTargetWithoutHash === normalizedCurrentWithoutHash && targetUrl.hash) {
-      if (readContentContext() && !beginFeatureNavigation(captureFeatureSource(anchor))) {
+      const nativeTarget = new URL(anchor.href);
+      if (
+        readContentContext() &&
+        !beginNativeNavigation(
+          captureFeatureSource(anchor),
+          nativeTarget.pathname + nativeTarget.search + nativeTarget.hash,
+        )
+      ) {
         event.preventDefault();
         return;
       }

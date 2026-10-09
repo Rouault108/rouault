@@ -115,7 +115,12 @@ export const adoptContentBinding = (
 ): void => {
   if (!context) return;
   const binding = { url, entryId };
-  context = { ...context, displayedBinding: binding, addressBinding: binding, mutation: false };
+  context = {
+    ...context,
+    displayedBinding: binding,
+    addressBinding: { entryId: readHistoryEntry()?.id ?? null, url: readAddress() },
+    mutation: false,
+  };
   emit('adopt', 'router');
 };
 export const captureFeatureSource = (element: HTMLElement): FeatureSource => ({
@@ -146,6 +151,28 @@ export const beginFeatureNavigation = (
     cause,
   };
 };
+
+export const beginNativeNavigation = (
+  source: FeatureSource,
+  url: string,
+): NavigationIntent | null => {
+  if (!isFeatureSourceCurrent(source)) return null;
+  return beginNavigationIntent('native-navigation', url, 'native');
+};
+export const adoptNativeNavigationIntent = (url: string): NavigationIntent => {
+  const pending = context?.intent;
+  if (
+    !pending ||
+    pending.signal.aborted ||
+    pending.cause !== 'native-navigation' ||
+    pending.target.url !== url
+  )
+    return beginNavigationIntent('native-navigation', url, 'native');
+  const intent = { ...pending, target: { entryId: readHistoryEntry()?.id ?? null, url } };
+  if (context) context = { ...context, intent, addressBinding: intent.target };
+  return intent;
+};
+
 export const isFeatureTokenCurrent = (source: FeatureSource, token: FeatureToken): boolean =>
   isFeatureSourceCurrent(source) &&
   token.intentId === intentCounter &&

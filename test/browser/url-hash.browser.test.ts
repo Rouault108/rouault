@@ -8,7 +8,7 @@ import {
 } from '../../src/router/url-hash.js';
 
 describe('url-hash', () => {
-  it('hash 更新時に既存の history.state をそのまま保持すること', () => {
+  it('hash 更新時に既存foreign stateを保持し管理IDを併記すること', () => {
     const originalPushState = history.pushState.bind(history);
     const originalReplaceState = history.replaceState.bind(history);
     const originalStateDescriptor = Object.getOwnPropertyDescriptor(history, 'state');
@@ -30,7 +30,10 @@ describe('url-hash', () => {
       const nextUrl = updateHashInCurrentUrl('intro', 'push');
 
       expect(nextUrl).to.equal(`${window.location.pathname}${window.location.search}#intro`);
-      expect(capturedState).to.deep.equal(currentState);
+      expect(capturedState).toEqual({
+        ...currentState,
+        __rouaultHistoryEntry: { version: 1, id: expect.any(String) },
+      });
     } finally {
       history.pushState = originalPushState;
       history.replaceState = originalReplaceState;
@@ -43,7 +46,7 @@ describe('url-hash', () => {
     }
   });
 
-  it('現在URLに hash を追加する際も既存 state を再利用すること', () => {
+  it('現在URLに hash を追加する際も既存foreign stateを保持し管理IDを併記すること', () => {
     const originalPushState = history.pushState.bind(history);
     const originalUrl = `${window.location.pathname}${window.location.search}${window.location.hash}`;
     const originalStateDescriptor = Object.getOwnPropertyDescriptor(history, 'state');
@@ -67,7 +70,10 @@ describe('url-hash', () => {
 
       expect(nextUrl).to.equal(`${window.location.pathname}${window.location.search}#intro`);
       expect(capturedUrl).to.equal(`${window.location.pathname}${window.location.search}#intro`);
-      expect(capturedState).to.deep.equal(currentState);
+      expect(capturedState).toEqual({
+        ...currentState,
+        __rouaultHistoryEntry: { version: 1, id: expect.any(String) },
+      });
     } finally {
       history.pushState = originalPushState;
       history.replaceState({}, '', originalUrl);

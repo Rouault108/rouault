@@ -31,8 +31,8 @@ export class RouterDocumentHostPostRenderController {
     this.reading.dispose();
   }
 
-  terminal(committed: boolean): void {
-    this.reading.terminal(committed);
+  terminal(committed: boolean, intentId: number): void {
+    this.reading.terminal(committed, intentId);
   }
 
   initialize(host: HTMLElement): void {

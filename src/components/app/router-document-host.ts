@@ -237,8 +237,11 @@ export class RouterDocumentHost extends HTMLElement {
     });
 
     router.on('after:navigate', (result) => {
-      this._postRenderController.terminal(result.committed);
       this._dispatchNavigationCommitted(result);
+    });
+
+    router.on('navigation:terminal', ({ result, intentId }) => {
+      this._postRenderController.terminal(result.committed, intentId);
     });
 
     router.on('diagnostic', (diagnostic) => {

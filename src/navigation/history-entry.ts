@@ -167,12 +167,16 @@ export const observeBrowserAddressChange = (options: {
     const cause =
       entry !== null && entry.id !== options.getEntryId()
         ? 'traverse'
-        : (entry === null || entry.id === options.getEntryId()) &&
+        : entry === null &&
+            displayed.hash !== address.hash &&
             displayed.pathname === address.pathname &&
             displayed.search === address.search
           ? 'native-fragment-unidentified'
           : 'untracked-traverse';
-    const adopted = cause === 'native-fragment-unidentified' ? adoptHistoryEntry(true) : entry;
+    const adopted =
+      cause === 'native-fragment-unidentified'
+        ? adoptHistoryEntry(true)
+        : (entry ?? adoptHistoryEntry());
     lastId = adopted?.id ?? null;
     options.onChange({ url, entry: adopted, cause, serial: ++serial });
   };

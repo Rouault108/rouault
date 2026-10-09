@@ -115,7 +115,10 @@ export class HydrationScheduler {
     this.activeContentSession?.controller.abort();
   }
 
-  async hydrateContent(root: ParentNode, options: HydrationSchedulerOptions = {}): Promise<void> {
+  async hydrateContent(
+    root: ParentNode,
+    options: HydrationSchedulerOptions = {},
+  ): Promise<HydrationDiagnostics> {
     this.activeContentSession?.controller.abort();
 
     const session = {
@@ -136,7 +139,7 @@ export class HydrationScheduler {
       session.controller.signal.aborted ||
       !session.isCurrent()
     ) {
-      return;
+      return finalizeHydrationDiagnostics(prepared.diagnostics);
     }
 
     void Promise.all([
@@ -163,6 +166,7 @@ export class HydrationScheduler {
         options.dispatchTarget ?? null,
       );
     });
+    return finalizeHydrationDiagnostics(prepared.diagnostics);
   }
 
   #dispatchDiagnostics(

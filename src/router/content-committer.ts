@@ -92,6 +92,10 @@ export class ContentCommitter {
     const previousMetaDescription =
       document.querySelector('meta[name="description"]')?.getAttribute('content') ?? null;
     const previousUrl = this.location.readCurrentUrl();
+    const previousBinding = readContentContext()?.displayedBinding ?? {
+      entryId: null,
+      url: previousUrl,
+    };
     const previousShellCommitId = readCurrentShellCommitId();
     const shellCommitId = reserveShellCommitId();
 
@@ -178,6 +182,7 @@ export class ContentCommitter {
         previousTitle,
         previousMetaDescription,
         previousUrl,
+        previousBinding,
         previousShellCommitId,
         failedShellCommitId: shellCommitId,
         failedNavigationUrl: request.normalizedUrl,
@@ -252,6 +257,7 @@ export class ContentCommitter {
     previousTitle: string;
     previousMetaDescription: string | null;
     previousUrl: string;
+    previousBinding: import('../navigation/content-navigation-context.js').ContentBinding;
     previousShellCommitId: number;
     failedShellCommitId: number;
     failedNavigationUrl: string;
@@ -294,6 +300,8 @@ export class ContentCommitter {
       dispatchShellRestored({
         header: document.querySelector<HTMLElement>(STATIC_HEADER_ROOT_SELECTOR),
         restoredUrl: args.previousUrl,
+        contentEpoch: readContentContext()?.contentEpoch ?? 0,
+        contentBinding: args.previousBinding,
         failedNavigationUrl: args.failedNavigationUrl,
         restoredShellCommitId: args.previousShellCommitId,
         failedShellCommitId: args.failedShellCommitId,

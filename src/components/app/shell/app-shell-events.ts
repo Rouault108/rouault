@@ -21,6 +21,8 @@ export interface AppShellValidatedDetail extends AppShellCommittedDetail {
 }
 
 export interface AppShellRestoredDetail {
+  readonly contentEpoch?: number;
+  readonly contentBinding?: { readonly entryId: string | null; readonly url: string };
   readonly header: HTMLElement | null;
   readonly restoredUrl: string;
   readonly failedNavigationUrl: string;

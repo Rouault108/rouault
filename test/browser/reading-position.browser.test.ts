@@ -11,6 +11,8 @@ import {
   adoptContentBinding,
   beginContentMutation,
   beginFeatureNavigation,
+  beginNativeNavigation,
+  adoptNativeNavigationIntent,
   beginNavigationIntent,
   captureFeatureSource,
   initializeContentContext,
@@ -25,6 +27,12 @@ import {
 } from '../../src/client/hydration/content-readiness.js';
 import { HydrationScheduler } from '../../src/client/hydration/scheduler.js';
 import { HYDRATION_REGISTRY_BY_TAG } from '../../src/client/hydration/registry.js';
+import { TabsUrlSyncController } from '../../src/components/ui/tabs/tabs-url-sync-controller.js';
+import {
+  clearTabsUrlSyncStrategy,
+  registerTabsUrlSyncStrategy,
+} from '../../src/components/ui/tabs/tabs-url-sync-strategy.js';
+import { primaryTabTabsUrlSyncStrategy } from '../../src/components/app/navigation/primary-tab-url-state.js';
 import { ReadingPositionController } from '../../src/components/app/controllers/reading-position-controller.js';
 
 const originalUrl = readAddress();
@@ -32,6 +40,7 @@ let root: HTMLElement | null = null;
 let reader: ReadingPositionController | null = null;
 let stop: (() => void) | null = null;
 afterEach(() => {
+  clearTabsUrlSyncStrategy();
   reader?.dispose();
   reader = null;
   stop?.();
@@ -267,8 +276,8 @@ describe('復元の待機とdurable境界', () => {
     let pending = true;
     // resource状態だけを制御し、range・scroll位置は実DOMで観測する。
     Object.defineProperty(image, 'complete', { get: () => !pending });
-    content.prepend(image);
     const intent = beginNavigationIntent('traverse', readAddress());
+    content.prepend(image);
     reader.schedule({
       intent,
       root: content,
@@ -348,4 +357,176 @@ describe('復元の待機とdurable境界', () => {
     expect(activated).toBe(1);
     expect(content.querySelector('[data-activated="true"]')).not.toBeNull();
   });
+});
+
+describe('tabsと凍結したtraverse候補', () => {
+  it('旧本文の即時/microtask/frame同期は宛先のURL/stateを正規化しない（B2）', async () => {
+    await setup();
+    if (!root) throw new Error('root');
+    const content = root;
+    let projections = 0;
+    registerTabsUrlSyncStrategy(primaryTabTabsUrlSyncStrategy);
+    const tabs = new TabsUrlSyncController({
+      getHostElement: () => content,
+      isUrlSyncEnabled: () => true,
+      getActiveValue: () => 'javascript',
+      resolveTabValueForHash: () => 'rust',
+      clearControlledSelection: () => {
+        projections++;
+      },
+      onUrlStateChanged: () => {
+        projections++;
+      },
+    });
+    tabs.hostConnected();
+    try {
+      const target = new URL(readAddress(), location.origin);
+      target.searchParams.set('tab', 'javascript');
+      target.hash = 'foreign-heading';
+      writeHistoryEntry({
+        mode: 'push',
+        owner: 'router',
+        url: target.pathname + target.search + target.hash,
+      });
+      const expected = readAddress();
+      const id = readHistoryEntry()?.id;
+      window.dispatchEvent(new PopStateEvent('popstate', { state: history.state }));
+      tabs.normalizeActiveValue('hash', 'rust');
+      expect(tabs.beginSelection('push')).toBe(false);
+      await Promise.resolve();
+      await frame();
+      expect(projections).toBe(0);
+      expect(readAddress()).toBe(expected);
+      expect(readHistoryEntry()?.id).toBe(id);
+    } finally {
+      tabs.hostDisconnected();
+    }
+  });
+  it('同entryのautomatic replaceと一時range=0は候補のCSS座標を捨てない（B2）', async () => {
+    const epoch = await setup();
+    if (!root) throw new Error('root');
+    const content = root;
+    registerTabsUrlSyncStrategy(primaryTabTabsUrlSyncStrategy);
+    const target = new URL(readAddress(), location.origin);
+    target.searchParams.set('tab', 'javascript');
+    target.hash = 'foreign-heading';
+    writeHistoryEntry({
+      mode: 'replace',
+      owner: 'feature',
+      url: target.pathname + target.search + target.hash,
+    });
+    adoptContentBinding(readAddress());
+    const tabs = new TabsUrlSyncController({
+      getHostElement: () => content,
+      isUrlSyncEnabled: () => true,
+      getActiveValue: () => 'rust',
+      resolveTabValueForHash: () => 'rust',
+      clearControlledSelection: () => {
+        /* 同期操作を検証しない。 */
+      },
+      onUrlStateChanged: () => {
+        /* 同期操作を検証しない。 */
+      },
+    });
+    reader = new ReadingPositionController((error) => {
+      throw error;
+    });
+    reader.start(content);
+    await expect.poll(() => content.dataset['readingPositionStatus']).toBe('settled');
+    window.scrollTo({ top: 800, behavior: 'instant' });
+    await frame();
+    setContentReadiness({
+      contentEpoch: epoch,
+      root: content,
+      shellCommitId: 0,
+      status: 'pending',
+      started: true,
+    });
+    const id = readHistoryEntry()?.id;
+    const intent = beginNavigationIntent('traverse', readAddress());
+    reader.schedule({
+      intent,
+      root: content,
+      url: readAddress(),
+      stateOnly: true,
+      error: false,
+      shellCommitId: 0,
+    });
+    content.style.display = 'none';
+    tabs.normalizeActiveValue('hash', 'rust');
+    await frame();
+    await frame();
+    expect(window.scrollY).toBe(0);
+    expect(readHistoryEntry()?.id).toBe(id);
+    expect(intent.signal.aborted).toBe(false);
+    expect(new URL(location.href).searchParams.get('tab')).toBe('rust');
+    content.style.display = 'flow-root';
+    setContentReadiness({
+      contentEpoch: epoch,
+      root: content,
+      shellCommitId: 0,
+      status: 'settled',
+      started: true,
+    });
+    await expect.poll(() => content.dataset['readingPositionStatus']).toBe('settled');
+    expect(Math.abs(window.scrollY - 800)).toBeLessThanOrEqual(2);
+  });
+});
+
+it('error文書のscroll/checkpointで同entryの成功文書recordを消さない（A8）', async () => {
+  await setup();
+  if (!root) throw new Error('root');
+  const content = root;
+  reader = new ReadingPositionController((error) => {
+    throw error;
+  });
+  reader.start(content);
+  await expect.poll(() => content.dataset['readingPositionStatus']).toBe('settled');
+  window.scrollTo({ top: 800, behavior: 'instant' });
+  await frame();
+  const show = async (error: boolean): Promise<void> => {
+    const intent = beginNavigationIntent('traverse', readAddress());
+    const epoch = beginContentMutation(content);
+    adoptContentBinding(readAddress());
+    setContentReadiness({
+      contentEpoch: epoch,
+      root: content,
+      shellCommitId: 0,
+      status: 'settled',
+      started: true,
+    });
+    if (!reader) throw new Error('reader');
+    reader.schedule({
+      intent,
+      root: content,
+      url: readAddress(),
+      stateOnly: false,
+      error,
+      shellCommitId: 0,
+    });
+    await expect.poll(() => content.dataset['readingPositionStatus']).toBe('settled');
+  };
+  await show(true);
+  expect(window.scrollY).toBe(0);
+  window.scrollTo({ top: 500, behavior: 'instant' });
+  await frame();
+  await show(false);
+  expect(Math.abs(window.scrollY - 800)).toBeLessThanOrEqual(2);
+});
+
+it('native clickと後続address採用は同じintentを使い二度取消さない（B1）', async () => {
+  await setup();
+  if (!root) throw new Error('root');
+  const source = captureFeatureSource(root);
+  const target = new URL(readAddress(), location.origin);
+  target.hash = 'reading-heading';
+  const url = target.pathname + target.search + target.hash;
+  const clickIntent = beginNativeNavigation(source, url);
+  if (!clickIntent) throw new Error('intent');
+  writeHistoryEntry({ mode: 'push', owner: 'router', url });
+  const adoption = adoptNativeNavigationIntent(url);
+  expect(adoption.intentId).toBe(clickIntent.intentId);
+  expect(adoption.signal).toBe(clickIntent.signal);
+  expect(clickIntent.signal.aborted).toBe(false);
+  expect(adoption.target.entryId).toBe(readHistoryEntry()?.id);
 });

@@ -21,7 +21,10 @@ import {
 import { initSearch, initSearchUnavailable } from './search/bootstrap.js';
 import { initTheme } from './theme/theme-manager.js';
 import { validateInitialAppShell } from './router/initial-shell-validation.js';
-import type { AppContentHydrationReadyDetail } from './components/app/shell/app-shell-events.js';
+import type {
+  AppShellRestoredDetail,
+  AppContentHydrationReadyDetail,
+} from './components/app/shell/app-shell-events.js';
 
 const initialNavigation = performance.getEntriesByType('navigation')[0];
 if (
@@ -120,6 +123,8 @@ const hydrateCurrentContent = async (
     readContentContext()?.contentEpoch === epoch &&
     readContentContext()?.mutation === false &&
     ready.root.isConnected;
+  if (!isCurrent()) return;
+  setContentReadiness({ ...ready, shellCommitId: readCurrentShellCommitId(), started: true });
   const routerDocumentHost = await waitForRouterDocumentHostReady();
   if (!isCurrent()) return;
 
@@ -134,13 +139,13 @@ const hydrateCurrentContent = async (
   }
   await Promise.resolve();
   if (!isCurrent()) return;
-  setContentReadiness({ ...ready, shellCommitId: readCurrentShellCommitId(), started: true });
-
+  let degraded = false;
   try {
-    await hydrationScheduler.hydrateContent(mainContent, {
+    const diagnostics = await hydrationScheduler.hydrateContent(mainContent, {
       dispatchTarget: routerDocumentHost,
       isCurrent,
     });
+    degraded = diagnostics.degraded;
   } catch {
     if (isCurrent()) setContentReadiness({ ...ready, started: true, status: 'unavailable' });
     return;
@@ -157,6 +162,7 @@ const hydrateCurrentContent = async (
     shellCommitId: readCurrentShellCommitId(),
     started: true,
     status: 'settled',
+    degraded,
   });
   dispatchContentHydrationReady({
     contentEpoch: epoch,
@@ -249,10 +255,11 @@ document.addEventListener('router-document-host:navigation-committed', (event: E
 subscribeContentContext((reason) => {
   if (reason === 'mutation') hydrationScheduler.cancelContent();
 });
-document.addEventListener('app-shell:restored', () => {
+document.addEventListener('app-shell:restored', (event: Event) => {
+  const detail = (event as CustomEvent<AppShellRestoredDetail>).detail;
   const context = readContentContext();
-  if (!context) return;
-  adoptContentBinding(context.displayedBinding.url, context.displayedBinding.entryId);
-  void hydrateCurrentContent(context.root ?? undefined, { contentEpoch: context.contentEpoch });
+  if (!context || detail.contentEpoch !== context.contentEpoch || !detail.contentBinding) return;
+  adoptContentBinding(detail.contentBinding.url, detail.contentBinding.entryId);
+  void hydrateCurrentContent(context.root ?? undefined, { contentEpoch: detail.contentEpoch });
 });
 void bootstrapClient();

@@ -1,6 +1,7 @@
 import {
   adoptContentBinding,
   beginNavigationIntent,
+  adoptNativeNavigationIntent,
   isNavigationIntentCurrent,
   subscribeContentContext,
   type NavigationIntent,
@@ -265,14 +266,16 @@ export class Router {
       return this.createValidationFailureResult(reason, historyMode);
     }
 
-    return this.queue.enqueue(
-      this.normalizeValidatedRequest(
-        request,
-        validation.normalizedUrl,
-        validation.routePresence,
-        historyMode,
-      ),
+    const normalized = this.normalizeValidatedRequest(
+      request,
+      validation.normalizedUrl,
+      validation.routePresence,
+      historyMode,
     );
+    const result = await this.queue.enqueue(normalized);
+    if (normalized.intent)
+      this.eventBus.emit('navigation:terminal', { result, intentId: normalized.intent.intentId });
+    return result;
   }
 
   private normalizeValidatedRequest(
@@ -679,7 +682,7 @@ export class Router {
 
   private adoptSameDocumentAddress(change: BrowserAddressChange): void {
     const previousUrl = this.currentUrl;
-    beginNavigationIntent('native-navigation', change.url, 'native');
+    adoptNativeNavigationIntent(change.url);
     this.currentUrl = change.url;
     adoptContentBinding(change.url, change.entry?.id ?? null);
     document.dispatchEvent(new Event('reading-position:native-address'));

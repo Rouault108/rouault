@@ -341,6 +341,7 @@ export interface RouterEventMap {
     isInitial: boolean;
   };
   'after:navigate': NavigationResult;
+  'navigation:terminal': { readonly result: NavigationResult; readonly intentId: number };
   'ui-url-state-change': {
     previousUrl: string;
     url: string;

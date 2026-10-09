@@ -49,12 +49,14 @@ export class ReadingPositionController {
   private readonly lifetime = new AbortController();
   private renderedId: string | null = null;
   private renderedUrl = '';
+  private renderedError = false;
   private sample: ReadingPosition | null = null;
   private candidate: ReadingPosition | null = null;
   private candidateId: string | null = null;
   private job: ScrollJob | null = null;
   private restoring = false;
   private disposed = false;
+  private nativeGeneration = 0;
   private interruptedIntent = -1;
   private originalMode: ScrollRestoration = history.scrollRestoration;
   private ownedMode: ScrollRestoration | null = null;
@@ -68,6 +70,13 @@ export class ReadingPositionController {
     this.renderedUrl = readAddress();
     this.sampleCurrent();
     const signal = this.lifetime.signal;
+    document.addEventListener(
+      'reading-position:native-start',
+      () => {
+        this.adoptNativeAddress();
+      },
+      { signal },
+    );
     document.addEventListener(
       'reading-position:document-fallback',
       () => {
@@ -188,6 +197,8 @@ export class ReadingPositionController {
         this.cancel();
         const intent = readContentContext()?.intent;
         if (!intent) return;
+        const root = readContentContext()?.root;
+        if (owner === 'router' && root) root.dataset['readingPositionStatus'] = 'pending';
         if (intent.cause === 'traverse') {
           const frozen =
             this.candidateId === intent.target.entryId && this.candidate?.url === intent.target.url
@@ -264,6 +275,8 @@ export class ReadingPositionController {
     }
     this.renderedId = readHistoryEntry()?.id ?? null;
     this.renderedUrl = options.url;
+    this.sample = null;
+    if (!options.stateOnly) this.renderedError = options.error;
     if (!this.shouldFocus(options.intent)) {
       this.restoring = false;
       this.sampleCurrent();
@@ -273,6 +286,7 @@ export class ReadingPositionController {
     const controller = new AbortController();
     const job: ScrollJob = {
       ...options,
+      error: options.error || this.renderedError,
       epoch: context.contentEpoch,
       controller,
       candidate: options.error
@@ -316,8 +330,9 @@ export class ReadingPositionController {
     this.renderedUrl = readAddress();
     this.mode('auto');
     const intent = readContentContext()?.intent;
+    const generation = ++this.nativeGeneration;
     requestAnimationFrame(() => {
-      if (this.disposed || intent?.signal.aborted) return;
+      if (this.disposed || generation !== this.nativeGeneration || intent?.signal.aborted) return;
       this.sampleCurrent();
       this.mode(this.renderedId ? 'manual' : 'auto');
     });
@@ -327,10 +342,13 @@ export class ReadingPositionController {
     this.cancel();
     this.mode('auto');
   }
-  terminal(committed: boolean): void {
-    if (!committed && readContentContext()?.displayedBinding.url === readAddress()) {
+  terminal(committed: boolean, intentId: number): void {
+    const context = readContentContext();
+    if (context?.intent?.intentId !== intentId) return;
+    if (!committed && !context.mutation && context.displayedBinding.url === readAddress()) {
       this.restoring = false;
       this.sampleCurrent();
+      if (context.root) context.root.dataset['readingPositionStatus'] = 'settled';
     }
   }
   private current(job: ScrollJob): boolean {
@@ -438,6 +456,7 @@ export class ReadingPositionController {
     const context = readContentContext();
     if (
       this.restoring ||
+      this.renderedError ||
       context?.mutation ||
       this.renderedUrl !== readAddress() ||
       this.renderedId !== (readHistoryEntry()?.id ?? null)
@@ -454,7 +473,8 @@ export class ReadingPositionController {
   private checkpoint(): void {
     if (this.restoring) return;
     if (this.renderedUrl === readAddress()) this.sampleCurrent();
-    if (this.sample) this.store.write(this.renderedId, this.sample);
+    if (!this.renderedError && this.sample?.url === this.renderedUrl)
+      this.store.write(this.renderedId, this.sample);
   }
   private intervene(): void {
     if (!this.job && !this.restoring) return;

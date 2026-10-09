@@ -208,8 +208,14 @@ test('native fragment補記はentryを増やさず離脱元stateをcopyしない
   const hash = await page.locator('#main-content h2[id]').first().getAttribute('id');
   if (!hash) throw new Error('heading');
   await page.evaluate((id) => {
-    location.hash = id;
+    const anchor = document.createElement('a');
+    anchor.id = 'reading-native-fragment';
+    anchor.href = `#${encodeURIComponent(id)}`;
+    anchor.textContent = '見出しへ';
+    anchor.style.cssText = 'position:fixed;top:60px;left:150px;z-index:9999';
+    document.querySelector('#main-content')?.prepend(anchor);
   }, hash);
+  await page.locator('#reading-native-fragment').click();
   await expect
     .poll(() => page.evaluate(() => history.state?.__rouaultHistoryEntry?.version))
     .toBe(1);
@@ -249,9 +255,24 @@ test('no-JSの通常link/hash/Backで本文を読める（A9）', async ({ brows
     const page = await context.newPage();
     await page.goto(e2eNoteFixtures.markdownBasic.directPath);
     await expect(page.locator('#main-content h1')).toBeVisible();
-    await page.goto(e2eNoteFixtures.code.directPath);
+    const hashLink = page.locator('[data-layout-toc-nav] a[href*="#"]').first();
+    await hashLink.click();
+    expect(new URL(page.url()).hash).not.toBe('');
+    await page.evaluate((url) => {
+      const anchor = document.createElement('a');
+      anchor.id = 'reading-no-js-next';
+      anchor.href = url;
+      anchor.textContent = '次へ';
+      anchor.style.cssText = 'position:fixed;top:60px;left:150px;z-index:9999';
+      document.querySelector('#main-content')?.prepend(anchor);
+    }, e2eNoteFixtures.code.directPath);
+    await page.locator('#reading-no-js-next').click();
+    await expect(page.locator('#main-content h1')).toBeVisible();
     await page.goBack();
     await expect(page.locator('#main-content h1')).toBeVisible();
+    expect(new URL(page.url()).hash).not.toBe('');
+    await page.goForward();
+    await expect(page).toHaveURL(e2eNoteFixtures.code.directPath);
   } finally {
     await context.close();
   }
@@ -340,8 +361,20 @@ for (const action of ['wheel', 'PageDown', 'pointer'] as const)
       await page.goBack();
       await expect(page.locator('#main-content img[src="/reading-cancel.svg"]')).toHaveCount(1);
       if (action === 'wheel') await page.mouse.wheel(0, 120);
-      else if (action === 'PageDown') await page.keyboard.press('PageDown');
-      else await page.mouse.click(400, 200);
+      else if (action === 'PageDown') {
+        await page.keyboard.press('PageDown');
+        await expect.poll(() => page.evaluate(() => scrollY)).toBeGreaterThan(20);
+        await page.evaluate(async () => {
+          let previous = scrollY;
+          let stable = 0;
+          const deadline = performance.now() + 2000;
+          while (stable < 4 && performance.now() < deadline) {
+            await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+            stable = Math.abs(scrollY - previous) <= 1 ? stable + 1 : 0;
+            previous = scrollY;
+          }
+        });
+      } else await page.mouse.click(400, 200);
       await expect(page.locator('#main-content')).toHaveAttribute(
         'data-reading-position-status',
         'cancelled',
@@ -388,6 +421,7 @@ test('same-document Backのfocus保持と後続hashchange/refreshで座標優先
   await links.first().click();
   const firstUrl = await page.evaluate(() => location.pathname + location.search + location.hash);
   const y = await read(page, 0.65);
+  await page.mouse.wheel(0, 1);
   const currentLink = page.locator(
     '[data-layout-toc-nav] [data-toc-link][aria-current="location"]',
   );
@@ -445,4 +479,113 @@ test('短文化したentryは現在rangeへclampし保存座標の到達を無�
   expect(max).toBeLessThan(y);
   await at(page, a(), max);
   await expect(page.locator('#main-content h1')).toHaveText('短い本文');
+});
+
+for (const surface of ['tabs', 'search'] as const)
+  test(`遅い未commit requestを本人${surface}の同値選択でも失効する（B2/A6）`, async ({ page }) => {
+    await page.goto(surface === 'tabs' ? e2eNoteFixtures.interactive.directPath : '/search/');
+    await ready(page);
+    if (surface === 'search')
+      await expect(page.locator('[data-search-page-root]')).toHaveAttribute(
+        'data-enhanced',
+        'true',
+      );
+    let release!: () => void;
+    let requested!: () => void;
+    const gate = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    const seen = new Promise<void>((resolve) => {
+      requested = resolve;
+    });
+    await page.route(`**${resolveRouterArtifactPathname(b())}`, async (route) => {
+      requested();
+      await gate;
+      await route.continue().catch(() => {
+        /* 取消されたrequestへ応答を適用しない。 */
+      });
+    });
+    try {
+      await page.evaluate((url) => {
+        const host = document.querySelector('router-document-host');
+        if (!host) throw new Error('host');
+        void host.navigate(url).then((result) => {
+          host.dataset['readingRequestOutcome'] = result.outcome;
+        });
+      }, b());
+      await seen;
+      if (surface === 'tabs')
+        await page.getByRole('tab', { name: 'JavaScript', exact: true }).click();
+      else {
+        const menu = page.locator('[data-search-choice-menu="tag-mode"]').first();
+        await menu.locator('[data-static-choice-trigger]').click();
+        await menu.locator('[data-static-choice-item][data-value="or"]').click();
+      }
+      const ownedUrl = page.url();
+      release();
+      await expect(page.locator('router-document-host')).toHaveAttribute(
+        'data-reading-request-outcome',
+        'superseded',
+      );
+      expect(page.url()).toBe(ownedUrl);
+      if (surface === 'tabs')
+        await expect(page.getByRole('tab', { name: 'JavaScript', exact: true })).toHaveAttribute(
+          'aria-selected',
+          'true',
+        );
+      else await expect(page.locator('[data-search-page-root]')).toHaveCount(1);
+    } finally {
+      release();
+    }
+  });
+
+test('BFCacheはpersisted観測時だけ同epoch/viewportの再開を判定する（A8）', async ({ page }) => {
+  await page.addInitScript(() => {
+    window.addEventListener('pageshow', (event) => {
+      document.documentElement.dataset['readingBfcachePersisted'] = String(event.persisted);
+    });
+    document.addEventListener('app-content:hydration-ready', (event) => {
+      document.documentElement.dataset['readingProbeEpoch'] = String(
+        (event as CustomEvent<{ contentEpoch: number }>).detail.contentEpoch,
+      );
+    });
+  });
+  await page.goto(e2eNoteFixtures.markdownBasic.directPath);
+  await ready(page);
+  const epoch = await page.locator('html').getAttribute('data-reading-probe-epoch');
+  const y = await read(page, 0.5);
+  await page.goto('/about/');
+  await page.goBack();
+  const persisted = await page.locator('html').getAttribute('data-reading-bfcache-persisted');
+  if (persisted !== 'true') {
+    test.info().annotations.push({
+      type: 'BFCache',
+      description: 'pageshow.persisted未観測。このrunをBFCache成功に数えない。',
+    });
+    await expect(page.locator('#main-content h1')).toBeVisible();
+    return;
+  }
+  await expect(page.locator('html')).toHaveAttribute('data-reading-probe-epoch', epoch ?? '');
+  await expect
+    .poll(async () => Math.abs((await page.evaluate(() => scrollY)) - y))
+    .toBeLessThanOrEqual(2);
+  await expect.poll(() => page.evaluate(() => history.scrollRestoration)).toBe('manual');
+});
+
+test('opaque/未知schemaのreloadはstateを包まずautoでnative位置を尊重する（A8/R3）', async ({
+  page,
+}) => {
+  await page.goto(e2eNoteFixtures.markdownBasic.directPath);
+  await ready(page);
+  for (const state of [7, ['opaque'], { __rouaultHistoryEntry: { version: 99, id: 'unknown' } }]) {
+    const y = await read(page, 0.5);
+    await page.evaluate((opaque) => history.replaceState(opaque, '', location.href), state);
+    await page.reload();
+    await ready(page);
+    expect(await page.evaluate(() => history.state)).toEqual(state);
+    expect(await page.evaluate(() => history.scrollRestoration)).toBe('auto');
+    await expect
+      .poll(async () => Math.abs((await page.evaluate(() => scrollY)) - y))
+      .toBeLessThanOrEqual(2);
+  }
 });

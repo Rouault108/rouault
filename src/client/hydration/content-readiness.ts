@@ -5,6 +5,7 @@ export interface ContentReadiness {
   readonly shellCommitId: number;
   readonly status: ContentReadinessStatus;
   readonly started: boolean;
+  readonly degraded?: boolean;
 }
 let current: ContentReadiness | null = null;
 const listeners = new Set<(state: ContentReadiness) => void>();
@@ -27,7 +28,9 @@ export const waitForContentReadiness = (
       signal.removeEventListener('abort', onAbort);
       resolve(status);
     };
-    const onAbort = (): void => { finish('invalidated'); };
+    const onAbort = (): void => {
+      finish('invalidated');
+    };
     const onChange = (state: ContentReadiness): void => {
       if (state.contentEpoch !== epoch) finish('invalidated');
       else if (state.status !== 'pending') finish(state.status);
