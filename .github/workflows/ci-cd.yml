@@ -6,6 +6,12 @@ on:
     branches:
       - main
   workflow_dispatch:
+    inputs:
+      test_refinement_standalone:
+        description: Run validation-only standalone search-page browser tests
+        required: false
+        type: boolean
+        default: false
 
 concurrency:
   group: ci-cd-${{ github.ref }}
@@ -144,6 +150,61 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm exec playwright install --with-deps chromium firefox webkit
       - run: pnpm run test:browser
+      - name: record test-refinement standalone provenance
+        if: ${{ !cancelled() && github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/validation/test-refinement-stage12-20261009' && inputs.test_refinement_standalone }}
+        run: |
+          set -euo pipefail
+
+          pnpm run codegen:icons
+          echo "GITHUB_SHA=$GITHUB_SHA"
+          echo "GITHUB_REF=$GITHUB_REF"
+          uname -a
+          node --version
+          pnpm --version
+          pnpm exec vitest --version
+          pnpm exec playwright --version
+          node --input-type=module <<'NODE'
+          import { readFile } from 'node:fs/promises';
+          import { createRequire } from 'node:module';
+          import { dirname, join } from 'node:path';
+
+          const require = createRequire(import.meta.url);
+          const packagePath = require.resolve('playwright-core/package.json');
+          const registry = JSON.parse(
+            await readFile(join(dirname(packagePath), 'browsers.json'), 'utf8'),
+          );
+          for (const name of ['chromium', 'firefox', 'webkit']) {
+            const browser = registry.browsers.find((entry) => entry.name === name);
+            if (browser === undefined) throw new Error(`missing Playwright browser ${name}`);
+            console.log(
+              `${name}: revision=${browser.revision} browserVersion=${browser.browserVersion}`,
+            );
+          }
+          NODE
+          sha256sum \
+            package.json \
+            pnpm-lock.yaml \
+            vitest.config.ts \
+            scripts/testing/browser-test-matrix.ts \
+            test/browser/setup.ts \
+            test/browser/harness/browser-fixture.ts \
+            test/browser/search-page-enhancer.browser.test.ts \
+            test/browser/search-page-baseline.browser.test.ts \
+            src/generated/lucide-subset.ts \
+            | tee "$RUNNER_TEMP/rouault-test-refinement-standalone.sha256"
+      - name: test search-page target standalone
+        if: ${{ !cancelled() && github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/validation/test-refinement-stage12-20261009' && inputs.test_refinement_standalone }}
+        env:
+          ROUAULT_BROWSER_TEST_BROWSERS: chromium,firefox,webkit
+        run: pnpm exec vitest run --project="browser-*" test/browser/search-page-enhancer.browser.test.ts
+      - name: test search-page baseline standalone
+        if: ${{ !cancelled() && github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/validation/test-refinement-stage12-20261009' && inputs.test_refinement_standalone }}
+        env:
+          ROUAULT_BROWSER_TEST_BROWSERS: chromium,firefox,webkit
+        run: pnpm exec vitest run --project="browser-*" test/browser/search-page-baseline.browser.test.ts
+      - name: verify test-refinement standalone provenance
+        if: ${{ !cancelled() && github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/validation/test-refinement-stage12-20261009' && inputs.test_refinement_standalone }}
+        run: sha256sum --check "$RUNNER_TEMP/rouault-test-refinement-standalone.sha256"
 
   prebuild-gate:
     name: prebuild-gate
