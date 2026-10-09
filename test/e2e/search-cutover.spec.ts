@@ -167,7 +167,7 @@ test('all sources failed is a request error and subsequent input can use Catalog
   );
   await expect(page.locator('[data-search-query-input]')).toBeEnabled();
   await expect(page.locator('[data-search-page-results-section]')).toBeEmpty();
-  await expect(page.locator('[data-search-page-result-count]')).toBeEmpty();
+  await expect(page.locator('[data-search-page-result-count]')).toHaveText('取得失敗');
   await page.locator('[data-search-query-input]').fill('言語バージョン・ビルド文脈・互換性');
   await expect(
     page.locator('[data-search-page-results-section] a.result-link').first(),
