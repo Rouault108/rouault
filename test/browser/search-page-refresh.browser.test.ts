@@ -15,6 +15,8 @@ import { renderSearchPageHtml } from '../../src/layouts/search-page-html.js';
 import { buildSearchResultRenderHref } from '../../src/search/normalize-search-result-url.js';
 import { SEARCH_DEBOUNCE_MS } from '../../src/search/search-constants.js';
 import type { SearchCore } from '../../src/search/search-core.js';
+import { waitForStyleRecalc } from './harness/browser-test-utilities.js';
+import { ensureMainCssLoaded } from './helpers/load-main-css.js';
 
 const staticResponse: ExploreSearchResponse = {
   mode: 'explore',
@@ -316,24 +318,71 @@ describe('search page refresh', () => {
     expect(root.querySelector('[data-search-page-error]')?.textContent).not.toContain('直前の条件');
   });
 
-  it('応答の差し替え時に結果focusを同じhrefまたは検索入力へ戻しscrollを動かさないこと', async () => {
-    const root = await mountResults();
+  it('非ゼロscrollで旧結果の高さを保ち、focus復帰は先頭へ飛ばさず0件化の末尾補正だけを許すこと', async () => {
+    await ensureMainCssLoaded();
+    const titles = Array.from({ length: 40 }, (_, index) => `old-${index}`);
+    const initialResponse = responseWith(...titles);
+    const root = renderResultsFixture({
+      ...initialResponse,
+      items: initialResponse.items.map(({ renderHref: _renderHref, ...item }) => item),
+    });
     const runtime = deferred();
     enhanceWithRuntime(root, undefined, runtime.core);
-    choose(root, 'and');
-    const link = expectElement(resultsRoot(root).querySelector('a'), 'old link');
-    link.focus({ preventScroll: true });
-    const scroll = window.scrollY;
-    runtime.requests[0]?.resolve(responseWith('old', 'another'));
+
+    const startUpdateFromResult = async (q: string, requestCount: number) => {
+      const link = expectElement(
+        resultsRoot(root).querySelectorAll('a')[20] ?? null,
+        'middle link',
+      );
+      link.scrollIntoView({ block: 'center', behavior: 'instant' });
+      link.focus({ preventScroll: true });
+      await waitForStyleRecalc();
+      expect(window.scrollY, 'fixture must actually scroll').toBeGreaterThan(0);
+      const resultHeight = resultsRoot(root).getBoundingClientRect().height;
+      enter(root, q);
+      await expect.poll(() => runtime.requests.length).toBe(requestCount);
+      await waitForStyleRecalc();
+      expect(resultsRoot(root).dataset['resultsStatus']).toBe('pending');
+      expect(resultsRoot(root).querySelectorAll('a')[20]).toBe(link);
+      expect(resultsRoot(root).getBoundingClientRect().height).toBeCloseTo(resultHeight, 0);
+      expect(window.scrollY, 'pending must retain a scrollable result list').toBeGreaterThan(0);
+      expect(document.activeElement).toBe(link);
+      return { scroll: window.scrollY, href: link.getAttribute('href') };
+    };
+
+    const sameLink = await startUpdateFromResult('same-link', 1);
+    runtime.requests[0]?.resolve(responseWith(...titles));
     await settled(root);
-    expect(document.activeElement).toBe(resultsRoot(root).querySelector('a'));
-    expect(window.scrollY).toBe(scroll);
-    choose(root, 'or');
-    resultsRoot(root).querySelector('a')?.focus({ preventScroll: true });
-    runtime.requests[1]?.resolve(responseWith('another'));
+    await waitForStyleRecalc();
+    expect(document.activeElement).toBe(resultsRoot(root).querySelectorAll('a')[20]);
+    expect(document.activeElement?.getAttribute('href')).toBe(sameLink.href);
+    expect(window.scrollY).toBeCloseTo(sameLink.scroll, 0);
+
+    const removedLink = await startUpdateFromResult('removed-link', 2);
+    runtime.requests[1]?.resolve(
+      responseWith(...titles.map((title) => title.replace('old-', 'new-'))),
+    );
     await settled(root);
+    await waitForStyleRecalc();
     expect(document.activeElement).toBe(queryInput(root));
-    expect(window.scrollY).toBe(scroll);
+    expect(window.scrollY).toBeCloseTo(removedLink.scroll, 0);
+
+    const empty = await startUpdateFromResult('empty', 3);
+    runtime.requests[2]?.resolve(responseWith());
+    await settled(root);
+    await waitForStyleRecalc();
+    const scrollingElement = expectElement(document.scrollingElement, 'scrolling element');
+    const maximumScroll = Math.max(
+      0,
+      scrollingElement.scrollHeight - scrollingElement.clientHeight,
+    );
+    expect(maximumScroll, 'zero results must exercise document height clamping').toBeLessThan(
+      empty.scroll,
+    );
+    expect(document.activeElement).toBe(queryInput(root));
+    expect(window.scrollY).toBeCloseTo(Math.min(empty.scroll, maximumScroll), 0);
+    expect(resultsRoot(root).querySelectorAll('a')).toHaveLength(0);
+    expect(root.querySelector('[data-search-page-result-count]')?.textContent).toBe('0 件の結果');
   });
 
   it('pending中のURL復元が入力timerと旧in-flightに勝ち未知stateへ書き込まないこと', async () => {
