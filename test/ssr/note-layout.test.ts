@@ -126,6 +126,19 @@ const matchesSourceLinkContract = (fragment: ParentLike, contract: SourceLinkCon
   );
 };
 
+const matchesCurrentBreadcrumbContract = (fragment: ParentLike, expectedText: string): boolean => {
+  const currentBreadcrumbs = findElements(
+    fragment,
+    (element) =>
+      element.tagName === 'span' &&
+      hasToken(element, 'class', 'article-header__breadcrumb-node') &&
+      hasToken(element, 'class', 'article-header__breadcrumb-current') &&
+      getAttribute(element, 'aria-current') === 'page' &&
+      textContent(element) === expectedText,
+  );
+  return currentBreadcrumbs.length === 1;
+};
+
 const matchesTocAbsenceContract = (
   fragment: ParentLike,
   options: { readonly sourceId: string; readonly scopeId: string },
@@ -358,14 +371,6 @@ describe('NoteLayout', () => {
         element.tagName === 'time' &&
         getAttribute(element, 'aria-label') === '公開日: 2026-01-01、作成日: 2025-12-31',
     );
-    const currentBreadcrumbs = findElements(
-      fragment,
-      (element) =>
-        hasToken(element, 'class', 'article-header__breadcrumb-current') &&
-        getAttribute(element, 'aria-current') === 'page' &&
-        textContent(element) === '見出し',
-    );
-
     expect(
       matchesSourceLinkContract(fragment, {
         href: 'https://external.example/source',
@@ -375,7 +380,7 @@ describe('NoteLayout', () => {
       }),
     ).to.equal(true);
     expect(dates).to.have.length(1);
-    expect(currentBreadcrumbs).to.have.length(1);
+    expect(matchesCurrentBreadcrumbContract(fragment, '見出し')).to.equal(true);
   });
 
   it('NoteLayout final HTML では source link を raw fallback ではなく分類済み internal-resource として描画すること', () => {
@@ -531,6 +536,8 @@ describe('NoteLayout', () => {
 
     expect(rendered).toContain('"Danger"&lt;tag&gt;');
     expect(rendered).toContain('href="/tags/a%22%26b/"');
+    // Serialization contract: the unsafe raw source must not leak into content or data attributes.
+    expect(rendered).not.toContain('javascript:alert(1)');
     expect(heading ? textContent(heading) : null).to.equal('"Danger"<tag>');
     expect(
       heading ? findElements(heading, (element) => element.tagName === 'tag') : [],
@@ -568,6 +575,10 @@ describe('NoteLayout', () => {
         href='/source'
         class='extra article-header__source-link'
       >出典</a>
+      <span
+        aria-current='page'
+        class='extra article-header__breadcrumb-current article-header__breadcrumb-node'
+      >見出し</span>
     `);
 
     expect(matchesArticleHeaderContract(fragment, '見出し')).to.equal(true);
@@ -580,6 +591,7 @@ describe('NoteLayout', () => {
         isExternal: false,
       }),
     ).to.equal(true);
+    expect(matchesCurrentBreadcrumbContract(fragment, '見出し')).to.equal(true);
   });
 
   it('意味契約は属性変更・別要素への分散・誤った祖先・重複・absent 残骸を拒否すること', () => {
@@ -599,6 +611,16 @@ describe('NoteLayout', () => {
       expect(matchesSourceLinkContract(parseFragment(fixture), sourceContract), fixture).to.equal(
         false,
       );
+    }
+
+    for (const invalidBreadcrumb of [
+      `<span class="article-header__breadcrumb-current" aria-current="page">見出し</span>`,
+      `<a class="article-header__breadcrumb-node article-header__breadcrumb-current" aria-current="page">見出し</a>`,
+    ]) {
+      expect(
+        matchesCurrentBreadcrumbContract(parseFragment(invalidBreadcrumb), '見出し'),
+        invalidBreadcrumb,
+      ).to.equal(false);
     }
 
     expect(

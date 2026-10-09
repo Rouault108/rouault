@@ -1063,9 +1063,13 @@ describe('search-page-enhancer', () => {
 
     first?.dispose();
     choiceMenu.open = true;
+    const hrefBeforePointerdown = location.href;
     document.body.dispatchEvent(new Event('pointerdown', { bubbles: true }));
+    expect(location.href).to.equal(hrefBeforePointerdown);
     history.pushState(history.state, '', '/search/?q=disposed');
+    const hrefBeforePopstate = location.href;
     window.dispatchEvent(new PopStateEvent('popstate'));
+    expect(location.href).to.equal(hrefBeforePopstate);
 
     expect(choiceMenu.open).to.equal(true);
     expect(query.value).to.equal('');
