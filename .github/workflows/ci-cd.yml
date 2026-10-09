@@ -6,6 +6,12 @@ on:
     branches:
       - main
   workflow_dispatch:
+    inputs:
+      test_refinement_stage3_standalone:
+        description: Run validation-only standalone stage 3 browser and E2E tests
+        required: false
+        type: boolean
+        default: false
 
 concurrency:
   group: ci-cd-${{ github.ref }}
@@ -144,6 +150,149 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm exec playwright install --with-deps chromium firefox webkit
       - run: pnpm run test:browser
+      - name: record stage 3 Browser standalone provenance
+        if: ${{ !cancelled() && github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/validation/test-refinement-stage3-20261009' && inputs.test_refinement_stage3_standalone }}
+        run: |
+          set -euo pipefail
+
+          head_sha="$(git rev-parse HEAD)"
+          echo "GITHUB_SHA=$GITHUB_SHA"
+          echo "GITHUB_REF=$GITHUB_REF"
+          echo "HEAD_SHA=$head_sha"
+          test "$head_sha" = "$GITHUB_SHA"
+          test -z "$(git status --porcelain --untracked-files=all)"
+          git diff --exit-code
+          git diff --cached --exit-code
+
+          uname -a
+          cat /etc/os-release
+          node --version
+          pnpm --version
+          pnpm exec vitest --version
+          pnpm exec playwright --version
+          node --input-type=module <<'NODE'
+          import { readFile } from 'node:fs/promises';
+          import { createRequire } from 'node:module';
+          import { dirname, join } from 'node:path';
+
+          const rootRequire = createRequire(import.meta.url);
+          const playwrightPackagePath = rootRequire.resolve('playwright/package.json');
+          const playwrightRequire = createRequire(playwrightPackagePath);
+          const packagePath = playwrightRequire.resolve('playwright-core/package.json');
+          const registry = JSON.parse(
+            await readFile(join(dirname(packagePath), 'browsers.json'), 'utf8'),
+          );
+          for (const name of ['chromium', 'firefox', 'webkit']) {
+            const browser = registry.browsers.find((entry) => entry.name === name);
+            if (browser === undefined) throw new Error(`missing Playwright browser ${name}`);
+            console.log(
+              `${name}: revision=${browser.revision} browserVersion=${browser.browserVersion}`,
+            );
+          }
+          NODE
+
+          for path in \
+            test/browser/search-page-visual.browser.test.ts \
+            test/browser/search-page-tag-state.browser.test.ts \
+            test/browser/search-page-lifecycle.browser.test.ts \
+            test/browser/search-page-url-state.browser.test.ts \
+            test/browser/search-dialog-lifecycle.browser.test.ts \
+            test/browser/search-dialog-results.browser.test.ts \
+            test/browser/search-dialog-status.browser.test.ts; do
+            test -f "$path"
+          done
+          test ! -e test/browser/search-page-enhancer.browser.test.ts
+          test ! -e test/browser/search-dialog-enhancer.browser.test.ts
+
+          node --input-type=module <<'NODE'
+          import { readFile } from 'node:fs/promises';
+
+          const paths = [
+            'test/browser/search-page-visual.browser.test.ts',
+            'test/browser/search-page-tag-state.browser.test.ts',
+            'test/browser/search-page-lifecycle.browser.test.ts',
+            'test/browser/search-page-url-state.browser.test.ts',
+            'test/browser/search-dialog-lifecycle.browser.test.ts',
+            'test/browser/search-dialog-results.browser.test.ts',
+            'test/browser/search-dialog-status.browser.test.ts',
+          ];
+          const prohibited = /\b(?:test|it|describe)\.(?:skip|fixme|only)\b/u;
+          for (const path of paths) {
+            if (prohibited.test(await readFile(path, 'utf8'))) {
+              throw new Error(`prohibited skip/fixme/only in ${path}`);
+            }
+          }
+          NODE
+
+          sha256sum \
+            package.json \
+            pnpm-lock.yaml \
+            vitest.config.ts \
+            scripts/testing/browser-test-matrix.ts \
+            test/browser/setup.ts \
+            test/browser/harness/browser-fixture.ts \
+            test/browser/helpers/search-page-test-fixture.ts \
+            test/browser/helpers/search-dialog-test-fixture.ts \
+            test/browser/search-page-visual.browser.test.ts \
+            test/browser/search-page-tag-state.browser.test.ts \
+            test/browser/search-page-lifecycle.browser.test.ts \
+            test/browser/search-page-url-state.browser.test.ts \
+            test/browser/search-dialog-lifecycle.browser.test.ts \
+            test/browser/search-dialog-results.browser.test.ts \
+            test/browser/search-dialog-status.browser.test.ts \
+            src/generated/lucide-subset.ts \
+            | tee "$RUNNER_TEMP/rouault-stage3-browser-standalone.sha256"
+      - name: test stage 3 Browser files standalone
+        if: ${{ !cancelled() && github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/validation/test-refinement-stage3-20261009' && inputs.test_refinement_stage3_standalone }}
+        env:
+          NO_COLOR: '1'
+          ROUAULT_BROWSER_TEST_BROWSERS: chromium,firefox,webkit
+        run: |
+          set -euo pipefail
+
+          process_count=0
+          pass_count=0
+          run_browser_file() {
+            project="$1"
+            file="$2"
+            expected="$3"
+            log="$RUNNER_TEMP/stage3-browser-${project}-$(basename "$file").log"
+            echo "stage3 Browser standalone: project=$project file=$file expected=$expected"
+            pnpm exec vitest run --project="$project" "$file" 2>&1 | tee "$log"
+            grep -Eq "Tests[[:space:]]+${expected} passed" "$log"
+            if grep -Eq '[[:space:]][1-9][0-9]* (failed|skipped|todo)' "$log"; then
+              echo "unexpected non-pass Browser result in $log" >&2
+              exit 1
+            fi
+            process_count=$((process_count + 1))
+            pass_count=$((pass_count + expected))
+          }
+
+          for project in browser-chromium browser-firefox browser-webkit-search-state-project; do
+            run_browser_file "$project" test/browser/search-page-visual.browser.test.ts 3
+            run_browser_file "$project" test/browser/search-page-tag-state.browser.test.ts 10
+            run_browser_file "$project" test/browser/search-page-lifecycle.browser.test.ts 18
+            run_browser_file "$project" test/browser/search-page-url-state.browser.test.ts 7
+          done
+          for project in browser-chromium browser-firefox browser-webkit-general-project; do
+            run_browser_file "$project" test/browser/search-dialog-lifecycle.browser.test.ts 17
+            run_browser_file "$project" test/browser/search-dialog-results.browser.test.ts 7
+            run_browser_file "$project" test/browser/search-dialog-status.browser.test.ts 12
+          done
+
+          test "$process_count" -eq 21
+          test "$pass_count" -eq 222
+          echo "stage3_browser_processes=$process_count"
+          echo "stage3_browser_passes=$pass_count"
+      - name: verify stage 3 Browser standalone provenance
+        if: ${{ !cancelled() && github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/validation/test-refinement-stage3-20261009' && inputs.test_refinement_stage3_standalone }}
+        run: |
+          set -euo pipefail
+          test "$GITHUB_SHA" = "$(git rev-parse HEAD)"
+          test -z "$(git status --porcelain --untracked-files=all)"
+          git diff --exit-code
+          git diff --cached --exit-code
+          sha256sum --check "$RUNNER_TEMP/rouault-stage3-browser-standalone.sha256"
 
   prebuild-gate:
     name: prebuild-gate
@@ -188,6 +337,142 @@ jobs:
       - run: pnpm exec playwright install --with-deps
       - id: playwright-production
         run: pnpm run test:e2e:production
+      - name: record stage 3 E2E standalone provenance
+        if: ${{ !cancelled() && github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/validation/test-refinement-stage3-20261009' && inputs.test_refinement_stage3_standalone }}
+        run: |
+          set -euo pipefail
+
+          head_sha="$(git rev-parse HEAD)"
+          echo "GITHUB_SHA=$GITHUB_SHA"
+          echo "GITHUB_REF=$GITHUB_REF"
+          echo "HEAD_SHA=$head_sha"
+          test "$head_sha" = "$GITHUB_SHA"
+          test -z "$(git status --porcelain --untracked-files=all)"
+          git diff --exit-code
+          git diff --cached --exit-code
+
+          uname -a
+          cat /etc/os-release
+          node --version
+          pnpm --version
+          pnpm exec playwright --version
+          node --input-type=module <<'NODE'
+          import { readFile } from 'node:fs/promises';
+          import { createRequire } from 'node:module';
+          import { dirname, join } from 'node:path';
+
+          const rootRequire = createRequire(import.meta.url);
+          const playwrightPackagePath = rootRequire.resolve('playwright/package.json');
+          const playwrightRequire = createRequire(playwrightPackagePath);
+          const packagePath = playwrightRequire.resolve('playwright-core/package.json');
+          const registry = JSON.parse(
+            await readFile(join(dirname(packagePath), 'browsers.json'), 'utf8'),
+          );
+          for (const name of ['chromium', 'firefox', 'webkit']) {
+            const browser = registry.browsers.find((entry) => entry.name === name);
+            if (browser === undefined) throw new Error(`missing Playwright browser ${name}`);
+            console.log(
+              `${name}: revision=${browser.revision} browserVersion=${browser.browserVersion}`,
+            );
+          }
+          NODE
+
+          for path in \
+            test/e2e/header-static-contract.spec.ts \
+            test/e2e/header-layout-contract.spec.ts \
+            test/e2e/header-interaction.spec.ts \
+            test/e2e/header-shell-integration.spec.ts \
+            test/e2e/header-no-js.spec.ts \
+            test/e2e/note-chrome-static-dom.spec.ts; do
+            test -f "$path"
+          done
+          test ! -e test/e2e/static-header-migration.spec.ts
+          test ! -e test/e2e/note-chrome-shadow-dom.spec.ts
+
+          node --input-type=module <<'NODE'
+          import { readFile } from 'node:fs/promises';
+
+          const paths = [
+            'test/e2e/header-static-contract.spec.ts',
+            'test/e2e/header-layout-contract.spec.ts',
+            'test/e2e/header-interaction.spec.ts',
+            'test/e2e/header-shell-integration.spec.ts',
+            'test/e2e/header-no-js.spec.ts',
+            'test/e2e/note-chrome-static-dom.spec.ts',
+          ];
+          const prohibited = /\b(?:test|it|describe)\.(?:skip|fixme|only)\b/u;
+          for (const path of paths) {
+            if (prohibited.test(await readFile(path, 'utf8'))) {
+              throw new Error(`prohibited skip/fixme/only in ${path}`);
+            }
+          }
+          NODE
+
+          sha256sum \
+            package.json \
+            pnpm-lock.yaml \
+            playwright.config.ts \
+            vite.preview.config.ts \
+            scripts/run-production-build.ts \
+            test/e2e/support/header-contract.ts \
+            test/e2e/support/router-document-host.ts \
+            test/e2e/support/note-fixtures.ts \
+            test/e2e/header-static-contract.spec.ts \
+            test/e2e/header-layout-contract.spec.ts \
+            test/e2e/header-interaction.spec.ts \
+            test/e2e/header-shell-integration.spec.ts \
+            test/e2e/header-no-js.spec.ts \
+            test/e2e/note-chrome-static-dom.spec.ts \
+            src/generated/lucide-subset.ts \
+            .velite/index.js \
+            .velite/index.d.ts \
+            .velite/notes.json \
+            .velite/memos.json \
+            | tee "$RUNNER_TEMP/rouault-stage3-e2e-standalone.sha256"
+      - name: test stage 3 E2E files standalone
+        if: ${{ !cancelled() && github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/validation/test-refinement-stage3-20261009' && inputs.test_refinement_stage3_standalone }}
+        env:
+          NO_COLOR: '1'
+        run: |
+          set -euo pipefail
+
+          process_count=0
+          pass_count=0
+          run_e2e_file() {
+            file="$1"
+            expected="$2"
+            log="$RUNNER_TEMP/stage3-e2e-$(basename "$file").log"
+            echo "stage3 E2E standalone: project=chromium-integration file=$file expected=$expected"
+            pnpm exec playwright test --project=chromium-integration "$file" --reporter=line 2>&1 | tee "$log"
+            grep -Eq "(^|[^0-9])${expected} passed" "$log"
+            if grep -Eq '(^|[^0-9])[1-9][0-9]* (failed|skipped|flaky)' "$log"; then
+              echo "unexpected non-pass E2E result in $log" >&2
+              exit 1
+            fi
+            process_count=$((process_count + 1))
+            pass_count=$((pass_count + expected))
+          }
+
+          run_e2e_file test/e2e/header-static-contract.spec.ts 3
+          run_e2e_file test/e2e/header-layout-contract.spec.ts 16
+          run_e2e_file test/e2e/header-interaction.spec.ts 14
+          run_e2e_file test/e2e/header-shell-integration.spec.ts 9
+          run_e2e_file test/e2e/header-no-js.spec.ts 5
+          run_e2e_file test/e2e/note-chrome-static-dom.spec.ts 2
+
+          test "$process_count" -eq 6
+          test "$pass_count" -eq 49
+          echo "stage3_e2e_processes=$process_count"
+          echo "stage3_e2e_passes=$pass_count"
+      - name: verify stage 3 E2E standalone provenance
+        if: ${{ !cancelled() && github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/validation/test-refinement-stage3-20261009' && inputs.test_refinement_stage3_standalone }}
+        run: |
+          set -euo pipefail
+          test "$GITHUB_SHA" = "$(git rev-parse HEAD)"
+          test -z "$(git status --porcelain --untracked-files=all)"
+          git diff --exit-code
+          git diff --cached --exit-code
+          sha256sum --check "$RUNNER_TEMP/rouault-stage3-e2e-standalone.sha256"
       - name: preserve production E2E diagnostics
         if: ${{ always() && steps.playwright-production.outcome == 'failure' }}
         continue-on-error: true
