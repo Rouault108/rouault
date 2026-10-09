@@ -36,7 +36,7 @@ Static headerのcorpus dropdownでは、current corpus itemがnavigation上の�
   - left border markerは採用されていなかった。
 - `src/assets/css/tokens.css`
   - `--bg-surface-active`はactive surface tokenとして存在する。
-- `test/e2e/static-header-migration.spec.ts`
+- `test/e2e/header-layout-contract.spec.ts`
   - 既存visual testはfont-weight中心で、selected surfaceを十分にassertしていなかった。
 - `test/ssr/static-css-contracts.test.ts`
   - persistent selected surfaceとCSS order contractは十分に固定されていなかった。
@@ -76,7 +76,7 @@ Left border markerやcheck iconの方が明確という仮説は今回採用し�
 - `docs/contracts/static-header-contract.md`はcurrent corpus itemのsemantic source of truthとvisual contractを更新する。
 - `src/assets/css/layout-header.css`はnon-current normal weight、current selected surface、current semibold、forced-colors current surfaceを実装する。
 - `test/ssr/static-css-contracts.test.ts`はselector-scoped CSS declarationとroot-level orderを固定する。
-- `test/e2e/static-header-migration.spec.ts`はopen corpus panel内のcurrent / non-current visual stateを比較する。
+- `test/e2e/header-layout-contract.spec.ts`はopen corpus panel内のcurrent / non-current visual stateを比較する。
 
 ## Unresolved
 
@@ -104,6 +104,6 @@ Left border markerやcheck iconの方が明確という仮説は今回採用し�
 
 ## Rollback
 
-Rollbackする場合は、`src/assets/css/layout-header.css`のcurrent selected surfaceとnon-current normal weightを戻し、`docs/contracts/static-header-contract.md`、`test/ssr/static-css-contracts.test.ts`、`test/e2e/static-header-migration.spec.ts`の対応契約を同時に戻す。また、`docs/adr/corpus-current-selected-surface.md`と`docs/README.md`の登録更新も同時に戻す。
+Rollbackする場合は、`src/assets/css/layout-header.css`のcurrent selected surfaceとnon-current normal weightを戻し、`docs/contracts/static-header-contract.md`、`test/ssr/static-css-contracts.test.ts`、`test/e2e/header-layout-contract.spec.ts`の対応契約を同時に戻す。また、`docs/adr/corpus-current-selected-surface.md`と`docs/README.md`の登録更新も同時に戻す。
 
 ただし、`aria-current="page"`はsemantic source of truthとして維持する。
