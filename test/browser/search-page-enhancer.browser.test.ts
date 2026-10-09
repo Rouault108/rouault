@@ -287,6 +287,16 @@ describe('search-page-enhancer', () => {
         };
       }),
     });
+    const mountResults = async (tags: readonly string[] = []) => {
+      const response = responseWith('old');
+      return renderTagOrderFixture(
+        {
+          ...response,
+          items: response.items.map(({ renderHref: _renderHref, ...item }) => item),
+        },
+        tags,
+      );
+    };
     const queryInput = (root: ParentNode) =>
       expectElement(root.querySelector<HTMLInputElement>('[data-search-query-input]'), 'query');
     const resultsRoot = (root: ParentNode) =>
@@ -336,7 +346,7 @@ describe('search-page-enhancer', () => {
 
     it('タグ0/1/複数の成功後同値は結果node・履歴を維持し、異値だけ即時実行すること', async () => {
       for (const tags of [[], ['music'], ['architecture', 'music']]) {
-        const root = await renderTagOrderFixture(responseWith('old'), tags);
+        const root = await mountResults(tags);
         const runtime = deferred();
         const controller = enhanceWithRuntime(root, undefined, runtime.core);
         const push = vi.spyOn(history, 'pushState');
@@ -363,7 +373,7 @@ describe('search-page-enhancer', () => {
     });
 
     it('入力150ms未満の同値選択はtimerを維持し未知のhistory stateを保持すること', async () => {
-      const root = await renderTagOrderFixture(responseWith('old'));
+      const root = await mountResults();
       const runtime = deferred();
       enhanceWithRuntime(root, undefined, runtime.core);
       const previousHistoryState: unknown = history.state;
@@ -392,7 +402,7 @@ describe('search-page-enhancer', () => {
     });
 
     it('in-flight同値連打は継続し異値は最新入力でabort・即時実行し遅い応答を捨てること', async () => {
-      const root = await renderTagOrderFixture(responseWith('old'));
+      const root = await mountResults();
       const runtime = deferred();
       enhanceWithRuntime(root, undefined, runtime.core);
       enter(root, 'latest');
@@ -416,7 +426,7 @@ describe('search-page-enhancer', () => {
     });
 
     it('失敗後は旧条件を明示して旧リンクを保持し同値retryはpushせずpendingへ戻ること', async () => {
-      const root = await renderTagOrderFixture(responseWith('old'));
+      const root = await mountResults();
       const runtime = deferred();
       enhanceWithRuntime(root, undefined, runtime.core);
       choose(root, 'and');
@@ -474,7 +484,7 @@ describe('search-page-enhancer', () => {
     });
 
     it('応答の差し替え時に結果focusを同じhrefまたは検索入力へ戻しscrollを動かさないこと', async () => {
-      const root = await renderTagOrderFixture(responseWith('old'));
+      const root = await mountResults();
       const runtime = deferred();
       enhanceWithRuntime(root, undefined, runtime.core);
       choose(root, 'and');
@@ -494,7 +504,7 @@ describe('search-page-enhancer', () => {
     });
 
     it('pending中のURL復元が入力timerと旧in-flightに勝ち未知stateへ書き込まないこと', async () => {
-      const root = await renderTagOrderFixture(responseWith('old'));
+      const root = await mountResults();
       const runtime = deferred();
       enhanceWithRuntime(root, undefined, runtime.core);
       enter(root, 'queued');
