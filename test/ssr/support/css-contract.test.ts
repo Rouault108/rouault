@@ -183,6 +183,145 @@ describe('css contract helper', () => {
     ).toThrow(/scope と mediaPredicate/u);
   });
 
+  it('tag token 用の完全な root 祖先経路と直下宣言だけを受け入れる', () => {
+    const tokenCss = `
+      :root {
+        --tag-token: 96%;
+      }
+      :root[data-theme="light"] {
+        --tag-token: var(--light);
+      }
+      :root[data-theme='dark'] {
+        --tag-token: 17%;
+      }
+      @media ( prefers-color-scheme : dark ) {
+        :root {
+          --tag-token: 17%;
+        }
+      }
+    `;
+
+    expect(
+      hasDeclarationPropertyForSelector(tokenCss, ':root', '--tag-token', {
+        tokenRuleAncestry: 'root',
+      }),
+    ).toBe(true);
+    expect(
+      hasDeclarationForSelector(
+        tokenCss,
+        ":root[data-theme='light']",
+        '--tag-token',
+        'var(--light)',
+        { tokenRuleAncestry: 'root' },
+      ),
+    ).toBe(true);
+    expect(
+      hasDeclarationForSelector(tokenCss, ":root[data-theme='dark']", '--tag-token', '17%', {
+        tokenRuleAncestry: 'root',
+      }),
+    ).toBe(true);
+    expect(
+      hasDeclarationForSelector(tokenCss, ':root', '--tag-token', '17%', {
+        tokenRuleAncestry: 'root-os-dark-media',
+      }),
+    ).toBe(true);
+  });
+
+  it('tag token の selector、宣言所有、完全な祖先経路の逸脱を拒否する', () => {
+    const rejectsRoot = [
+      `.wrong { --tag-token: 96%; }`,
+      `:root { .wrong { --tag-token: 96%; } }`,
+      `:root { @media print { --tag-token: 96%; } }`,
+      `.wrong { :root { --tag-token: 96%; } }`,
+      `@supports (display: definitely-not-a-real-value) { :root { --tag-token: 96%; } }`,
+      `@container card { :root { --tag-token: 96%; } }`,
+      `@layer tokens { :root { --tag-token: 96%; } }`,
+    ];
+    for (const candidate of rejectsRoot) {
+      expect(
+        hasDeclarationPropertyForSelector(candidate, ':root', '--tag-token', {
+          tokenRuleAncestry: 'root',
+        }),
+        candidate,
+      ).toBe(false);
+    }
+    for (const selector of [":root[data-theme='light']", ":root[data-theme='dark']"]) {
+      expect(
+        hasDeclarationForSelector(
+          `@supports (display: definitely-not-a-real-value) { ${selector} { --tag-token: 96%; } }`,
+          selector,
+          '--tag-token',
+          '96%',
+          { tokenRuleAncestry: 'root' },
+        ),
+        selector,
+      ).toBe(false);
+    }
+    expect(
+      hasDeclarationForSelector(
+        `:root[data-theme='dark'] { --tag-token: 17%; }`,
+        ":root[data-theme='light']",
+        '--tag-token',
+        '17%',
+        { tokenRuleAncestry: 'root' },
+      ),
+    ).toBe(false);
+    expect(
+      hasDeclarationForSelector(
+        `:root { --tag-token: 0%; } .wrong { --tag-token: 96%; }`,
+        ':root',
+        '--tag-token',
+        '96%',
+        { tokenRuleAncestry: 'root' },
+      ),
+    ).toBe(false);
+    expect(
+      hasDeclarationPropertyForSelector(':root { --other-token: 96%; }', ':root', '--tag-token', {
+        tokenRuleAncestry: 'root',
+      }),
+    ).toBe(false);
+
+    const rejectsDarkMedia = [
+      `:root { --tag-token: 17%; }`,
+      `@media (prefers-color-scheme: light) { :root { --tag-token: 17%; } }`,
+      `@media screen and (prefers-color-scheme: dark) { :root { --tag-token: 17%; } }`,
+      `@supports (display: definitely-not-a-real-value) { @media (prefers-color-scheme: dark) { :root { --tag-token: 17%; } } }`,
+      `@media (prefers-color-scheme: dark) { @supports (display: definitely-not-a-real-value) { :root { --tag-token: 17%; } } }`,
+      `@media (prefers-color-scheme: dark) { :root { @supports (display: definitely-not-a-real-value) { --tag-token: 17%; } } }`,
+      `@media (prefers-color-scheme: dark) { @media (prefers-color-scheme: dark) { :root { --tag-token: 17%; } } }`,
+    ];
+    for (const candidate of rejectsDarkMedia) {
+      expect(
+        hasDeclarationForSelector(candidate, ':root', '--tag-token', '17%', {
+          tokenRuleAncestry: 'root-os-dark-media',
+        }),
+        candidate,
+      ).toBe(false);
+    }
+  });
+
+  it('tag token option の競合を拒否し、未指定時の再帰探索を維持する', () => {
+    const nestedDeclaration = `:root { @media print { --tag-token: 96%; } }`;
+
+    expect(
+      hasDeclarationForSelector(nestedDeclaration, ':root', '--tag-token', '96%', {
+        scope: 'base',
+      }),
+    ).toBe(true);
+    expect(() =>
+      hasDeclarationForSelector(':root { --tag-token: 96%; }', ':root', '--tag-token', '96%', {
+        scope: 'base',
+        tokenRuleAncestry: 'root',
+      }),
+    ).toThrow(/tokenRuleAncestry/u);
+    expect(() =>
+      hasDeclarationForSelector(':root { --tag-token: 96%; }', ':root', '--tag-token', '96%', {
+        mediaPredicate: () => true,
+        tokenRuleAncestry: 'root',
+      }),
+    ).toThrow(/tokenRuleAncestry/u);
+  });
+
   it('checks direct property absence for a selector', () => {
     expect(lacksDeclarationPropertyForSelector(cssText, '.property-present', 'background')).toBe(
       true,
