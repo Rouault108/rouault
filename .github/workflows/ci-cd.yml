@@ -446,6 +446,8 @@ jobs:
           const digest = createHash('sha256').update(JSON.stringify(ordered)).digest('hex');
           console.log(`${digest}  .velite/notes.json (canonical top-level slug order)`);
           NODE
+          cp .velite/notes.json "$RUNNER_TEMP/rouault-stage3-e2e-notes-before.json"
+          sha256sum "$RUNNER_TEMP/rouault-stage3-e2e-notes-before.json"
       - name: test stage 3 E2E files standalone
         if: ${{ !cancelled() && github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/validation/test-refinement-stage3-20261009' && inputs.test_refinement_stage3_standalone }}
         env:
@@ -507,6 +509,124 @@ jobs:
           );
           const digest = createHash('sha256').update(JSON.stringify(ordered)).digest('hex');
           console.log(`${digest}  .velite/notes.json (canonical top-level slug order)`);
+          NODE
+          sha256sum \
+            "$RUNNER_TEMP/rouault-stage3-e2e-notes-before.json" \
+            .velite/notes.json
+          node --import tsx --input-type=module <<'NODE'
+          import assert from 'node:assert/strict';
+          import { readFile } from 'node:fs/promises';
+          import { join } from 'node:path';
+          import { buildNotesCollection, filterPublicNotes } from './build/data/notes.ts';
+          import { buildNoteNavigationModel } from './build/navigation/index.ts';
+          import { buildSearchCatalog } from './build/search/build-search-catalog.ts';
+          import { buildE2ENoteFixtureManifest } from './build/testing/e2e-note-fixture-manifest.ts';
+
+          const runnerTemp = process.env['RUNNER_TEMP'];
+          if (runnerTemp === undefined) throw new Error('RUNNER_TEMP is required');
+          const beforeRaw = JSON.parse(
+            await readFile(
+              join(runnerTemp, 'rouault-stage3-e2e-notes-before.json'),
+              'utf8',
+            ),
+          );
+          const afterRaw = JSON.parse(await readFile('.velite/notes.json', 'utf8'));
+          if (!Array.isArray(beforeRaw) || !Array.isArray(afterRaw)) {
+            throw new TypeError('Velite notes snapshots must be arrays');
+          }
+
+          const toRecordMap = (notes, label) => {
+            const records = new Map();
+            for (const note of notes) {
+              if (typeof note.slug !== 'string') throw new TypeError(`${label}: missing note slug`);
+              if (records.has(note.slug)) throw new Error(`${label}: duplicate note slug ${note.slug}`);
+              records.set(note.slug, note);
+            }
+            return records;
+          };
+          const beforeRecords = toRecordMap(beforeRaw, 'before');
+          const afterRecords = toRecordMap(afterRaw, 'after');
+          assert.deepStrictEqual(
+            [...afterRecords.keys()].sort(),
+            [...beforeRecords.keys()].sort(),
+            'Velite note slug set changed',
+          );
+          for (const [slug, beforeRecord] of beforeRecords) {
+            assert.deepStrictEqual(
+              afterRecords.get(slug),
+              beforeRecord,
+              `Velite note record changed: ${slug}`,
+            );
+          }
+
+          const contentRoot = join(process.cwd(), 'content/notes');
+          const enrich = (notes) =>
+            filterPublicNotes(
+              buildNotesCollection(notes, contentRoot, {
+                sourceRoots: {
+                  'content/notes': contentRoot,
+                  'test/fixtures/content/notes': join(
+                    process.cwd(),
+                    'test/fixtures/content/notes',
+                  ),
+                },
+              }),
+            );
+          const beforeNotes = enrich(beforeRaw);
+          const afterNotes = enrich(afterRaw);
+          const beforeNotesBySlug = toRecordMap(beforeNotes, 'enriched before');
+          const afterNotesBySlug = toRecordMap(afterNotes, 'enriched after');
+          assert.deepStrictEqual(
+            [...afterNotesBySlug.keys()].sort(),
+            [...beforeNotesBySlug.keys()].sort(),
+            'enriched note slug set changed',
+          );
+          for (const [slug, beforeNote] of beforeNotesBySlug) {
+            assert.deepStrictEqual(
+              afterNotesBySlug.get(slug),
+              beforeNote,
+              `enriched note record changed: ${slug}`,
+            );
+          }
+          assert.deepStrictEqual(
+            buildSearchCatalog(afterNotes),
+            buildSearchCatalog(beforeNotes),
+            'search catalog projection changed',
+          );
+          assert.deepStrictEqual(
+            buildE2ENoteFixtureManifest(afterNotes),
+            buildE2ENoteFixtureManifest(beforeNotes),
+            'E2E note fixture projection changed',
+          );
+
+          for (const beforeNote of beforeNotes) {
+            const afterNote = afterNotesBySlug.get(beforeNote.slug);
+            if (afterNote === undefined) throw new Error(`missing enriched note ${beforeNote.slug}`);
+            assert.deepStrictEqual(
+              buildNoteNavigationModel({ currentNote: afterNote, notes: afterNotes }),
+              buildNoteNavigationModel({ currentNote: beforeNote, notes: beforeNotes }),
+              `navigation projection changed: ${beforeNote.slug}`,
+            );
+          }
+
+          const rawOrderEqual = beforeRaw.every(
+            (note, index) => note.slug === afterRaw[index]?.slug,
+          );
+          const enrichedOrderChanges = beforeNotes.flatMap((note, index) => {
+            const afterSlug = afterNotes[index]?.slug;
+            return note.slug === afterSlug
+              ? []
+              : [{ index, before: note.slug, after: afterSlug ?? null }];
+          });
+          console.log(`stage3_e2e_notes_records=${beforeRecords.size}`);
+          console.log(`stage3_e2e_notes_raw_order_equal=${String(rawOrderEqual)}`);
+          console.log(
+            `stage3_e2e_notes_enriched_order_equal=${String(enrichedOrderChanges.length === 0)}`,
+          );
+          console.log(
+            `stage3_e2e_notes_enriched_order_changes=${JSON.stringify(enrichedOrderChanges)}`,
+          );
+          console.log('stage3_e2e_notes_navigation_search_projections=equal');
           NODE
       - name: preserve production E2E diagnostics
         if: ${{ always() && steps.playwright-production.outcome == 'failure' }}
