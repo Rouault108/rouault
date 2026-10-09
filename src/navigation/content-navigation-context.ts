@@ -1,4 +1,4 @@
-import { readAddress, readHistoryEntry } from './history-entry.js';
+import { readAddress, readHistoryEntry, writeHistoryEntry } from './history-entry.js';
 export type NavigationCause = 'initial' | 'navigation' | 'traverse' | 'native-navigation';
 export type FeatureCause = 'user-navigation' | 'initialization' | 'url-sync' | 'normalization';
 export interface ContentBinding {
@@ -184,6 +184,37 @@ export const adoptFeatureAddress = (): void => {
   const binding = { entryId: readHistoryEntry()?.id ?? null, url: readAddress() };
   context = { ...context, displayedBinding: binding, addressBinding: binding };
   emit('feature', 'feature');
+};
+export const writeFeatureHistoryEntry = (
+  source: FeatureSource,
+  token: FeatureToken,
+  options: { mode: 'push' | 'replace'; url: string; state?: unknown },
+): FeatureToken | null => {
+  if (!isFeatureTokenCurrent(source, token)) return null;
+  const result: { adopted: FeatureToken | null } = { adopted: null };
+  try {
+    writeHistoryEntry({
+      ...options,
+      owner: 'feature',
+      beforeWrite: () => {
+        if (!isFeatureTokenCurrent(source, token))
+          throw new DOMException('superseded', 'AbortError');
+      },
+      onDurable: () => {
+        // 成功API直後にbindingを採用し、after observerより前に新tokenを固定する。
+        adoptFeatureAddress();
+        result.adopted = {
+          ...token,
+          entryId: readHistoryEntry()?.id ?? null,
+          expectedUrl: readAddress(),
+        };
+      },
+    });
+  } catch (error) {
+    if (!isFeatureTokenCurrent(source, token)) return null;
+    throw error;
+  }
+  return result.adopted && isFeatureTokenCurrent(source, result.adopted) ? result.adopted : null;
 };
 export const hasCoordinatePriority = (): boolean => context?.coordinatePriority === true;
 export const markCoordinatePriority = (): void => {

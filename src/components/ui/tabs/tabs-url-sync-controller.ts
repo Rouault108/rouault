@@ -1,10 +1,9 @@
-import { writeHistoryEntry } from '../../../navigation/history-entry.js';
 import {
   captureFeatureSource,
   beginFeatureNavigation,
   isFeatureSourceCurrent,
   isFeatureTokenCurrent,
-  adoptFeatureAddress,
+  writeFeatureHistoryEntry,
   type FeatureSource,
   type FeatureToken,
 } from '../../../navigation/content-navigation-context.js';
@@ -194,19 +193,18 @@ export class TabsUrlSyncController {
     const state: unknown = history.state;
     const strategy = getTabsUrlSyncStrategy();
 
-    if (historyMode === 'push') {
-      writeHistoryEntry({ mode: 'push', url: nextUrl, owner: 'feature', state });
-    } else {
-      writeHistoryEntry({ mode: 'replace', url: nextUrl, owner: 'feature', state });
-    }
-
-    adoptFeatureAddress();
+    const adopted = writeFeatureHistoryEntry(this.source, token, {
+      mode: historyMode,
+      url: nextUrl,
+      state,
+    });
     this.operation = null;
+    if (!adopted) return;
     strategy?.dispatchChange(previousUrl, nextUrl);
   }
 
-  private syncFromLocationState(): void {
-    if (!this.canSync()) return;
+  private syncFromLocationState(token: FeatureToken): void {
+    if (!isFeatureTokenCurrent(this.source, token)) return;
     const strategy = getTabsUrlSyncStrategy();
     const url = typeof window === 'undefined' ? '' : window.location.href;
     const hasQueryValue = (strategy?.readValue(url) ?? null) !== null;
@@ -230,7 +228,9 @@ export class TabsUrlSyncController {
     // popstate と router の state-only commit は、ブラウザ側 URL 更新と component 側の
     // selected-value / panel state 反映順が前後することがある。
     // 即時・microtask・次フレームの 3 段階で再同期して履歴復元を安定化する。
-    this.syncFromLocationState();
+    const token = beginFeatureNavigation(this.source, 'url-sync');
+    if (!token) return;
+    this.syncFromLocationState(token);
 
     if (typeof window === 'undefined') {
       return;
@@ -246,7 +246,7 @@ export class TabsUrlSyncController {
       ) {
         return;
       }
-      this.syncFromLocationState();
+      this.syncFromLocationState(token);
     });
 
     if (this.locationSyncRafId !== null) {
@@ -262,7 +262,7 @@ export class TabsUrlSyncController {
       ) {
         return;
       }
-      this.syncFromLocationState();
+      this.syncFromLocationState(token);
     });
   };
 }

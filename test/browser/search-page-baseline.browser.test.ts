@@ -1,4 +1,15 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import {
+  beginNavigationIntent,
+  initializeContentContext,
+  adoptContentBinding,
+  releaseContentContext,
+} from '../../src/navigation/content-navigation-context.js';
+import {
+  adoptHistoryEntry,
+  observeHistoryEntries,
+  readAddress,
+} from '../../src/navigation/history-entry.js';
 import { userEvent } from 'vitest/browser';
 import { renderSearchPageHtml } from '../../src/layouts/search-page-html.js';
 import { enhanceSearchPage } from '../../src/client/post-hydrate/search-page-enhancer.js';
@@ -43,8 +54,14 @@ const result = (title: string, path: string): ExploreSearchResponse => {
   };
 };
 const controllers: SearchPageController[] = [];
+let navigationRoot: HTMLElement | null = null;
+let stopHistory: (() => void) | null = null;
 afterEach(() => {
+  stopHistory?.();
+  stopHistory = null;
   for (const controller of controllers.splice(0)) controller.dispose();
+  if (navigationRoot) releaseContentContext(navigationRoot);
+  navigationRoot = null;
   document.body.replaceChildren();
   history.replaceState(history.state, '', '/');
 });
@@ -106,6 +123,69 @@ const query = (input: HTMLInputElement, value: string) => {
   input.value = value;
   input.dispatchEvent(new Event('input', { bubbles: true }));
 };
+
+describe('Searchのfeature token再照合', () => {
+  it.each(['before', 'after'] as const)(
+    '%s observer再入後に旧search/focusを開始しない',
+    (phase) => {
+      const { host, page } = mount('tag');
+      navigationRoot = host;
+      initializeContentContext(host);
+      adoptHistoryEntry();
+      adoptContentBinding(readAddress());
+      const search = vi.fn(async () => empty);
+      enhance(host, { search });
+      const focus = document.createElement('button');
+      focus.textContent = '新intentのfocus';
+      document.body.append(focus);
+      const reenter = (): void => {
+        beginNavigationIntent('navigation', '/notes/next/');
+        focus.focus({ preventScroll: true });
+      };
+      const length = history.length;
+      const url = readAddress();
+      stopHistory = observeHistoryEntries(
+        () => {
+          if (phase === 'before') reenter();
+        },
+        () => {
+          if (phase === 'after') reenter();
+        },
+      );
+      const item = page.querySelector<HTMLButtonElement>(
+        '[data-search-choice-menu="sort"] [data-static-choice-item][data-value="date-desc"]',
+      );
+      if (!item) throw new Error('sort item');
+      item.click();
+      expect(history.length).toBe(length + (phase === 'after' ? 1 : 0));
+      expect(readAddress()).toBe(phase === 'before' ? url : '/search/?tag=A&sort=date-desc');
+      expect(search).not.toHaveBeenCalled();
+      expect(document.activeElement).toBe(focus);
+    },
+  );
+  it('同epoch/同addressでも新intent後の旧Search結果を採用しない', async () => {
+    const { host, input, page } = mount('tag');
+    navigationRoot = host;
+    initializeContentContext(host);
+    adoptHistoryEntry();
+    adoptContentBinding(readAddress());
+    let release!: (value: ExploreSearchResponse) => void;
+    const pending = new Promise<ExploreSearchResponse>((resolve) => {
+      release = resolve;
+    });
+    const search = vi.fn(() => pending);
+    enhance(host, { search });
+    query(input, 'old');
+    await vi.waitFor(() => expect(search).toHaveBeenCalledTimes(1));
+    beginNavigationIntent('navigation', '/notes/next/');
+    release(result('旧intentの結果', '/notes/old/'));
+    await pending;
+    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+    expect(page.querySelector('[data-search-page-results-section]')?.textContent).not.toContain(
+      '旧intentの結果',
+    );
+  });
+});
 
 describe('SSR baseline / capability / request outcome', () => {
   it('baseline linkにfocusがあるready移行は操作可能なqueryへfocusを引き継ぐ', () => {

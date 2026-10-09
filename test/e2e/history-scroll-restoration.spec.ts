@@ -220,6 +220,64 @@ test('artifact待機中の本人wheel後はcommitしてもtopとfocusを奪わ�
   }
 });
 
+for (const key of ['Tab', 'Shift+Tab'])
+  test(`artifact待機中の本人${key}で本文外focusを選んだ後は奪わない（A6）`, async ({ page }) => {
+    await page.goto(e2eNoteFixtures.markdownBasic.directPath);
+    await ready(page);
+    await page.evaluate(() => {
+      const before = document.createElement('button');
+      before.id = 'reading-tab-before';
+      before.textContent = '前のfocus';
+      const after = document.createElement('button');
+      after.id = 'reading-tab-after';
+      after.textContent = '次のfocus';
+      document.body.prepend(before, after);
+      (document.getElementById('reading-tab-before') as HTMLElement).focus({ preventScroll: true });
+    });
+    if (key === 'Shift+Tab')
+      await page.evaluate(() => {
+        document.getElementById('reading-tab-after')?.focus({ preventScroll: true });
+      });
+    let release!: () => void;
+    let requested!: () => void;
+    const gate = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    const seen = new Promise<void>((resolve) => {
+      requested = resolve;
+    });
+    await page.route(`**${resolveRouterArtifactPathname(b())}`, async (route) => {
+      requested();
+      await gate;
+      await route.continue();
+    });
+    try {
+      await page.evaluate((url) => {
+        const host = document.querySelector('router-document-host');
+        if (!host) throw new Error('host');
+        void host.navigate(url).then((result) => {
+          host.dataset['readingRequestOutcome'] = result.outcome;
+        });
+      }, b());
+      await seen;
+      await page.keyboard.press(key);
+      const focus = key === 'Tab' ? 'reading-tab-after' : 'reading-tab-before';
+      expect(await page.evaluate(() => document.activeElement?.id)).toBe(focus);
+      release();
+      await expect(page.locator('router-document-host')).toHaveAttribute(
+        'data-reading-request-outcome',
+        'completed',
+      );
+      await expect(page.locator('#main-content')).toHaveAttribute(
+        'data-reading-position-status',
+        'cancelled',
+      );
+      expect(await page.evaluate(() => document.activeElement?.id)).toBe(focus);
+    } finally {
+      release();
+    }
+  });
+
 test('Back連打で未表示Bの応答が最終Aを上書きしない（A5）', async ({ page }) => {
   await page.goto(e2eNoteFixtures.markdownBasic.directPath);
   await ready(page);
@@ -286,6 +344,9 @@ test('native fragment補記はentryを増やさず離脱元stateをcopyしない
 
 const probeReloadScroll = async (page: Page): Promise<void> => {
   await page.addInitScript(() => {
+    window.addEventListener('load', () => {
+      document.documentElement.dataset['readingModeAtLoad'] = history.scrollRestoration;
+    });
     const scrollTo = window.scrollTo.bind(window);
     const calls: string[] = [];
     window.scrollTo = (options?: ScrollToOptions | number, y?: number): void => {
@@ -304,6 +365,7 @@ const reloadEvidence = async (page: Page, before: number): Promise<void> => {
         before: y,
         after: scrollY,
         mode: history.scrollRestoration,
+        modeAtLoad: document.documentElement.dataset['readingModeAtLoad'],
         navigationType: (
           performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming | undefined
         )?.type,
@@ -378,6 +440,7 @@ test('reloadは継承manualをautoへ返しnativeの座標を尊重する（A8�
     await document.querySelector('router-document-host')?.whenReady();
   });
   await reloadEvidence(page, y);
+  await expect(page.locator('html')).toHaveAttribute('data-reading-mode-at-load', 'auto');
   await expect
     .poll(async () => Math.abs((await page.evaluate(() => window.scrollY)) - y))
     .toBeLessThanOrEqual(2);
@@ -787,6 +850,7 @@ test('opaque/未知schemaのreloadはstateを包まずautoでnative位置を尊�
     expect(await page.evaluate(() => history.state)).toEqual(state);
     expect(await page.evaluate(() => history.scrollRestoration)).toBe('auto');
     await reloadEvidence(page, y);
+    await expect(page.locator('html')).toHaveAttribute('data-reading-mode-at-load', 'auto');
     await expect
       .poll(async () => Math.abs((await page.evaluate(() => scrollY)) - y))
       .toBeLessThanOrEqual(2);

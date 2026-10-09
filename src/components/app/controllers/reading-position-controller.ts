@@ -33,7 +33,7 @@ interface ScrollJob {
   candidate: ReadingPosition | null;
   url: string;
 }
-const scrollKeys = new Set([
+const interventionKeys = new Set([
   'ArrowDown',
   'ArrowUp',
   'ArrowLeft',
@@ -43,6 +43,7 @@ const scrollKeys = new Set([
   'Home',
   'End',
   ' ',
+  'Tab',
 ]);
 export class ReadingPositionController {
   private readonly store = new ReadingPositionStore();
@@ -118,7 +119,7 @@ export class ReadingPositionController {
     window.addEventListener(
       'keydown',
       (event) => {
-        if (scrollKeys.has(event.key)) this.intervene();
+        if (interventionKeys.has(event.key)) this.intervene();
       },
       { capture: true, signal },
     );
@@ -218,7 +219,13 @@ export class ReadingPositionController {
           this.candidate = null;
           this.candidateId = null;
         }
-        this.mode(intent.target.entryId ? 'manual' : 'auto');
+        this.mode(
+          intent.cause === 'initial' && owner === 'native'
+            ? 'auto'
+            : intent.target.entryId
+              ? 'manual'
+              : 'auto',
+        );
       }),
     );
     const navigation = performance.getEntriesByType('navigation')[0];
@@ -226,7 +233,7 @@ export class ReadingPositionController {
       navigation instanceof PerformanceNavigationTiming && navigation.type !== 'navigate';
     if (nativeInitial || this.renderedId === null) {
       this.mode('auto');
-      const intent = beginNavigationIntent('initial', readAddress());
+      const intent = beginNavigationIntent('initial', readAddress(), 'native');
       const adopt = (): void => {
         if (intent.signal.aborted || this.disposed) return;
         requestAnimationFrame(() => {

@@ -2,10 +2,11 @@ import {
   captureFeatureSource,
   beginFeatureNavigation,
   isFeatureSourceCurrent,
-  adoptFeatureAddress,
+  isFeatureTokenCurrent,
+  writeFeatureHistoryEntry,
+  type FeatureToken,
   type FeatureSource,
 } from '../../navigation/content-navigation-context.js';
-import { writeHistoryEntry } from '../../navigation/history-entry.js';
 import { renderStaticIconHtml } from '../../../shared/icons/render-static-icon-html.js';
 import { createSearchJsonParseDiagnosticSink } from '../../../shared/search/search-diagnostics.js';
 import { parseStaticExploreSearchResponseJson } from '../../../shared/search/search-json-artifact-parser.js';
@@ -642,6 +643,7 @@ export class SearchPageController {
   private searchRuntime: SearchCore | null = null;
   private debounceTimerId: number | undefined;
   private searchGeneration = 0;
+  private operation: FeatureToken | null = null;
   private activeSearchAbortController: AbortController | null = null;
 
   constructor(options: CreateSearchPageControllerOptions) {
@@ -770,6 +772,8 @@ export class SearchPageController {
     if (this.disposed || this.siteUrlContext === null || this.runtimeState === null) {
       return;
     }
+    this.operation = beginFeatureNavigation(this.source, 'url-sync');
+    if (!this.operation) return;
     const state = parseCurrentSearchState(this.siteUrlContext);
     this.closeAllSearchChoiceMenus();
     if (this.searchRuntime === null) {
@@ -832,19 +836,24 @@ export class SearchPageController {
     this.activeSearchAbortController = null;
   }
 
-  private commitUrl(method: 'pushState' | 'replaceState'): void {
-    if (this.runtimeState === null || this.siteUrlContext === null) {
-      return;
-    }
-    if (!isFeatureSourceCurrent(this.source)) return;
-    writeHistoryEntry({
+  private readCurrentOperation(): FeatureToken | null {
+    const token = this.operation;
+    return token && isFeatureTokenCurrent(this.source, token) ? token : null;
+  }
+
+  private commitUrl(method: 'pushState' | 'replaceState'): boolean {
+    if (this.runtimeState === null || this.siteUrlContext === null) return false;
+    const token = this.operation ?? beginFeatureNavigation(this.source, 'url-sync');
+    if (!token) return false;
+    const adopted = writeFeatureHistoryEntry(this.source, token, {
       mode: method === 'pushState' ? 'push' : 'replace',
       state: history.state,
-      owner: 'feature',
       url: buildSearchPageHistoryHref(this.toSearchState(), this.siteUrlContext),
     });
-    adoptFeatureAddress();
+    this.operation = adopted;
+    if (!adopted) return false;
     this.syncHeroFromRuntimeState();
+    return isFeatureTokenCurrent(this.source, adopted);
   }
 
   private syncHeroFromRuntimeState(): void {
@@ -904,6 +913,8 @@ export class SearchPageController {
     if (this.disposed || this.searchRuntime === null || this.runtimeState === null) {
       return;
     }
+    const token = this.operation ?? beginFeatureNavigation(this.source, 'url-sync');
+    if (!token || !isFeatureTokenCurrent(this.source, token)) return;
     const generation = this.searchGeneration;
     const searchAbortController = new AbortController();
     this.activeSearchAbortController = searchAbortController;
@@ -915,6 +926,12 @@ export class SearchPageController {
     try {
       pending = searchRuntime.search(request, { signal: searchAbortController.signal });
     } catch {
+      if (
+        !isFeatureTokenCurrent(this.source, token) ||
+        generation !== this.searchGeneration ||
+        searchAbortController.signal.aborted
+      )
+        return;
       this.activeSearchAbortController = null;
       this.showRequestError();
       return;
@@ -923,7 +940,7 @@ export class SearchPageController {
       .then((response) => {
         if (
           this.disposed ||
-          !isFeatureSourceCurrent(this.source) ||
+          !isFeatureTokenCurrent(this.source, token) ||
           generation !== this.searchGeneration ||
           searchAbortController.signal.aborted
         ) {
@@ -941,7 +958,7 @@ export class SearchPageController {
       .catch((error: unknown) => {
         if (
           this.disposed ||
-          !isFeatureSourceCurrent(this.source) ||
+          !isFeatureTokenCurrent(this.source, token) ||
           generation !== this.searchGeneration ||
           searchAbortController.signal.aborted ||
           (error instanceof DOMException && error.name === 'AbortError')
@@ -1198,7 +1215,8 @@ export class SearchPageController {
           )
             return;
           if (event instanceof KeyboardEvent && !['Enter', ' '].includes(event.key)) return;
-          if (!beginFeatureNavigation(this.source)) {
+          this.operation = beginFeatureNavigation(this.source);
+          if (!this.operation) {
             event.preventDefault();
             event.stopImmediatePropagation();
           }
@@ -1206,7 +1224,7 @@ export class SearchPageController {
         { ...listenerOptions, capture: true },
       );
     const syncFilterDom = (preferredTag?: string): void => {
-      if (this.disposed || this.runtimeState === null) {
+      if (!isFeatureSourceCurrent(this.source) || this.disposed || this.runtimeState === null) {
         return;
       }
       syncFilterDomFromForm(this.page, form, this.runtimeState, preferredTag);
@@ -1219,14 +1237,15 @@ export class SearchPageController {
       search: 'debounced' | 'immediate',
       preferredTag?: string,
       invalidateCounts = true,
-    ): void => {
+    ): boolean => {
       if (
-        !isFeatureSourceCurrent(this.source) ||
+        !this.operation ||
+        !isFeatureTokenCurrent(this.source, this.operation) ||
         this.disposed ||
         this.runtimeState === null ||
         this.searchRuntime === null
       ) {
-        return;
+        return false;
       }
       const data = new FormData(form);
       this.runtimeState.queryInputValue =
@@ -1238,7 +1257,7 @@ export class SearchPageController {
       this.runtimeState.tagMode = normalizeSearchTagMode(readFormString(data.get('tagMode')));
       this.runtimeState.sort = normalizeSearchSort(readFormString(data.get('sort')));
       if (invalidateCounts) this.runtimeState.countsStatus = 'pending';
-      this.commitUrl(method);
+      if (!this.commitUrl(method)) return false;
       this.syncSearchChoiceMenusFromRuntimeState(form);
       syncFilterDom(preferredTag);
       if (search === 'debounced') {
@@ -1246,6 +1265,7 @@ export class SearchPageController {
       } else {
         this.runSearchImmediately();
       }
+      return this.readCurrentOperation() !== null;
     };
 
     form.addEventListener(
@@ -1313,7 +1333,7 @@ export class SearchPageController {
         if (input) {
           input.value = value;
         }
-        commitFormState('pushState', 'immediate', undefined, name !== 'sort');
+        if (!commitFormState('pushState', 'immediate', undefined, name !== 'sort')) return;
         this.closeSearchChoiceMenu(details, true);
       },
       listenerOptions,
@@ -1432,8 +1452,7 @@ export class SearchPageController {
         const input = form.querySelector<HTMLInputElement>('[data-search-query-input]');
         if (input) {
           input.value = '';
-          commitFormState('replaceState', 'debounced');
-          input.focus();
+          if (commitFormState('replaceState', 'debounced')) input.focus();
         }
       },
       listenerOptions,

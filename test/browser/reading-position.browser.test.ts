@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { fixture } from './harness/browser-fixture.js';
 import {
   adoptHistoryEntry,
@@ -33,6 +33,9 @@ import {
   registerTabsUrlSyncStrategy,
 } from '../../src/components/ui/tabs/tabs-url-sync-strategy.js';
 import { primaryTabTabsUrlSyncStrategy } from '../../src/components/app/navigation/primary-tab-url-state.js';
+import { TocNavigationController } from '../../src/toc/toc-navigation-controller.js';
+import { resolveTocScrollMetrics } from '../../src/toc/toc-scroll-contract.js';
+import type { TocActiveTracker } from '../../src/toc/toc-active-tracker.js';
 import { Router } from '../../src/router/router.js';
 import { ReadingPositionController } from '../../src/components/app/controllers/reading-position-controller.js';
 
@@ -49,6 +52,7 @@ afterEach(() => {
   releaseContentContext(root);
   root = null;
   history.replaceState(null, '', originalUrl);
+  vi.restoreAllMocks();
 });
 const frame = (): Promise<void> => new Promise((resolve) => requestAnimationFrame(() => resolve()));
 const setup = async (): Promise<number> => {
@@ -175,6 +179,40 @@ describe('履歴entryと本文生存期間', () => {
     expect(await result).toEqual({ status: 'aborted' });
     expect(toc.querySelector('[data-layout-toc-nav]')).toBeNull();
   });
+  it.each(['load', 'new-intent'] as const)(
+    '管理ID付きreloadはnative採用までauto、新intentならownerを移す（%s）',
+    async (completion) => {
+      await setup();
+      if (!root) throw new Error('root');
+      const navigation = performance.getEntriesByType('navigation')[0];
+      if (!(navigation instanceof PerformanceNavigationTiming))
+        throw new Error('navigation timing');
+      const nativeNavigation = new Proxy(navigation, {
+        get: (target, key) => (key === 'type' ? 'reload' : Reflect.get(target, key, target)),
+      });
+      const readEntries = performance.getEntriesByType.bind(performance);
+      vi.spyOn(performance, 'getEntriesByType').mockImplementation((name) =>
+        name === 'navigation' ? [nativeNavigation] : readEntries(name),
+      );
+      vi.spyOn(document, 'readyState', 'get').mockReturnValue('loading');
+      history.scrollRestoration = 'manual';
+      reader = new ReadingPositionController((error) => {
+        throw error;
+      });
+      reader.start(root);
+      expect(readHistoryEntry()).not.toBeNull();
+      expect(history.scrollRestoration).toBe('auto');
+      await frame();
+      expect(history.scrollRestoration).toBe('auto');
+      if (completion === 'new-intent') {
+        beginNavigationIntent('navigation', readAddress());
+        expect(history.scrollRestoration).toBe('manual');
+      }
+      window.dispatchEvent(new Event('load'));
+      await frame();
+      expect(history.scrollRestoration).toBe('manual');
+    },
+  );
   it('artifact未commit待機中の本人操作も後続topとfocusを取り消す（A6）', async () => {
     await setup();
     if (!root) throw new Error('root');
@@ -452,6 +490,163 @@ describe('復元の待機とdurable境界', () => {
     await Promise.all([first, restored]);
     expect(activated).toBe(1);
     expect(content.querySelector('[data-activated="true"]')).not.toBeNull();
+  });
+});
+
+describe('feature writerのtoken再入', () => {
+  it.each(['before', 'after'] as const)(
+    'TOCの%s observer再入は旧scroll/projectionを続けない',
+    async (phase) => {
+      await setup();
+      if (!root) throw new Error('root');
+      const content = root;
+      const link = document.createElement('a');
+      link.href = '#reading-heading';
+      link.dataset['tocLink'] = '';
+      link.dataset['headingId'] = 'reading-heading';
+      content.append(link);
+      const tracker = {
+        beginProgrammaticNavigation: vi.fn(),
+        finishProgrammaticNavigation: vi.fn(),
+        beginPostSettlementHold: vi.fn(),
+        cancelProgrammaticNavigation: vi.fn(),
+        canHoldProgrammaticTarget: () => true,
+      } as unknown as TocActiveTracker;
+      const project = vi.fn();
+      const length = history.length;
+      const url = readAddress();
+      const reenter = (): void => {
+        beginNavigationIntent('navigation', readAddress(), 'feature');
+      };
+      stop = observeHistoryEntries(
+        () => {
+          if (phase === 'before') reenter();
+        },
+        () => {
+          if (phase === 'after') reenter();
+        },
+      );
+      const controller = new TocNavigationController(content);
+      const event = new MouseEvent('click', { button: 0, cancelable: true });
+      Object.defineProperty(event, 'composedPath', { value: () => [link, content, document.body] });
+      const scroll = vi.spyOn(window, 'scrollTo');
+      try {
+        expect(
+          controller.handleTocLinkClick(event, {
+            tocRuntimeId: 'reading-token',
+            contentRoot: content,
+            tracker,
+            getActiveId: () => '',
+            applyActiveId: project,
+          }).owned,
+        ).toBe(true);
+        expect(history.length).toBe(length + (phase === 'after' ? 1 : 0));
+        expect(readAddress()).toBe(
+          phase === 'after' ? url.split('#')[0] + '#reading-heading' : url,
+        );
+        await frame();
+        await frame();
+        expect(scroll).not.toHaveBeenCalled();
+        expect(project).not.toHaveBeenCalled();
+        expect(tracker.beginProgrammaticNavigation).not.toHaveBeenCalled();
+        expect(tracker.finishProgrammaticNavigation).not.toHaveBeenCalled();
+      } finally {
+        controller.destroy();
+      }
+    },
+  );
+  it.each(['before', 'after'] as const)(
+    'tabsの%s observer再入は旧writer/changeを続けない',
+    async (phase) => {
+      history.replaceState({}, '', '/notes/reading-token?tab=javascript');
+      await setup();
+      if (!root) throw new Error('root');
+      const content = root;
+      const change = vi.fn();
+      registerTabsUrlSyncStrategy({ ...primaryTabTabsUrlSyncStrategy, dispatchChange: change });
+      const tabs = new TabsUrlSyncController({
+        getHostElement: () => content,
+        isUrlSyncEnabled: () => true,
+        getActiveValue: () => 'javascript',
+        resolveTabValueForHash: () => null,
+        clearControlledSelection: () => {
+          /* このfixtureではprojection不要。 */
+        },
+        onUrlStateChanged: () => {
+          /* このfixtureではprojection不要。 */
+        },
+      });
+      const length = history.length;
+      const url = readAddress();
+      const reenter = (): void => {
+        beginNavigationIntent('navigation', readAddress(), 'feature');
+      };
+      stop = observeHistoryEntries(
+        () => {
+          if (phase === 'before') reenter();
+        },
+        () => {
+          if (phase === 'after') reenter();
+        },
+      );
+      expect(tabs.beginSelection('push')).toBe(true);
+      tabs.writeSelectedValue('rust', 'push');
+      expect(history.length).toBe(length + (phase === 'after' ? 1 : 0));
+      expect(readAddress()).toBe(phase === 'after' ? '/notes/reading-token?tab=rust' : url);
+      expect(change).not.toHaveBeenCalled();
+      tabs.hostDisconnected();
+    },
+  );
+  it('同epochの新intent後はTOCの旧settle callbackを採用しない', async () => {
+    await setup();
+    if (!root) throw new Error('root');
+    const content = root;
+    const target = content.querySelector<HTMLElement>('#reading-heading');
+    if (!target) throw new Error('heading');
+    const link = document.createElement('a');
+    link.href = '#reading-heading';
+    link.dataset['tocLink'] = '';
+    link.dataset['headingId'] = 'reading-heading';
+    content.append(link);
+    const finish = vi.fn();
+    const tracker = {
+      beginProgrammaticNavigation: vi.fn(),
+      finishProgrammaticNavigation: finish,
+      beginPostSettlementHold: finish,
+      cancelProgrammaticNavigation: vi.fn(),
+      canHoldProgrammaticTarget: () => true,
+    } as unknown as TocActiveTracker;
+    const scroll = window.scrollTo.bind(window);
+    scroll({ top: 0, behavior: 'instant' });
+    vi.spyOn(window, 'scrollTo').mockImplementation(() => {
+      /* 到達を後で実DOMへ適用する。 */
+    });
+    const metrics = resolveTocScrollMetrics(target);
+    const controller = new TocNavigationController(content);
+    const event = new MouseEvent('click', { button: 0, cancelable: true });
+    Object.defineProperty(event, 'composedPath', { value: () => [link, content] });
+    try {
+      expect(
+        controller.handleTocLinkClick(event, {
+          tocRuntimeId: 'reading-stale-settle',
+          contentRoot: content,
+          tracker,
+          getActiveId: () => '',
+          applyActiveId: () => {
+            /* runtime projectionはこの検証の対象外。 */
+          },
+        }).owned,
+      ).toBe(true);
+      beginNavigationIntent('navigation', '/later');
+      scroll({ top: metrics.targetY, behavior: 'instant' });
+      await frame();
+      await frame();
+      await frame();
+      await frame();
+      expect(finish).not.toHaveBeenCalled();
+    } finally {
+      controller.destroy();
+    }
   });
 });
 
