@@ -426,9 +426,26 @@ jobs:
             src/generated/lucide-subset.ts \
             .velite/index.js \
             .velite/index.d.ts \
-            .velite/notes.json \
             .velite/memos.json \
             | tee "$RUNNER_TEMP/rouault-stage3-e2e-standalone.sha256"
+          node --input-type=module <<'NODE' \
+            | tee "$RUNNER_TEMP/rouault-stage3-e2e-notes-semantic.sha256"
+          import { createHash } from 'node:crypto';
+          import { readFile } from 'node:fs/promises';
+
+          const notes = JSON.parse(await readFile('.velite/notes.json', 'utf8'));
+          if (!Array.isArray(notes)) throw new TypeError('Velite notes must be an array');
+          const slugs = notes.map((note) => note.slug);
+          if (slugs.some((slug) => typeof slug !== 'string')) {
+            throw new TypeError('Every Velite note must have a slug');
+          }
+          if (new Set(slugs).size !== slugs.length) throw new Error('Velite note slugs must be unique');
+          const ordered = [...notes].sort((left, right) =>
+            left.slug < right.slug ? -1 : left.slug > right.slug ? 1 : 0,
+          );
+          const digest = createHash('sha256').update(JSON.stringify(ordered)).digest('hex');
+          console.log(`${digest}  .velite/notes.json (canonical top-level slug order)`);
+          NODE
       - name: test stage 3 E2E files standalone
         if: ${{ !cancelled() && github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/validation/test-refinement-stage3-20261009' && inputs.test_refinement_stage3_standalone }}
         env:
@@ -473,6 +490,24 @@ jobs:
           git diff --exit-code
           git diff --cached --exit-code
           sha256sum --check "$RUNNER_TEMP/rouault-stage3-e2e-standalone.sha256"
+          node --input-type=module <<'NODE' \
+            | diff -u "$RUNNER_TEMP/rouault-stage3-e2e-notes-semantic.sha256" -
+          import { createHash } from 'node:crypto';
+          import { readFile } from 'node:fs/promises';
+
+          const notes = JSON.parse(await readFile('.velite/notes.json', 'utf8'));
+          if (!Array.isArray(notes)) throw new TypeError('Velite notes must be an array');
+          const slugs = notes.map((note) => note.slug);
+          if (slugs.some((slug) => typeof slug !== 'string')) {
+            throw new TypeError('Every Velite note must have a slug');
+          }
+          if (new Set(slugs).size !== slugs.length) throw new Error('Velite note slugs must be unique');
+          const ordered = [...notes].sort((left, right) =>
+            left.slug < right.slug ? -1 : left.slug > right.slug ? 1 : 0,
+          );
+          const digest = createHash('sha256').update(JSON.stringify(ordered)).digest('hex');
+          console.log(`${digest}  .velite/notes.json (canonical top-level slug order)`);
+          NODE
       - name: preserve production E2E diagnostics
         if: ${{ always() && steps.playwright-production.outcome == 'failure' }}
         continue-on-error: true
