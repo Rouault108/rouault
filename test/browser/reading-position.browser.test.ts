@@ -174,6 +174,31 @@ describe('履歴entryと本文生存期間', () => {
     expect(await result).toEqual({ status: 'aborted' });
     expect(toc.querySelector('[data-layout-toc-nav]')).toBeNull();
   });
+  it('artifact未commit待機中の本人操作も後続topとfocusを取り消す（A6）', async () => {
+    await setup();
+    if (!root) throw new Error('root');
+    reader = new ReadingPositionController((error) => {
+      throw error;
+    });
+    reader.start(root);
+    await expect.poll(() => root?.dataset['readingPositionStatus']).toBe('settled');
+    const intent = beginNavigationIntent('navigation', readAddress());
+    window.dispatchEvent(new WheelEvent('wheel', { deltaY: 100 }));
+    window.scrollTo({ top: 650, behavior: 'instant' });
+    expect(reader.shouldFocus(intent)).toBe(false);
+    reader.schedule({
+      intent,
+      root,
+      url: readAddress(),
+      stateOnly: false,
+      error: false,
+      shellCommitId: 0,
+    });
+    await frame();
+    await frame();
+    expect(root.dataset['readingPositionStatus']).toBe('cancelled');
+    expect(Math.abs(window.scrollY - 650)).toBeLessThanOrEqual(2);
+  });
   it('復元待機中の本人操作後にreadyを解放してもtop/hashへ戻さない', async () => {
     const epoch = await setup();
     if (!root) throw new Error('root');

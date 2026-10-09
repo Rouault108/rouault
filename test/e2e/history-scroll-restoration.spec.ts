@@ -168,6 +168,58 @@ test('遅い未commitのBを同hashの本人TOC再選択で取消す（B2/A6）'
   }
 });
 
+test('artifact待機中の本人wheel後はcommitしてもtopとfocusを奪わない（A6）', async ({ page }) => {
+  await page.goto(e2eNoteFixtures.markdownBasic.directPath);
+  await ready(page);
+  await read(page, 0.3);
+  let release!: () => void;
+  let requested!: () => void;
+  const gate = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  const seen = new Promise<void>((resolve) => {
+    requested = resolve;
+  });
+  await page.route(`**${resolveRouterArtifactPathname(b())}`, async (route) => {
+    requested();
+    await gate;
+    await route.continue();
+  });
+  try {
+    await page.evaluate((url) => {
+      const host = document.querySelector('router-document-host');
+      if (!host) throw new Error('host');
+      void host.navigate(url).then((result) => {
+        host.dataset['readingRequestOutcome'] = result.outcome;
+      });
+    }, b());
+    await seen;
+    await page.mouse.wheel(0, 100);
+    await page.evaluate(() => {
+      const button = document.createElement('button');
+      button.id = 'reading-precommit-focus';
+      button.textContent = '本人操作';
+      document.body.append(button);
+      button.focus({ preventScroll: true });
+      window.scrollTo({ top: 400, behavior: 'instant' });
+    });
+    release();
+    await expect(page.locator('router-document-host')).toHaveAttribute(
+      'data-reading-request-outcome',
+      'completed',
+    );
+    await expect(page.locator('#main-content')).toHaveAttribute(
+      'data-reading-position-status',
+      'cancelled',
+    );
+    expect(new URL(page.url()).pathname).toBe(b());
+    expect(await page.evaluate(() => window.scrollY)).toBeGreaterThan(0);
+    expect(await page.evaluate(() => document.activeElement?.id)).toBe('reading-precommit-focus');
+  } finally {
+    release();
+  }
+});
+
 test('Back連打で未表示Bの応答が最終Aを上書きしない（A5）', async ({ page }) => {
   await page.goto(e2eNoteFixtures.markdownBasic.directPath);
   await ready(page);

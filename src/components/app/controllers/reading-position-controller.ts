@@ -58,6 +58,7 @@ export class ReadingPositionController {
   private disposed = false;
   private nativeGeneration = 0;
   private interruptedIntent = -1;
+  private pendingIntent: number | null = null;
   private originalMode: ScrollRestoration = history.scrollRestoration;
   private ownedMode: ScrollRestoration | null = null;
   private stops: (() => void)[] = [];
@@ -197,6 +198,7 @@ export class ReadingPositionController {
         this.cancel();
         const intent = readContentContext()?.intent;
         if (!intent) return;
+        this.pendingIntent = owner === 'router' ? intent.intentId : null;
         const root = readContentContext()?.root;
         if (owner === 'router' && root) root.dataset['readingPositionStatus'] = 'pending';
         if (intent.cause === 'traverse') {
@@ -268,6 +270,7 @@ export class ReadingPositionController {
     this.cancel();
     const context = readContentContext();
     if (!context || readHistoryEntry() === null) {
+      this.pendingIntent = null;
       this.mode('auto');
       this.restoring = false;
       options.root.dataset['readingPositionStatus'] = 'settled';
@@ -278,6 +281,7 @@ export class ReadingPositionController {
     this.sample = null;
     if (!options.stateOnly) this.renderedError = options.error;
     if (!this.shouldFocus(options.intent)) {
+      this.pendingIntent = null;
       this.restoring = false;
       this.sampleCurrent();
       options.root.dataset['readingPositionStatus'] = 'cancelled';
@@ -315,6 +319,7 @@ export class ReadingPositionController {
         if (!controller.signal.aborted) {
           job.root.dataset['readingPositionStatus'] = failed ? 'unavailable' : 'settled';
           this.restoring = false;
+          this.pendingIntent = null;
           this.candidate = null;
           this.candidateId = null;
           if (!job.error && !failed) this.sampleCurrent();
@@ -322,6 +327,7 @@ export class ReadingPositionController {
       });
   }
   adoptNativeAddress(): void {
+    this.pendingIntent = null;
     this.cancel();
     this.candidate = null;
     this.candidateId = null;
@@ -338,6 +344,7 @@ export class ReadingPositionController {
     });
   }
   fallback(): void {
+    this.pendingIntent = null;
     this.checkpoint();
     this.cancel();
     this.mode('auto');
@@ -346,6 +353,7 @@ export class ReadingPositionController {
     const context = readContentContext();
     if (context?.intent?.intentId !== intentId) return;
     if (!committed && !context.mutation && context.displayedBinding.url === readAddress()) {
+      this.pendingIntent = null;
       this.restoring = false;
       this.sampleCurrent();
       if (context.root) context.root.dataset['readingPositionStatus'] = 'settled';
@@ -477,8 +485,9 @@ export class ReadingPositionController {
       this.store.write(this.renderedId, this.sample);
   }
   private intervene(): void {
-    if (!this.job && !this.restoring) return;
+    if (!this.job && !this.restoring && this.pendingIntent === null) return;
     this.interruptedIntent = readContentContext()?.intent?.intentId ?? -1;
+    this.pendingIntent = null;
     this.cancel();
     this.candidate = null;
     this.candidateId = null;
