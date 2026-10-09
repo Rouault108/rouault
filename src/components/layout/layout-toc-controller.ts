@@ -1,3 +1,4 @@
+import { hasCoordinatePriority } from '../../navigation/content-navigation-context.js';
 import type { TocHeading as Heading } from '../../toc/toc-headings.js';
 import {
   filterHeadingsByScopeSelections,
@@ -49,7 +50,7 @@ const readLocationHash = (): string => {
     return '';
   }
 
-  return decodeHashFragment(window.location.hash) ?? '';
+  return hasCoordinatePriority() ? '' : (decodeHashFragment(window.location.hash) ?? '');
 };
 
 const removeIdsFromTree = (root: ParentNode): void => {
@@ -131,6 +132,7 @@ export class LayoutTocController extends HTMLElement {
       return { status: 'skipped', reason: 'missing-source' };
     }
 
+    this._navigationController = new TocNavigationController(this);
     this._hydrationActivated = true;
     this._hydrationSessionController.start({
       runtimeId: this.tocRuntimeId,

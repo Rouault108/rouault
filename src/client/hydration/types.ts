@@ -24,6 +24,7 @@ export interface HydrationActivationContext {
   readonly root: ParentNode;
   readonly signal: AbortSignal;
   readonly sessionId?: string | undefined;
+  readonly isCurrent: () => boolean;
 }
 
 export interface HydrationPreloadPolicy {

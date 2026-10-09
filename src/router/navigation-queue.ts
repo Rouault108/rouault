@@ -1,3 +1,4 @@
+import type { NavigationIntent } from '../navigation/content-navigation-context.js';
 import type {
   HistoryMode,
   InternalDocumentRoutePresence,
@@ -12,6 +13,7 @@ export interface QueuedNavigationRequest {
   historyMode: HistoryMode;
   routePresence: InternalDocumentRoutePresence;
   state: Record<string, unknown> | undefined;
+  intent?: NavigationIntent;
 }
 
 interface PendingNavigation {
@@ -71,6 +73,14 @@ export class NavigationQueue {
         resolve,
       });
     });
+  }
+
+  cancelPending(): void {
+    this.activeNavigation?.controller.abort();
+    if (this.pendingNavigation) {
+      this.pendingNavigation.resolve(this.createSupersededResult(this.pendingNavigation.request));
+      this.pendingNavigation = null;
+    }
   }
 
   dispose(): void {

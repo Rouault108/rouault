@@ -39,4 +39,6 @@ export interface AppShellRollbackStartDetail {
 export interface AppContentHydrationReadyDetail {
   readonly contentRoot: HTMLElement;
   readonly initial: boolean;
+  readonly contentEpoch: number;
+  readonly shellCommitId: number;
 }

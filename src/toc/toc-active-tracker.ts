@@ -1,3 +1,4 @@
+import { hasCoordinatePriority } from '../navigation/content-navigation-context.js';
 import type { TocHeading as Heading } from './toc-headings.js';
 import { decodeHashFragment } from '../router/url-hash.js';
 import { readRootScrollY } from '../router/root-scroll.js';
@@ -69,7 +70,7 @@ const HASH_NAVIGATION_HOLD_MS = TOC_SCROLL_SETTLE_TIMEOUT_MS;
 const decodeHash = (hash: string): string => decodeHashFragment(hash) ?? '';
 
 const shouldPreserveHashActiveId = (activeId: string): boolean => {
-  const hash = decodeHash(window.location.hash);
+  const hash = hasCoordinatePriority() ? '' : decodeHash(window.location.hash);
   if (hash.length === 0 || hash !== activeId) {
     return false;
   }
@@ -344,7 +345,7 @@ export class TocActiveTracker {
   }
 
   private _resolveInitialActiveId(): string {
-    const hash = decodeHash(window.location.hash);
+    const hash = hasCoordinatePriority() ? '' : decodeHash(window.location.hash);
     if (hash.length > 0 && this._visibleHeadings.some((heading) => heading.id === hash)) {
       return hash;
     }
@@ -353,7 +354,7 @@ export class TocActiveTracker {
   }
 
   private _syncActiveHeadingFromHash(): void {
-    const hash = decodeHash(window.location.hash);
+    const hash = hasCoordinatePriority() ? '' : decodeHash(window.location.hash);
     if (hash.length === 0) {
       return;
     }
@@ -448,7 +449,7 @@ export class TocActiveTracker {
   }
 
   private _resolveHoldableHashTarget(): { id: string; element: HTMLElement } | null {
-    const targetId = decodeHash(window.location.hash);
+    const targetId = hasCoordinatePriority() ? '' : decodeHash(window.location.hash);
     const contentRoot = this._contentRoot;
     if (targetId.length === 0 || contentRoot === null) {
       return null;
@@ -468,7 +469,7 @@ export class TocActiveTracker {
   }
 
   private _syncInitialHashActiveId(): void {
-    const hash = decodeHash(window.location.hash);
+    const hash = hasCoordinatePriority() ? '' : decodeHash(window.location.hash);
     if (hash.length === 0 || this._getActiveId() === hash) {
       return;
     }
@@ -531,7 +532,7 @@ export class TocActiveTracker {
       return;
     }
 
-    const forcedId = this._resolveProgrammaticActiveId();
+    const forcedId = hasCoordinatePriority() ? '' : this._resolveProgrammaticActiveId();
     if (forcedId.length > 0) {
       if (forcedId !== this._getActiveId()) {
         this._onActiveIdChange(forcedId);
@@ -564,7 +565,7 @@ export class TocActiveTracker {
   }
 
   private _shouldPreserveCurrentHashActiveId(): boolean {
-    const hash = decodeHash(window.location.hash);
+    const hash = hasCoordinatePriority() ? '' : decodeHash(window.location.hash);
     if (hash.length === 0) {
       this._suppressedHashActivePreservationId = null;
       return false;
@@ -684,7 +685,7 @@ export class TocActiveTracker {
       shouldSync = true;
     }
 
-    const hash = decodeHash(window.location.hash);
+    const hash = hasCoordinatePriority() ? '' : decodeHash(window.location.hash);
     if (hash.length > 0 && this._getActiveId() === hash) {
       this._suppressedHashActivePreservationId = hash;
       shouldSync = true;

@@ -22,9 +22,7 @@ export interface WebkitBrowserTestShard {
 // WebKitのHistory API rate limitをtop-level sessionごとに分離する。
 // History／URL stateを高頻度に変更するtestは、責務に応じて
 // URL stateまたはNavigation stateへ明示的に分類する。
-const webkitSearchStateTestFiles = [
-  'test/browser/search-page-enhancer.browser.test.ts',
-] as const;
+const webkitSearchStateTestFiles = ['test/browser/search-page-enhancer.browser.test.ts'] as const;
 
 const webkitUrlStateTestFiles = [
   'test/browser/tabs.browser.test.ts',
@@ -32,6 +30,7 @@ const webkitUrlStateTestFiles = [
 ] as const;
 
 const webkitNavigationStateTestFiles = [
+  'test/browser/reading-position.browser.test.ts',
   'test/browser/layout-toc-controller.browser.test.ts',
   'test/browser/router-stale-fetch-artifact-fallback.browser.test.ts',
   'test/browser/toc-active-tracker.browser.test.ts',

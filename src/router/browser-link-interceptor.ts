@@ -1,4 +1,13 @@
 import {
+  observeBrowserAddressChange,
+  type BrowserAddressChange,
+} from '../navigation/history-entry.js';
+import {
+  captureFeatureSource,
+  beginFeatureNavigation,
+  readContentContext,
+} from '../navigation/content-navigation-context.js';
+import {
   classifyLinkHref,
   createManifestLoadedRouteClassificationMode,
 } from '../../shared/link/link-annotation.js';
@@ -16,9 +25,11 @@ import {
 interface InterceptorRequest {
   url: string;
   historyMode: 'none' | 'push' | 'replace';
+  cause?: 'traverse';
 }
 
 export interface RouterLinkInterceptorOptions {
+  readonly onNativeAddressChange?: (change: BrowserAddressChange) => void;
   readonly location: LocationAdapter;
   readonly siteUrlContext: SiteUrlContext;
   readonly getCurrentUrl: () => string;
@@ -35,7 +46,8 @@ const isInvalidTarget = (target: string): boolean =>
 
 export class RouterLinkInterceptor {
   private readonly clickHandler: (event: MouseEvent) => void;
-  private readonly popstateHandler: () => void;
+  private stopAddressObserver: (() => void) | null = null;
+  private readonly onNativeAddressChange: RouterLinkInterceptorOptions['onNativeAddressChange'];
   private readonly location: LocationAdapter;
   private readonly siteUrlContext: SiteUrlContext;
   private readonly getCurrentUrl: () => string;
@@ -45,6 +57,7 @@ export class RouterLinkInterceptor {
   private readonly diagnosticSink: RouterRuntimeDiagnosticSink;
 
   constructor(options: RouterLinkInterceptorOptions) {
+    this.onNativeAddressChange = options.onNativeAddressChange;
     this.location = options.location;
     this.siteUrlContext = options.siteUrlContext;
     this.getCurrentUrl = options.getCurrentUrl;
@@ -57,22 +70,26 @@ export class RouterLinkInterceptor {
     this.clickHandler = (event: MouseEvent) => {
       this.handleAnchorClick(event);
     };
-    this.popstateHandler = () => {
-      const nextUrl = this.location.readCurrentUrl();
-      void this.requestNavigation({
-        url: nextUrl,
-        historyMode: 'none',
-      });
-    };
   }
 
   attach(): void {
-    window.addEventListener('popstate', this.popstateHandler);
+    this.stopAddressObserver = observeBrowserAddressChange({
+      getDisplayedUrl: () => readContentContext()?.displayedBinding.url ?? this.getCurrentUrl(),
+      getEntryId: () => readContentContext()?.displayedBinding.entryId ?? null,
+      onChange: (change) => {
+        if (change.cause === 'native-fragment-unidentified' && this.onNativeAddressChange) {
+          this.onNativeAddressChange(change);
+          return;
+        }
+        void this.requestNavigation({ url: change.url, historyMode: 'none', cause: 'traverse' });
+      },
+    });
     document.addEventListener('click', this.clickHandler);
   }
 
   detach(): void {
-    window.removeEventListener('popstate', this.popstateHandler);
+    this.stopAddressObserver?.();
+    this.stopAddressObserver = null;
     document.removeEventListener('click', this.clickHandler);
   }
 
@@ -101,7 +118,19 @@ export class RouterLinkInterceptor {
       anchor.relList.contains('external') ||
       (typeof relValue === 'string' && relValue.split(/\s+/u).includes('external'));
 
-    if (isExternalRel || anchor.hasAttribute('data-no-router')) {
+    if (isExternalRel) return;
+    if (anchor.hasAttribute('data-no-router')) {
+      const nativeTarget = new URL(anchor.href);
+      if (
+        nativeTarget.origin === location.origin &&
+        nativeTarget.pathname === location.pathname &&
+        nativeTarget.search === location.search &&
+        nativeTarget.hash
+      ) {
+        if (readContentContext() && !beginFeatureNavigation(captureFeatureSource(anchor)))
+          event.preventDefault();
+        else document.dispatchEvent(new Event('reading-position:native-start'));
+      }
       return;
     }
 
@@ -138,6 +167,11 @@ export class RouterLinkInterceptor {
     const normalizedCurrentWithoutHash = this.location.stripHash(currentAbsoluteUrl);
 
     if (normalizedTargetWithoutHash === normalizedCurrentWithoutHash && targetUrl.hash) {
+      if (readContentContext() && !beginFeatureNavigation(captureFeatureSource(anchor))) {
+        event.preventDefault();
+        return;
+      }
+      document.dispatchEvent(new Event('reading-position:native-start'));
       this.diagnosticSink.record({
         reason: 'return-to-reading-unavailable',
         routeId: `${targetUrl.pathname}${targetUrl.search}${targetUrl.hash}`,

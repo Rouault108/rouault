@@ -213,3 +213,7 @@ runtime契約:
 ## Native Tabs integration
 
 build-time annotationのownerはextract-toc-from-html.ts/prepareTocHtmlである。direct panelのdata-tab-valueを読み、既存scope IDと外側→内側のscopeSelections tupleを維持する。runtimeはreadTabsSelection/selectTabsValueを使う。未enhance scopeは全panel可視として扱い、hash revealは外側からhistoryMode:noneで要求する。起動は要求せずqueueも作らない。data-tabs-enhanced/data-selected-valueのmutationで再評価し、初期化用の選択eventを偽装しない。
+
+## Reading position integration
+
+coordinate-priority中はactiveTracking=trueだけがviewportからcurrentを同期する。falseへ新規追跡を加えない。通常hash選択は本人intentをDOM変更前に受理する。 詳細は[Reading Position Contract](reading-position.md)。

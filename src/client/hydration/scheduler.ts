@@ -22,11 +22,13 @@ interface HydrationSession {
   readonly controller: AbortController;
   readonly kind: HydrationSessionKind;
   readonly excludeSubtrees: readonly Element[];
+  readonly isCurrent: () => boolean;
 }
 
 interface HydrationSchedulerOptions {
   readonly dispatchTarget?: EventTarget | null;
   readonly excludeSubtrees?: readonly Element[];
+  readonly isCurrent?: () => boolean;
 }
 
 interface PreparedSession {
@@ -60,6 +62,8 @@ const normalizeExcludeSubtrees = (
   excludeSubtrees: readonly Element[] | undefined,
 ): readonly Element[] => (excludeSubtrees ? [...excludeSubtrees] : []);
 
+const isConnected = (element: HTMLElement): boolean => element.isConnected;
+
 const isCustomElementEntry = (entry: HydrationRegistryEntry): boolean => entry.kind !== 'enhancer';
 
 const canLoadEntryForElement = (entry: HydrationRegistryEntry, element: HTMLElement): boolean =>
@@ -84,6 +88,7 @@ export class HydrationScheduler {
       controller: new AbortController(),
       kind: 'shell',
       excludeSubtrees: normalizeExcludeSubtrees(options.excludeSubtrees),
+      isCurrent: options.isCurrent ?? (() => true),
     } satisfies HydrationSession;
 
     const prepared = await this.#prepareSession(session);
@@ -106,6 +111,10 @@ export class HydrationScheduler {
     return finalizeHydrationDiagnostics(prepared.diagnostics);
   }
 
+  cancelContent(): void {
+    this.activeContentSession?.controller.abort();
+  }
+
   async hydrateContent(root: ParentNode, options: HydrationSchedulerOptions = {}): Promise<void> {
     this.activeContentSession?.controller.abort();
 
@@ -115,13 +124,18 @@ export class HydrationScheduler {
       controller: new AbortController(),
       kind: 'content',
       excludeSubtrees: normalizeExcludeSubtrees(options.excludeSubtrees),
+      isCurrent: options.isCurrent ?? (() => true),
     } satisfies HydrationSession;
     this.activeContentSession = session;
 
     const prepared = await this.#prepareSession(session);
     const activeContentSession = this.activeContentSession;
 
-    if (activeContentSession.id !== session.id || session.controller.signal.aborted) {
+    if (
+      activeContentSession.id !== session.id ||
+      session.controller.signal.aborted ||
+      !session.isCurrent()
+    ) {
       return;
     }
 
@@ -293,12 +307,17 @@ export class HydrationScheduler {
     diagnostics: MutableHydrationDiagnostics,
     processed: WeakSet<HTMLElement>,
   ): Promise<void> {
+    const isCurrent = (): boolean =>
+      !session.controller.signal.aborted &&
+      session.isCurrent() &&
+      (session.kind === 'shell' || this.activeContentSession?.id === session.id);
+    if (!isCurrent()) return;
     if (processed.has(item.element)) {
       diagnostics.skippedCount += 1;
       return;
     }
 
-    if (!item.element.isConnected) {
+    if (!isConnected(item.element)) {
       diagnostics.skippedCount += 1;
       return;
     }
@@ -328,6 +347,7 @@ export class HydrationScheduler {
 
     try {
       await this.#loadEntry(entry);
+      if (!isCurrent() || !isConnected(item.element)) return;
       diagnostics.loadedCount += 1;
     } catch {
       diagnostics.failedCount += 1;
@@ -343,6 +363,7 @@ export class HydrationScheduler {
     if (entry.kind !== 'enhancer') {
       try {
         await customElements.whenDefined(item.tag);
+        if (!isCurrent() || !isConnected(item.element)) return;
         customElements.upgrade(item.element);
         diagnostics.upgradedCount += 1;
       } catch {
@@ -365,8 +386,10 @@ export class HydrationScheduler {
             root: session.root,
             signal: session.controller.signal,
             sessionId: String(session.id),
+            isCurrent,
           }),
         );
+        if (!isCurrent() || !isConnected(item.element)) return;
         if (result.status === 'activated') {
           diagnostics.activatedCount += 1;
         } else if (result.status === 'skipped') {
@@ -378,6 +401,7 @@ export class HydrationScheduler {
         }
       }
 
+      if (!isCurrent() || !isConnected(item.element)) return;
       this.#cleanupBootMarker(entry, item.element);
     } catch {
       diagnostics.failedCount += 1;

@@ -146,3 +146,7 @@
 - state-only navigationがdocument fetchとcontent hydration triggerを起こさない。
 - note page navigation URLとfetch target URLが混同されていない。
 - router coreがfocus / scroll / announcement / UI stateを所有していない。
+
+## Reading position integration
+
+History entryの識別・cause・取消signalをpost-renderへ渡す。共通writerのstate保全を使い、本人feature intentで未commit requestを失効する。durable後の取消はcommitted:trueを維持する。scroll/focus/announcementはcoreへ移さない。 詳細は[Reading Position Contract](reading-position.md)。

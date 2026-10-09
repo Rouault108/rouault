@@ -168,3 +168,7 @@ public CSS custom propertyの`--ui-tabs-panel-gap`と`--ui-tabs-inline-bleed`は
 ## 既存未対応事項
 
 `ui-tab-request-change`、detail.source、公開focus methods、RTL論理方向の未対応を今回実装しない。旧HTMLElement property/methodとdynamic slot topologyは廃止する。value一意性、orientation validation、accessible name転写はbuild-time契約に従う。
+
+## Reading position integration
+
+URL意味・query選択規則を維持し、共通history writerを使う。本人操作はpanel変更前にintent受理し、初期化/URL同期/normalizationは現intentを維持する。source epochとdisplayed/address整合を即時/microtask/frameの各段階で確認する。 詳細は[Reading Position Contract](reading-position.md)。

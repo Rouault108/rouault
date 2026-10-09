@@ -50,16 +50,22 @@ const activateLayoutSidebar = ({ element, signal }: HydrationActivationContext):
   enhanceLayoutSidebar(element, signal);
 };
 
-const activateLayoutTocController = async ({ element, signal }: HydrationActivationContext) => {
-  if (signal.aborted) {
-    return;
-  }
+const isActivationCurrent = (context: HydrationActivationContext): boolean =>
+  !context.signal.aborted && context.isCurrent();
+const isElementConnected = (element: HTMLElement): boolean => element.isConnected;
+
+const activateLayoutTocController = async (context: HydrationActivationContext) => {
+  const { element } = context;
+  if (!isActivationCurrent(context)) return { status: 'aborted' };
+  if (!isElementConnected(element)) return { status: 'skipped', reason: 'element-disconnected' };
 
   if (element.getAttribute('data-toc-trigger-reserved') === 'true') {
     return;
   }
 
   const module = await import('../../components/layout/layout-toc-controller.js');
+  if (!isActivationCurrent(context)) return { status: 'aborted' };
+  if (!isElementConnected(element)) return { status: 'skipped', reason: 'element-disconnected' };
   return module.activateLayoutTocController(element);
 };
 

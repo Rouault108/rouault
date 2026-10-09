@@ -1,3 +1,11 @@
+import {
+  adoptContentBinding,
+  beginNavigationIntent,
+  isNavigationIntentCurrent,
+  subscribeContentContext,
+  type NavigationIntent,
+} from '../navigation/content-navigation-context.js';
+import { readAddress, type BrowserAddressChange } from '../navigation/history-entry.js';
 import { ContentCommitter } from './content-committer.js';
 import { createRouterRuntime } from './create-router-runtime.js';
 import { DocumentLoader } from './document-loader.js';
@@ -72,6 +80,8 @@ const LIVE_ROUTER_OWNERS = new WeakMap<Document, Router>();
 
 type NormalizedNavigationRequest = QueuedNavigationRequest;
 
+const isSignalAborted = (signal: AbortSignal): boolean => signal.aborted;
+
 const isAbortError = (error: unknown): boolean =>
   error instanceof Error && (error.name === 'AbortError' || error.name === 'TimeoutError');
 
@@ -92,6 +102,7 @@ export class Router {
   private isBusy = false;
   private currentUrl = '';
   private hasCommittedNavigation = false;
+  private stopContextObserver: (() => void) | null = null;
 
   constructor(
     outlet: HTMLElement,
@@ -112,6 +123,9 @@ export class Router {
       outlet: this.outlet,
       options: this.options,
       urlDependencies,
+      adoptSameDocumentAddress: (change) => {
+        this.adoptSameDocumentAddress(change);
+      },
       getCurrentUrl: () => this.currentUrl,
       requestNavigation: async (request) => this.navigate(request),
       runNavigation: async (request, signal) => this.runNavigation(request, signal),
@@ -129,6 +143,10 @@ export class Router {
     this.linkInterceptor = runtime.linkInterceptor;
     this.queue = runtime.queue;
     this.currentUrl = this.location.readCurrentUrl();
+    this.stopContextObserver = subscribeContentContext((reason, owner) => {
+      if (reason === 'intent' && owner !== 'router') this.queue.cancelPending();
+      if (reason === 'feature') this.currentUrl = this.location.readCurrentUrl();
+    });
   }
 
   async start(): Promise<NavigationResult | null> {
@@ -146,6 +164,7 @@ export class Router {
     return this.navigate({
       url: this.currentUrl,
       historyMode: 'none',
+      cause: 'initial',
     });
   }
 
@@ -160,6 +179,7 @@ export class Router {
     this.beforeNavigateHooks.clear();
     this.eventBus.clear();
     this.queue.dispose();
+    this.stopContextObserver?.();
 
     if (LIVE_ROUTER_OWNERS.get(document) === this) {
       LIVE_ROUTER_OWNERS.delete(document);
@@ -267,6 +287,10 @@ export class Router {
       historyMode,
       routePresence,
       state: request.state,
+      intent: beginNavigationIntent(
+        request.cause ?? 'navigation',
+        request.cause === 'traverse' ? readAddress() : normalizedUrl,
+      ),
     };
   }
 
@@ -279,10 +303,13 @@ export class Router {
       return beforeNavigateResult;
     }
 
+    if (request.intent && !isNavigationIntentCurrent(request.intent))
+      return this.createSupersededResult(request);
     const currentUrl = this.currentUrl;
     const statePolicy = this.options.urlStateNavigationPolicy;
     const stateDecision = statePolicy
       ? await statePolicy.evaluate({
+          ...(request.intent ? { cause: request.intent.cause } : {}),
           currentUrl,
           requestedUrl: request.requestedUrl,
           normalizedUrl: request.normalizedUrl,
@@ -291,6 +318,11 @@ export class Router {
         })
       : { kind: 'full' as const };
 
+    if (
+      isSignalAborted(externalSignal) ||
+      (request.intent && !isNavigationIntentCurrent(request.intent))
+    )
+      return this.createSupersededResult(request);
     if (stateDecision.kind === 'state-only') {
       const result = await this.runStateOnlyNavigation(request, currentUrl);
       this.eventBus.emit('after:navigate', result);
@@ -305,6 +337,7 @@ export class Router {
       executionController.abort();
     };
     externalSignal.addEventListener('abort', onExternalAbort, { once: true });
+    request.intent?.signal.addEventListener('abort', onExternalAbort, { once: true });
 
     const timeoutMs = this.options.navigationTimeoutMs ?? null;
     if (typeof timeoutMs === 'number' && timeoutMs > 0) {
@@ -320,12 +353,16 @@ export class Router {
         request.routePresence,
       );
 
-      if (executionController.signal.aborted && externalSignal.aborted) {
+      if (
+        isSignalAborted(externalSignal) ||
+        (request.intent && !isNavigationIntentCurrent(request.intent))
+      ) {
         return this.createSupersededResult(request);
       }
 
       if (loadResult.source === 'document-navigation-fallback') {
         if (this.canUseDocumentNavigationFallback(request, currentUrl)) {
+          document.dispatchEvent(new Event('reading-position:document-fallback'));
           this.location.navigateDocument(request.normalizedUrl, request.historyMode);
           const result = this.createDocumentNavigationFallbackResult(
             request,
@@ -347,7 +384,7 @@ export class Router {
           loadErrorReason,
         );
         const finalResult: NavigationResult =
-          durableCommitResult.outcome === 'failed'
+          durableCommitResult.outcome !== 'completed'
             ? {
                 ...durableCommitResult,
                 source: errorFallbackResult.source,
@@ -378,7 +415,7 @@ export class Router {
         loadResult.source === 'error-fallback' ? loadResult.errorReason : undefined;
 
       const finalResult: NavigationResult =
-        durableCommitResult.outcome === 'failed'
+        durableCommitResult.outcome !== 'completed'
           ? {
               ...durableCommitResult,
               source: loadResult.source,
@@ -396,7 +433,11 @@ export class Router {
       this.eventBus.emit('after:navigate', finalResult);
       return finalResult;
     } catch (error) {
-      if (executionController.signal.aborted && externalSignal.aborted && isAbortError(error)) {
+      if (
+        isSignalAborted(externalSignal) ||
+        (request.intent && !isNavigationIntentCurrent(request.intent)) ||
+        (executionController.signal.aborted && isAbortError(error))
+      ) {
         const result = this.createSupersededResult(request);
         this.eventBus.emit('after:navigate', result);
         return result;
@@ -415,7 +456,7 @@ export class Router {
       );
 
       const finalResult: NavigationResult =
-        durableCommitResult.outcome === 'failed'
+        durableCommitResult.outcome !== 'completed'
           ? {
               ...durableCommitResult,
               source: loadResult.source,
@@ -438,6 +479,7 @@ export class Router {
         window.clearTimeout(timeoutId);
       }
       externalSignal.removeEventListener('abort', onExternalAbort);
+      request.intent?.signal.removeEventListener('abort', onExternalAbort);
       this.setBusy(false);
     }
   }
@@ -451,15 +493,22 @@ export class Router {
   ): Promise<
     | import('./router-types.js').NavigationCompletedResult
     | import('./router-types.js').NavigationLoadFailureResult
+    | import('./router-types.js').NavigationSupersededResult
   > {
+    if (request.intent && !isNavigationIntentCurrent(request.intent))
+      return this.createCommitSupersededResult(request);
+    let lifetime: import('./content-committer.js').CommittedContentLifetime;
     try {
-      await this.committer.commit({
+      lifetime = await this.committer.commit({
         envelope,
         normalizedUrl: request.normalizedUrl,
         historyMode: request.historyMode,
         state: request.state,
+        ...(request.intent ? { intent: request.intent } : {}),
       });
     } catch (error) {
+      if (request.intent && !isNavigationIntentCurrent(request.intent))
+        return this.createCommitSupersededResult(request);
       const normalizedError = error instanceof Error ? error : new Error(String(error));
       this.eventBus.emit('error', {
         error: normalizedError,
@@ -485,6 +534,7 @@ export class Router {
     }
 
     this.currentUrl = request.normalizedUrl;
+    adoptContentBinding(readAddress());
     const isInitial = !this.hasCommittedNavigation;
     this.hasCommittedNavigation = true;
 
@@ -499,6 +549,7 @@ export class Router {
       issues: [],
       source: 'none',
       renderedKind: envelope.document.renderedKind,
+      ...lifetime,
       error: envelope.document.renderedKind === 'error' ? baseError : undefined,
       errorReason: envelope.document.renderedKind === 'error' ? baseErrorReason : undefined,
     };
@@ -516,6 +567,7 @@ export class Router {
       envelope.document.renderedKind,
       false,
       result,
+      request.intent,
     );
 
     return result;
@@ -528,9 +580,10 @@ export class Router {
     renderedKind: NavigationResult['renderedKind'],
     stateOnly: boolean,
     result: NavigationResult,
+    intent?: NavigationIntent,
   ): Promise<void> {
     const controller = this.options.postCommitController;
-    if (!controller) {
+    if (!controller || !intent || !isNavigationIntentCurrent(intent)) {
       return;
     }
 
@@ -542,6 +595,7 @@ export class Router {
         isInitial,
         stateOnly,
         renderedKind,
+        intent,
       });
     } catch (error) {
       const normalizedError = error instanceof Error ? error : new Error(String(error));
@@ -570,6 +624,7 @@ export class Router {
     }
 
     this.currentUrl = request.normalizedUrl;
+    adoptContentBinding(readAddress());
     const isInitial = !this.hasCommittedNavigation;
     this.hasCommittedNavigation = true;
     const detail = {
@@ -591,9 +646,44 @@ export class Router {
       renderedKind: null,
     };
 
-    await this.runPostCommit(previousUrl, request.normalizedUrl, isInitial, null, true, result);
+    await this.runPostCommit(
+      previousUrl,
+      request.normalizedUrl,
+      isInitial,
+      null,
+      true,
+      result,
+      request.intent,
+    );
 
     return result;
+  }
+
+  private createCommitSupersededResult(
+    request: NormalizedNavigationRequest,
+  ): import('./router-types.js').NavigationSupersededResult {
+    return {
+      kind: 'superseded',
+      outcome: 'superseded',
+      reason: 'superseded',
+      normalizedUrl: request.normalizedUrl,
+      historyMode: request.historyMode,
+      stateOnly: false,
+      committed: false,
+      degraded: false,
+      issues: [],
+      source: 'none',
+      renderedKind: null,
+    };
+  }
+
+  private adoptSameDocumentAddress(change: BrowserAddressChange): void {
+    const previousUrl = this.currentUrl;
+    beginNavigationIntent('native-navigation', change.url, 'native');
+    this.currentUrl = change.url;
+    adoptContentBinding(change.url, change.entry?.id ?? null);
+    document.dispatchEvent(new Event('reading-position:native-address'));
+    this.eventBus.emit('ui-url-state-change', { previousUrl, url: change.url });
   }
 
   private async runBeforeNavigateHooks(

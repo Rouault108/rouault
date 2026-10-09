@@ -1,3 +1,13 @@
+import { writeHistoryEntry } from '../../../navigation/history-entry.js';
+import {
+  captureFeatureSource,
+  beginFeatureNavigation,
+  isFeatureSourceCurrent,
+  isFeatureTokenCurrent,
+  adoptFeatureAddress,
+  type FeatureSource,
+  type FeatureToken,
+} from '../../../navigation/content-navigation-context.js';
 import { getTabsUrlSyncStrategy } from './tabs-url-sync-strategy.js';
 import type { TabsUrlSource, UrlHistoryMode } from './tabs.types.js';
 
@@ -18,12 +28,15 @@ export interface UrlDrivenValueResolution {
 export class TabsUrlSyncController {
   private readonly host: TabsUrlSyncHost;
   private suppressWrite = false;
+  private readonly source: FeatureSource;
+  private operation: FeatureToken | null = null;
   private changeEventName: string | null = null;
   private locationSyncGeneration = 0;
   private locationSyncRafId: number | null = null;
 
   constructor(host: TabsUrlSyncHost) {
     this.host = host;
+    this.source = captureFeatureSource(host.getHostElement());
   }
 
   hostConnected(): void {
@@ -68,8 +81,21 @@ export class TabsUrlSyncController {
     }
   }
 
+  canSync(): boolean {
+    return isFeatureSourceCurrent(this.source);
+  }
+
+  beginSelection(historyMode: UrlHistoryMode): boolean {
+    if (!this.host.isUrlSyncEnabled()) return this.canSync();
+    this.operation = beginFeatureNavigation(
+      this.source,
+      historyMode === 'none' ? 'url-sync' : 'user-navigation',
+    );
+    return this.operation !== null;
+  }
+
   resolveUrlDrivenValue(): UrlDrivenValueResolution {
-    if (!this.host.isUrlSyncEnabled() || typeof window === 'undefined') {
+    if (!this.canSync() || !this.host.isUrlSyncEnabled() || typeof window === 'undefined') {
       return {
         value: null,
         source: null,
@@ -104,7 +130,7 @@ export class TabsUrlSyncController {
   }
 
   normalizeActiveValue(source: TabsUrlSource, activeValue: string | null): void {
-    if (!this.host.isUrlSyncEnabled() || typeof window === 'undefined') {
+    if (!this.canSync() || !this.host.isUrlSyncEnabled() || typeof window === 'undefined') {
       return;
     }
 
@@ -125,12 +151,14 @@ export class TabsUrlSyncController {
     }
 
     if (nextUrl !== currentUrl) {
+      this.operation = null;
       this.writeUrlStateInternal(nextUrl, 'replace');
     }
   }
 
   writeSelectedValue(value: string | null, historyMode: UrlHistoryMode): void {
     if (
+      !this.canSync() ||
       !this.host.isUrlSyncEnabled() ||
       this.suppressWrite ||
       historyMode === 'none' ||
@@ -151,28 +179,34 @@ export class TabsUrlSyncController {
   }
 
   private writeUrlStateInternal(nextUrl: string, historyMode: UrlHistoryMode): void {
-    if (historyMode === 'none' || typeof window === 'undefined') {
+    if (!this.canSync() || historyMode === 'none' || typeof window === 'undefined') {
       return;
     }
 
     const previousUrl = `${window.location.pathname}${window.location.search}${window.location.hash}`;
     if (previousUrl === nextUrl) {
+      this.operation = null;
       return;
     }
 
+    const token = this.operation ?? beginFeatureNavigation(this.source, 'normalization');
+    if (!token || !isFeatureTokenCurrent(this.source, token)) return;
     const state: unknown = history.state;
     const strategy = getTabsUrlSyncStrategy();
 
     if (historyMode === 'push') {
-      window.history.pushState(state, '', nextUrl);
+      writeHistoryEntry({ mode: 'push', url: nextUrl, owner: 'feature', state });
     } else {
-      window.history.replaceState(state, '', nextUrl);
+      writeHistoryEntry({ mode: 'replace', url: nextUrl, owner: 'feature', state });
     }
 
+    adoptFeatureAddress();
+    this.operation = null;
     strategy?.dispatchChange(previousUrl, nextUrl);
   }
 
   private syncFromLocationState(): void {
+    if (!this.canSync()) return;
     const strategy = getTabsUrlSyncStrategy();
     const url = typeof window === 'undefined' ? '' : window.location.href;
     const hasQueryValue = (strategy?.readValue(url) ?? null) !== null;
@@ -189,7 +223,7 @@ export class TabsUrlSyncController {
   }
 
   private readonly onLocationStateChange = (): void => {
-    if (!this.host.isUrlSyncEnabled()) {
+    if (!this.canSync() || !this.host.isUrlSyncEnabled()) {
       return;
     }
 

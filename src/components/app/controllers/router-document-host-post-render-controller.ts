@@ -1,3 +1,5 @@
+import { ReadingPositionController } from './reading-position-controller.js';
+import { readCurrentShellCommitId } from '../shell/app-shell-lifecycle.js';
 import { FocusManager } from '../../../router/focus-manager.js';
 import type { PostCommitController } from '../../../router/router.js';
 import type { RouterDiagnosticPayload } from '../../../router/router-diagnostics.js';
@@ -10,46 +12,64 @@ import {
 export class RouterDocumentHostPostRenderController {
   private readonly focusManager = new FocusManager();
   private clearTimer: number | null = null;
-  private currentHashTarget: HTMLElement | null = null;
+  private readonly reading = new ReadingPositionController((error) => {
+    this.reportBackgroundError(error);
+  });
 
-  constructor(private readonly setAnnouncement: (text: string) => void) {}
+  constructor(
+    private readonly setAnnouncement: (text: string) => void,
+    private readonly reportBackgroundError: (error: unknown) => void = () => {
+      /* 初期化前には診断先がない。 */
+    },
+  ) {}
 
   dispose(): void {
     if (this.clearTimer !== null) {
       window.clearTimeout(this.clearTimer);
       this.clearTimer = null;
     }
-    this.clearHashTarget();
+    this.reading.dispose();
+  }
+
+  terminal(committed: boolean): void {
+    this.reading.terminal(committed);
+  }
+
+  initialize(host: HTMLElement): void {
+    const root = host.querySelector(MAIN_CONTENT_SELECTOR);
+    if (!(root instanceof HTMLElement)) return;
+    this.reading.start(root);
   }
 
   createPostCommitController(hostElement: HTMLElement): PostCommitController {
     return {
-      run: async (context) => {
-        if (context.stateOnly) {
-          dispatchPrimaryTabUrlStateChange(context.previousUrl, context.url);
-
-          await this.scrollToHash(context.url);
-          return;
+      run: (context) => {
+        if (context.stateOnly) dispatchPrimaryTabUrlStateChange(context.previousUrl, context.url);
+        else {
+          this.setAnnouncement('ページが読み込まれました');
+          if (this.clearTimer !== null) window.clearTimeout(this.clearTimer);
+          this.clearTimer = window.setTimeout(() => {
+            if (!context.intent.signal.aborted) this.setAnnouncement('');
+            this.clearTimer = null;
+          }, 1000);
+          const main = hostElement.querySelector(MAIN_CONTENT_SELECTOR);
+          if (
+            main instanceof HTMLElement &&
+            !context.intent.signal.aborted &&
+            this.reading.shouldFocus(context.intent)
+          )
+            this.focusManager.focusMainContent(main);
         }
-
-        this.setAnnouncement('ページが読み込まれました');
-        if (this.clearTimer !== null) {
-          window.clearTimeout(this.clearTimer);
-        }
-        this.clearTimer = window.setTimeout(() => {
-          this.setAnnouncement('');
-          this.clearTimer = null;
-        }, 1000);
-
-        const didScrollToHash = await this.scrollToHash(context.url);
-        if (!didScrollToHash) {
-          window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
-        }
-
-        const main = hostElement.querySelector(MAIN_CONTENT_SELECTOR);
-        if (main instanceof HTMLElement) {
-          this.focusManager.focusMainContent(main);
-        }
+        const root = hostElement.querySelector(MAIN_CONTENT_SELECTOR);
+        if (root instanceof HTMLElement)
+          this.reading.schedule({
+            intent: context.intent,
+            root,
+            url: window.location.pathname + window.location.search + window.location.hash,
+            stateOnly: context.stateOnly,
+            error: context.renderedKind === 'error' || context.renderedKind === 'not-found',
+            shellCommitId: readCurrentShellCommitId(),
+          });
       },
     };
   }
@@ -64,151 +84,5 @@ export class RouterDocumentHostPostRenderController {
       reason: 'return-to-reading-unavailable',
       routeId: url,
     };
-  }
-
-  restoreInitialScrollImmediately(url: string): boolean {
-    const didScroll = this.scrollToHashImmediately(url);
-    if (didScroll) {
-      return true;
-    }
-
-    this.scrollToTopImmediately(url);
-    return false;
-  }
-
-  async restoreInitialScroll(): Promise<void> {
-    const waitForLoad = async (): Promise<void> => {
-      if (document.readyState === 'complete') {
-        return;
-      }
-
-      await new Promise<void>((resolve) => {
-        window.addEventListener(
-          'load',
-          () => {
-            resolve();
-          },
-          { once: true },
-        );
-      });
-    };
-
-    await waitForLoad();
-
-    const didScroll = await this.scrollToHash(window.location.href);
-    if (didScroll) {
-      return;
-    }
-
-    const hash = readDecodedHash(window.location.href);
-    if (hash.length === 0) {
-      await this.waitForStableLayout();
-      this.scrollToTopIfNeeded();
-      return;
-    }
-
-    const target = document.getElementById(hash);
-    if (!(target instanceof HTMLElement)) {
-      return;
-    }
-
-    await this.waitForStableLayout();
-    this.setHashTarget(target);
-
-    const absoluteTop = target.getBoundingClientRect().top + window.scrollY;
-    window.scrollTo({ top: absoluteTop, left: 0, behavior: 'instant' });
-  }
-
-  private async scrollToHash(url: string): Promise<boolean> {
-    const hash = readDecodedHash(url);
-    if (hash.length === 0) {
-      this.clearHashTarget();
-      return false;
-    }
-
-    await this.waitForStableLayout();
-
-    const target = document.getElementById(hash);
-    if (!(target instanceof HTMLElement)) {
-      this.clearHashTarget();
-      return false;
-    }
-
-    this.setHashTarget(target);
-    target.scrollIntoView({ block: 'start', inline: 'nearest' });
-    return true;
-  }
-
-  private scrollToTopImmediately(url: string): void {
-    const hash = readDecodedHash(url);
-    if (hash.length > 0) {
-      return;
-    }
-
-    this.scrollToTopIfNeeded();
-  }
-
-  private async waitForStableLayout(): Promise<void> {
-    await new Promise<void>((resolve) => {
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          resolve();
-        });
-      });
-    });
-  }
-
-  private scrollToHashImmediately(url: string): boolean {
-    const hash = readDecodedHash(url);
-    if (hash.length === 0) {
-      this.clearHashTarget();
-      return false;
-    }
-
-    const target = document.getElementById(hash);
-    if (!(target instanceof HTMLElement)) {
-      this.clearHashTarget();
-      return false;
-    }
-
-    this.setHashTarget(target);
-    /*
-     * 初回 boot では TOC current 同期が先に進みやすいため、
-     * 最低限の hash 到達だけは同期的に済ませて viewport 契約を先に成立させる。
-     * その後の restoreInitialScroll() が load 後の再整列を担当する。
-     */
-    target.scrollIntoView({ block: 'start', inline: 'nearest' });
-    return true;
-  }
-
-  private scrollToTopIfNeeded(): void {
-    /*
-     * 初期 SSR 文書ではブラウザ自身が先頭位置を保持していることがある。
-     * その状態で同じ先頭座標へ再度 scrollTo すると、hash 遷移テストや履歴復元の観測を汚すため抑止する。
-     */
-    if (window.scrollX === 0 && window.scrollY === 0) {
-      return;
-    }
-
-    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
-  }
-
-  private clearHashTarget(): void {
-    if (this.currentHashTarget === null) {
-      return;
-    }
-    this.currentHashTarget.removeAttribute('data-router-hash-target');
-    this.currentHashTarget = null;
-  }
-
-  private setHashTarget(target: HTMLElement): void {
-    if (this.currentHashTarget === target) {
-      target.setAttribute('data-router-hash-target', 'true');
-      return;
-    }
-
-    this.clearHashTarget();
-    target.setAttribute('data-router-hash-target', 'true');
-    this.currentHashTarget = target;
   }
 }

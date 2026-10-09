@@ -1,3 +1,4 @@
+import type { NavigationIntent } from '../navigation/content-navigation-context.js';
 import type { DocumentRenderSnapshot } from '../../shared/navigation/document-render-snapshot.js';
 import type { HydrationPlan } from '../../shared/navigation/hydration-plan.js';
 import type { NavigationEnvelope } from '../../shared/navigation/navigation-envelope.js';
@@ -64,6 +65,7 @@ export interface NavigateRequest {
   url: string;
   historyMode?: HistoryMode;
   state?: Record<string, unknown> | undefined;
+  cause?: 'initial' | 'traverse';
 }
 
 export interface NavigationResultMetadata {
@@ -82,6 +84,8 @@ export interface NavigationResultMetadata {
 }
 
 export interface NavigationCompletedResult extends NavigationResultMetadata {
+  readonly contentEpoch?: number;
+  readonly shellCommitId?: number;
   readonly kind: 'completed';
   readonly outcome: 'completed';
   readonly historyMode: HistoryMode;
@@ -236,6 +240,7 @@ export type UrlStateNavigationDecision =
 
 export interface UrlStateNavigationPolicy {
   evaluate(context: {
+    cause?: NavigationIntent['cause'];
     currentUrl: string;
     requestedUrl: string;
     normalizedUrl: InternalDocumentNormalizedUrl;
@@ -252,6 +257,7 @@ export interface PostCommitController {
     isInitial: boolean;
     stateOnly: boolean;
     renderedKind: 'page' | 'not-found' | 'error' | null;
+    intent: NavigationIntent;
   }): void | Promise<void>;
 }
 

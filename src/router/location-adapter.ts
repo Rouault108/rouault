@@ -1,3 +1,4 @@
+import { isPlainHistoryState, writeHistoryEntry } from '../navigation/history-entry.js';
 import { isDefaultInternalResourcePathname } from '../../shared/link/link-annotation.js';
 import { detectUnsafeHref } from '../../shared/link/unsafe-href-detector.js';
 import { resolveRouterArtifactPathname } from '../../shared/navigation/router-artifact-path.js';
@@ -65,7 +66,11 @@ export class LocationAdapter {
     if (this.isHistoryStateObject(currentState)) {
       const historyUrl = currentState['__routerUrl'];
       const trustedHistoryUrl = this.readTrustedHistoryRouterUrl(historyUrl);
-      if (trustedHistoryUrl !== null) {
+      if (
+        trustedHistoryUrl !== null &&
+        trustedHistoryUrl ===
+          `${window.location.pathname}${window.location.search}${window.location.hash}`
+      ) {
         return this.normalizeInternalDocumentUrl(trustedHistoryUrl);
       }
     }
@@ -131,12 +136,36 @@ export class LocationAdapter {
     return `${snapshotPathname}${parsed.search}`;
   }
 
-  push(normalizedUrl: string, state?: Record<string, unknown>): void {
-    window.history.pushState(this.createHistoryState(state, normalizedUrl), '', normalizedUrl);
+  push(
+    normalizedUrl: string,
+    state?: Record<string, unknown>,
+    onDurable?: () => void,
+    beforeWrite?: () => void,
+  ): void {
+    writeHistoryEntry({
+      mode: 'push',
+      url: normalizedUrl,
+      owner: 'router',
+      state,
+      ...(onDurable ? { onDurable } : {}),
+      ...(beforeWrite ? { beforeWrite } : {}),
+    });
   }
 
-  replace(normalizedUrl: string, state?: Record<string, unknown>): void {
-    window.history.replaceState(this.createHistoryState(state, normalizedUrl), '', normalizedUrl);
+  replace(
+    normalizedUrl: string,
+    state?: Record<string, unknown>,
+    onDurable?: () => void,
+    beforeWrite?: () => void,
+  ): void {
+    writeHistoryEntry({
+      mode: 'replace',
+      url: normalizedUrl,
+      owner: 'router',
+      state,
+      ...(onDurable ? { onDurable } : {}),
+      ...(beforeWrite ? { beforeWrite } : {}),
+    });
   }
 
   navigateDocument(normalizedUrl: string, historyMode: 'none' | 'push' | 'replace'): void {
@@ -149,6 +178,6 @@ export class LocationAdapter {
   }
 
   private isHistoryStateObject(value: unknown): value is Record<string, unknown> {
-    return typeof value === 'object' && value !== null;
+    return isPlainHistoryState(value);
   }
 }

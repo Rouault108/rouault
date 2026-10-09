@@ -1,3 +1,8 @@
+import {
+  isNavigationIntentCurrent,
+  readContentContext,
+  type NavigationIntent,
+} from '../navigation/content-navigation-context.js';
 import { HeadManager } from './head-manager.js';
 import { replaceElementChildrenFromHtml } from './html-fragment.js';
 import { LocationAdapter } from './location-adapter.js';
@@ -30,6 +35,7 @@ interface CommitRequest {
   normalizedUrl: string;
   historyMode: HistoryMode;
   state: Record<string, unknown> | undefined;
+  intent?: NavigationIntent;
 }
 
 interface PreparedMutation {
@@ -65,6 +71,11 @@ const dispatchShellRollbackStart = (detail: AppShellRollbackStartDetail): void =
   );
 };
 
+export interface CommittedContentLifetime {
+  readonly contentEpoch: number;
+  readonly shellCommitId: number;
+}
+
 export class ContentCommitter {
   private headManager = new HeadManager();
 
@@ -76,12 +87,11 @@ export class ContentCommitter {
     private shellAdapter?: ShellAdapter,
   ) {}
 
-  async commit(request: CommitRequest): Promise<void> {
+  async commit(request: CommitRequest): Promise<CommittedContentLifetime> {
     const previousTitle = document.title;
     const previousMetaDescription =
       document.querySelector('meta[name="description"]')?.getAttribute('content') ?? null;
     const previousUrl = this.location.readCurrentUrl();
-    const previousHistoryState: unknown = history.state;
     const previousShellCommitId = readCurrentShellCommitId();
     const shellCommitId = reserveShellCommitId();
 
@@ -95,12 +105,23 @@ export class ContentCommitter {
       shellCommitId,
     );
 
+    const checkCurrent = (): void => {
+      if (request.intent && !isNavigationIntentCurrent(request.intent))
+        throw new DOMException('superseded', 'AbortError');
+    };
+    checkCurrent();
     let historyApplied = false;
+    const isHistoryApplied = (): boolean => historyApplied;
     let validatedDetail: AppShellValidatedDetail;
+    let contentEpoch = 0;
 
     try {
+      checkCurrent();
       await preparedContentMutation.commit();
+      contentEpoch = readContentContext()?.contentEpoch ?? 0;
+      checkCurrent();
       await preparedShellMutation.commit();
+      checkCurrent();
       commitShellGeneration(shellCommitId);
       const header = document.querySelector<HTMLElement>(STATIC_HEADER_ROOT_SELECTOR);
       if (!(header instanceof HTMLElement)) {
@@ -139,17 +160,24 @@ export class ContentCommitter {
       this.headManager.setTitle(request.envelope.document.title);
       this.headManager.setMetaDescription(request.envelope.document.description);
 
-      this.applyHistory(request.historyMode, request.normalizedUrl, request.state);
-      historyApplied = request.historyMode !== 'none';
+      checkCurrent();
+      this.applyHistory(
+        request.historyMode,
+        request.normalizedUrl,
+        request.state,
+        () => {
+          historyApplied = true;
+        },
+        checkCurrent,
+      );
     } catch (error) {
+      if (isHistoryApplied()) throw error;
       const rollbackError = await this.rollbackCommit({
         preparedContentMutation,
         preparedShellMutation,
         previousTitle,
         previousMetaDescription,
         previousUrl,
-        previousHistoryState,
-        historyApplied,
         previousShellCommitId,
         failedShellCommitId: shellCommitId,
         failedNavigationUrl: request.normalizedUrl,
@@ -166,6 +194,7 @@ export class ContentCommitter {
     }
     // 通知後のenhancement失敗で、成功済みの文書transactionを巻き戻さない。
     dispatchShellValidated(validatedDetail);
+    return { contentEpoch, shellCommitId };
   }
 
   private async prepareContentMutation(
@@ -223,8 +252,6 @@ export class ContentCommitter {
     previousTitle: string;
     previousMetaDescription: string | null;
     previousUrl: string;
-    previousHistoryState: unknown;
-    historyApplied: boolean;
     previousShellCommitId: number;
     failedShellCommitId: number;
     failedNavigationUrl: string;
@@ -241,14 +268,6 @@ export class ContentCommitter {
       previousShellCommitId: args.previousShellCommitId,
       reason: 'rollback',
     });
-
-    try {
-      if (args.historyApplied) {
-        window.history.replaceState(args.previousHistoryState, '', args.previousUrl);
-      }
-    } catch (error) {
-      captureRollbackError(error);
-    }
 
     try {
       this.headManager.setTitle(args.previousTitle);
@@ -289,14 +308,16 @@ export class ContentCommitter {
     historyMode: HistoryMode,
     normalizedUrl: string,
     state?: Record<string, unknown>,
+    onDurable?: () => void,
+    beforeWrite?: () => void,
   ): void {
     if (historyMode === 'push') {
-      this.location.push(normalizedUrl, state);
+      this.location.push(normalizedUrl, state, onDurable, beforeWrite);
       return;
     }
 
     if (historyMode === 'replace') {
-      this.location.replace(normalizedUrl, state);
+      this.location.replace(normalizedUrl, state, onDurable, beforeWrite);
     }
   }
 }

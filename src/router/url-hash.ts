@@ -1,3 +1,5 @@
+import { writeHistoryEntry } from '../navigation/history-entry.js';
+import { adoptFeatureAddress } from '../navigation/content-navigation-context.js';
 export type HistoryUpdateMode = 'push' | 'replace';
 
 export const encodeHashId = (rawId: string): string => encodeURIComponent(rawId);
@@ -38,11 +40,12 @@ export const updateHashInCurrentUrl = (hash: string, mode: HistoryUpdateMode = '
 
   const nextState: unknown = history.state;
   if (mode === 'replace') {
-    history.replaceState(nextState, '', nextUrl);
+    writeHistoryEntry({ mode: 'replace', url: nextUrl, state: nextState, owner: 'feature' });
   } else {
-    history.pushState(nextState, '', nextUrl);
+    writeHistoryEntry({ mode: 'push', url: nextUrl, state: nextState, owner: 'feature' });
   }
 
+  adoptFeatureAddress();
   return nextUrl;
 };
 
@@ -66,10 +69,11 @@ export const updateHashInCurrentUrlFromId = (
   const nextUrl = `${window.location.pathname}${window.location.search}${nextHash}`;
   const nextState: unknown = history.state;
   if (mode === 'replace') {
-    history.replaceState(nextState, '', nextUrl);
+    writeHistoryEntry({ mode: 'replace', url: nextUrl, state: nextState, owner: 'feature' });
   } else {
-    history.pushState(nextState, '', nextUrl);
+    writeHistoryEntry({ mode: 'push', url: nextUrl, state: nextState, owner: 'feature' });
   }
 
+  adoptFeatureAddress();
   return nextUrl;
 };

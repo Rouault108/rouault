@@ -108,3 +108,7 @@
 ## Static initial document / HTML replacement
 
 BaseLayoutがcanonical main/announcementを出力する。router-document-hostは非Lit light DOM HTMLElementとして同一文書境界を保持する。generic HTML fragment parsing/replacementはsrc/router/html-fragment.tsが担当し、note DSD promotionとLit hydrationを行わない。routerのdurable commit/rollbackとpost-commit effectsの責務は維持する。
+
+## Reading position integration
+
+本文children再生成前にhostが単調contentEpochを進める。rollbackでもepochを戻さず、root identityだけでreadyを証明しない。commit通知は採用epochを運ぶ。 詳細は[Reading Position Contract](reading-position.md)。

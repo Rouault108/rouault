@@ -144,6 +144,7 @@ class TabsController {
   }
 
   private resolve(emit: boolean): void {
+    if (!this.url.canSync()) return;
     const location = this.url.resolveUrlDrivenValue();
     const resolved = resolveSelectedIndex(
       {
@@ -164,6 +165,7 @@ class TabsController {
   }
 
   private commit(index: number, historyMode: UrlHistoryMode, emit: boolean): void {
+    if (!this.url.beginSelection(historyMode)) return;
     const value = this.tabs[index]?.getAttribute('data-tab-value') ?? null;
     if (this.activeIndex === index && this.focusedIndex === index && this.selectedValue === value) {
       this.url.writeSelectedValue(value, historyMode);

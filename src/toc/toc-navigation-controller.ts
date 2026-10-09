@@ -1,3 +1,9 @@
+import {
+  captureFeatureSource,
+  beginFeatureNavigation,
+  isFeatureSourceCurrent,
+  type FeatureSource,
+} from '../navigation/content-navigation-context.js';
 import { scrollRootTo } from '../router/root-scroll.js';
 import {
   buildHashHrefFromId,
@@ -24,6 +30,7 @@ export interface TocNavigationContext {
 }
 
 export type TocNavigationRejectReason =
+  | 'stale-content'
   | 'non-primary-click'
   | 'external-url'
   | 'download-link'
@@ -123,8 +130,18 @@ export class TocNavigationController {
   private _generation = 0;
   private _cleanupUserInterventionListeners: (() => void) | null = null;
   private _context: TocNavigationContext | null = null;
+  private _source: FeatureSource | null = null;
+
+  constructor(sourceElement?: HTMLElement) {
+    this._source = sourceElement ? captureFeatureSource(sourceElement) : null;
+  }
 
   handleTocLinkClick(event: MouseEvent, context: TocNavigationContext): TocNavigationClickResult {
+    this._source ??= captureFeatureSource(context.contentRoot);
+    if (!isFeatureSourceCurrent(this._source)) {
+      event.preventDefault();
+      return { owned: false, reason: 'stale-content' };
+    }
     const link = resolveLinkFromEvent(event);
     if (link === null || !isPrimaryPlainClick(event)) {
       return { owned: false, reason: 'non-primary-click' };
@@ -176,6 +193,10 @@ export class TocNavigationController {
     }
     const { target } = headingResolution;
 
+    if (!beginFeatureNavigation(this._source)) {
+      event.preventDefault();
+      return { owned: false, reason: 'stale-content' };
+    }
     event.preventDefault();
     this.cancelNavigation('new-navigation');
     this._context = context;
@@ -236,14 +257,20 @@ export class TocNavigationController {
     let stableFrames = 0;
 
     this._timeoutId = window.setTimeout(() => {
-      if (generation !== this._generation) {
+      if (
+        generation !== this._generation ||
+        (this._source && !isFeatureSourceCurrent(this._source))
+      ) {
         return;
       }
       this.cancelNavigation('timeout');
     }, TOC_SCROLL_SETTLE_TIMEOUT_MS);
 
     const tick = (): void => {
-      if (generation !== this._generation) {
+      if (
+        generation !== this._generation ||
+        (this._source && !isFeatureSourceCurrent(this._source))
+      ) {
         return;
       }
 

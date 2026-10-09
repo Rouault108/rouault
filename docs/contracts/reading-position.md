@@ -1,0 +1,39 @@
+# Reading Position Contract
+
+## Status and ownership
+
+Normative。通常リンクは先頭、明示見出しリンクは見出し、Back/Forwardは履歴entryの最後のroot viewport位置へ戻る。router coreはscroll/focusを所有しない。`ReadingPositionController`をpost-render ownerの配下に置く。
+
+## Identity and state
+
+`src/navigation/history-entry.ts`の共通writerをrouter、TOC/hash、tabs、searchが使う。`history.state.__rouaultHistoryEntry = { version: 1, id }`のIDはopaqueであり、pushでは必ず新ID、replaceではcurrent entryのIDを維持する。同一URLのpushも別ID。router pushのstate省略は空record、replace省略はcurrent state、明示stateはそのrecordを採る。featureはcurrent stateを採る。他fieldを保持し、既存`__routerUrl`は実URLに合わせる。
+
+null/undefinedは識別可能。primitive、array、Date、未知version/不正shapeの予約fieldは包み直さず保全して未管理へ縮退する。本来のHistory API失敗はrollback対象であり、stateを捨てて再試行しない。observer例外は成功History APIを失敗に戻さない。
+
+native fragmentはbrowser生成stateを採用し、離脱元stateを複製しない。未識別hash entryの補記はreplaceのみでentryを増やさない。native push/replaceの一般的な判別と旧ID継続は保証しない。観測はcapture側で一元分類し、popstate後のhashchangeで二重採用しない。
+
+## Positions and precedence
+
+保存は同一runtimeのメモリだけ。sessionStorageによる独自reload復元（提案P）は採用しない。root viewportの有限非負x/yをCSS pxでentry IDとexact URLへ結び付ける。URLだけをkeyにしない。sidebar、dialog、code/table railのscroll、last focus、semantic anchorは対象外。
+
+passive scroll、History API直前、最初の本文mutation直前、pagehideで現在の読書位置を採る。popstateでは離脱entryをcontrollerが保持し、その直前sampleを使う。未表示の中間entryへ旧文書の座標を書かない。traverse候補は受理時に凍結し、clampや初期tabsの正当な同entry normalizationでは座標を置換しない。
+
+新規link/APIはhash/topへ進み、以前の同URLの座標を流用しない。traverseは保存座標をhashより優先する。管理entryでrecord欠落/不正/URL不一致ならhash、なければ先頭。state-onlyの新規hash不存在は現在位置を保持する。error/not-foundは先頭と既存a11y処理を用い、成功文書のrecordをerror座標で消さない。
+
+## Epoch, readiness and cancellation
+
+本文childrenのcommit/rollback再生成前にhostが単調contentEpochを進める。root、URL、shellCommitIdが同じでも旧epochは再利用しない。client readinessはepoch別のpending/settled/unavailable/invalidated状態。初期SSR、成功full commit、成功rollbackだけが一度hydrateされ、state-onlyは同epochの準備を引き継ぐ。旧epochのmodule await/TOC activation内側await/ready通知を破棄する。
+
+post-commitはjobを予約して戻り、hydration-readyをawaitしない。jobは現epochの初期準備、復元位置より上の寸法未確定画像、loading fontを待ち、rangeと目標が連続2frame安定して実座標が±2 CSS pxなら完了。5秒を上限に到達範囲へclampして打ち切る。将来のvisible/interaction enhancementやSearch Worker結果へ追従しない。
+
+本人のwheel/touchmove/scroll key/pointer操作、新navigation、本人のTOC/tabs/search操作（URL no-opを含む）、pagehide/disposeで旧jobを取り消す。取消後にhash/top fallbackやfocus奪取をしない。featureはattach時のsource epochとdisplayed/address bindingをURL読取・projection・書込・await後に検査する。Back待機中の旧本文を根拠に宛先URLを正規化しない。本人feature intentは旧未commit router requestを失効し、automatic initialization/normalizationは現intentを維持する。
+
+## Browser and accessibility
+
+管理entryはmanual、opaque/ID補記失敗は明示auto。reload/back-forward初期表示は明示autoでbrowser位置を尊重し、独自top/hashを実行しない。native fragmentはautoでnative actionを保ち、同intentの次frameでmanualへ戻す。fallback/pagehideはflush・取消してautoへ返す。BFCache再開はDOM/epochを再生成せず現viewportを採用する。disposeは自分のmodeが残る場合だけ元値へ戻す。beforeunload listenerを追加しない。
+
+full commitのmain focusはpreventScroll、same-documentはfocusを保持する。座標優先中のTOCはhash holdを再作成せず、activeTracking=trueだけがviewportのcurrentを追跡する。falseを新しいscroll追跡へ変更しない。本人の新しいhash/TOC操作で通常のhash priorityへ戻す。
+
+## Verification
+
+A1通常/hash移動、A2entry座標復元、A3同URLの別entry、A4state/native互換、A5遅延/epoch、A6本人取消/stale feature、A7focus/TOC、A8native/reload/fallback/clamp、A9既存owner/transaction/SSRをnode/browser/production E2Eで検証する。新E2EはChromium・Firefox・WebKitに明示選択する。BFCacheはpersistedを観測したrunのみ成功判定する。正式環境未実施を互換browserの結果で置き換えない。

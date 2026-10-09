@@ -4,6 +4,7 @@ import { defineConfig, devices } from '@playwright/test';
 import process from 'node:process';
 
 const crossBrowserFinalCheck = [
+  '**/history-scroll-restoration.spec.ts',
   '**/memos.spec.ts',
   '**/search-cutover.spec.ts',
   '**/app-shell.spec.ts',
@@ -28,6 +29,7 @@ const webkitFinalCheck = [
 ];
 
 const mobileWebkitFinalCheck = [
+  '**/history-scroll-restoration-mobile.spec.ts',
   '**/mobile-header-dropdown-position.spec.ts',
   articleHeaderStaticLayoutCheck,
   '**/toc-readable-long-heading.spec.ts',

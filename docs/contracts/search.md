@@ -300,3 +300,7 @@ Pagefind dependency / CLI / loader / metadata / HTML hook / cache ruleは終了�
 公開対象の正本は`NotePublicationPolicy.search`であり、HTML属性から公開可否を決めない。
 本文抽出の明示除外は`data-search-exclude`を使用する。
 production buildはCatalog / route manifest検証とlexical descriptor / schema / publication / Node load検証を行う。
+
+## Reading position integration
+
+feature-local push/replaceは現在のSSR baselineを維持し、共通history writerを使う。本人条件操作をprojection前に受理し、popstate同期とasync結果はcapture済みsource epochを確認する。full routeで新SSRを採用するとbaselineが交代し、任意queryを新しくstate-only化しない。 詳細は[Reading Position Contract](reading-position.md)。

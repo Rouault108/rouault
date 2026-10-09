@@ -120,3 +120,7 @@
 Tabsはinteractive/initial、TranslationとVideoはinteractive/visible、Code Previewは承認済みcontrols/direct-toolbar predicateでconditional interactive/visible。Sandboxはsandboxedでeager→initial、visible→visible、manual→interactionとする。
 
 visibleのviewport近傍/focusin/IntersectionObserver非対応時の既存policyを維持する。controllerは独自の初回起動observerを持たない。registryの動的import後にannotated rootへattachし、content session abortでlistener/observer/operational DOMを破棄する。native DOMの重複登録やdocument全体のcustomElements.upgradeは行わない。非Lit shell custom elementの登録用途は維持する。
+
+## Reading position integration
+
+content readinessはepoch別pending/settled/unavailable/invalidated。mutationでは旧session取消だけを行い、成功full commitと初期SSRの既存起動を維持する。成功rollbackの再生成本文だけをclientから一度再開する。state-onlyは同epochのpendingを引き継ぐ。activation前後とTOC wrapperの内側await後にcapture済みisCurrentを確認する。 詳細は[Reading Position Contract](reading-position.md)。

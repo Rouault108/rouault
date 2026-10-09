@@ -1,3 +1,11 @@
+import {
+  captureFeatureSource,
+  beginFeatureNavigation,
+  isFeatureSourceCurrent,
+  adoptFeatureAddress,
+  type FeatureSource,
+} from '../../navigation/content-navigation-context.js';
+import { writeHistoryEntry } from '../../navigation/history-entry.js';
 import { renderStaticIconHtml } from '../../../shared/icons/render-static-icon-html.js';
 import { createSearchJsonParseDiagnosticSink } from '../../../shared/search/search-diagnostics.js';
 import { parseStaticExploreSearchResponseJson } from '../../../shared/search/search-json-artifact-parser.js';
@@ -627,6 +635,7 @@ export class SearchPageController {
   private readonly listenerController = new AbortController();
   private readonly signal: AbortSignal | undefined;
   private disposed = false;
+  private readonly source: FeatureSource;
   private currentState: SearchPageControllerState | null = null;
   private runtimeState: SearchPageRuntimeState | null = null;
   private siteUrlContext: SiteUrlContext | null = null;
@@ -637,6 +646,7 @@ export class SearchPageController {
 
   constructor(options: CreateSearchPageControllerOptions) {
     this.page = options.page;
+    this.source = captureFeatureSource(options.page);
     this.form = options.page.querySelector<HTMLFormElement>('[data-search-page-form]');
     this.signal = options.signal;
     this.dependencies = { ...defaultDependencies, ...options.dependencies };
@@ -756,6 +766,7 @@ export class SearchPageController {
   }
 
   private readonly handlePopState = (): void => {
+    if (!isFeatureSourceCurrent(this.source)) return;
     if (this.disposed || this.siteUrlContext === null || this.runtimeState === null) {
       return;
     }
@@ -825,11 +836,14 @@ export class SearchPageController {
     if (this.runtimeState === null || this.siteUrlContext === null) {
       return;
     }
-    history[method](
-      history.state,
-      '',
-      buildSearchPageHistoryHref(this.toSearchState(), this.siteUrlContext),
-    );
+    if (!isFeatureSourceCurrent(this.source)) return;
+    writeHistoryEntry({
+      mode: method === 'pushState' ? 'push' : 'replace',
+      state: history.state,
+      owner: 'feature',
+      url: buildSearchPageHistoryHref(this.toSearchState(), this.siteUrlContext),
+    });
+    adoptFeatureAddress();
     this.syncHeroFromRuntimeState();
   }
 
@@ -909,6 +923,7 @@ export class SearchPageController {
       .then((response) => {
         if (
           this.disposed ||
+          !isFeatureSourceCurrent(this.source) ||
           generation !== this.searchGeneration ||
           searchAbortController.signal.aborted
         ) {
@@ -926,6 +941,7 @@ export class SearchPageController {
       .catch((error: unknown) => {
         if (
           this.disposed ||
+          !isFeatureSourceCurrent(this.source) ||
           generation !== this.searchGeneration ||
           searchAbortController.signal.aborted ||
           (error instanceof DOMException && error.name === 'AbortError')
@@ -1167,6 +1183,28 @@ export class SearchPageController {
 
   private bindReadyListeners(form: HTMLFormElement): void {
     const listenerOptions = { signal: this.listenerController.signal };
+    for (const name of ['click', 'change', 'input', 'keydown', 'submit', 'reset'] as const)
+      form.addEventListener(
+        name,
+        (event) => {
+          const target = event.target;
+          if (
+            event.type !== 'submit' &&
+            event.type !== 'reset' &&
+            (!(target instanceof HTMLElement) ||
+              !target.closest(
+                '[data-search-query-input], [data-search-query-clear], [data-search-tag-checkbox], [data-search-selected-tag-remove], [data-static-choice-item]',
+              ))
+          )
+            return;
+          if (event instanceof KeyboardEvent && !['Enter', ' '].includes(event.key)) return;
+          if (!beginFeatureNavigation(this.source)) {
+            event.preventDefault();
+            event.stopImmediatePropagation();
+          }
+        },
+        { ...listenerOptions, capture: true },
+      );
     const syncFilterDom = (preferredTag?: string): void => {
       if (this.disposed || this.runtimeState === null) {
         return;
@@ -1182,7 +1220,12 @@ export class SearchPageController {
       preferredTag?: string,
       invalidateCounts = true,
     ): void => {
-      if (this.disposed || this.runtimeState === null || this.searchRuntime === null) {
+      if (
+        !isFeatureSourceCurrent(this.source) ||
+        this.disposed ||
+        this.runtimeState === null ||
+        this.searchRuntime === null
+      ) {
         return;
       }
       const data = new FormData(form);

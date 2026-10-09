@@ -1,4 +1,15 @@
 import {
+  initializeContentContext,
+  beginContentMutation,
+  readContentContext,
+  releaseContentContext,
+} from '../../navigation/content-navigation-context.js';
+import {
+  invalidateContentReadiness,
+  setContentReadiness,
+} from '../../client/hydration/content-readiness.js';
+import { readCurrentShellCommitId } from './shell/app-shell-lifecycle.js';
+import {
   Router,
   type RouterDiagnosticPayload,
   RouterNotStartedError,
@@ -39,6 +50,8 @@ export interface RouterDocumentHostContentDomReplacedDetail {
 
 export interface RouterDocumentHostNavigationCommittedDetail {
   contentRoot: HTMLElement;
+  contentEpoch: number;
+  shellCommitId: number;
   result: NavigationResult;
 }
 
@@ -147,9 +160,17 @@ export class RouterDocumentHost extends HTMLElement {
   constructor() {
     super();
 
-    this._postRenderController = new RouterDocumentHostPostRenderController((text) => {
-      this._syncAnnouncement(text);
-    });
+    this._postRenderController = new RouterDocumentHostPostRenderController(
+      (text) => {
+        this._syncAnnouncement(text);
+      },
+      () => {
+        this._dispatchRouterDiagnostic({
+          reason: 'post-commit-handler-failed',
+          handlerName: 'reading-position',
+        });
+      },
+    );
 
     this.ready = new Promise<void>((resolve) => {
       this._resolveReady = resolve;
@@ -216,6 +237,7 @@ export class RouterDocumentHost extends HTMLElement {
     });
 
     router.on('after:navigate', (result) => {
+      this._postRenderController.terminal(result.committed);
       this._dispatchNavigationCommitted(result);
     });
 
@@ -227,8 +249,7 @@ export class RouterDocumentHost extends HTMLElement {
     this._runtimeFailureReason = null;
     this._router = router;
     void router.start();
-    this._postRenderController.restoreInitialScrollImmediately(window.location.href);
-    void this._postRenderController.restoreInitialScroll();
+    this._postRenderController.initialize(this);
     this._markReady();
   }
 
@@ -253,6 +274,7 @@ export class RouterDocumentHost extends HTMLElement {
     this._router = null;
     this._isNavigating = false;
     this._postRenderController.dispose();
+    releaseContentContext(this.getContentRoot());
   }
 
   async navigate(
@@ -347,6 +369,14 @@ export class RouterDocumentHost extends HTMLElement {
 
   private _adoptInitialContent(contentRoot: HTMLElement): void {
     this._currentContent = createRouterContentHtml(contentRoot.innerHTML);
+    const contentEpoch = initializeContentContext(contentRoot);
+    setContentReadiness({
+      contentEpoch,
+      root: contentRoot,
+      shellCommitId: readCurrentShellCommitId(),
+      status: 'pending',
+      started: false,
+    });
 
     this._ensureAnnouncementRegion();
     this._syncBusyState(false);
@@ -377,6 +407,15 @@ export class RouterDocumentHost extends HTMLElement {
     options: { dispatchContentDomReplacedEvent: boolean },
   ): void {
     const contentRoot = this._ensureContentRoot(this._findExistingContentRoot());
+    invalidateContentReadiness();
+    const contentEpoch = beginContentMutation(contentRoot);
+    setContentReadiness({
+      contentEpoch,
+      root: contentRoot,
+      shellCommitId: readCurrentShellCommitId(),
+      status: 'pending',
+      started: false,
+    });
     replaceElementChildrenFromHtml(
       contentRoot,
       unwrapRouterContentHtml(content),
@@ -432,12 +471,20 @@ export class RouterDocumentHost extends HTMLElement {
       return;
     }
 
+    if (
+      result.contentEpoch === undefined ||
+      result.shellCommitId === undefined ||
+      readContentContext()?.contentEpoch !== result.contentEpoch
+    )
+      return;
     this.dispatchEvent(
       new CustomEvent<RouterDocumentHostNavigationCommittedDetail>(
         'router-document-host:navigation-committed',
         {
           detail: {
             contentRoot,
+            contentEpoch: result.contentEpoch,
+            shellCommitId: result.shellCommitId,
             result,
           },
           bubbles: true,

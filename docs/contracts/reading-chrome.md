@@ -162,3 +162,7 @@
 ## 共通reading projection
 
 本文・共通article header・TOC identity/capability・読書検証のownerは`build/projections/reading-page-projection.ts`。note/memo projectionはこれをcompositionする。note sidebar、corpus、tags、archiveとprivate import状態は共通層へ持ち込まない。memosはsidebar absent、breadcrumbと見出し由来desktop/mobile TOCを持つ。scheduler/registryがruntime triggerを所有する契約は維持する。notes↔memos移動でもpersistent sidebar hostを維持し、旧TOC stateを持ち越さない。
+
+## Reading position integration
+
+traverseのcoordinate-priorityは(entry, epoch, intent)の現状態を参照し、後続hashchange/refreshでもhash holdを再作成しない。通常の本人hash選択とmobile focus returnは維持する。 詳細は[Reading Position Contract](reading-position.md)。

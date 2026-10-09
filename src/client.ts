@@ -1,3 +1,12 @@
+import { readHistoryEntry } from './navigation/history-entry.js';
+import {
+  adoptContentBinding,
+  readContentContext,
+  subscribeContentContext,
+  recordInitialIntervention,
+} from './navigation/content-navigation-context.js';
+import { readContentReadiness, setContentReadiness } from './client/hydration/content-readiness.js';
+import { readCurrentShellCommitId } from './components/app/shell/app-shell-lifecycle.js';
 import { MAIN_CONTENT_SELECTOR } from '../shared/navigation/main-landmark-contract.js';
 import type {
   RouterDocumentHost,
@@ -14,8 +23,30 @@ import { initTheme } from './theme/theme-manager.js';
 import { validateInitialAppShell } from './router/initial-shell-validation.js';
 import type { AppContentHydrationReadyDetail } from './components/app/shell/app-shell-events.js';
 
+const initialNavigation = performance.getEntriesByType('navigation')[0];
+if (
+  readHistoryEntry() === null ||
+  (initialNavigation instanceof PerformanceNavigationTiming &&
+    initialNavigation.type !== 'navigate')
+)
+  history.scrollRestoration = 'auto';
 const hydrationScheduler = new HydrationScheduler();
-let contentHydrationGeneration = 0;
+const initialInput = new AbortController();
+for (const name of ['wheel', 'touchmove', 'pointerdown', 'keydown'] as const)
+  window.addEventListener(
+    name,
+    (event) => {
+      if (
+        event instanceof KeyboardEvent &&
+        !['ArrowDown', 'ArrowUp', 'PageDown', 'PageUp', 'Home', 'End', ' ', 'Tab'].includes(
+          event.key,
+        )
+      )
+        return;
+      if (!readContentContext()?.intent) recordInitialIntervention();
+    },
+    { capture: true, passive: true, signal: initialInput.signal },
+  );
 
 const getRouterDocumentHost = (): RouterDocumentHost | null =>
   document.querySelector<RouterDocumentHost>('router-document-host');
@@ -67,6 +98,8 @@ const hydrateShellScopes = async (): Promise<void> => {
 const dispatchContentHydrationReady = (detail: {
   contentRoot: HTMLElement;
   initial: boolean;
+  contentEpoch: number;
+  shellCommitId: number;
 }): void => {
   document.dispatchEvent(
     new CustomEvent<AppContentHydrationReadyDetail>('app-content:hydration-ready', {
@@ -77,10 +110,18 @@ const dispatchContentHydrationReady = (detail: {
 
 const hydrateCurrentContent = async (
   contentRoot?: HTMLElement,
-  options: { initial?: boolean } = {},
+  options: { initial?: boolean; contentEpoch?: number } = {},
 ): Promise<void> => {
-  const generation = ++contentHydrationGeneration;
+  const epoch = options.contentEpoch ?? readContentContext()?.contentEpoch;
+  if (epoch === undefined) return;
+  const ready = readContentReadiness(epoch);
+  if (!ready || ready.started || ready.status === 'invalidated') return;
+  const isCurrent = (): boolean =>
+    readContentContext()?.contentEpoch === epoch &&
+    readContentContext()?.mutation === false &&
+    ready.root.isConnected;
   const routerDocumentHost = await waitForRouterDocumentHostReady();
+  if (!isCurrent()) return;
 
   const mainContent =
     contentRoot ??
@@ -92,18 +133,34 @@ const hydrateCurrentContent = async (
     return;
   }
   await Promise.resolve();
+  if (!isCurrent()) return;
+  setContentReadiness({ ...ready, shellCommitId: readCurrentShellCommitId(), started: true });
 
-  await hydrationScheduler.hydrateContent(mainContent, {
-    dispatchTarget: routerDocumentHost,
-  });
-  if (generation !== contentHydrationGeneration || !mainContent.isConnected) {
+  try {
+    await hydrationScheduler.hydrateContent(mainContent, {
+      dispatchTarget: routerDocumentHost,
+      isCurrent,
+    });
+  } catch {
+    if (isCurrent()) setContentReadiness({ ...ready, started: true, status: 'unavailable' });
+    return;
+  }
+  if (!isCurrent() || !mainContent.isConnected) {
     return;
   }
   const currentContentRoot = routerDocumentHost?.getContentRoot();
   if (currentContentRoot instanceof HTMLElement && currentContentRoot !== mainContent) {
     return;
   }
+  setContentReadiness({
+    ...ready,
+    shellCommitId: readCurrentShellCommitId(),
+    started: true,
+    status: 'settled',
+  });
   dispatchContentHydrationReady({
+    contentEpoch: epoch,
+    shellCommitId: readCurrentShellCommitId(),
     contentRoot: mainContent,
     initial: options.initial === true,
   });
@@ -176,6 +233,7 @@ const bootstrapClient = async (): Promise<void> => {
   initTheme();
   await hydrateShellScopes();
   await initializeRouterDocumentHostRuntime();
+  initialInput.abort();
   await hydrateCurrentContent(undefined, { initial: true });
 };
 
@@ -184,7 +242,17 @@ document.addEventListener('router-document-host:navigation-committed', (event: E
   const contentRoot = detail.contentRoot;
   void hydrateCurrentContent(contentRoot instanceof HTMLElement ? contentRoot : undefined, {
     initial: false,
+    contentEpoch: detail.contentEpoch,
   });
 });
 
+subscribeContentContext((reason) => {
+  if (reason === 'mutation') hydrationScheduler.cancelContent();
+});
+document.addEventListener('app-shell:restored', () => {
+  const context = readContentContext();
+  if (!context) return;
+  adoptContentBinding(context.displayedBinding.url, context.displayedBinding.entryId);
+  void hydrateCurrentContent(context.root ?? undefined, { contentEpoch: context.contentEpoch });
+});
 void bootstrapClient();

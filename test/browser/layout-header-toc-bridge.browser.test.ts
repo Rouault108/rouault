@@ -340,6 +340,8 @@ describe('layout-header-toc-bridge', () => {
         detail: {
           contentRoot,
           initial: false,
+          contentEpoch: 1,
+          shellCommitId: 0,
         },
       }),
     );

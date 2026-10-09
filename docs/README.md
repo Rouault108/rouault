@@ -18,6 +18,7 @@
 ## 正本Contract
 
 - `docs/contracts/static-first-and-no-js.md`
+- `docs/contracts/reading-position.md`
 - `docs/contracts/router.md`
 - `docs/contracts/url-policy.md`
 - `docs/contracts/router-document.md`

@@ -16,6 +16,7 @@ import type { RouterDiagnosticPayload } from './router-diagnostics.js';
 interface InterceptorRequest {
   url: string;
   historyMode: 'none' | 'push' | 'replace';
+  cause?: 'traverse';
 }
 
 export interface RouterRuntime {
@@ -32,6 +33,9 @@ interface CreateRouterRuntimeOptions {
   outlet: HTMLElement;
   options: RouterOptions;
   urlDependencies: RouterRuntimeUrlDependencies;
+  adoptSameDocumentAddress(
+    change: import('../navigation/history-entry.js').BrowserAddressChange,
+  ): void;
   getCurrentUrl(): string;
   requestNavigation(request: InterceptorRequest): Promise<NavigationResult>;
   runNavigation(request: QueuedNavigationRequest, signal: AbortSignal): Promise<NavigationResult>;
@@ -57,6 +61,7 @@ export const createRouterRuntime = (runtimeOptions: CreateRouterRuntimeOptions):
   });
   const linkInterceptor = new RouterLinkInterceptor({
     location,
+    onNativeAddressChange: (change) => { runtimeOptions.adoptSameDocumentAddress(change); },
     siteUrlContext: runtimeOptions.urlDependencies.siteUrlContext,
     getCurrentUrl: () => runtimeOptions.getCurrentUrl(),
     requestNavigation: (request) => runtimeOptions.requestNavigation(request),
