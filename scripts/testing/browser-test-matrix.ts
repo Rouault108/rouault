@@ -23,7 +23,10 @@ export interface WebkitBrowserTestShard {
 // History／URL stateを高頻度に変更するtestは、責務に応じて
 // URL stateまたはNavigation stateへ明示的に分類する。
 const webkitSearchStateTestFiles = [
-  'test/browser/search-page-enhancer.browser.test.ts',
+  'test/browser/search-page-lifecycle.browser.test.ts',
+  'test/browser/search-page-tag-state.browser.test.ts',
+  'test/browser/search-page-url-state.browser.test.ts',
+  'test/browser/search-page-visual.browser.test.ts',
 ] as const;
 
 const webkitUrlStateTestFiles = [

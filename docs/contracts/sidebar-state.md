@@ -57,5 +57,5 @@ canonical snapshotはtransaction内だけで生成し、runtime expanded state /
 
 - Node / SSR: native nav invariant、root cardinality、projection、hydration budget、SSR target
 - Browser: `layout-sidebar-enhancer.browser.test.ts`、controller、shell mutation、native keyboard / persistence
-- E2E: `sidebar-pre-hydration-leakage.spec.ts`、`sidebar-scroll.spec.ts`、`static-header-migration.spec.ts`
+- E2E: `sidebar-pre-hydration-leakage.spec.ts`、`sidebar-scroll.spec.ts`、`header-layout-contract.spec.ts`、`header-shell-integration.spec.ts`、`header-no-js.spec.ts`
 - UI CheckはPhase3まで比較用のmeta / smoke ownerとして維持する。
