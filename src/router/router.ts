@@ -620,10 +620,21 @@ export class Router {
     request: NormalizedNavigationRequest,
     previousUrl: string,
   ): Promise<NavigationResult> {
-    if (request.historyMode === 'push') {
-      this.location.push(request.normalizedUrl, request.state);
-    } else if (request.historyMode === 'replace') {
-      this.location.replace(request.normalizedUrl, request.state);
+    const checkCurrent = (): void => {
+      if (request.intent && !isNavigationIntentCurrent(request.intent))
+        throw new DOMException('superseded', 'AbortError');
+    };
+    try {
+      checkCurrent();
+      if (request.historyMode === 'push') {
+        this.location.push(request.normalizedUrl, request.state, undefined, checkCurrent);
+      } else if (request.historyMode === 'replace') {
+        this.location.replace(request.normalizedUrl, request.state, undefined, checkCurrent);
+      }
+    } catch (error) {
+      if (request.intent && !isNavigationIntentCurrent(request.intent))
+        return this.createCommitSupersededResult(request);
+      throw error;
     }
 
     this.currentUrl = request.normalizedUrl;

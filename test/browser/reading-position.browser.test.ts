@@ -33,6 +33,7 @@ import {
   registerTabsUrlSyncStrategy,
 } from '../../src/components/ui/tabs/tabs-url-sync-strategy.js';
 import { primaryTabTabsUrlSyncStrategy } from '../../src/components/app/navigation/primary-tab-url-state.js';
+import { Router } from '../../src/router/router.js';
 import { ReadingPositionController } from '../../src/components/app/controllers/reading-position-controller.js';
 
 const originalUrl = readAddress();
@@ -240,6 +241,76 @@ describe('履歴entryと本文生存期間', () => {
 });
 
 describe('復元の待機とdurable境界', () => {
+  it('実routerのstate-only writerもdurable直前を再照合し、直後はcommittedを保つ（R2）', async () => {
+    await setup();
+    if (!root) throw new Error('root');
+    const routes = ['/notes/current', '/notes/next'];
+    let focused = 0;
+    const router = new Router(
+      root,
+      {
+        siteUrlContext: { siteOrigin: location.origin, basePath: '' },
+        isInternalDocumentPathname: (path) => routes.includes(path.replace(/\/$/u, '')),
+        routeManifestState: {
+          status: 'loaded',
+          manifest: {
+            version: 1,
+            buildId: 'reading-test',
+            buildLabel: 'reading-test',
+            generatedAt: '2026-01-01T00:00:00.000Z',
+            siteOrigin: location.origin,
+            basePath: '',
+            routes,
+          },
+          routeSet: { routes, has: (path) => routes.includes(path) },
+        },
+      },
+      {
+        skipInitialNavigation: true,
+        urlStateNavigationPolicy: { evaluate: () => ({ kind: 'state-only' }) },
+        postCommitController: {
+          run: () => {
+            focused++;
+          },
+        },
+      },
+    );
+    try {
+      await router.start();
+      const length = history.length;
+      const url = readAddress();
+      stop = observeHistoryEntries(
+        () => {
+          beginNavigationIntent('navigation', readAddress(), 'feature');
+        },
+        () => {
+          /* この観測点ではintentを変更しない。 */
+        },
+      );
+      const cancelled = await router.navigate({ url: '/notes/next', historyMode: 'push' });
+      expect(cancelled.committed).toBe(false);
+      expect(cancelled.outcome).toBe('superseded');
+      expect(history.length).toBe(length);
+      expect(readAddress()).toBe(url);
+      stop();
+      stop = observeHistoryEntries(
+        () => {
+          /* この観測点ではintentを変更しない。 */
+        },
+        () => {
+          beginNavigationIntent('navigation', readAddress(), 'feature');
+        },
+      );
+      const committed = await router.navigate({ url: '/notes/next', historyMode: 'push' });
+      expect(committed.committed).toBe(true);
+      expect(committed.outcome).toBe('completed');
+      expect(history.length).toBe(length + 1);
+      expect(readAddress()).toBe('/notes/next');
+      expect(focused).toBe(0);
+    } finally {
+      router.destroy();
+    }
+  });
   it('History API直前の取消は書き込まず、直後の再入は成功entryを保持する（R2）', async () => {
     await setup();
     const old = beginNavigationIntent('navigation', originalUrl);
