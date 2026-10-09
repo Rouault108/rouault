@@ -21,7 +21,7 @@ Static choice menuは、search pageの`tagMode` / `sort`を所有する単一選
 - `ArrowDown` / `ArrowUp`はmenuを開き、item focusを移動する。
 - `Escape`はmenuを閉じ、triggerへfocus restoreする。
 - `Tab`は自然なフォーカス移動を許容し、開いているmenuを閉じる。
-- item activation後はhidden input、trigger label、selected item stateを同期し、URL更新と検索を実行し、menuを閉じてtriggerへfocus restoreする。
+- item activation後はhidden input、trigger label、selected item stateを同期し、menuを閉じてtriggerへfocus restoreする。条件が変われば最新入力語を含め即時検索し、異なるURLをpushする。同値選択は成功済みなら検索・結果消去・履歴追加を行わず、入力待ちtimerや同条件in-flightは継続する。失敗後は同値選択でretryでき、同じURLをpushしない。タグ0/1個でも組み合わせの変更は候補件数の意味が変わるため実行する。
 - 同一検索ページ内の`tagMode` / `sort` menuは同時に複数開かない。ヘッダーのcorpus / theme menuとの相互排他はこの契約に含めない。
 - menu外をpointer操作した場合、開いているsearch choice menuは閉じる。
 - typeahead navigationとpointer modality trackingはこの契約に含めない。

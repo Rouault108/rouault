@@ -477,6 +477,14 @@
 .filter-option[data-selected='true'] .filter-option-count {
   color: var(--fg-default);
 }
+.search-page__feedback {
+  min-block-size: var(--space-8);
+  overflow-wrap: anywhere;
+}
+[data-search-page-results-section][data-stale='true'] {
+  border-inline-start: var(--border-width) dashed var(--border-muted);
+  padding-inline-start: var(--space-3);
+}
 .search-page__loading {
   display: flex;
   align-items: center;

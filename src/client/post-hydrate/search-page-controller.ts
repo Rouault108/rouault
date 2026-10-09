@@ -121,7 +121,6 @@ interface SearchPageRuntimeState {
   tagCounts: Record<string, number>;
   allTagCounts: Record<string, number>;
   countsStatus: 'ready' | 'pending' | 'error';
-  loaded: boolean;
 }
 
 export type SearchPageRenderableItem = Omit<SearchResultItem, 'reasons'>;
@@ -224,7 +223,6 @@ const createRuntimeState = (
   tagCounts: response ? { ...response.tagCounts } : {},
   allTagCounts: response ? { ...response.allTagCounts } : {},
   countsStatus: response === undefined ? 'pending' : 'ready',
-  loaded: response !== undefined,
 });
 
 const selectedTagValues = (form: HTMLFormElement): string[] =>
@@ -410,6 +408,8 @@ const syncFilterDomFromForm = (
   runtimeState: SearchPageRuntimeState,
   preferredTag?: string,
 ): void => {
+  const list = page.querySelector<HTMLElement>('[data-search-filter-list]');
+  const scrollTop = list?.scrollTop ?? 0;
   const focusToKeep = syncFilterOptionsFromRuntimeState(page, runtimeState);
   const selectedTags = orderedSelectedTagValues(form, preferredTag);
   const tagMode = getSearchPageTagModeLabel(runtimeState.tagMode);
@@ -491,6 +491,7 @@ const syncFilterDomFromForm = (
   if (focusToKeep && !focusToKeep.disabled && focusToKeep.getClientRects().length > 0) {
     focusToKeep.focus({ preventScroll: true });
   }
+  if (list) list.scrollTop = scrollTop;
   syncStaticSearchFieldClearButtons(page);
 };
 
@@ -631,6 +632,8 @@ export class SearchPageController {
   private runtimeState: SearchPageRuntimeState | null = null;
   private siteUrlContext: SiteUrlContext | null = null;
   private searchRuntime: SearchCore | null = null;
+  private successfulState: SearchState | null = null;
+  private requestStatus: 'ready' | 'pending' | 'error' = 'pending';
   private debounceTimerId: number | undefined;
   private searchGeneration = 0;
   private activeSearchAbortController: AbortController | null = null;
@@ -726,6 +729,9 @@ export class SearchPageController {
       });
       this.syncFormFromRuntimeState(this.form);
       syncFilterDomFromForm(this.page, this.form, this.runtimeState);
+      this.successfulState = this.toSearchState();
+      this.requestStatus = 'ready';
+      this.setResultsState('ready');
       this.showStatus(null);
       renderSearchPageResults(this.page, this.runtimeState);
     } else {
@@ -769,7 +775,15 @@ export class SearchPageController {
       this.setDynamicSearchControlsDisabled(true);
       return;
     }
-    this.runtimeState = createRuntimeState(state);
+    this.runtimeState = {
+      ...this.runtimeState,
+      ...createRuntimeState(state, {
+        items: this.runtimeState.items,
+        tagCounts: this.runtimeState.tagCounts,
+        allTagCounts: this.runtimeState.allTagCounts,
+      }),
+      countsStatus: 'pending',
+    };
     if (this.form) {
       this.syncFormFromRuntimeState(this.form);
       syncFilterDomFromForm(this.page, this.form, this.runtimeState);
@@ -797,6 +811,7 @@ export class SearchPageController {
         container.textContent = '';
       }
     }
+    this.announce(message);
     if (variant === null) {
       return;
     }
@@ -804,7 +819,11 @@ export class SearchPageController {
     if (!container) {
       return;
     }
-    if (variant !== 'loading') {
+    if (variant === 'loading') {
+      const label = container.querySelector<HTMLElement>('.search-page__loading-label');
+      if (label) label.textContent = message;
+      else container.textContent = message;
+    } else {
       container.textContent = message;
     }
     container.hidden = false;
@@ -825,11 +844,10 @@ export class SearchPageController {
     if (this.runtimeState === null || this.siteUrlContext === null) {
       return;
     }
-    history[method](
-      history.state,
-      '',
-      buildSearchPageHistoryHref(this.toSearchState(), this.siteUrlContext),
-    );
+    const href = buildSearchPageHistoryHref(this.toSearchState(), this.siteUrlContext);
+    if (new URL(href, window.location.href).href !== window.location.href) {
+      history[method](history.state, '', href);
+    }
     this.syncHeroFromRuntimeState();
   }
 
@@ -874,7 +892,7 @@ export class SearchPageController {
 
   private scheduleSearch(): void {
     this.cancelPendingSearch();
-    this.clearCurrentResults();
+    this.showPendingResults();
     this.debounceTimerId = window.setTimeout(() => {
       this.debounceTimerId = undefined;
       this.executeSearch();
@@ -893,8 +911,7 @@ export class SearchPageController {
     const generation = this.searchGeneration;
     const searchAbortController = new AbortController();
     this.activeSearchAbortController = searchAbortController;
-    this.clearCurrentResults();
-    this.showStatus('loading');
+    this.showPendingResults();
     const searchRuntime = this.searchRuntime;
     const request = { mode: 'explore' as const, ...this.toSearchState() };
     let pending: ReturnType<SearchCore['search']>;
@@ -944,20 +961,54 @@ export class SearchPageController {
       });
   }
 
-  private clearCurrentResults(): void {
-    this.page.querySelector<HTMLElement>('[data-search-page-results-section]')?.replaceChildren();
-    this.page.querySelector<HTMLElement>('[data-search-page-result-count]')?.replaceChildren();
+  private announce(message: string): void {
+    const live = this.page.querySelector<HTMLElement>('[data-search-page-announcement]');
+    if (live && live.textContent !== message) live.textContent = message;
+  }
+
+  private setResultsState(status: 'ready' | 'pending' | 'error'): void {
+    const root = this.page.querySelector<HTMLElement>('[data-search-page-results-section]');
+    if (root) {
+      root.dataset['resultsStatus'] = status;
+      root.setAttribute('aria-busy', String(status === 'pending'));
+      root.dataset['stale'] = String(status !== 'ready' && this.successfulState !== null);
+    }
+  }
+
+  private previousResultsDescription(): string {
+    const state = this.successfulState;
+    if (state === null || this.runtimeState === null) return '';
+    const conditions = [
+      state.q ? `検索語「${state.q}」` : '検索語なし',
+      state.tags.length > 0 ? `タグ「${state.tags.join(' / ')}」` : 'タグなし',
+      getSearchPageTagModeLabel(state.tagMode),
+      choiceValueLabel('sort', state.sort),
+    ].join('、');
+    return `表示中は直前の条件（${conditions}）の${String(this.runtimeState.items.length)}件です。リンクはその結果へ移動します。`;
+  }
+
+  private showPendingResults(): void {
+    this.requestStatus = 'pending';
+    this.setResultsState('pending');
+    this.page
+      .querySelector<HTMLElement>('[data-search-page-result-count]')
+      ?.replaceChildren('更新中');
+    this.showStatus('loading', `検索結果を更新中。${this.previousResultsDescription()}`);
   }
 
   private showRequestError(): void {
-    if (this.runtimeState?.countsStatus === 'pending') {
+    this.requestStatus = 'error';
+    if (this.runtimeState) {
       this.runtimeState.countsStatus = 'error';
       if (this.form) syncFilterDomFromForm(this.page, this.form, this.runtimeState);
     }
-    this.clearCurrentResults();
+    this.setResultsState('error');
+    this.page
+      .querySelector<HTMLElement>('[data-search-page-result-count]')
+      ?.replaceChildren('取得失敗');
     this.showStatus(
       'error',
-      '検索の読み込みに失敗しました。検索語や条件を変更して再入力できます。',
+      `検索の読み込みに失敗しました。同じ条件を選び直すと再試行できます。${this.previousResultsDescription()}`,
     );
   }
 
@@ -969,9 +1020,24 @@ export class SearchPageController {
     this.runtimeState.tagCounts = { ...response.tagCounts };
     this.runtimeState.allTagCounts = { ...response.allTagCounts };
     this.runtimeState.countsStatus = 'ready';
-    this.runtimeState.loaded = true;
+    this.successfulState = this.toSearchState();
+    this.requestStatus = 'ready';
+    this.setResultsState('ready');
     this.showStatus(null);
+    const root = this.page.querySelector<HTMLElement>('[data-search-page-results-section]');
+    const active = this.page.ownerDocument.activeElement;
+    const focusedHref =
+      active instanceof HTMLAnchorElement && root?.contains(active) ? active.href : null;
     renderSearchPageResults(this.page, this.runtimeState);
+    if (focusedHref !== null) {
+      const replacement = [...(root?.querySelectorAll<HTMLAnchorElement>('a') ?? [])].find(
+        (link) => link.href === focusedHref,
+      );
+      (
+        replacement ?? this.form?.querySelector<HTMLInputElement>('[data-search-query-input]')
+      )?.focus({ preventScroll: true });
+    }
+    this.announce(`${String(this.runtimeState.items.length)} 件の結果`);
     if (this.form) {
       this.syncFormFromRuntimeState(this.form);
       syncFilterDomFromForm(this.page, this.form, this.runtimeState);
@@ -1180,11 +1246,11 @@ export class SearchPageController {
       method: 'pushState' | 'replaceState',
       search: 'debounced' | 'immediate',
       preferredTag?: string,
-      invalidateCounts = true,
     ): void => {
       if (this.disposed || this.runtimeState === null || this.searchRuntime === null) {
         return;
       }
+      const previousState = this.toSearchState();
       const data = new FormData(form);
       this.runtimeState.queryInputValue =
         form.querySelector<HTMLInputElement>('[data-search-query-input]')?.value ?? '';
@@ -1194,10 +1260,19 @@ export class SearchPageController {
       );
       this.runtimeState.tagMode = normalizeSearchTagMode(readFormString(data.get('tagMode')));
       this.runtimeState.sort = normalizeSearchSort(readFormString(data.get('sort')));
-      if (invalidateCounts) this.runtimeState.countsStatus = 'pending';
-      this.commitUrl(method);
+      const unchanged = areSearchStatesCanonicallyEqual(previousState, this.toSearchState());
+      // 同値選択は入力待ち・実行中の仕事を生かし、失敗時だけ再試行する。
+      const keepCurrentSearch =
+        unchanged &&
+        (this.requestStatus === 'pending' ||
+          (this.requestStatus === 'ready' &&
+            this.successfulState !== null &&
+            areSearchStatesCanonicallyEqual(this.successfulState, this.toSearchState())));
+      if (!keepCurrentSearch) this.runtimeState.countsStatus = 'pending';
+      if (!unchanged) this.commitUrl(method);
       this.syncSearchChoiceMenusFromRuntimeState(form);
       syncFilterDom(preferredTag);
+      if (keepCurrentSearch) return;
       if (search === 'debounced') {
         this.scheduleSearch();
       } else {
@@ -1270,7 +1345,7 @@ export class SearchPageController {
         if (input) {
           input.value = value;
         }
-        commitFormState('pushState', 'immediate', undefined, name !== 'sort');
+        commitFormState('pushState', 'immediate');
         this.closeSearchChoiceMenu(details, true);
       },
       listenerOptions,

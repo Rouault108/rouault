@@ -205,6 +205,10 @@ describe('renderSearchPageHtml static contract', () => {
     expect(rendered).not.toContain('data-search-results-section');
     expect(rendered).toContain('role="status"');
     expect(rendered).toContain('aria-live="polite"');
+    expect(rendered.match(/role="status"/gu)).toHaveLength(1);
+    expect(rendered.match(/aria-live="polite"/gu)).toHaveLength(1);
+    expect(rendered).toContain('data-search-page-announcement');
+    expect(rendered).toContain('class="search-page__feedback"');
   });
 
   it('status containers は常時 SSR 出力し、loading 入力だけ hidden を外すこと', () => {

@@ -430,12 +430,15 @@ export const renderSearchPageHtml = (options: {
           </details>
         </form>
 
-        <div class="search-page__loading" role="status" aria-live="polite" ${loading ? '' : 'hidden'} data-search-page-loading>
+        <div class="sr-only" role="status" aria-live="polite" aria-atomic="true" data-search-page-announcement></div>
+        <div class="search-page__feedback">
+        <div class="search-page__loading" ${loading ? '' : 'hidden'} data-search-page-loading>
           <span class="search-page__spinner" aria-hidden="true"></span>
-          <span class="search-page__loading-label">検索インデックスを照会しています...</span>
+          <span class="search-page__loading-label">検索結果を更新中。</span>
         </div>
-        <div class="search-page__error" role="status" aria-live="polite" hidden data-search-page-error></div>
-        <div class="search-page__unavailable" role="status" aria-live="polite" hidden data-search-page-unavailable></div>
+        <div class="search-page__error" hidden data-search-page-error></div>
+        <div class="search-page__unavailable" hidden data-search-page-unavailable></div>
+        </div>
         <div class="results-section" data-search-page-results-section hidden></div>
       </div>
     </section>

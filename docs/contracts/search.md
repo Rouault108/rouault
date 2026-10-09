@@ -181,6 +181,16 @@ query、clear、tag checkbox、selected-tag remove、tag名ローカルfilter / 
 
 個別requestのlexical成功、Catalog fallback成功、store-only degradation、正常0件、正常空queryはcapability喪失を意味しない。resolved diagnosticsの`all-sources-failed`もrequest errorとして検出し、正常0件と表示しない。rejectionもrequest errorとし、ready controlsを保持して同じcoreへ次queryを送れる。旧dynamic resultsを現在queryの成功結果と表示しない。Abort、stale、dispose後completionはcommitしない。
 
+### 検索ページの条件更新と結果保持
+
+- 成功済みの条件と現在の入力条件、request outcomeを別に保持する。同値選択では成功結果を維持し、150ms入力待ちtimer・同条件in-flightを取り落とさず重複実行しない。失敗後の同値選択だけretryする。
+- 異なる明示条件選択はpush、文字入力はreplaceとする。同じURLへは書き込まず、未知の`history.state`を保持する。Back / Forwardは入力待ちtimerと旧requestを中止し、復元URLの条件で即時検索する。Abort・generation不一致のcompletionを採用しない。
+- 入力待ちを含む更新中は直前の成功結果（空結果の説明を含む）を残す。件数欄は「更新中」、候補件数はpendingへ移る。表示中の結果が直前の条件の結果であること、旧条件・旧件数を説明する。旧リンクは引き続きそのnoteへ移動できる。
+- 初回検索で成功結果がなければ結果領域は空のまま更新状態を表示する。成功時は結果・確定件数・候補件数を同一同期処理で差し替え、正常0件は0件と空結果説明を表示する。高速完了のために表示を遅延させない。
+- 失敗時は件数欄を「取得失敗」、候補件数をerrorとし、成功結果があれば旧条件と旧件数の説明を付けて保持する。初回失敗は確定結果を表示しない。同条件retry開始時はpendingに戻す。
+- 結果領域の`aria-busy`は入力待ち・実行中だけtrue。読み上げは単一のpersistent polite live regionが所有する。視覚用loading/error、件数欄、結果一覧はlive regionにしない。更新・失敗説明は旧件数を現在条件の確定件数として通知しない。成功時だけ現在条件の確定件数を通知する。
+- mode trigger、タグcheckbox、候補一覧のDOM identityとscrollを維持する。結果内focusが差し替えで消える場合は同じhrefの新リンクへ、なければ検索入力へ`preventScroll`で復帰する。controllerはページscrollや読書位置のhistory stateを所有しない。
+
 ready確認用probe、health API、periodic monitoring、自動retry、core / session再生成によるbudget補充は追加しない。valid SSR initial response adoption時の初回検索省略とlazy initializationを維持する。
 
 ### SSR baseline identity

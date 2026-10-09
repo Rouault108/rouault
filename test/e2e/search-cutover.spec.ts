@@ -280,3 +280,68 @@ test.describe('No-JS static exploration', () => {
     ).toBe(false);
   });
 });
+
+test('search condition history wins over pending input and survives note round trip', async ({
+  page,
+}) => {
+  await ready(page, '/tags/Programming/');
+  const results = page.locator('[data-search-page-results-section]');
+  const count = page.locator('[data-search-page-result-count]');
+  const query = page.locator('[data-search-query-input]');
+  const menu = page.locator('[data-search-choice-menu="tag-mode"]');
+  await expect(results.locator('a.result-link').first()).toBeVisible();
+  await menu.locator('[data-static-choice-trigger]').click();
+  await menu.locator('[data-value="and"]').click();
+  await expect(results).toHaveAttribute('data-results-status', 'ready');
+  await expect(menu.locator('[data-static-choice-trigger]')).toBeFocused();
+
+  const sentinel = await page.evaluate(() => {
+    const saved: unknown = history.state;
+    history.replaceState(
+      { ...(saved && typeof saved === 'object' ? saved : {}), searchTestForeign: 42 },
+      '',
+      location.href,
+    );
+    const input = document.querySelector<HTMLInputElement>('[data-search-query-input]');
+    if (!input) throw new Error('Missing query');
+    input.value = 'TypeScript';
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+    const root = document.querySelector('[data-search-page-results-section]');
+    const snapshot = {
+      status: root?.getAttribute('data-results-status'),
+      retained: (root?.querySelectorAll('a.result-link').length ?? 0) > 0,
+      count: document.querySelector('[data-search-page-result-count]')?.textContent,
+      foreign: (history.state as { searchTestForeign?: number }).searchTestForeign,
+    };
+    history.back();
+    return snapshot;
+  });
+  expect(sentinel).toEqual({ status: 'pending', retained: true, count: '更新中', foreign: 42 });
+  await expect(query).toHaveValue('');
+  await expect(menu.locator('[data-value="or"]')).toHaveAttribute('aria-pressed', 'true');
+  await expect(results).toHaveAttribute('data-results-status', 'ready');
+  await page.goForward();
+  await expect(query).toHaveValue('TypeScript');
+  await expect(menu.locator('[data-value="and"]')).toHaveAttribute('aria-pressed', 'true');
+  await expect(results).toHaveAttribute('data-results-status', 'ready');
+  await expect(results.locator('a.result-link').first()).toBeVisible();
+  const searchUrl = page.url();
+  const resultCount = await count.textContent();
+  const hrefs = await paths(page);
+  const historyLength = await page.evaluate(() => history.length);
+  await menu.locator('[data-static-choice-trigger]').click();
+  await menu.locator('[data-value="and"]').click();
+  expect(await page.evaluate(() => history.length)).toBe(historyLength);
+  expect(await paths(page)).toEqual(hrefs);
+  await results.locator('a.result-link').first().click();
+  await expect(page).not.toHaveURL(searchUrl);
+  await page.goBack();
+  await expect(page).toHaveURL(searchUrl);
+  await expect(query).toHaveValue('TypeScript');
+  await expect(results).toHaveAttribute('data-results-status', 'ready');
+  await expect(count).toHaveText(resultCount ?? '');
+  expect(await paths(page)).toEqual(hrefs);
+  expect(
+    await page.evaluate(() => (history.state as { searchTestForeign?: number }).searchTestForeign),
+  ).toBe(42);
+});
