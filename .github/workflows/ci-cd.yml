@@ -168,8 +168,10 @@ jobs:
           import { createRequire } from 'node:module';
           import { dirname, join } from 'node:path';
 
-          const require = createRequire(import.meta.url);
-          const packagePath = require.resolve('playwright-core/package.json');
+          const rootRequire = createRequire(import.meta.url);
+          const playwrightPackagePath = rootRequire.resolve('playwright/package.json');
+          const playwrightRequire = createRequire(playwrightPackagePath);
+          const packagePath = playwrightRequire.resolve('playwright-core/package.json');
           const registry = JSON.parse(
             await readFile(join(dirname(packagePath), 'browsers.json'), 'utf8'),
           );
