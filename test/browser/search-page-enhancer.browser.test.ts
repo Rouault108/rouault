@@ -335,7 +335,7 @@ describe('search-page-enhancer', () => {
     };
 
     it('タグ0/1/複数の成功後同値は結果node・履歴を維持し、異値だけ即時実行すること', async () => {
-      for (const tags of [[], ['music'], ['music', 'architecture']]) {
+      for (const tags of [[], ['music'], ['architecture', 'music']]) {
         const root = await renderTagOrderFixture(responseWith('old'), tags);
         const runtime = deferred();
         const controller = enhanceWithRuntime(root, undefined, runtime.core);

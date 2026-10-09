@@ -76,6 +76,7 @@
 
 - current navigation URL
 - `history.state`
+- `__routerUrl`はrouterの復元URLであり、生成・既存entryのURL同期は`shared/navigation/history-state.ts`が所有する。同一文書内の検索URL更新では保存済みの復元URLだけを同期し、未知fieldや読書位置用stateを保持する。
 - document content
 - shell projection
 - document metadata
