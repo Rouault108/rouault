@@ -14,6 +14,7 @@ import { enhanceSearchPage } from '../../src/client/post-hydrate/search-page-enh
 import {
   areSearchStatesCanonicallyEqual,
   buildSearchPageHistoryHref,
+  type SearchPageController,
 } from '../../src/client/post-hydrate/search-page-controller.js';
 import type { SearchCore } from '../../src/search/search-core.js';
 import { SEARCH_DEBOUNCE_MS } from '../../src/search/search-constants.js';
@@ -37,6 +38,37 @@ const staticResponse: ExploreSearchResponse = {
 const createSearchRuntime = (
   search: SearchCore['search'] = async () => staticResponse,
 ): SearchCore => ({ search });
+
+type SearchPageDisposable = Pick<SearchPageController, 'dispose'>;
+
+const controllers = new Set<SearchPageDisposable>();
+
+const ownSearchPageController = <T extends SearchPageController | null>(controller: T): T => {
+  if (controller) controllers.add(controller);
+  return controller;
+};
+
+const disposeSearchPageControllers = (owned: Set<SearchPageDisposable>): void => {
+  let firstError: unknown;
+  let failed = false;
+  try {
+    for (const controller of owned) {
+      try {
+        controller.dispose();
+      } catch (error: unknown) {
+        if (!failed) firstError = error;
+        failed = true;
+      }
+    }
+  } finally {
+    owned.clear();
+  }
+  if (failed) throw firstError;
+};
+
+const enhanceOwnedSearchPage = (
+  ...args: Parameters<typeof enhanceSearchPage>
+): ReturnType<typeof enhanceSearchPage> => ownSearchPageController(enhanceSearchPage(...args));
 
 const appendSiteUrlContextMeta = (): void => {
   for (const [name, content] of [
@@ -127,7 +159,7 @@ const enhanceWithRuntime = (
   signal?: AbortSignal,
   searchRuntime = createSearchRuntime(),
 ) =>
-  enhanceSearchPage(root, signal, {
+  enhanceOwnedSearchPage(root, signal, {
     siteUrlContextProvider: () => DEFAULT_SITE_URL_CONTEXT,
     bootstrapProvider: () => ({
       status: 'ready',
@@ -151,6 +183,21 @@ const expectElement = <T extends Element>(element: T | null | undefined, label: 
 const setSearchFixtureUrl = (href = '/search/'): void => {
   if (new URL(href, location.href).href !== location.href) {
     history.replaceState(history.state, '', href);
+  }
+};
+
+const cleanupSearchPageTest = (
+  owned: Set<SearchPageDisposable> = controllers,
+  restoreFixture: () => void = () => {
+    document.body.replaceChildren();
+    document.head.replaceChildren();
+    setSearchFixtureUrl();
+  },
+): void => {
+  try {
+    disposeSearchPageControllers(owned);
+  } finally {
+    restoreFixture();
   }
 };
 
@@ -222,9 +269,7 @@ describe('search-page-enhancer', () => {
   });
 
   afterEach(() => {
-    document.body.replaceChildren();
-    document.head.replaceChildren();
-    setSearchFixtureUrl();
+    cleanupSearchPageTest();
   });
 
   it('light / dark の未選択・選択 checkbox 枠と check は合成後も識別でき、label は24pxの操作領域を持つこと', async () => {
@@ -971,6 +1016,129 @@ describe('search-page-enhancer', () => {
     expect(second).not.to.equal(first);
   });
 
+  it('cleanup 中に例外が発生しても全 controller を dispose して registry を空にすること', () => {
+    const calls: string[] = [];
+    let restored = false;
+    const failure = new Error('expected cleanup failure');
+    const owned = new Set<SearchPageDisposable>([
+      {
+        dispose: () => {
+          calls.push('first');
+          throw failure;
+        },
+      },
+      {
+        dispose: () => {
+          calls.push('second');
+        },
+      },
+    ]);
+
+    expect(() =>
+      cleanupSearchPageTest(owned, () => {
+        restored = true;
+      }),
+    ).toThrow(failure);
+    expect(calls).to.deep.equal(['first', 'second']);
+    expect(owned.size).to.equal(0);
+    expect(restored).to.equal(true);
+  });
+
+  it('dispose 後の global event は旧 controller を更新せず、後継 controller だけが処理すること', () => {
+    const requests: unknown[] = [];
+    const runtime = createSearchRuntime(async (request) => {
+      requests.push(request);
+      return staticResponse;
+    });
+    const root = renderSearchPageFixture();
+    const query = expectElement(
+      root.querySelector<HTMLInputElement>('[data-search-query-input]'),
+      'query',
+    );
+    const choiceMenu = expectElement(
+      root.querySelector<HTMLDetailsElement>('[data-search-choice-menu="tag-mode"]'),
+      'choice menu',
+    );
+    const first = enhanceWithRuntime(root, undefined, runtime);
+
+    first?.dispose();
+    choiceMenu.open = true;
+    const hrefBeforePointerdown = location.href;
+    document.body.dispatchEvent(new Event('pointerdown', { bubbles: true }));
+    expect(location.href).to.equal(hrefBeforePointerdown);
+    history.pushState(history.state, '', '/search/?q=disposed');
+    const hrefBeforePopstate = location.href;
+    window.dispatchEvent(new PopStateEvent('popstate'));
+    expect(location.href).to.equal(hrefBeforePopstate);
+
+    expect(choiceMenu.open).to.equal(true);
+    expect(query.value).to.equal('');
+    expect(requests).to.deep.equal([]);
+
+    setSearchFixtureUrl();
+    choiceMenu.open = false;
+    const second = enhanceWithRuntime(root, undefined, runtime);
+    expect(second).not.to.equal(first);
+    choiceMenu.open = true;
+    document.body.dispatchEvent(new Event('pointerdown', { bubbles: true }));
+    history.pushState(history.state, '', '/search/?q=active');
+    window.dispatchEvent(new PopStateEvent('popstate'));
+
+    expect(choiceMenu.open).to.equal(false);
+    expect(query.value).to.equal('active');
+    expect(requests).to.deep.equal([
+      { mode: 'explore', q: 'active', tags: [], tagMode: 'or', sort: 'relevance' },
+    ]);
+  });
+
+  it('dispose は pending 検索を abort し、遅い完了を旧 DOM へ反映せず後継を保つこと', async () => {
+    let resolvePending: ((response: ExploreSearchResponse) => void) | undefined;
+    let pendingSignal: AbortSignal | undefined;
+    const pendingRuntime = createSearchRuntime(
+      (_request, options) =>
+        new Promise((resolve) => {
+          resolvePending = resolve;
+          pendingSignal = options?.signal;
+        }),
+    );
+    history.replaceState(history.state, '', '/search/?q=pending');
+    const oldRoot = renderSearchPageFixture();
+    oldRoot
+      .querySelector<HTMLElement>('[data-search-page-root]')
+      ?.setAttribute('initial-search-response-json', '{');
+    const oldController = enhanceWithRuntime(oldRoot, undefined, pendingRuntime);
+    expect(pendingSignal).not.to.equal(undefined);
+
+    oldController?.dispose();
+    expect(pendingSignal?.aborted).to.equal(true);
+    expect(oldRoot.querySelector('[data-search-page-result-count]')?.textContent).to.equal('');
+
+    oldRoot.remove();
+    setSearchFixtureUrl();
+    const successorRequests: unknown[] = [];
+    const successorRuntime = createSearchRuntime(async (request) => {
+      successorRequests.push(request);
+      return staticResponse;
+    });
+    const successorRoot = renderSearchPageFixture();
+    enhanceWithRuntime(successorRoot, undefined, successorRuntime);
+    history.pushState(history.state, '', '/search/?q=successor');
+    window.dispatchEvent(new PopStateEvent('popstate'));
+    expect(successorRequests).to.have.length(1);
+
+    resolvePending?.(staticResponse);
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(oldRoot.querySelector('[data-search-page-result-count]')?.textContent).to.equal('');
+    expect(
+      successorRoot.querySelector<HTMLInputElement>('[data-search-query-input]')?.value,
+    ).to.equal('successor');
+    expect(successorRequests).to.deep.equal([
+      { mode: 'explore', q: 'successor', tags: [], tagMode: 'or', sort: 'relevance' },
+    ]);
+  });
+
   it('bootstrap不成立はreadyにせずbaselineを保持すること', () => {
     const root = renderSearchPageFixture();
     const bootstrapState = {
@@ -978,7 +1146,7 @@ describe('search-page-enhancer', () => {
       reason: 'search-runtime-unavailable' as const,
     };
     const searchRuntime = null;
-    const controller = enhanceSearchPage(root, undefined, {
+    const controller = enhanceOwnedSearchPage(root, undefined, {
       siteUrlContextProvider: () => DEFAULT_SITE_URL_CONTEXT,
       bootstrapProvider: () => bootstrapState,
       searchRuntimeProvider: () => searchRuntime,
@@ -992,7 +1160,7 @@ describe('search-page-enhancer', () => {
     const root = renderSearchPageFixture();
     const page = root.querySelector<HTMLElement>('[data-search-page-root]');
     const unavailableBefore = root.querySelector<HTMLElement>('[data-search-page-unavailable]');
-    const controller = enhanceSearchPage(root, undefined, {
+    const controller = enhanceOwnedSearchPage(root, undefined, {
       siteUrlContextProvider: () => null,
     });
     const unavailableAfter = root.querySelector<HTMLElement>('[data-search-page-unavailable]');
@@ -1021,7 +1189,7 @@ describe('search-page-enhancer', () => {
     const root = renderSearchPageFixture();
     let bootstrapReads = 0;
     let runtimeReads = 0;
-    const controller = enhanceSearchPage(root, undefined, {
+    const controller = enhanceOwnedSearchPage(root, undefined, {
       siteUrlContextProvider: () => null,
       bootstrapProvider: () => {
         bootstrapReads += 1;
@@ -1160,7 +1328,7 @@ describe('search-page-enhancer', () => {
       .querySelector<HTMLElement>('[data-search-page-root]')
       ?.setAttribute('initial-search-response-json', '{');
 
-    enhanceSearchPage(root, undefined, {
+    enhanceOwnedSearchPage(root, undefined, {
       siteUrlContextProvider: () => ({ siteOrigin: 'https://example.com', basePath: '/base' }),
       bootstrapProvider: () => ({
         status: 'ready',
@@ -1181,7 +1349,7 @@ describe('search-page-enhancer', () => {
       reason: 'search-runtime-unavailable' as const,
     };
     const root = renderSearchPageFixture();
-    const controller = enhanceSearchPage(root, undefined, {
+    const controller = enhanceOwnedSearchPage(root, undefined, {
       siteUrlContextProvider: () => DEFAULT_SITE_URL_CONTEXT,
       bootstrapProvider: () => bootstrapState,
       searchRuntimeProvider: () => null,
@@ -1225,7 +1393,7 @@ describe('search-page-enhancer', () => {
     invalidRoot
       .querySelector<HTMLElement>('[data-search-page-root]')
       ?.setAttribute('initial-search-response-json', '{');
-    const invalidController = enhanceSearchPage(invalidRoot, undefined, {
+    const invalidController = enhanceOwnedSearchPage(invalidRoot, undefined, {
       siteUrlContextProvider: () => DEFAULT_SITE_URL_CONTEXT,
       bootstrapProvider: () => bootstrapState,
       searchRuntimeProvider: () => null,
@@ -1239,7 +1407,7 @@ describe('search-page-enhancer', () => {
 
   it('bootstrap unavailable 中の popstate はhidden formを復元し、元SSR baselineを保持すること', () => {
     const root = renderSearchPageFixture();
-    const controller = enhanceSearchPage(root, undefined, {
+    const controller = enhanceOwnedSearchPage(root, undefined, {
       siteUrlContextProvider: () => DEFAULT_SITE_URL_CONTEXT,
       bootstrapProvider: () => ({
         status: 'unavailable',
@@ -1267,7 +1435,7 @@ describe('search-page-enhancer', () => {
 
   it('bootstrap unavailable 中の同一 canonical state popstate は SSR results を維持すること', () => {
     const root = renderSearchPageFixture();
-    const controller = enhanceSearchPage(root, undefined, {
+    const controller = enhanceOwnedSearchPage(root, undefined, {
       siteUrlContextProvider: () => DEFAULT_SITE_URL_CONTEXT,
       bootstrapProvider: () => ({
         status: 'unavailable',
@@ -1298,7 +1466,7 @@ describe('search-page-enhancer', () => {
         'initial-search-state-json',
         JSON.stringify({ q: '', tags: ['architecture'], tagMode: 'or', sort: 'relevance' }),
       );
-    enhanceSearchPage(root, undefined, {
+    enhanceOwnedSearchPage(root, undefined, {
       siteUrlContextProvider: () => DEFAULT_SITE_URL_CONTEXT,
       bootstrapProvider: () => ({
         status: 'unavailable',
@@ -1674,7 +1842,7 @@ describe('search-page-enhancer', () => {
         'initial-search-state-json',
         JSON.stringify({ q: '', tags: ['architecture'], tagMode: 'or', sort: 'relevance' }),
       );
-    enhanceSearchPage(root, undefined, {
+    enhanceOwnedSearchPage(root, undefined, {
       siteUrlContextProvider: () => DEFAULT_SITE_URL_CONTEXT,
       bootstrapProvider: () => ({
         status: 'unavailable',

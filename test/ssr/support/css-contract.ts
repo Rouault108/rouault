@@ -6,11 +6,13 @@ import selectorParser from 'postcss-selector-parser';
 
 export type CssRuleScope = 'base' | 'screen' | 'forced-colors' | 'print' | 'reduced-motion' | 'any';
 export type SelectorKind = 'element' | 'pseudo-before' | 'pseudo-after' | 'any';
+export type TokenRuleAncestry = 'root' | 'root-os-dark-media';
 
 export interface CssDeclarationSearchOptions {
   readonly scope?: CssRuleScope;
   readonly mediaPredicate?: (params: string) => boolean;
   readonly selectorKind?: SelectorKind;
+  readonly tokenRuleAncestry?: TokenRuleAncestry;
 }
 
 export interface CssContractViolation {
@@ -31,6 +33,25 @@ const isPrintMedia = (params: string): boolean => /\bprint\b/u.test(params);
 const isForcedColorsMedia = (params: string): boolean => /forced-colors\s*:\s*active/u.test(params);
 const isReducedMotionMedia = (params: string): boolean =>
   /prefers-reduced-motion\s*:\s*reduce/u.test(params);
+
+const normalizeOsDarkMediaParams = (params: string): string =>
+  params
+    .trim()
+    .replace(/\s+/gu, ' ')
+    .replace(/\(\s*/gu, '(')
+    .replace(/\s*\)/gu, ')')
+    .replace(/\s*:\s*/gu, ':');
+
+const isRuleInTokenAncestry = (rule: Rule, ancestry: TokenRuleAncestry): boolean => {
+  if (ancestry === 'root') return rule.parent?.type === 'root';
+  const parent = rule.parent;
+  return (
+    parent?.type === 'atrule' &&
+    parent.name.toLowerCase() === 'media' &&
+    normalizeOsDarkMediaParams(parent.params) === '(prefers-color-scheme:dark)' &&
+    parent.parent?.type === 'root'
+  );
+};
 
 export const normalizeCssDeclarationValue = (value: string): string =>
   value
@@ -82,6 +103,12 @@ const assertValidOptions = (options: CssDeclarationSearchOptions): void => {
   if (options.scope !== undefined && options.mediaPredicate !== undefined) {
     throw new Error('scope と mediaPredicate は同時指定できません');
   }
+  if (
+    options.tokenRuleAncestry !== undefined &&
+    (options.scope !== undefined || options.mediaPredicate !== undefined)
+  ) {
+    throw new Error('tokenRuleAncestry と scope／mediaPredicate は同時指定できません');
+  }
 };
 
 const normalizeAttributeQuoteStyle = (selector: string): string =>
@@ -129,6 +156,9 @@ const listCssFilesInDirectory = (directoryPath: string): string[] => {
 
 const ruleMatchesOptions = (rule: Rule, options: CssDeclarationSearchOptions): boolean => {
   assertValidOptions(options);
+  if (options.tokenRuleAncestry !== undefined) {
+    return isRuleInTokenAncestry(rule, options.tokenRuleAncestry);
+  }
   if (options.mediaPredicate !== undefined) {
     return collectMediaAncestors(rule).some(
       (media) => options.mediaPredicate?.(media.params) === true,
@@ -185,6 +215,11 @@ const matchingDeclarations = (
   mode: 'exact' | 'fragment',
 ): Declaration[] =>
   matchingRules(cssText, selector, options, mode).flatMap((rule) => {
+    if (options.tokenRuleAncestry !== undefined) {
+      return (rule.nodes ?? []).filter(
+        (node): node is Declaration => node.type === 'decl' && node.prop === property,
+      );
+    }
     const declarations: Declaration[] = [];
     rule.walkDecls(property, (declaration) => {
       declarations.push(declaration);
