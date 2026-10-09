@@ -280,7 +280,7 @@ describe('search-page-enhancer', () => {
           pathLabel: title,
           title,
           description: title,
-          date: { epochMs: 0, original: '' },
+          date: { epochMs: null, original: null },
           tags: ['music'],
           snippet: null,
           reasons: [],
@@ -367,7 +367,11 @@ describe('search-page-enhancer', () => {
       const runtime = deferred();
       enhanceWithRuntime(root, undefined, runtime.core);
       const previousHistoryState: unknown = history.state;
-      history.replaceState({ foreign: { reading: 42 } }, '', location.href);
+      history.replaceState(
+        { foreign: { reading: 42 }, __routerUrl: '/search/' },
+        '',
+        location.href,
+      );
       const push = vi.spyOn(history, 'pushState');
       const replace = vi.spyOn(history, 'replaceState');
       enter(root, 'latest');
@@ -375,7 +379,7 @@ describe('search-page-enhancer', () => {
       expect(runtime.requests).toHaveLength(0);
       expect(push).not.toHaveBeenCalled();
       expect(replace).toHaveBeenCalledTimes(1);
-      expect(history.state).toEqual({ foreign: { reading: 42 } });
+      expect(history.state).toEqual({ foreign: { reading: 42 }, __routerUrl: '/search/?q=latest' });
       expect(resultsRoot(root).textContent).toContain('old');
       expect(resultsRoot(root).getAttribute('aria-busy')).toBe('true');
       expect(root.querySelector('[data-search-page-result-count]')?.textContent).toBe('更新中');

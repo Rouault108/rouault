@@ -1,3 +1,4 @@
+import { updateExistingRouterHistoryUrl } from '../../../shared/navigation/history-state.js';
 import { renderStaticIconHtml } from '../../../shared/icons/render-static-icon-html.js';
 import { createSearchJsonParseDiagnosticSink } from '../../../shared/search/search-diagnostics.js';
 import { parseStaticExploreSearchResponseJson } from '../../../shared/search/search-json-artifact-parser.js';
@@ -846,7 +847,7 @@ export class SearchPageController {
     }
     const href = buildSearchPageHistoryHref(this.toSearchState(), this.siteUrlContext);
     if (new URL(href, window.location.href).href !== window.location.href) {
-      history[method](history.state, '', href);
+      history[method](updateExistingRouterHistoryUrl(history.state, href), '', href);
     }
     this.syncHeroFromRuntimeState();
   }

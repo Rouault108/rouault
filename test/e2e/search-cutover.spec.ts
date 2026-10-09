@@ -298,7 +298,11 @@ test('search condition history wins over pending input and survives note round t
   const sentinel = await page.evaluate(() => {
     const saved: unknown = history.state;
     history.replaceState(
-      { ...(saved && typeof saved === 'object' ? saved : {}), searchTestForeign: 42 },
+      {
+        ...(saved && typeof saved === 'object' ? saved : {}),
+        searchTestForeign: 42,
+        __routerUrl: `${location.pathname}${location.search}`,
+      },
       '',
       location.href,
     );

@@ -230,8 +230,11 @@ describe('SSR baseline / capability / request outcome', () => {
               },
             };
       const search = vi.fn(async () => response);
+      if (outcome === 'empty') {
+        page.setAttribute('initial-search-response-json', '{');
+      }
       enhance(host, { search });
-      query(input, outcome === 'empty' ? '' : 'next');
+      if (outcome !== 'empty') query(input, 'next');
       await vi.waitFor(() => expect(search).toHaveBeenCalledTimes(1));
       await vi.waitFor(() =>
         expect(host.querySelector('[data-search-page-result-count]')?.textContent).toContain(
@@ -274,11 +277,19 @@ describe('SSR baseline / capability / request outcome', () => {
         ),
       );
       query(input, 'fail');
-      expect(host.querySelector('[data-search-page-results-section]')?.textContent).toBe('');
+      expect(host.querySelector('[data-search-page-results-section]')?.textContent).toContain(
+        '現在結果',
+      );
+      expect(
+        host.querySelector('[data-search-page-results-section]')?.getAttribute('data-stale'),
+      ).toBe('true');
       await vi.waitFor(() =>
         expect(host.querySelector<HTMLElement>('[data-search-page-error]')?.hidden).toBe(false),
       );
-      expect(host.querySelector('[data-search-page-result-count]')?.textContent).toBe('');
+      expect(host.querySelector('[data-search-page-result-count]')?.textContent).toBe('取得失敗');
+      expect(host.querySelector('[data-search-page-error]')?.textContent).toContain(
+        '検索語「success」',
+      );
       expect(page.dataset['searchPageCapability']).toBe('ready');
       expect(form.hidden).toBe(false);
       expect(controller.state?.kind === 'ready' && controller.state.searchRuntime).toBe(core);
@@ -332,13 +343,21 @@ describe('SSR baseline / capability / request outcome', () => {
         }),
     };
     const controller = enhance(first.host, core);
+    const initialResults = first.host.querySelector(
+      '[data-search-page-results-section]',
+    )?.innerHTML;
     query(first.input, 'first');
     await vi.waitFor(() => expect(responses).toHaveLength(1));
     query(first.input, 'second');
     await vi.waitFor(() => expect(responses).toHaveLength(2));
     responses[0]?.(result('stale', '/notes/stale/'));
     await Promise.resolve();
-    expect(first.host.querySelector('[data-search-page-results-section]')?.textContent).toBe('');
+    expect(first.host.querySelector('[data-search-page-results-section]')?.innerHTML).toBe(
+      initialResults,
+    );
+    expect(
+      first.host.querySelector('[data-search-page-results-section]')?.getAttribute('aria-busy'),
+    ).toBe('true');
     controller.dispose();
     first.host.remove();
     const second = mount('tag');

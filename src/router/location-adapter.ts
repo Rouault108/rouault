@@ -1,3 +1,4 @@
+import { createRouterHistoryState } from '../../shared/navigation/history-state.js';
 import { isDefaultInternalResourcePathname } from '../../shared/link/link-annotation.js';
 import { detectUnsafeHref } from '../../shared/link/unsafe-href-detector.js';
 import { resolveRouterArtifactPathname } from '../../shared/navigation/router-artifact-path.js';
@@ -80,12 +81,7 @@ export class LocationAdapter {
     normalizedUrl: string,
   ): Record<string, unknown> {
     const parsed = this.toUrl(normalizedUrl);
-    const currentState = this.isHistoryStateObject(state) ? state : {};
-
-    return {
-      ...currentState,
-      __routerUrl: `${parsed.pathname}${parsed.search}${parsed.hash}`,
-    };
+    return createRouterHistoryState(state, `${parsed.pathname}${parsed.search}${parsed.hash}`);
   }
 
   normalizeInternalDocumentUrl(url: string): string {
