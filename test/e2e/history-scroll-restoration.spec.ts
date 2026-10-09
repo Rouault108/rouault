@@ -591,6 +591,60 @@ for (const surface of ['tabs', 'search'] as const)
     }
   });
 
+for (const start of ['/search/', '/tags/Programming/'])
+  test(`${start}のfeature pushはbaselineを保ちrouter Backは新SSRへ交代する（R5）`, async ({
+    page,
+  }) => {
+    await page.goto(start);
+    await ready(page);
+    const surface = page.locator('[data-search-page-root]');
+    await expect(surface).toHaveAttribute('data-search-page-capability', 'ready');
+    const original = await page.evaluate(() => {
+      const baseline = document.querySelector<HTMLElement>('[data-search-page-baseline]');
+      if (!baseline) throw new Error('baseline');
+      baseline.dataset['readingBaselineOwner'] = 'original';
+      return {
+        url: location.pathname + location.search,
+        id: history.state.__rouaultHistoryEntry.id as string,
+        html: baseline.innerHTML,
+      };
+    });
+    const menu = page.locator('[data-search-choice-menu="sort"]').first();
+    await menu.locator('[data-static-choice-trigger]').click();
+    await menu.locator('[data-static-choice-item][data-value="date-desc"]').click();
+    await expect
+      .poll(() => page.evaluate(() => location.pathname + location.search))
+      .not.toBe(original.url);
+    await expect(page.locator('[data-search-page-baseline]')).toHaveAttribute(
+      'data-reading-baseline-owner',
+      'original',
+    );
+    expect(await page.locator('[data-search-page-baseline]').innerHTML()).toBe(original.html);
+    expect(await page.evaluate(() => history.state.__rouaultHistoryEntry.id)).not.toBe(original.id);
+    await page.goBack();
+    await ready(page);
+    await expect
+      .poll(() => page.evaluate(() => location.pathname + location.search))
+      .toBe(original.url);
+    expect(await page.evaluate(() => history.state.__rouaultHistoryEntry.id)).toBe(original.id);
+    await expect(page.locator('[data-search-page-baseline]')).not.toHaveAttribute(
+      'data-reading-baseline-owner',
+      'original',
+    );
+    expect(await page.locator('[data-search-page-baseline]').innerHTML()).toBe(original.html);
+    await page.goForward();
+    await ready(page);
+    await expect.poll(() => page.evaluate(() => location.search)).toContain('sort=date-desc');
+    await expect(page.locator('[data-search-page-baseline]')).not.toHaveAttribute(
+      'data-reading-baseline-owner',
+      'original',
+    );
+    await expect(page.locator('[data-search-page-root]')).toHaveAttribute(
+      'data-search-page-surface',
+      'search',
+    );
+  });
+
 test('BFCacheはpersisted観測時だけ同epoch/viewportの再開を判定する（A8）', async ({ page }) => {
   await page.addInitScript(() => {
     window.addEventListener('pageshow', (event) => {
