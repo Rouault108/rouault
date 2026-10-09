@@ -736,6 +736,9 @@ export class SearchPageController {
       this.showStatus(null);
       renderSearchPageResults(this.page, this.runtimeState);
     } else {
+      // 再enhance時のDOMは旧session由来の可能性があり、成功条件を引き継げない。
+      this.page.querySelector<HTMLElement>('[data-search-page-results-section]')?.replaceChildren();
+      this.page.querySelector<HTMLElement>('[data-search-page-result-count]')?.replaceChildren();
       this.runtimeState = createRuntimeState(urlState);
       this.syncFormFromRuntimeState(this.form);
       syncFilterDomFromForm(this.page, this.form, this.runtimeState);

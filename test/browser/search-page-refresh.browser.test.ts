@@ -296,6 +296,26 @@ describe('search page refresh', () => {
     expect(root.querySelector('[data-search-page-result-count]')?.textContent).toBe('0 件の結果');
   });
 
+  it('同じrootの再enhanceで条件不一致なら旧sessionの結果を初回結果として残さないこと', async () => {
+    const root = await mountResults();
+    const first = deferred();
+    const controller = enhanceWithRuntime(root, undefined, first.core);
+    enter(root, 'different');
+    choose(root, 'and');
+    first.requests[0]?.resolve(responseWith('previous-session'));
+    await settled(root);
+    controller?.dispose();
+    const next = deferred();
+    enhanceWithRuntime(root, undefined, next.core);
+    expect(next.requests).toHaveLength(1);
+    expect(resultsRoot(root).children).toHaveLength(0);
+    next.requests[0]?.reject(new Error('initial failure'));
+    await expect.poll(() => resultsRoot(root).dataset['resultsStatus']).toBe('error');
+    expect(resultsRoot(root).children).toHaveLength(0);
+    expect(resultsRoot(root).dataset['stale']).toBe('false');
+    expect(root.querySelector('[data-search-page-error]')?.textContent).not.toContain('直前の条件');
+  });
+
   it('応答の差し替え時に結果focusを同じhrefまたは検索入力へ戻しscrollを動かさないこと', async () => {
     const root = await mountResults();
     const runtime = deferred();
