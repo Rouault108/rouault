@@ -284,7 +284,91 @@ test('native fragment補記はentryを増やさず離脱元stateをcopyしない
   expect(await page.evaluate(() => history.length)).toBe(count + 1);
 });
 
+const probeReloadScroll = async (page: Page): Promise<void> => {
+  await page.addInitScript(() => {
+    const scrollTo = window.scrollTo.bind(window);
+    const calls: string[] = [];
+    window.scrollTo = (options?: ScrollToOptions | number, y?: number): void => {
+      calls.push(JSON.stringify([options, y]));
+      document.documentElement.dataset['readingScrollCalls'] = JSON.stringify(calls);
+      if (typeof options === 'number') scrollTo(options, y ?? 0);
+      else scrollTo(options);
+    };
+  });
+};
+const reloadEvidence = async (page: Page, before: number): Promise<void> => {
+  console.log(
+    'reading-reload-evidence',
+    await page.evaluate(
+      (y) => ({
+        before: y,
+        after: scrollY,
+        mode: history.scrollRestoration,
+        navigationType: (
+          performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming | undefined
+        )?.type,
+        appScrollCalls: document.documentElement.dataset['readingScrollCalls'] ?? '[]',
+        range: document.scrollingElement
+          ? document.scrollingElement.scrollHeight - document.scrollingElement.clientHeight
+          : null,
+      }),
+      before,
+    ),
+  );
+};
+
+test('native対照: JS無効のreloadとsame-document Backを観測する（A7/A8診断）', async ({
+  browser,
+  baseURL,
+}) => {
+  const context = await browser.newContext({
+    javaScriptEnabled: false,
+    ...(baseURL ? { baseURL } : {}),
+    viewport: { width: 1280, height: 720 },
+  });
+  try {
+    const native = await context.newPage();
+    await native.goto(e2eNoteFixtures.markdownBasic.directPath);
+    await expect.poll(() => native.evaluate(() => document.fonts.status)).toBe('loaded');
+    const y = await native.evaluate(() => {
+      const root = document.scrollingElement;
+      if (!root) throw new Error('scroll root');
+      const y = Math.floor((root.scrollHeight - root.clientHeight) * 0.5);
+      window.scrollTo({ top: y, behavior: 'instant' });
+      return y;
+    });
+    await expect.poll(() => native.evaluate(() => scrollY)).toBe(y);
+    await native.reload();
+    await expect.poll(() => native.evaluate(() => document.fonts.status)).toBe('loaded');
+    await reloadEvidence(native, y);
+    await native.evaluate(() => {
+      const headings = document.querySelectorAll('#main-content h2[id]');
+      history.pushState({}, '', `#${encodeURIComponent(headings[0]?.id ?? '')}`);
+      history.pushState({}, '', `#${encodeURIComponent(headings[1]?.id ?? '')}`);
+      const button = document.createElement('button');
+      button.id = 'reading-native-focus';
+      button.textContent = 'native対照';
+      document.querySelector('#main-content')?.append(button);
+      button.focus({ preventScroll: true });
+    });
+    expect(await native.evaluate(() => document.activeElement?.id)).toBe('reading-native-focus');
+    await native.goBack();
+    console.log(
+      'reading-native-focus-evidence',
+      await native.evaluate(() => ({
+        tag: document.activeElement?.tagName,
+        id: document.activeElement?.id,
+        retained: document.getElementById('reading-native-focus')?.isConnected,
+      })),
+    );
+    await expect(native.locator('#main-content h1')).toBeVisible();
+  } finally {
+    await context.close();
+  }
+});
+
 test('reloadは継承manualをautoへ返しnativeの座標を尊重する（A8、Pなし）', async ({ page }) => {
+  await probeReloadScroll(page);
   await page.goto(e2eNoteFixtures.markdownBasic.directPath);
   await ready(page);
   const y = await read(page, 0.5);
@@ -293,6 +377,7 @@ test('reloadは継承manualをautoへ返しnativeの座標を尊重する（A8�
     await customElements.whenDefined('router-document-host');
     await document.querySelector('router-document-host')?.whenReady();
   });
+  await reloadEvidence(page, y);
   await expect
     .poll(async () => Math.abs((await page.evaluate(() => window.scrollY)) - y))
     .toBeLessThanOrEqual(2);
@@ -489,8 +574,17 @@ test('same-document Backのfocus保持と後続hashchange/refreshで座標優先
     document.querySelector('#main-content')?.append(button);
     button.focus({ preventScroll: true });
   });
+  expect(await page.evaluate(() => document.activeElement?.id)).toBe('reading-same-focus');
   await page.goBack();
   await at(page, firstUrl, y);
+  console.log(
+    'reading-app-focus-evidence',
+    await page.evaluate(() => ({
+      tag: document.activeElement?.tagName,
+      id: document.activeElement?.id,
+      retained: document.getElementById('reading-same-focus')?.isConnected,
+    })),
+  );
   expect(await page.evaluate(() => history.state.__rouaultHistoryEntry.id)).toBe(firstId);
   expect(await page.evaluate(() => document.activeElement?.id)).toBe('reading-same-focus');
   await page.evaluate(() => {
@@ -663,6 +757,7 @@ test('BFCacheはpersisted観測時だけ同epoch/viewportの再開を判定す�
   await page.goto('/about/');
   await page.goBack();
   const persisted = await page.locator('html').getAttribute('data-reading-bfcache-persisted');
+  console.log('reading-bfcache-evidence', persisted);
   if (persisted !== 'true') {
     test.info().annotations.push({
       type: 'BFCache',
@@ -681,6 +776,7 @@ test('BFCacheはpersisted観測時だけ同epoch/viewportの再開を判定す�
 test('opaque/未知schemaのreloadはstateを包まずautoでnative位置を尊重する（A8/R3）', async ({
   page,
 }) => {
+  await probeReloadScroll(page);
   await page.goto(e2eNoteFixtures.markdownBasic.directPath);
   await ready(page);
   for (const state of [7, ['opaque'], { __rouaultHistoryEntry: { version: 99, id: 'unknown' } }]) {
@@ -690,6 +786,7 @@ test('opaque/未知schemaのreloadはstateを包まずautoでnative位置を尊�
     await ready(page);
     expect(await page.evaluate(() => history.state)).toEqual(state);
     expect(await page.evaluate(() => history.scrollRestoration)).toBe('auto');
+    await reloadEvidence(page, y);
     await expect
       .poll(async () => Math.abs((await page.evaluate(() => scrollY)) - y))
       .toBeLessThanOrEqual(2);
