@@ -34,7 +34,14 @@ post-commitはjobを予約して戻り、hydration-readyをawaitしない。job�
 
 管理entryはmanual、opaque/ID補記失敗は明示auto。reload/back-forward初期表示は明示autoでbrowser位置を尊重し、独自top/hashを実行しない。native initial intentの同期通知もautoを維持し、load後の採用frameが済んでから管理entryをmanualへ戻す。native fragmentはautoでnative actionを保ち、同intentの次frameでmanualへ戻す。fallback/pagehideはflush・取消してautoへ返す。BFCache再開はDOM/epochを再生成せず現viewportを採用する。disposeは自分のmodeが残る場合だけ元値へ戻す。beforeunload listenerを追加しない。
 
-full commitのmain focusはpreventScroll、same-documentはfocusを保持する。座標優先中のTOCはhash holdを再作成せず、activeTracking=trueだけがviewportのcurrentを追跡する。falseを新しいscroll追跡へ変更しない。本人の新しいhash/TOC操作で通常のhash priorityへ戻す。
+full commitのmain focusはpreventScroll。state-only／same-documentの履歴移動では、読書位置ownerがfocusを変更せず、browser標準動作に任せる。browser自身がfocusを変更する場合も、appによるlast focusの保存・復元を追加しない。座標優先中のTOCはhash holdを再作成せず、activeTracking=trueだけがviewportのcurrentを追跡する。falseを新しいscroll追跡へ変更しない。本人の新しいhash/TOC操作とmobile panelの正当なfocus returnは維持する。
+
+## Approved native-behavior adjustment
+
+2026-10-10承認。設計v3のsame-document Backの「focus保持」は、appがfocusを動かさずbrowser標準動作に任せる方針へ調整した。独自focus保存・復元は追加しない。P保留のreloadは元からnative尊重であり、reload前の座標へ必ず戻るという保証を追加しない。
+
+- A7：同じfixture・履歴URL/state・focus対象のnative対照と比較し、appのfocus/blur呼出しがないことをassertする。full commitのmain focus、管理entryの保存座標±2 CSS px、hashchange／resize／TOC refresh後の座標とcurrentの検証は維持する。
+- A8：同じfixture・履歴操作・viewportのnative reload実測位置と±2 CSS pxで比較する。managedのmanual→load時auto→採用後manual、opaqueのload時・採用後auto、state保全、entry数、appのtop/hash scroll呼出しなしをassertする。primitive・array・未知versionは独立caseで実施する。browser名ごとの固定座標、許容幅拡大やskipで通さない。
 
 ## Verification
 
