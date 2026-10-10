@@ -51,7 +51,7 @@ Menu pattern全体へ移す案は採用しない。Corpus switcherはnavigation 
 - `src/layouts/layout-header-html.ts`はcorpus link直下をindicator slot + label span構造にする。
 - `src/assets/css/layout-header.css`はcorpus itemの正本layoutをgridにし、label ellipsisとindicator slotを定義する。
 - `test/ssr/static-css-contracts.test.ts`はselector / rule単位でcurrent通常状態とforced-colors current専用selectorの禁止propertyを検査する。
-- `test/e2e/static-header-migration.spec.ts`はcurrent / non-currentのindicator slot、check icon、semibold、SPA遷移後同期を検査する。
+- `test/e2e/header-layout-contract.spec.ts`はcurrent / non-currentのindicator slot、check icon、semiboldを、`test/e2e/header-shell-integration.spec.ts`はSPA遷移後同期を検査する。
 - `test/ssr/static-header-parse5-validator.test.ts`と`test/fixtures/static-header-contract-cases.ts`は静的HTML projectionとvalidator許容範囲を検査する。
 
 ## Out of Scope

@@ -1,8 +1,38 @@
 import { expect, test, type Page } from '@playwright/test';
+import { globSync, readFileSync } from 'node:fs';
+import path from 'node:path';
+import { JSON_SCHEMA, load } from 'js-yaml';
 import type { NavigationResult } from '../../src/router/router-types.js';
 import { MEMO_RIGHTS_NOTICE } from '../../build/projections/memo-page-projection.js';
+import { resolveContentRoute } from '../../build/content/content-route-registry.js';
 test.describe.configure({ retries: 0 });
 const DEFAULT_FOOTER_COPYRIGHT = `© ${new Date().getFullYear().toString()} Ruo Miyata. CC BY 4.0.`;
+
+const readExpectedMemoIndex = (): { title: string; href: string }[] =>
+  // 表示件数から期待値を作らず、公開入力と明示的なfixtureの欠落・重複を検出する。
+  ['content/memos', 'test/fixtures/content/memos'].flatMap((root) =>
+    globSync('**/*.md', { cwd: root }).map((name) => {
+      const source = readFileSync(path.join(root, name), 'utf8');
+      const frontmatter = /^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)/u.exec(source);
+      if (!frontmatter) throw new Error(`Memo frontmatter is missing: ${root}/${name}`);
+      const metadata: unknown = load(frontmatter[1] ?? '', { schema: JSON_SCHEMA });
+      if (
+        typeof metadata !== 'object' ||
+        metadata === null ||
+        !('title' in metadata) ||
+        typeof metadata.title !== 'string' ||
+        !metadata.title.trim()
+      )
+        throw new Error(`Memo title is invalid: ${root}/${name}`);
+      return {
+        title: metadata.title,
+        href: resolveContentRoute({
+          collectionId: 'memos',
+          sourceRelativePath: name.split(path.sep).join('/'),
+        }).canonicalPathname,
+      };
+    }),
+  );
 
 const expectSharedDefaultFooter = async (page: Page): Promise<void> => {
   const footer = page.locator('[data-layout-footer]');
@@ -158,6 +188,9 @@ test('memo index uses the shared page shell across widths and color schemes', as
   baseURL,
 }) => {
   if (baseURL === undefined) throw new Error('production E2E baseURL is required');
+  const expectedMemos = readExpectedMemoIndex().sort((left, right) =>
+    left.href.localeCompare(right.href, 'en'),
+  );
   for (const viewport of [
     { name: 'wide', width: 1280, height: 900 },
     { name: 'narrow', width: 390, height: 844 },
@@ -177,9 +210,24 @@ test('memo index uses the shared page shell across widths and color schemes', as
         await expect(shell).toBeVisible();
         await expect(page.locator('html')).toHaveAttribute('data-resolved-theme', colorScheme);
         await expect(shell.getByRole('heading', { name: 'メモ', level: 1 })).toBeVisible();
-        await expect(shell.locator('.meta-row')).toHaveText('2件のメモ');
-        await expect(shell.locator('.memo-index__list > .memo-index__item')).toHaveCount(2);
-        await expect(shell.locator('.result-card')).toHaveCount(2);
+        await expect(shell.locator('.meta-row')).toHaveText(
+          `${expectedMemos.length.toLocaleString('ja-JP')}件のメモ`,
+        );
+        await expect(shell.locator('.memo-index__list > .memo-index__item')).toHaveCount(
+          expectedMemos.length,
+        );
+        await expect(shell.locator('.result-card')).toHaveCount(expectedMemos.length);
+        const listedMemos = await shell.locator('.result-card .result-link').evaluateAll((links) =>
+          links.map((link) => ({
+            title: link.textContent?.trim() ?? '',
+            href: link.getAttribute('href'),
+          })),
+        );
+        expect(
+          listedMemos.sort((left, right) =>
+            (left.href ?? '').localeCompare(right.href ?? '', 'en'),
+          ),
+        ).toEqual(expectedMemos);
         await expect(shell.getByRole('link', { name: '合成メモ', exact: true })).toHaveAttribute(
           'data-link-surface',
           'card',

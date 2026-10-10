@@ -1,45 +1,12 @@
 import { expect, test, type Page } from '@playwright/test';
 
 import { e2eNoteFixtures } from './support/note-fixtures.js';
+import { navigateWithRouterDocumentHost } from './support/router-document-host.js';
 
 const sourcePath = e2eNoteFixtures.markdownBasic.directPath;
 const layoutRich = e2eNoteFixtures.layoutRich;
 const layoutRichDirectPath = layoutRich.directPath;
 const layoutRichSpaPath = layoutRich.normalizedPath;
-
-const waitForRouterDocumentHostReady = async (page: Page): Promise<void> => {
-  await page.waitForFunction(() => {
-    const router = document.querySelector('router-document-host');
-    return (
-      router instanceof HTMLElement &&
-      typeof (router as { navigate?: unknown }).navigate === 'function' &&
-      typeof (router as { whenReady?: unknown }).whenReady === 'function'
-    );
-  });
-};
-
-const navigateWithRouterDocumentHost = async (page: Page, url: string): Promise<void> => {
-  await waitForRouterDocumentHostReady(page);
-
-  await page.evaluate(async (targetUrl) => {
-    const router = document.querySelector('router-document-host') as
-      | (HTMLElement & {
-          navigate: (nextUrl: string) => Promise<unknown>;
-          whenReady: () => Promise<void>;
-        })
-      | null;
-    if (
-      !router ||
-      typeof router.navigate !== 'function' ||
-      typeof router.whenReady !== 'function'
-    ) {
-      throw new Error('router-document-host.navigate() が利用できません');
-    }
-
-    await router.whenReady();
-    await router.navigate(targetUrl);
-  }, url);
-};
 
 const readNoteChromeState = async (
   page: Page,
@@ -133,7 +100,7 @@ const expectLayoutRichNoteChrome = async (page: Page): Promise<void> => {
     .toBeLessThanOrEqual(1);
 };
 
-test.describe('note chrome shadow DOM', () => {
+test.describe('note chrome static DOM', () => {
   test('layout-rich 直アクセス時に front matter と TOC が初回表示で見えること', async ({
     page,
   }) => {
