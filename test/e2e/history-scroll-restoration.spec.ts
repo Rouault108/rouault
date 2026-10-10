@@ -9,10 +9,8 @@ interface ReloadProbe {
   phases: {
     phase: string;
     mode: ScrollRestoration;
-    x: number;
-    y: number;
-    maxY: number | null;
-    fonts: string;
+    readyState: DocumentReadyState;
+    at: number;
     visibility: DocumentVisibilityState;
   }[];
 }
@@ -215,7 +213,18 @@ test('artifact待機中の本人wheel後はcommitしてもtopとfocusを奪わ�
       });
     }, b());
     await seen;
+    await page.evaluate(() => {
+      window.addEventListener(
+        'wheel',
+        (event) => {
+          document.documentElement.dataset['readingWheelReceived'] = String(event.isTrusted);
+        },
+        { once: true },
+      );
+    });
     await page.mouse.wheel(0, 100);
+    // wheelの送信完了とDOMへの配送は別。実際の本人操作が届いてからartifactを解放する。
+    await expect(page.locator('html')).toHaveAttribute('data-reading-wheel-received', 'true');
     await page.evaluate(() => {
       const button = document.createElement('button');
       button.id = 'reading-precommit-focus';
@@ -372,8 +381,9 @@ const settleNativeLayout = async (page: Page): Promise<void> => {
   await expect
     .poll(
       async () => {
-        const current = await page.evaluate(() =>
-          JSON.stringify([
+        const measurement = await page.evaluate(() => ({
+          fonts: document.fonts.status,
+          key: JSON.stringify([
             scrollX,
             scrollY,
             document.scrollingElement?.scrollWidth,
@@ -381,9 +391,9 @@ const settleNativeLayout = async (page: Page): Promise<void> => {
             innerWidth,
             innerHeight,
           ]),
-        );
-        stable = current === previous ? stable + 1 : 0;
-        previous = current;
+        }));
+        stable = measurement.fonts === 'loaded' && measurement.key === previous ? stable + 1 : 0;
+        previous = measurement.key;
         return stable;
       },
       { intervals: [16] },
@@ -424,18 +434,17 @@ const withNativeControl = async (
   });
   try {
     const native = await context.newPage();
-    if (control !== 'no-js') {
-      // app moduleの位置でmodeだけを受け渡す。native対照にscroll/focus/復元storeを加えない。
-      await native.route('**/*', async (route) => {
-        if (route.request().resourceType() !== 'script') {
-          await route.continue();
-          return;
-        }
-        const response = await route.fetch();
-        await route.fulfill({
-          response,
-          contentType: 'text/javascript',
-          body: `
+    // app moduleの位置でmodeだけを受け渡す。native対照にscroll/focus/復元storeを加えない。
+    await native.route('**/*', async (route) => {
+      if (control === 'no-js' || route.request().resourceType() !== 'script') {
+        await route.continue();
+        return;
+      }
+      const response = await route.fetch();
+      await route.fulfill({
+        response,
+        contentType: 'text/javascript',
+        body: `
             history.scrollRestoration = 'auto';
             addEventListener('pagehide', () => { history.scrollRestoration = 'auto'; });
             addEventListener('load', () => requestAnimationFrame(() => {
@@ -444,8 +453,9 @@ const withNativeControl = async (
                 ? 'manual' : 'auto';
             }), { once: true });
           `,
-        });
       });
+    });
+    if (control !== 'no-js') {
       await probeReloadScroll(native);
     }
     await native.goto(initialUrl);
@@ -480,14 +490,12 @@ const probeReloadScroll = async (page: Page): Promise<void> => {
     const probe: ReloadProbe = { modeAtLoad: null, scrollCalls: [], phases: [], modeChanges: [] };
     window.__readingReloadProbe = probe;
     const record = (phase: string): void => {
-      const root = document.scrollingElement;
+      // 初期parse/load中にlayoutを強制しない。座標と字体/rangeはload後の安定待ちで測る。
       probe.phases.push({
         phase,
         mode: history.scrollRestoration,
-        x: scrollX,
-        y: scrollY,
-        maxY: root ? root.scrollHeight - root.clientHeight : null,
-        fonts: document.fonts.status,
+        readyState: document.readyState,
+        at: performance.now(),
         visibility: document.visibilityState,
       });
     };
@@ -536,6 +544,8 @@ type ReloadVariant =
 const compareNativeReload = async (app: Page, variant: ReloadVariant): Promise<void> => {
   await app.emulateMedia({ reducedMotion: 'reduce' });
   await probeReloadScroll(app);
+  // native対照のroutingはHTTP cacheを無効化するため、app側も同じnetwork条件にする。
+  await app.route('**/*', (route) => route.continue());
   await app.goto(e2eNoteFixtures.markdownBasic.directPath);
   await ready(app);
   await settleNativeLayout(app);
@@ -646,12 +656,15 @@ const compareNativeReload = async (app: Page, variant: ReloadVariant): Promise<v
       try {
         expect(probe).toBeDefined();
         expect(probe?.modeAtLoad).toBe('auto');
-        expect(probe?.phases[0]?.mode).toBe('auto');
+        expect(probe?.phases[0]?.phase).toBe('init');
         expect(probe?.scrollCalls).toEqual([]);
         expect(afterApp.mode).toBe(variant.kind === 'managed' ? 'manual' : 'auto');
         expect(afterNative.mode).toBe(afterApp.mode);
         expect(nativeProbe?.modeAtLoad).toBe('auto');
-        expect(nativeProbe?.phases[0]?.mode).toBe('auto');
+        expect(nativeProbe?.phases[0]?.phase).toBe('init');
+        expect(nativeProbe?.phases[0]?.mode).toBe(probe?.phases[0]?.mode);
+        expect(probe?.modeChanges[0]?.mode).toBe('auto');
+        expect(nativeProbe?.modeChanges[0]?.mode).toBe('auto');
         expect(nativeProbe?.scrollCalls).toEqual([]);
         expect(afterApp.state).toEqual(state);
         expect(afterNative.state).toEqual(state);

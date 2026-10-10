@@ -45,6 +45,8 @@ full commitのmain focusはpreventScroll。state-only／same-documentの履歴�
 
 reloadのnative対照はapp moduleをmode handoffだけのscriptへ置き換える。両者のreload前manual、pagehideでauto、module時点でauto、load後の採用frameでmanagedのみmanualを揃え、同じHTML/CSS・URL/state・viewport・字体/range・前面化条件で実測する。対照にscroll、focus、座標保存・復元を追加しない。JS無効でautoを維持した別modeの対照を、管理entryからのreloadと同等と扱わない。no-JS baselineは独立したA9で引き続き検証する。
 
+試験ではroutingによるHTTP cache無効をapp・全対照で揃える。init時点の継承modeは両者の一致を確認し、browser名による固定値を要求しない。bootの最初の明示auto、load時auto、採用後のmodeを検証する。parse/load中の観測でlayoutを強制せず、mode/readyState/時刻を記録し、座標・字体・rangeはload後に字体loadedを含む安定条件で測る。
+
 ## Verification
 
 A1通常/hash移動、A2entry座標復元、A3同URLの別entry、A4state/native互換、A5遅延/epoch、A6本人取消/stale feature、A7focus/TOC、A8native/reload/fallback/clamp、A9既存owner/transaction/SSRをnode/browser/production E2Eで検証する。新E2EはChromium・Firefox・WebKitに明示選択する。BFCacheはpersistedを観測したrunのみ成功判定する。正式環境未実施を互換browserの結果で置き換えない。
