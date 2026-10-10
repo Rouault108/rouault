@@ -5,6 +5,16 @@ import { resolveRouterArtifactPathname } from '../../shared/navigation/router-ar
 interface ReloadProbe {
   modeAtLoad: ScrollRestoration | null;
   scrollCalls: string[];
+  modeChanges: { mode: ScrollRestoration; readyState: DocumentReadyState; at: number }[];
+  phases: {
+    phase: string;
+    mode: ScrollRestoration;
+    x: number;
+    y: number;
+    maxY: number | null;
+    fonts: string;
+    visibility: DocumentVisibilityState;
+  }[];
 }
 declare global {
   interface Window {
@@ -381,6 +391,7 @@ const settleNativeLayout = async (page: Page): Promise<void> => {
     .toBeGreaterThanOrEqual(2);
 };
 const readReloadPosition = async (page: Page): Promise<number> => {
+  await page.bringToFront();
   const y = await page.evaluate(() => {
     const root = document.scrollingElement;
     if (!root || root.scrollHeight - root.clientHeight < 700) throw new Error('long fixture');
@@ -395,6 +406,8 @@ const readReloadPosition = async (page: Page): Promise<number> => {
 const withNativeControl = async (
   app: Page,
   compare: (native: Page) => Promise<void>,
+  control: 'no-js' | 'same-mode' | 'steady-auto' = 'no-js',
+  initialUrl = app.url(),
 ): Promise<void> => {
   const browser = app.context().browser();
   if (!browser) throw new Error('native対照には同じbrowserが必要です');
@@ -407,11 +420,35 @@ const withNativeControl = async (
     ...environment,
     viewport: app.viewportSize() ?? { width: 1280, height: 720 },
     reducedMotion: 'reduce',
-    javaScriptEnabled: false,
+    javaScriptEnabled: control !== 'no-js',
   });
   try {
     const native = await context.newPage();
-    await native.goto(app.url());
+    if (control !== 'no-js') {
+      // app moduleの位置でmodeだけを受け渡す。native対照にscroll/focus/復元storeを加えない。
+      await native.route('**/*', async (route) => {
+        if (route.request().resourceType() !== 'script') {
+          await route.continue();
+          return;
+        }
+        const response = await route.fetch();
+        await route.fulfill({
+          response,
+          contentType: 'text/javascript',
+          body: `
+            history.scrollRestoration = 'auto';
+            addEventListener('pagehide', () => { history.scrollRestoration = 'auto'; });
+            addEventListener('load', () => requestAnimationFrame(() => {
+              const entry = history.state?.__rouaultHistoryEntry;
+              history.scrollRestoration = ${control === 'same-mode'} && entry?.version === 1 && typeof entry.id === 'string'
+                ? 'manual' : 'auto';
+            }), { once: true });
+          `,
+        });
+      });
+      await probeReloadScroll(native);
+    }
+    await native.goto(initialUrl);
     await settleNativeLayout(native);
     expect(
       await native.evaluate(() => customElements.get('router-document-host') !== undefined),
@@ -434,14 +471,49 @@ const viewportSnapshot = (page: Page) =>
       mode: history.scrollRestoration,
       length: history.length,
       state: history.state as unknown,
+      fonts: document.fonts.status,
+      readyState: document.readyState,
     };
   });
 const probeReloadScroll = async (page: Page): Promise<void> => {
   await page.addInitScript(() => {
-    const probe: ReloadProbe = { modeAtLoad: null, scrollCalls: [] };
+    const probe: ReloadProbe = { modeAtLoad: null, scrollCalls: [], phases: [], modeChanges: [] };
     window.__readingReloadProbe = probe;
+    const record = (phase: string): void => {
+      const root = document.scrollingElement;
+      probe.phases.push({
+        phase,
+        mode: history.scrollRestoration,
+        x: scrollX,
+        y: scrollY,
+        maxY: root ? root.scrollHeight - root.clientHeight : null,
+        fonts: document.fonts.status,
+        visibility: document.visibilityState,
+      });
+    };
+    const mode = Object.getOwnPropertyDescriptor(History.prototype, 'scrollRestoration');
+    if (!mode?.get || !mode.set) throw new Error('native scrollRestoration descriptor');
+    Object.defineProperty(history, 'scrollRestoration', {
+      configurable: true,
+      get: () => mode.get?.call(history) as ScrollRestoration,
+      set: (value: ScrollRestoration) => {
+        mode.set?.call(history, value);
+        // setterの観測でlayoutを強制し、native復元の時系列を変えない。
+        probe.modeChanges.push({
+          mode: value,
+          readyState: document.readyState,
+          at: performance.now(),
+        });
+      },
+    });
+    record('init');
+    for (const name of ['DOMContentLoaded', 'pageshow', 'pagehide'] as const)
+      window.addEventListener(name, () => {
+        record(name);
+      });
     window.addEventListener('load', () => {
       probe.modeAtLoad = history.scrollRestoration;
+      record('load');
     });
     for (const method of ['scrollTo', 'scroll', 'scrollBy'] as const) {
       const original = window[method].bind(window);
@@ -468,91 +540,162 @@ const compareNativeReload = async (app: Page, variant: ReloadVariant): Promise<v
   await ready(app);
   await settleNativeLayout(app);
   expect(await app.evaluate(() => history.scrollRestoration)).toBe('manual');
-  await withNativeControl(app, async (native) => {
-    const hash = await app.locator('#main-content h2[id]').nth(1).getAttribute('id');
-    if (!hash) throw new Error('heading');
-    const source = new URL(app.url());
-    source.hash = hash;
-    const targetUrl = source.pathname + source.search + source.hash;
-    const state: unknown =
-      variant.kind === 'managed'
-        ? await app.evaluate((url) => {
-            const current: unknown = history.state;
-            if (typeof current !== 'object' || current === null || Array.isArray(current))
-              throw new Error('managed state');
-            return { ...current, __routerUrl: url, comparisonSentinel: 'reload' };
-          }, targetUrl)
-        : variant.state;
-    for (const page of [native, app])
-      await page.evaluate(({ state, url }) => history.replaceState(state, '', url), {
-        state,
-        url: targetUrl,
-      });
-    const hashY = await app
-      .locator('#main-content h2[id]')
-      .nth(1)
-      .evaluate((heading) => heading.getBoundingClientRect().top + scrollY);
-    const beforeAppY = await readReloadPosition(app);
-    const beforeNativeY = await readReloadPosition(native);
-    expect(
-      await app.evaluate(() => window.__readingReloadProbe?.scrollCalls.length),
-    ).toBeGreaterThan(0);
-    expect(beforeAppY).toBeGreaterThan(0);
-    expect(Math.abs(beforeAppY - hashY)).toBeGreaterThan(2);
-    const beforeApp = await viewportSnapshot(app);
-    const beforeNative = await viewportSnapshot(native);
-    expect(beforeApp.url).toBe(beforeNative.url);
-    expect(beforeApp.state).toEqual(beforeNative.state);
-    expect(Math.abs(beforeApp.maxY - beforeNative.maxY)).toBeLessThanOrEqual(2);
-    expect(Math.abs(beforeAppY - beforeNativeY)).toBeLessThanOrEqual(2);
-    expect(beforeApp.mode).toBe('manual');
-    expect(beforeNative.mode).toBe('auto');
-    await native.reload();
-    await settleNativeLayout(native);
-    await app.reload();
-    await ready(app);
-    await settleNativeLayout(app);
-    // load後にもbrowserのnative復元が進み得る。双方の実測座標が一致するまで観測する。
-    await expect
-      .poll(async () => {
-        const [appPosition, nativePosition] = await Promise.all([
-          viewportSnapshot(app),
-          viewportSnapshot(native),
-        ]);
-        return Math.max(
-          Math.abs(appPosition.x - nativePosition.x),
-          Math.abs(appPosition.y - nativePosition.y),
+  const initialUrl = app.url();
+  await withNativeControl(
+    app,
+    async (native) => {
+      const hash = await app.locator('#main-content h2[id]').nth(1).getAttribute('id');
+      if (!hash) throw new Error('heading');
+      const source = new URL(app.url());
+      source.hash = hash;
+      const targetUrl = source.pathname + source.search + source.hash;
+      const state: unknown =
+        variant.kind === 'managed'
+          ? await app.evaluate((url) => {
+              const current: unknown = history.state;
+              if (typeof current !== 'object' || current === null || Array.isArray(current))
+                throw new Error('managed state');
+              return { ...current, __routerUrl: url, comparisonSentinel: 'reload' };
+            }, targetUrl)
+          : variant.state;
+      for (const page of [native, app])
+        await page.evaluate(
+          ({ state, url }) => {
+            history.replaceState(state, '', url);
+            history.scrollRestoration = 'manual';
+          },
+          {
+            state,
+            url: targetUrl,
+          },
         );
-      })
-      .toBeLessThanOrEqual(2);
-    const afterNative = await viewportSnapshot(native);
-    const afterApp = await viewportSnapshot(app);
-    const probe = await app.evaluate(() => window.__readingReloadProbe);
-    console.log('reading-native-reload-comparison', {
-      variant: variant.kind,
-      beforeApp,
-      beforeNative,
-      afterApp,
-      afterNative,
-      probe,
-    });
-    expect(probe).toBeDefined();
-    expect(probe?.modeAtLoad).toBe('auto');
-    expect(probe?.scrollCalls).toEqual([]);
-    expect(afterApp.mode).toBe(variant.kind === 'managed' ? 'manual' : 'auto');
-    expect(afterNative.mode).toBe('auto');
-    expect(afterApp.state).toEqual(state);
-    expect(afterNative.state).toEqual(state);
-    expect(afterApp.length).toBe(beforeApp.length);
-    expect(afterNative.length).toBe(beforeNative.length);
-    expect(afterApp.url).toBe(targetUrl);
-    expect(afterNative.url).toBe(targetUrl);
-    expect(Math.abs(afterApp.maxX - afterNative.maxX)).toBeLessThanOrEqual(2);
-    expect(Math.abs(afterApp.maxY - afterNative.maxY)).toBeLessThanOrEqual(2);
-    // native自身がhash/top/保存位置のどれを選ぶかは固定せず、同じ入力の実測値と比較する。
-    expect(Math.abs(afterApp.x - afterNative.x)).toBeLessThanOrEqual(2);
-    expect(Math.abs(afterApp.y - afterNative.y)).toBeLessThanOrEqual(2);
-  });
+      const hashY = await app
+        .locator('#main-content h2[id]')
+        .nth(1)
+        .evaluate((heading) => heading.getBoundingClientRect().top + scrollY);
+      const beforeAppY = await readReloadPosition(app);
+      const beforeNativeY = await readReloadPosition(native);
+      expect(
+        await app.evaluate(() => window.__readingReloadProbe?.scrollCalls.length),
+      ).toBeGreaterThan(0);
+      expect(beforeAppY).toBeGreaterThan(0);
+      expect(Math.abs(beforeAppY - hashY)).toBeGreaterThan(2);
+      const beforeApp = await viewportSnapshot(app);
+      const beforeNative = await viewportSnapshot(native);
+      expect(beforeApp.url).toBe(beforeNative.url);
+      expect(beforeApp.state).toEqual(beforeNative.state);
+      expect(Math.abs(beforeApp.maxY - beforeNative.maxY)).toBeLessThanOrEqual(2);
+      expect(Math.abs(beforeAppY - beforeNativeY)).toBeLessThanOrEqual(2);
+      expect(beforeApp.mode).toBe('manual');
+      expect(beforeNative.mode).toBe(beforeApp.mode);
+      expect(beforeApp.fonts).toBe('loaded');
+      expect(beforeNative.fonts).toBe(beforeApp.fonts);
+      expect(beforeApp.readyState).toBe('complete');
+      expect(beforeNative.readyState).toBe(beforeApp.readyState);
+      const diagnostics: {
+        control: 'steady-auto' | 'no-js';
+        before: Awaited<ReturnType<typeof viewportSnapshot>>;
+        after: Awaited<ReturnType<typeof viewportSnapshot>>;
+      }[] = [];
+      // mode差とJS無効自体の差を分ける。異なるmodeの対照は合否の座標基準へ使わない。
+      for (const control of ['steady-auto', 'no-js'] as const)
+        await withNativeControl(
+          app,
+          async (baseline) => {
+            await baseline.evaluate(({ state, url }) => history.replaceState(state, '', url), {
+              state,
+              url: targetUrl,
+            });
+            await readReloadPosition(baseline);
+            const before = await viewportSnapshot(baseline);
+            expect(before.mode).toBe('auto');
+            expect(before.url).toBe(beforeApp.url);
+            expect(before.state).toEqual(beforeApp.state);
+            expect(before.fonts).toBe('loaded');
+            expect(before.readyState).toBe('complete');
+            expect(Math.abs(before.maxX - beforeApp.maxX)).toBeLessThanOrEqual(2);
+            expect(Math.abs(before.maxY - beforeApp.maxY)).toBeLessThanOrEqual(2);
+            expect(Math.abs(before.y - beforeApp.y)).toBeLessThanOrEqual(2);
+            await baseline.reload();
+            await settleNativeLayout(baseline);
+            const after = await viewportSnapshot(baseline);
+            expect(after.state).toEqual(state);
+            expect(after.url).toBe(targetUrl);
+            expect(after.length).toBe(before.length);
+            expect(after.mode).toBe('auto');
+            expect(after.fonts).toBe('loaded');
+            expect(after.readyState).toBe('complete');
+            expect(Math.abs(after.maxX - beforeApp.maxX)).toBeLessThanOrEqual(2);
+            expect(Math.abs(after.maxY - beforeApp.maxY)).toBeLessThanOrEqual(2);
+            diagnostics.push({ control, before, after });
+          },
+          control,
+          initialUrl,
+        );
+      await native.bringToFront();
+      await native.reload();
+      await settleNativeLayout(native);
+      await app.bringToFront();
+      await app.reload();
+      await ready(app);
+      await settleNativeLayout(app);
+      const afterNative = await viewportSnapshot(native);
+      const afterApp = await viewportSnapshot(app);
+      const probe = await app.evaluate(() => window.__readingReloadProbe);
+      const nativeProbe = await native.evaluate(() => window.__readingReloadProbe);
+      try {
+        expect(probe).toBeDefined();
+        expect(probe?.modeAtLoad).toBe('auto');
+        expect(probe?.phases[0]?.mode).toBe('auto');
+        expect(probe?.scrollCalls).toEqual([]);
+        expect(afterApp.mode).toBe(variant.kind === 'managed' ? 'manual' : 'auto');
+        expect(afterNative.mode).toBe(afterApp.mode);
+        expect(nativeProbe?.modeAtLoad).toBe('auto');
+        expect(nativeProbe?.phases[0]?.mode).toBe('auto');
+        expect(nativeProbe?.scrollCalls).toEqual([]);
+        expect(afterApp.state).toEqual(state);
+        expect(afterNative.state).toEqual(state);
+        expect(afterApp.length).toBe(beforeApp.length);
+        expect(afterNative.length).toBe(beforeNative.length);
+        expect(afterApp.url).toBe(targetUrl);
+        expect(afterNative.url).toBe(targetUrl);
+        expect(afterApp.fonts).toBe('loaded');
+        expect(afterNative.fonts).toBe(afterApp.fonts);
+        expect(afterApp.readyState).toBe('complete');
+        expect(afterNative.readyState).toBe(afterApp.readyState);
+        expect(Math.abs(afterApp.maxX - afterNative.maxX)).toBeLessThanOrEqual(2);
+        expect(Math.abs(afterApp.maxY - afterNative.maxY)).toBeLessThanOrEqual(2);
+        // load後にもnative復元が進み得る。mode/state判定を先に行い、座標失敗で隠さない。
+        await expect
+          .poll(async () => {
+            const [appPosition, nativePosition] = await Promise.all([
+              viewportSnapshot(app),
+              viewportSnapshot(native),
+            ]);
+            return Math.max(
+              Math.abs(appPosition.x - nativePosition.x),
+              Math.abs(appPosition.y - nativePosition.y),
+            );
+          })
+          .toBeLessThanOrEqual(2);
+      } finally {
+        console.log(
+          'reading-native-reload-comparison',
+          JSON.stringify({
+            variant: variant.kind,
+            beforeApp,
+            beforeNative,
+            afterApp: await viewportSnapshot(app),
+            afterNative: await viewportSnapshot(native),
+            probe: await app.evaluate(() => window.__readingReloadProbe),
+            nativeProbe: await native.evaluate(() => window.__readingReloadProbe),
+            diagnostics,
+          }),
+        );
+      }
+    },
+    'same-mode',
+  );
 };
 const installFocusProbe = async (page: Page): Promise<void> => {
   await page.evaluate(() => {
