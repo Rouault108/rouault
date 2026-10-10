@@ -200,6 +200,15 @@ class Harness implements PublicationPorts {
   }
 }
 describe('manual publication transaction and recovery', () => {
+  it('does not execute registration through the publication write flow', async () => {
+    const ports = new Harness();
+    await expect(
+      executePublicationOperation({ ...operation, action: 'register-existing' }, ports, { guards }),
+    ).rejects.toThrow('dedicated entrypoint');
+    expect(ports.receipts).toHaveLength(0);
+    expect(ports.sourceCommits).toBe(0);
+    expect(ports.publicCommits).toBe(0);
+  });
   it('stops if an already-pushed target changed instead of finalizing a stale successful deployment', async () => {
     const ports = new Harness();
     ports.failAt = 'deployment';

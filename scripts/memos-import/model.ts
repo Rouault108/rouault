@@ -1,6 +1,6 @@
 export interface PublicationOperation {
   operationId: string;
-  action: 'publish' | 'update' | 'withdraw';
+  action: 'publish' | 'update' | 'withdraw' | 'register-existing';
   targets: readonly string[];
   userRequestRef: string;
   expectedLedgerRevision: number;

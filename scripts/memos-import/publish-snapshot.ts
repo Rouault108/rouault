@@ -62,6 +62,8 @@ export const executePublicationOperation = async (
   },
 ): Promise<PublicationRunResult> =>
   ports.withLock(operation.operationId, async () => {
+    if (operation.action === 'register-existing')
+      throw new Error('[publication] existing registration requires its dedicated entrypoint');
     const loaded = await ports.readLedger();
     const ledger = loaded.ledger;
     const existing = ledger.operations[operation.operationId];

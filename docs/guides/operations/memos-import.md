@@ -32,6 +32,10 @@ JPEGはscanの前後・間の全markerを検査する。entropy内のstuffingと
 
 `createMemoDeploymentVerifier`はそのproofと実HTTPのbytes、manifest/build、anchor、画像、取り下げの404/410、通常searchの非混入を照合する。job結果だけを合格にしない。取得不能はunknown、観測できた不一致はfailed。検証branchのworkflow_dispatch成功では本番配信proofを作らない。
 
+既存公開だけがありprivate台帳が未登録の場合は、別途承認した`registerExistingPublication`を使う。`register-existing`は通常のpublish/update/withdraw経路へ渡さない。完全なsource・現行main・その実親commit、正確な承認内容hash、現行所有manifestを固定し、メモリ上の対象選択だけで再変換する。承認対象と依存物が所有領域全体を覆い、変換bytesが現行公開入力と完全一致する場合だけ進む。`createMemoDeploymentVerifier`を既存の認証済みActions proof readerへ接続し、本番ZIP/digest/deployment IDと実HTTPの照合がverifiedとなることを必須とする。
+
+登録の`recheckSnapshots`ではsource/publicのrepository identity、最新main、公開commitの実親と限定targetの一致を再確認する。台帳の完全folderが依然空でありprivate mainが固定基点のままである場合だけ、revision 1の確定stateと`register-existing` receiptを同じ限定commitへ保存する。空state初期化・source flag変更・公開writeは行わない。receiptの`ledger-finalized`は今回の登録完了を表し、過去のsource flag/push段階やno-opを捏造しない。登録後は固定commitのstate/receipt全文と限定差分を読み戻す。readerがこのactionに対応した運用実装を配備する前には登録しない。archive取得拒否、配信unknown、不一致、並行更新は書込み前に停止する。
+
 `runManualMemoRequest`がGit publication ports、proof reader、HTTP検証を接続する。`execution`は`dry-run`または`publication`を明示する。private依頼受付側で対象/action、内容版、userRequestRef、台帳revision、必要なembed/画像承認を確定した後、一回の操作として呼ぶ。返却plan/receiptはprivate操作応答だけへ渡し、public CI、public issue、共有logへ転送しない。この関数呼出し自体をユーザー承認や資格情報の追加許可の代わりにしない。
 
 導入手順は既存Metisの実環境に沿って行う。この一時的な開発環境を常設運用先と扱わない。

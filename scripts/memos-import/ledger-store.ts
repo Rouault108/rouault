@@ -76,7 +76,7 @@ const assertReceipt = (parsed: unknown, name: string): OperationReceipt => {
     typeof op['operationId'] !== 'string' ||
     !/^[a-zA-Z0-9_-]+$/u.test(op['operationId']) ||
     name !== `operations/${op['operationId']}.json` ||
-    !['publish', 'update', 'withdraw'].includes(String(op['action'])) ||
+    !['publish', 'update', 'withdraw', 'register-existing'].includes(String(op['action'])) ||
     !Array.isArray(op['targets']) ||
     !op['targets'].length ||
     !op['targets'].every(
@@ -110,6 +110,29 @@ const assertReceipt = (parsed: unknown, name: string): OperationReceipt => {
       !OPERATION_STAGES.includes(parsed['failureStage'] as OperationReceipt['stage']))
   )
     throw new Error('[ledger] corrupt receipt status');
+  if (
+    op['action'] === 'register-existing' &&
+    (parsed['stage'] !== 'ledger-finalized' ||
+      parsed['flagState'] !== 'unchanged' ||
+      !sha(parsed['sourceFinalSha']) ||
+      parsed['sourceBeforeSha'] !== parsed['sourceFinalSha'] ||
+      !sha(parsed['rouaultCommitSha']) ||
+      !hash(parsed['approvedInputHash']) ||
+      !hash(parsed['candidateHash']) ||
+      !parsed['deploymentId'] ||
+      parsed['deploymentStatus'] !== 'verified' ||
+      parsed['failureStage'] !== null ||
+      parsed['noOps'].length !== 0 ||
+      op['expectedLedgerRevision'] !== 0 ||
+      !isRecord(parsed['results']) ||
+      parsed['results']['registrationMethod'] !== 'verified-existing-publication-v1' ||
+      parsed['results']['sourceFlagsPreserved'] !== 'true' ||
+      parsed['results']['publicWritesPerformed'] !== 'false' ||
+      !hash(parsed['results']['importSelectionHash']) ||
+      typeof parsed['results']['registeredAt'] !== 'string' ||
+      Number.isNaN(Date.parse(parsed['results']['registeredAt'])))
+  )
+    throw new Error('[ledger] corrupt existing registration receipt');
   return parsed as unknown as OperationReceipt;
 };
 const parseFolder = (files: ReadonlyMap<string, Uint8Array>): PublicationLedger => {
@@ -203,6 +226,7 @@ export class PublicationLedgerStore {
   ): Promise<string> {
     await this.assertRepository();
     if (
+      receipt.operation.action === 'register-existing' ||
       receipt.stage !== 'ledger-finalized' ||
       receipt.deploymentStatus !== 'verified' ||
       !receipt.rouaultCommitSha ||
@@ -240,6 +264,63 @@ export class PublicationLedgerStore {
           Buffer.from(JSON.stringify(receipt, null, 2) + '\n'),
         ],
       ]),
+    );
+  }
+  async registerExistingPublication(
+    receipt: OperationReceipt,
+    plan: ImportPlan,
+    expectedHead: string,
+  ): Promise<string> {
+    await this.assertRepository();
+    assertReceipt(receipt, `operations/${receipt.operation.operationId}.json`);
+    if (
+      receipt.operation.action !== 'register-existing' ||
+      !receipt.rouaultCommitSha ||
+      !receipt.deploymentId ||
+      receipt.approvedInputHash !== plan.inputHash ||
+      JSON.stringify([...receipt.operation.targets].sort()) !==
+        JSON.stringify(Object.keys(plan.entries).sort()) ||
+      Object.values(plan.entries).some(
+        (entry) =>
+          entry.status !== 'published' ||
+          entry.approvedSourceSha !== receipt.sourceFinalSha ||
+          entry.approvedRequestRef !== receipt.operation.userRequestRef,
+      )
+    )
+      throw new Error('[ledger] incomplete existing registration');
+    if ((await this.repository.head()) !== expectedHead)
+      throw new Error('[ledger] existing registration base conflict');
+    const folder = await this.repository.readFolder(expectedHead, ledgerStorage.ledgerRoot);
+    if (!folder.complete || folder.files.size !== 0)
+      throw new Error('[ledger] existing registration requires a complete absent ledger');
+    const rouaultCommitSha = receipt.rouaultCommitSha;
+    const deploymentId = receipt.deploymentId;
+    const state: PublicationLedgerState = {
+      schemaVersion: 1,
+      revision: 1,
+      entries: Object.fromEntries(
+        Object.entries(plan.entries).map(([name, entry]) => [
+          name,
+          {
+            ...entry,
+            rouaultCommitSha,
+            deploymentId,
+          },
+        ]),
+      ),
+    };
+    const files = new Map([
+      ['state.json', Buffer.from(serializeState(state))],
+      [
+        `operations/${receipt.operation.operationId}.json`,
+        Buffer.from(JSON.stringify(receipt, null, 2) + '\n'),
+      ],
+    ]);
+    // 空stateを作って通常公開へ進むのではなく、検証済みの実登録だけを一括保存する。
+    parseFolder(files);
+    return this.repository.commitFiles(
+      expectedHead,
+      new Map([...files].map(([name, bytes]) => [`${ledgerStorage.ledgerRoot}/${name}`, bytes])),
     );
   }
   async backup(): Promise<{

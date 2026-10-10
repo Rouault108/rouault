@@ -89,6 +89,8 @@ export const plannedSourceSnapshot = (
   source: Snapshot,
   operation: PublicationOperation,
 ): Snapshot => {
+  if (operation.action === 'register-existing')
+    throw new Error('[import] existing registration cannot change source flags');
   const files = new Map(source.files);
   for (const target of operation.targets) {
     const file = files.get(target);
