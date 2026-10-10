@@ -10,7 +10,12 @@ import type {
 } from '../../components/ui/tabs/tabs.types.js';
 
 const controllers = new WeakMap<HTMLElement, TabsController>();
-export type TabsSelectionResult = 'not-enhanced' | 'invalid-value' | 'selected' | 'unchanged';
+export type TabsSelectionResult =
+  | 'not-enhanced'
+  | 'invalid-value'
+  | 'selected'
+  | 'unchanged'
+  | 'superseded';
 
 export const selectTabsValue = (
   root: HTMLElement,
@@ -139,7 +144,7 @@ class TabsController {
     const index = this.tabs.findIndex((tab) => tab.dataset['tabValue'] === value);
     if (index < 0) return 'invalid-value';
     const changed = index !== this.activeIndex;
-    this.commit(index, historyMode, true);
+    if (!this.commit(index, historyMode, true)) return 'superseded';
     return changed ? 'selected' : 'unchanged';
   }
 
@@ -159,27 +164,27 @@ class TabsController {
       (value) => this.tabs.findIndex((tab) => tab.dataset['tabValue'] === value),
     );
     const previous = this.activeIndex;
-    this.commit(resolved.index, 'none', false);
-    this.url.normalizeActiveValue(location.source, this.getActiveValue());
+    if (!this.commit(resolved.index, 'none', false)) return;
+    if (!this.url.normalizeActiveValue(location.source, this.getActiveValue())) return;
     if (emit && previous !== this.activeIndex) this.notify(previous);
   }
 
-  private commit(index: number, historyMode: UrlHistoryMode, emit: boolean): void {
-    if (!this.url.beginSelection(historyMode)) return;
+  private commit(index: number, historyMode: UrlHistoryMode, emit: boolean): boolean {
+    if (!this.url.beginSelection(historyMode)) return false;
     const value = this.tabs[index]?.getAttribute('data-tab-value') ?? null;
     if (this.activeIndex === index && this.focusedIndex === index && this.selectedValue === value) {
-      this.url.writeSelectedValue(value, historyMode);
-      return;
+      return this.url.writeSelectedValue(value, historyMode);
     }
     const previous = this.activeIndex;
     this.activeIndex = index;
     this.focusedIndex = index;
     this.selectedValue = this.getActiveValue();
     this.project();
-    this.url.writeSelectedValue(this.selectedValue, historyMode);
+    if (!this.url.writeSelectedValue(this.selectedValue, historyMode)) return false;
     this.indicator.hostUpdated();
     this.scroll(index);
     if (emit && previous !== index) this.notify(previous);
+    return this.url.isSelectionCurrent();
   }
 
   private project(): void {

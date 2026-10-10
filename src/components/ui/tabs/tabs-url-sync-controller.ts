@@ -85,12 +85,15 @@ export class TabsUrlSyncController {
   }
 
   beginSelection(historyMode: UrlHistoryMode): boolean {
-    if (!this.host.isUrlSyncEnabled()) return this.canSync();
     this.operation = beginFeatureNavigation(
       this.source,
-      historyMode === 'none' ? 'url-sync' : 'user-navigation',
+      !this.host.isUrlSyncEnabled() || historyMode === 'none' ? 'url-sync' : 'user-navigation',
     );
     return this.operation !== null;
+  }
+
+  isSelectionCurrent(): boolean {
+    return this.operation !== null && isFeatureTokenCurrent(this.source, this.operation);
   }
 
   resolveUrlDrivenValue(): UrlDrivenValueResolution {
@@ -128,15 +131,15 @@ export class TabsUrlSyncController {
     };
   }
 
-  normalizeActiveValue(source: TabsUrlSource, activeValue: string | null): void {
-    if (!this.canSync() || !this.host.isUrlSyncEnabled() || typeof window === 'undefined') {
-      return;
-    }
+  normalizeActiveValue(source: TabsUrlSource, activeValue: string | null): boolean {
+    this.operation ??= beginFeatureNavigation(this.source, 'normalization');
+    if (!this.isSelectionCurrent()) return false;
+    if (!this.host.isUrlSyncEnabled() || typeof window === 'undefined') return true;
 
     const currentUrl = `${window.location.pathname}${window.location.search}${window.location.hash}`;
     const strategy = getTabsUrlSyncStrategy();
     if (!strategy) {
-      return;
+      return true;
     }
 
     let nextUrl = currentUrl;
@@ -150,46 +153,47 @@ export class TabsUrlSyncController {
     }
 
     if (nextUrl !== currentUrl) {
-      this.operation = null;
-      this.writeUrlStateInternal(nextUrl, 'replace');
+      return this.writeUrlStateInternal(nextUrl, 'replace');
     }
+    return this.isSelectionCurrent();
   }
 
-  writeSelectedValue(value: string | null, historyMode: UrlHistoryMode): void {
+  writeSelectedValue(value: string | null, historyMode: UrlHistoryMode): boolean {
+    if (!this.isSelectionCurrent()) return false;
     if (
-      !this.canSync() ||
       !this.host.isUrlSyncEnabled() ||
       this.suppressWrite ||
       historyMode === 'none' ||
       typeof window === 'undefined'
     ) {
-      return;
+      return true;
     }
 
     const currentUrl = `${window.location.pathname}${window.location.search}${window.location.hash}`;
     const strategy = getTabsUrlSyncStrategy();
     if (!strategy) {
-      return;
+      return true;
     }
 
     const nextUrl = strategy.writeValue(currentUrl, value);
 
-    this.writeUrlStateInternal(nextUrl, historyMode);
+    return this.writeUrlStateInternal(nextUrl, historyMode);
   }
 
-  private writeUrlStateInternal(nextUrl: string, historyMode: UrlHistoryMode): void {
+  private writeUrlStateInternal(nextUrl: string, historyMode: UrlHistoryMode): boolean {
     if (!this.canSync() || historyMode === 'none' || typeof window === 'undefined') {
-      return;
-    }
-
-    const previousUrl = `${window.location.pathname}${window.location.search}${window.location.hash}`;
-    if (previousUrl === nextUrl) {
-      this.operation = null;
-      return;
+      return false;
     }
 
     const token = this.operation ?? beginFeatureNavigation(this.source, 'normalization');
-    if (!token || !isFeatureTokenCurrent(this.source, token)) return;
+    if (!token || !isFeatureTokenCurrent(this.source, token)) return false;
+
+    const previousUrl = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+    if (previousUrl === nextUrl) {
+      this.operation = token;
+      return this.isSelectionCurrent();
+    }
+
     const state: unknown = history.state;
     const strategy = getTabsUrlSyncStrategy();
 
@@ -198,9 +202,11 @@ export class TabsUrlSyncController {
       url: nextUrl,
       state,
     });
-    this.operation = null;
-    if (!adopted) return;
+    this.operation = adopted;
+    if (!adopted) return false;
     strategy?.dispatchChange(previousUrl, nextUrl);
+    // URL changeのsubscriberも再入できるため、呼出し元のscroll/通知前に再照合する。
+    return isFeatureTokenCurrent(this.source, adopted);
   }
 
   private syncFromLocationState(token: FeatureToken): void {

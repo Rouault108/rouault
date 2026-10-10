@@ -1,5 +1,9 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
-import { fixture } from './harness/browser-fixture.js';
+import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
+import { fixture, fixtureAbortController } from './harness/browser-fixture.js';
+import { activateTabs } from '../../src/client/post-hydrate/tabs-enhancer.js';
+import { activateLayoutTocController } from '../../src/components/layout/layout-toc-controller.js';
+import { layoutTocMobileController } from '../../src/components/layout/layout-toc-mobile-controller.js';
+import { layoutTocRuntimeStore } from '../../src/components/layout/layout-toc-runtime-store.js';
 import {
   adoptHistoryEntry,
   observeHistoryEntries,
@@ -40,10 +44,23 @@ import { Router } from '../../src/router/router.js';
 import { ReadingPositionController } from '../../src/components/app/controllers/reading-position-controller.js';
 
 const originalUrl = readAddress();
+const originalState: unknown = history.state;
+let baselineState: unknown;
+beforeAll(() => {
+  // reader/store/epochは各testで新規生成する。fixture用entryだけは再利用し、
+  // cleanupのnull化→次setupのID補記という無関係な二重書込を作らない。
+  writeHistoryEntry({ mode: 'replace', owner: 'router', url: originalUrl, state: {} });
+  baselineState = history.state;
+});
+afterAll(() => {
+  history.replaceState(originalState, '', originalUrl);
+});
 let root: HTMLElement | null = null;
 let reader: ReadingPositionController | null = null;
 let stop: (() => void) | null = null;
 afterEach(() => {
+  layoutTocMobileController.reset();
+  layoutTocRuntimeStore.reset();
   clearTabsUrlSyncStrategy();
   reader?.dispose();
   reader = null;
@@ -51,7 +68,11 @@ afterEach(() => {
   stop = null;
   releaseContentContext(root);
   root = null;
-  history.replaceState(null, '', originalUrl);
+  if (
+    readAddress() !== originalUrl ||
+    JSON.stringify(history.state) !== JSON.stringify(baselineState)
+  )
+    history.replaceState(baselineState, '', originalUrl);
   vi.restoreAllMocks();
 });
 const frame = (): Promise<void> => new Promise((resolve) => requestAnimationFrame(() => resolve()));
@@ -539,7 +560,7 @@ describe('feature writerのtoken再入', () => {
             getActiveId: () => '',
             applyActiveId: project,
           }).owned,
-        ).toBe(true);
+        ).toBe(false);
         expect(history.length).toBe(length + (phase === 'after' ? 1 : 0));
         expect(readAddress()).toBe(
           phase === 'after' ? url.split('#')[0] + '#reading-heading' : url,
@@ -648,6 +669,129 @@ describe('feature writerのtoken再入', () => {
       controller.destroy();
     }
   });
+});
+
+describe('featureの呼出し元までの失効', () => {
+  it.each(['before', 'after', 'change', 'current'] as const)(
+    'tabsの%s通知境界では現操作だけがenhancerのscroll/changeを続行する',
+    async (phase) => {
+      await setup();
+      if (!root) throw new Error('root');
+      const tabs = await fixture<HTMLElement>(`
+        <section data-tabs-root data-tabs-url-sync>
+          <nav data-tabs-static-nav style="width:80px;overflow:auto;white-space:nowrap">
+            <a data-tab data-tab-value="javascript" href="#js" style="display:inline-block;width:160px">JS</a>
+            <a data-tab data-tab-value="rust" href="#rs" style="display:inline-block;width:160px">Rust</a>
+          </nav>
+          <section id="js" data-tab-panel data-tab-value="javascript">JS</section>
+          <section id="rs" data-tab-panel data-tab-value="rust">Rust</section>
+        </section>
+      `);
+      const outside = await fixture<HTMLButtonElement>('<button>新操作のfocus</button>');
+      let notifications = 0;
+      const reenter = (): void => {
+        notifications += 1;
+        beginNavigationIntent('navigation', readAddress(), 'feature');
+        outside.focus({ preventScroll: true });
+      };
+      registerTabsUrlSyncStrategy({
+        ...primaryTabTabsUrlSyncStrategy,
+        dispatchChange: phase === 'change' ? reenter : () => undefined,
+      });
+      activateTabs(tabs, fixtureAbortController(tabs).signal);
+      await frame();
+      await frame();
+      const nav = tabs.querySelector<HTMLElement>('[data-tabs-static-nav]');
+      const tab = tabs.querySelector<HTMLAnchorElement>('[data-tab-value="rust"]');
+      if (!nav || !tab) throw new Error('tabs fixture');
+      expect(nav.scrollWidth).toBeGreaterThan(nav.clientWidth);
+      const position = nav.scrollLeft;
+      const change = vi.fn();
+      tabs.addEventListener('ui-tab-change', change);
+      const length = history.length;
+      const url = readAddress();
+      stop = observeHistoryEntries(
+        () => {
+          if (phase === 'before') reenter();
+        },
+        () => {
+          if (phase === 'after') reenter();
+        },
+      );
+      tab.click();
+      await frame();
+      expect(notifications).toBe(phase === 'current' ? 0 : 1);
+      expect(history.length).toBe(length + (phase === 'before' ? 0 : 1));
+      expect(readAddress()).toBe(
+        phase === 'before' ? url : primaryTabTabsUrlSyncStrategy.writeValue(url, 'rust'),
+      );
+      if (phase === 'current') {
+        expect(nav.scrollLeft).toBeGreaterThan(position);
+        expect(change).toHaveBeenCalledOnce();
+      } else {
+        expect(nav.scrollLeft).toBe(position);
+        expect(change).not.toHaveBeenCalled();
+        expect(document.activeElement).toBe(outside);
+      }
+    },
+  );
+  it.each(['before', 'after', 'current'] as const)(
+    'mobile TOCの%s通知境界では現操作だけがpanel close/focusを続行する',
+    async (phase) => {
+      await setup();
+      if (!root) throw new Error('root');
+      root.id = 'reading-mobile-content';
+      const toc = await fixture<HTMLElement>(`
+        <div data-layout-toc-root>
+          <script id="reading-mobile-source" type="application/json" data-toc-owner-id="reading-mobile-owner">[{"id":"reading-heading","text":"見出し","level":2}]</script>
+          <nav data-layout-toc-nav aria-label="目次"><ol><li data-heading-id="reading-heading">
+            <a href="#reading-heading" data-toc-link data-heading-id="reading-heading">見出し</a>
+          </li></ol></nav>
+          <layout-toc-controller source-id="reading-mobile-source" toc-runtime-id="reading-mobile"
+            content-root-id="reading-mobile-content"
+            capabilities-json='{"activeTracking":false,"dynamicScopes":false,"mobilePanel":true}'></layout-toc-controller>
+        </div>
+      `);
+      const controller = toc.querySelector<HTMLElement>('layout-toc-controller');
+      if (!controller) throw new Error('TOC controller');
+      activateLayoutTocController(controller);
+      const trigger = await fixture<HTMLButtonElement>('<button>目次</button>');
+      const outside = await fixture<HTMLButtonElement>('<button>新操作のfocus</button>');
+      layoutTocMobileController.open('reading-mobile', trigger);
+      const panel = document.querySelector<HTMLElement>('[data-layout-toc-mobile-panel]');
+      const link = panel?.querySelector<HTMLAnchorElement>('[data-toc-link]');
+      if (!panel || !link) throw new Error('mobile TOC fixture');
+      expect(panel.hidden).toBe(false);
+      let notifications = 0;
+      const reenter = (): void => {
+        notifications += 1;
+        beginNavigationIntent('navigation', readAddress(), 'feature');
+        outside.focus({ preventScroll: true });
+      };
+      stop = observeHistoryEntries(
+        () => {
+          if (phase === 'before') reenter();
+        },
+        () => {
+          if (phase === 'after') reenter();
+        },
+      );
+      const scroll = vi.spyOn(window, 'scrollTo');
+      const length = history.length;
+      const url = readAddress();
+      link.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, button: 0 }));
+      await frame();
+      expect(notifications).toBe(phase === 'current' ? 0 : 1);
+      expect(history.length).toBe(length + (phase === 'before' ? 0 : 1));
+      expect(readAddress()).toBe(phase === 'before' ? url : url.split('#')[0] + '#reading-heading');
+      expect(panel.hidden).toBe(phase === 'current');
+      expect(layoutTocMobileController.getSnapshot('reading-mobile').panelOpen).toBe(
+        phase !== 'current',
+      );
+      expect(document.activeElement).toBe(phase === 'current' ? trigger : outside);
+      if (phase !== 'current') expect(scroll).not.toHaveBeenCalled();
+    },
+  );
 });
 
 describe('tabsと凍結したtraverse候補', () => {

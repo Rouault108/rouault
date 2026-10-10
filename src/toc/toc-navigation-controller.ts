@@ -214,8 +214,10 @@ export class TocNavigationController {
       },
     });
     if (!this._operation || !isFeatureTokenCurrent(this._source, this._operation))
-      return { owned: true, targetId: headingId, link };
+      return { owned: false, reason: 'stale-content' };
     context.applyActiveId(headingId);
+    if (!isFeatureTokenCurrent(this._source, this._operation))
+      return { owned: false, reason: 'stale-content' };
 
     const skipScroll = canSkipTocScrollForTarget(target, metrics);
     if (skipScroll) {

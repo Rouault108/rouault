@@ -144,6 +144,7 @@ ui-tabs[data-toc-scope]        → [data-tabs-root][data-toc-scope]
 - `readTabsSelection(root)`はenhanced済みcontrollerの選択値、または未enhanceを表す`null`を返す。TOCがDOM属性へ書き込んで選択状態を所有することは禁止する。
 - 未enhance／起動失敗／破棄済みrootへの選択要求は`not-enhanced`を返し、DOM・URL・focusを変更しない。新たなcontrollerを起動せず、遅延要求queueも作らない。native baselineでは全panelが読めるため、TOCはそのまま見出しへ移動できる。
 - 起動後、存在しないvalueには`invalid-value`を返して状態・URL・focusを変えない。既存値には`selected`または`unchanged`を返す。
+- source/intentが失効した選択要求は`superseded`を返す。成功したhistory書込は保持し、その操作の後続scrollや変更通知を抑止する。
 - TOCのhidden ancestor展開は外側tabsから内側tabsへ要求する。hashからの展開には`historyMode: none`、既存のscope selection適用ではcaller指定のhistoryModeを渡す。
 - 初期選択の解決順序とhost-owned hash判定は、固定commitの選択解決実装・`tabs-url-sync-controller.ts`を維持する。`data-toc-scope`とHeadingのscopeSelectionsとの対応を維持し、新しいscope体系やquery名を導入しない。
 - URL同期はfeature側だけが所有する。URL-sync無効時と`historyMode: none`では選択要求によるhistory書込をしない。ユーザーのclick／Enter／Space選択はpush、自動activationの矢印移動はreplace、hashとqueryの矛盾回復は既存規則のreplaceを維持する。

@@ -30,6 +30,8 @@ post-commitはjobを予約して戻り、hydration-readyをawaitしない。job�
 
 ## Browser and accessibility
 
+失効結果はfeature writerから呼出し元へ伝える。tabs enhancerは失効後にindicator更新、tab railのscroll、`ui-tab-change`を続けず、URL normalization後の通知も再照合する。TOCの失効clickは既定動作を抑止したまま`owned:false`を返し、mobile panelのcloseとtriggerへのfocus復帰を実行しない。成功したhistory書込や、失効前の正当なprojectionをrollbackしない。
+
 管理entryはmanual、opaque/ID補記失敗は明示auto。reload/back-forward初期表示は明示autoでbrowser位置を尊重し、独自top/hashを実行しない。native initial intentの同期通知もautoを維持し、load後の採用frameが済んでから管理entryをmanualへ戻す。native fragmentはautoでnative actionを保ち、同intentの次frameでmanualへ戻す。fallback/pagehideはflush・取消してautoへ返す。BFCache再開はDOM/epochを再生成せず現viewportを採用する。disposeは自分のmodeが残る場合だけ元値へ戻す。beforeunload listenerを追加しない。
 
 full commitのmain focusはpreventScroll、same-documentはfocusを保持する。座標優先中のTOCはhash holdを再作成せず、activeTracking=trueだけがviewportのcurrentを追跡する。falseを新しいscroll追跡へ変更しない。本人の新しいhash/TOC操作で通常のhash priorityへ戻す。
