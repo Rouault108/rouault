@@ -133,6 +133,21 @@ describe('production E2E matrix structural contract', () => {
 
   const mutations: readonly [string, (fixture: MatrixFixture) => void][] = [
     [
+      'mismatched container HOME',
+      (f) => {
+        workflowRecord(f.job['env'])['HOME'] = '/github/home';
+      },
+    ],
+    [
+      'missing HOME ownership verification',
+      (f) => {
+        f.verification['run'] = String(f.verification['run']).replace(
+          'test "$(stat -c %u "$HOME")" = "$(id -u)"',
+          '',
+        );
+      },
+    ],
+    [
       'separate shell command',
       (f) => {
         f.test['run'] = 'pnpm run test:e2e:production\n${{ matrix.projects }}';

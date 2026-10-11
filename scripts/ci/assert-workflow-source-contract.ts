@@ -402,6 +402,10 @@ export const assertProductionE2EMatrixContract = (source: string): void => {
   );
   const env = requireWorkflowRecord(job['env'], 'Production E2E matrix env');
   assertCondition(
+    env['HOME'] === '/root',
+    'Production E2E matrix must align HOME with the root container user',
+  );
+  assertCondition(
     env['ROUAULT_MEDIA_BASE_URL'] === '${{ vars.ROUAULT_MEDIA_BASE_URL }}',
     'Production E2E matrix must preserve the media URL',
   );
@@ -452,6 +456,9 @@ export const assertProductionE2EMatrixContract = (source: string): void => {
         JSON.stringify(verificationLines) ===
           JSON.stringify([
             'set -euo pipefail',
+            'test "$(id -u)" = "0"',
+            'test "$HOME" = "/root"',
+            'test "$(stat -c %u "$HOME")" = "$(id -u)"',
             'test "$PLAYWRIGHT_BROWSERS_PATH" = "/ms-playwright"',
             'command -v bash',
             'test "$(node --version)" = "v${NODE_VERSION}"',

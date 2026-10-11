@@ -190,6 +190,8 @@ jobs:
       - prebuild-gate
     if: ${{ !cancelled() && needs.detect-changes.result == 'success' && needs.prebuild-gate.result == 'success' && needs.detect-changes.outputs.app == 'true' && ((github.event_name == 'push' && github.ref == 'refs/heads/main') || github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && github.base_ref == 'main')) }}
     env:
+      # root 実行と HOME の所有者を揃え、Firefox の起動前検証を成立させる。
+      HOME: /root
       ROUAULT_MEDIA_BASE_URL: ${{ vars.ROUAULT_MEDIA_BASE_URL }}
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
@@ -205,6 +207,9 @@ jobs:
         name: verify pinned Playwright container
         run: |
           set -euo pipefail
+          test "$(id -u)" = "0"
+          test "$HOME" = "/root"
+          test "$(stat -c %u "$HOME")" = "$(id -u)"
           test "$PLAYWRIGHT_BROWSERS_PATH" = "/ms-playwright"
           command -v bash
           test "$(node --version)" = "v${NODE_VERSION}"

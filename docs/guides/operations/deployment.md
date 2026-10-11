@@ -171,6 +171,8 @@ Cloudflare Pages projectでは次を確認する。
 
 Production E2Eのmatrix化はcoverageを維持したままwall-clockを短縮するためのorchestration変更である。各variationは`mcr.microsoft.com/playwright:v1.63.0-resolute@sha256:b022639ae9197f864040f92eef7b57c6d4b47db2190f77c909d8a5d902dd4b7e`を`--ipc=host`付きjob containerとして使い、browserやOS packageをjob内で再installしない。Nodeはworkflowの`NODE_VERSION`、pnpmは`packageManager`のexact versionを維持し、container内のbrowser path、bash、Node、pnpm、対象browser解決をtest前に検証する。failure diagnosticsは失敗したvariationのtarget固有artifactへ、`playwright-report/`と`test-results/`だけを7日保存する。成功時のdiagnostics artifactは追加しない。
 
+Job containerはroot実行のため、production E2Eだけで`HOME=/root`を指定する。Firefoxの起動前に実行UID、HOME値、HOME所有者の一致を検証し、browser sandbox設定は変更しない。
+
 `verify-production-deployment`はPRでは実行されないため、branch protectionのrequired status checkへ無条件に登録しない。
 
 ## Change Record
