@@ -166,14 +166,32 @@ jobs:
         run: python3 scripts/ci/validate_prebuild_needs.py
 
   test-e2e-production:
-    name: test-e2e-production
+    name: test-e2e-production (${{ matrix.target }})
     runs-on: ubuntu-26.04
     timeout-minutes: 35
+    container:
+      image: mcr.microsoft.com/playwright:v1.63.0-resolute@sha256:b022639ae9197f864040f92eef7b57c6d4b47db2190f77c909d8a5d902dd4b7e
+      options: --ipc=host
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: chromium
+            browser: chromium
+            projects: --project=chromium-integration
+          - target: firefox
+            browser: firefox
+            projects: --project=firefox-final-check
+          - target: webkit
+            browser: webkit
+            projects: --project=webkit-final-check --project=webkit-mobile-final-check
     needs:
       - detect-changes
       - prebuild-gate
     if: ${{ !cancelled() && needs.detect-changes.result == 'success' && needs.prebuild-gate.result == 'success' && needs.detect-changes.outputs.app == 'true' && ((github.event_name == 'push' && github.ref == 'refs/heads/main') || github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && github.base_ref == 'main')) }}
     env:
+      # root 実行と HOME の所有者を揃え、Firefox の起動前検証を成立させる。
+      HOME: /root
       ROUAULT_MEDIA_BASE_URL: ${{ vars.ROUAULT_MEDIA_BASE_URL }}
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
@@ -185,15 +203,26 @@ jobs:
           cache: pnpm
       - run: corepack enable
       - run: pnpm install --frozen-lockfile
-      - run: pnpm exec playwright install --with-deps
+      - id: verify-e2e-container
+        name: verify pinned Playwright container
+        run: |
+          set -euo pipefail
+          test "$(id -u)" = "0"
+          test "$HOME" = "/root"
+          test "$(stat -c %u "$HOME")" = "$(id -u)"
+          test "$PLAYWRIGHT_BROWSERS_PATH" = "/ms-playwright"
+          command -v bash
+          test "$(node --version)" = "v${NODE_VERSION}"
+          test "$(pnpm --version)" = "11.7.0"
+          pnpm exec playwright install --dry-run ${{ matrix.browser }}
       - id: playwright-production
-        run: pnpm run test:e2e:production
+        run: pnpm run test:e2e:production ${{ matrix.projects }}
       - name: preserve production E2E diagnostics
         if: ${{ always() && steps.playwright-production.outcome == 'failure' }}
         continue-on-error: true
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
-          name: rouault-e2e-production-diagnostics
+          name: rouault-e2e-production-${{ matrix.target }}-diagnostics
           path: |
             playwright-report/
             test-results/
