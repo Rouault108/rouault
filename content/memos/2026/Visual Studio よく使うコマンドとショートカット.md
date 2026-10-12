@@ -155,3 +155,5 @@ license: CC BY 4.0
 * [デバッガーでコードを移動する](https://learn.microsoft.com/en-us/visualstudio/debugger/navigating-through-code-with-the-debugger)
 * [デバッガーの基本操作](https://learn.microsoft.com/en-us/visualstudio/debugger/debugger-feature-tour?view=visualstudio)
 * [テスト エクスプローラーでテストを実行](https://learn.microsoft.com/en-us/visualstudio/test/run-unit-tests-with-test-explorer?view=visualstudio)
+
+公開原稿版：1

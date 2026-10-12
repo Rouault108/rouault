@@ -2199,3 +2199,5 @@ Singletonだけは「どこからでも呼べるようにしたい」を導入�
 ## 関連する資料・ノート
 
 各パターンの末尾に、該当するJDK・Java言語・フレームワークの公式資料を配置した。パターンの原典は Erich Gamma、Richard Helm、Ralph Johnson、John Vlissides による Design Patterns Elements of Reusable Object-Oriented Software。本文の説明とサンプルコードは、このノートのために構成したもので、原典の長文転載ではない。
+
+公開原稿版：1
