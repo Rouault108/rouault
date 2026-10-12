@@ -14,10 +14,18 @@ interface ReloadProbe {
     visibility: DocumentVisibilityState;
   }[];
 }
+interface ReadingFrameProbe {
+  samples: { title: string; x: number; y: number; status: string | undefined; at: number }[];
+  applies: { title: string; status: string | undefined; at: number }[];
+  replaced: number[];
+  interventions: string[];
+  done: boolean;
+}
 declare global {
   interface Window {
     __readingReloadProbe?: ReloadProbe;
     __readingFocusCalls?: string[];
+    __readingFrameProbe?: ReadingFrameProbe;
   }
 }
 
@@ -79,6 +87,116 @@ const at = async (page: Page, url: string, y: number): Promise<void> => {
 };
 
 test.use({ viewport: { width: 1280, height: 720 } });
+
+test('深いちくま学芸文庫から岩波文庫へのsidebar clickは初回frameから先頭（P/V1/V2）', async ({
+  page,
+}, testInfo) => {
+  const source = `/notes/library/collection/${encodeURIComponent('ちくま学芸文庫')}`;
+  await page.goto(source + '/');
+  await ready(page);
+  const initialUrl = await page.evaluate(() => location.pathname + location.search + location.hash);
+  for (const visit of ['first', 'revisit'] as const) {
+    const link = page
+      .locator('aside[data-layout-sidebar-root]')
+      .getByRole('link', { name: '岩波文庫', exact: true });
+    await link.scrollIntoViewIfNeeded();
+    const point = await link.boundingBox();
+    if (!point) throw new Error('sidebar link');
+    await page.evaluate(() => window.scrollTo({ left: 0, top: 2200, behavior: 'instant' }));
+    await page.evaluate(
+      () => new Promise<void>((resolve) => requestAnimationFrame(() => resolve())),
+    );
+    const departure = await page.evaluate(() => ({ x: scrollX, y: scrollY }));
+    expect(Math.abs(departure.x)).toBeLessThanOrEqual(2);
+    expect(Math.abs(departure.y - 2200)).toBeLessThanOrEqual(2);
+    await page.evaluate(() => {
+      const probe: ReadingFrameProbe = {
+        samples: [],
+        applies: [],
+        replaced: [],
+        interventions: [],
+        done: false,
+      };
+      window.__readingFrameProbe = probe;
+      const title = (): string =>
+        document.querySelector('#main-content h1')?.textContent?.trim() ?? '';
+      const status = (): string | undefined =>
+        document.querySelector<HTMLElement>('#main-content')?.dataset['readingPositionStatus'];
+      let tail = -1;
+      const sample = (): void => {
+        if (probe.done) return;
+        const name = title();
+        probe.samples.push({
+          title: name,
+          x: scrollX,
+          y: scrollY,
+          status: status(),
+          at: performance.now(),
+        });
+        if (name === '岩波文庫' && status() === 'settled') tail++;
+        if (tail >= 2) {
+          probe.done = true;
+          return;
+        }
+        requestAnimationFrame(sample);
+      };
+      const scroll = window.scrollTo.bind(window);
+      window.scrollTo = (options?: ScrollToOptions | number, top?: number): void => {
+        probe.applies.push({ title: title(), status: status(), at: performance.now() });
+        if (typeof options === 'number') scroll(options, top ?? 0);
+        else scroll(options);
+      };
+      document.querySelector('router-document-host')?.addEventListener(
+        'router-document-host:content-dom-replaced',
+        () => {
+          probe.replaced.push(performance.now());
+        },
+        { once: true },
+      );
+      for (const name of ['wheel', 'touchmove', 'keydown', 'pointerdown'] as const) {
+        window.addEventListener(
+          name,
+          () => {
+            if (!probe.done && title() === '岩波文庫') probe.interventions.push(name);
+          },
+          { capture: true },
+        );
+      }
+      requestAnimationFrame(sample);
+    });
+    await page.mouse.click(point.x + point.width / 2, point.y + point.height / 2);
+    await page.waitForFunction(() =>
+      window.__readingFrameProbe?.samples.some((value) => value.title === '岩波文庫'),
+    );
+    const screenshotStatus = await page
+      .locator('#main-content')
+      .getAttribute('data-reading-position-status');
+    await testInfo.attach(`P-${visit}-viewport-${screenshotStatus}`, {
+      body: await page.screenshot(),
+      contentType: 'image/png',
+    });
+    await page.waitForFunction(() => window.__readingFrameProbe?.done);
+    const probe = await page.evaluate(() => window.__readingFrameProbe);
+    if (!probe) throw new Error('frame probe');
+    await testInfo.attach(`P-${visit}-frames`, {
+      body: JSON.stringify({ departure, screenshotStatus, probe }, null, 2),
+      contentType: 'application/json',
+    });
+    expect(probe.interventions).toEqual([]);
+    const displayed = probe.samples.filter((value) => value.title === '岩波文庫');
+    expect(displayed.length).toBeGreaterThanOrEqual(3);
+    expect(Math.abs(displayed[0]?.x ?? Infinity)).toBeLessThanOrEqual(2);
+    expect(Math.abs(displayed[0]?.y ?? Infinity)).toBeLessThanOrEqual(2);
+    expect(displayed.every((value) => Math.abs(value.x) <= 2 && Math.abs(value.y) <= 2)).toBe(true);
+    expect(probe.applies[0]?.title).toBe('岩波文庫');
+    expect(probe.applies[0]?.status).toBe('pending');
+    expect(probe.applies[0]?.at).toBeLessThanOrEqual(displayed[0]?.at ?? 0);
+    if (visit === 'first') {
+      await page.goBack();
+      await at(page, initialUrl, 2200);
+    }
+  }
+});
 
 test('通常リンク先頭とA→B→Back→Forwardのentry位置（A1/A2/A9）', async ({ page }) => {
   await page.goto(e2eNoteFixtures.markdownBasic.directPath);

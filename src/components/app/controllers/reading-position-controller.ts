@@ -391,6 +391,20 @@ export class ReadingPositionController {
     job.controller.signal.addEventListener('abort', abortReady, { once: true });
     const readyTimer = window.setTimeout(abortReady, 5000);
     try {
+      // 履歴成功・binding採用後の既知の先頭だけを描画待ちより前に適用する。
+      // 完了判定と取消は、このjobの準備後の安定化まで引き続き所有する。
+      const binding = readContentContext()?.displayedBinding;
+      if (
+        job.intent.cause === 'navigation' &&
+        !job.stateOnly &&
+        !job.error &&
+        !job.candidate &&
+        readDecodedHash(job.url) === '' &&
+        binding?.entryId === this.renderedId &&
+        binding.url === job.url &&
+        this.current(job)
+      )
+        window.scrollTo({ left: 0, top: 0, behavior: 'instant' });
       const readiness = await waitForContentReadiness(job.epoch, readinessController.signal);
       if (
         !this.current(job) ||

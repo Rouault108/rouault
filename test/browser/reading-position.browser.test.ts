@@ -1,4 +1,5 @@
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
+import { page } from 'vitest/browser';
 import { fixture, fixtureAbortController } from './harness/browser-fixture.js';
 import { activateTabs } from '../../src/client/post-hydrate/tabs-enhancer.js';
 import { activateLayoutTocController } from '../../src/components/layout/layout-toc-controller.js';
@@ -42,6 +43,14 @@ import { resolveTocScrollMetrics } from '../../src/toc/toc-scroll-contract.js';
 import type { TocActiveTracker } from '../../src/toc/toc-active-tracker.js';
 import { Router } from '../../src/router/router.js';
 import { ReadingPositionController } from '../../src/components/app/controllers/reading-position-controller.js';
+import { RouterDocumentHost } from '../../src/components/app/router-document-host.js';
+import {
+  readCurrentShellCommitId,
+  resetShellLifecycleForTest,
+} from '../../src/components/app/shell/app-shell-lifecycle.js';
+import { STATIC_HEADER_CONTRACT_ACCEPTED_TOC_ABSENT_HTML } from '../fixtures/static-header-contract-cases.js';
+import { NAVIGATION_ENVELOPE_SCHEMA_VERSION } from '../../shared/navigation/navigation-envelope.js';
+import { ReadingPositionStore } from '../../src/components/app/navigation/reading-position-store.js';
 
 const originalUrl = readAddress();
 const originalState: unknown = history.state;
@@ -58,12 +67,15 @@ afterAll(() => {
 let root: HTMLElement | null = null;
 let reader: ReadingPositionController | null = null;
 let stop: (() => void) | null = null;
+let host: RouterDocumentHost | null = null;
 afterEach(() => {
   layoutTocMobileController.reset();
   layoutTocRuntimeStore.reset();
   clearTabsUrlSyncStrategy();
   reader?.dispose();
   reader = null;
+  host?.remove();
+  host = null;
   stop?.();
   stop = null;
   releaseContentContext(root);
@@ -74,6 +86,8 @@ afterEach(() => {
   )
     history.replaceState(baselineState, '', originalUrl);
   vi.restoreAllMocks();
+  document.querySelectorAll('[data-reading-test-meta]').forEach((meta) => meta.remove());
+  resetShellLifecycleForTest();
 });
 const frame = (): Promise<void> => new Promise((resolve) => requestAnimationFrame(() => resolve()));
 const setup = async (): Promise<number> => {
@@ -92,6 +106,426 @@ const setup = async (): Promise<number> => {
   });
   return epoch;
 };
+
+const setupNavigation = async (): Promise<RouterDocumentHost> => {
+  const buildId = 'reading-first-frame';
+  const generatedAt = '2026-10-12T00:00:00.000Z';
+  const routes = ['/', '/search/', '/notes/reading-a', '/notes/reading-b', '/notes/reading-c'];
+  history.replaceState(baselineState, '', '/notes/reading-a');
+  for (const [name, content] of [
+    ['rouault-build-id', buildId],
+    ['rouault-generated-at', generatedAt],
+  ]) {
+    const meta = document.createElement('meta');
+    meta.name = name ?? '';
+    meta.content = content ?? '';
+    meta.setAttribute('data-reading-test-meta', '');
+    document.head.append(meta);
+  }
+  const shell = await fixture(`<div data-reading-fixture>
+    <style>[data-reading-fixture] header svg { width:20px; height:20px; }</style>
+    ${STATIC_HEADER_CONTRACT_ACCEPTED_TOC_ABSENT_HTML}
+    <div data-app-shell-sidebar-host hidden>
+      <aside data-layout-sidebar-root hidden><div data-layout-sidebar-surface></div></aside>
+    </div>
+    <router-document-host><main id="main-content" style="display:flow-root">
+      <article data-reading-page="a" style="height:6000px"><h1>長い本文 A</h1></article>
+    </main></router-document-host>
+    <a id="reading-link" href="/notes/reading-b" data-link-kind="internal-document"
+      data-link-surface="prose" style="position:fixed;top:10px;right:10px">本文 B</a>
+  </div>`);
+  host = shell.querySelector('router-document-host');
+  if (!(host instanceof RouterDocumentHost)) throw new Error('host');
+  root = host.getContentRoot();
+  if (!root) throw new Error('root');
+  const settle = (): void => {
+    const epoch = readContentContext()?.contentEpoch;
+    if (!root || epoch === undefined) throw new Error('epoch');
+    setContentReadiness({
+      contentEpoch: epoch,
+      root,
+      shellCommitId: readCurrentShellCommitId(),
+      status: 'settled',
+      started: true,
+    });
+  };
+  host.initializeRuntime({
+    siteUrlContext: { siteOrigin: location.origin, basePath: '' },
+    isInternalDocumentPathname: (path) => routes.includes(path.replace(/\/$/u, '')),
+    routeManifestState: {
+      status: 'loaded',
+      manifest: {
+        version: 1,
+        buildId,
+        buildLabel: buildId,
+        generatedAt,
+        siteOrigin: location.origin,
+        basePath: '',
+        routes,
+      },
+      routeSet: { routes, has: (path) => routes.includes(path) },
+    },
+  });
+  settle();
+  await expect.poll(() => root?.dataset['readingPositionStatus']).toBe('settled');
+  vi.spyOn(window, 'fetch').mockImplementation(async (input) => {
+    const next = String(input).includes('reading-c') ? 'c' : 'b';
+    return new Response(
+      JSON.stringify({
+        schemaVersion: NAVIGATION_ENVELOPE_SCHEMA_VERSION,
+        buildId,
+        generatedAt,
+        document: {
+          html: `<article data-reading-page="${next}" style="height:6000px"><h1>長い本文 ${next.toUpperCase()}</h1>${Array.from({ length: 18 }, (_, i) => `<p style="margin-top:260px">本文 ${next.toUpperCase()} の段落 ${i + 1}</p>`).join('')}</article>`,
+          title: next,
+          description: null,
+          renderedKind: 'page',
+        },
+        shell: {
+          headerHtml: STATIC_HEADER_CONTRACT_ACCEPTED_TOC_ABSENT_HTML,
+          sidebarProjection: null,
+        },
+        hydrationPlan: null,
+      }),
+      { headers: { 'content-type': 'application/json' } },
+    );
+  });
+  return host;
+};
+
+describe('通常 full navigation の初回適用と安定化', () => {
+  it.each(['readiness', 'font', 'image'] as const)(
+    '%s 遅延中も最初の B frame から settled 後 2rAF まで先頭を保つ（H/V1/V2）',
+    async (delay) => {
+      const currentHost = await setupNavigation();
+      const content = currentHost.getContentRoot();
+      if (!content) throw new Error('root');
+      window.scrollTo({ left: 0, top: 2200, behavior: 'instant' });
+      await frame();
+      expect(Math.abs(window.scrollY - 2200)).toBeLessThanOrEqual(2);
+      expect(window.scrollX).toBe(0);
+      const samples: {
+        page: string | undefined;
+        x: number;
+        y: number;
+        status: string | undefined;
+      }[] = [];
+      const apply: { x: number; y: number; readiness: string | undefined; at: number }[] = [];
+      const scroll = window.scrollTo.bind(window);
+      vi.spyOn(window, 'scrollTo').mockImplementation(
+        (options: ScrollToOptions | number, top?: number) => {
+          apply.push({
+            x: window.scrollX,
+            y: window.scrollY,
+            at: performance.now(),
+            readiness: readContentReadiness(readContentContext()?.contentEpoch ?? -1)?.status,
+          });
+          if (typeof options === 'number') scroll(options, top ?? 0);
+          else scroll(options);
+        },
+      );
+      let tail = -1;
+      let raf = 0;
+      const sample = (): void => {
+        const name =
+          content.querySelector<HTMLElement>('[data-reading-page]')?.dataset['readingPage'];
+        samples.push({
+          page: name,
+          x: scrollX,
+          y: scrollY,
+          status: content.dataset['readingPositionStatus'],
+        });
+        if (name === 'b' && content.dataset['readingPositionStatus'] === 'settled') tail++;
+        if (tail < 2) raf = requestAnimationFrame(sample);
+      };
+      raf = requestAnimationFrame(sample);
+      try {
+        document.querySelector<HTMLAnchorElement>('#reading-link')?.click();
+        await expect
+          .poll(() => samples.filter((value) => value.page === 'b').length)
+          .toBeGreaterThanOrEqual(6);
+        expect(content.dataset['readingPositionStatus']).toBe('pending');
+        const viewport = await fixture(
+          '<div style="position:fixed;inset:0;pointer-events:none"></div>',
+        );
+        await page.screenshot({
+          element: viewport,
+          path: `__screenshots__/reading-h-${delay}-pending.png`,
+        });
+        const epoch = readContentContext()?.contentEpoch;
+        if (epoch === undefined) throw new Error('epoch');
+        let pendingResource = true;
+        let image: HTMLImageElement | null = null;
+        if (delay === 'font')
+          vi.spyOn(document.fonts, 'status', 'get').mockImplementation(() =>
+            pendingResource ? 'loading' : 'loaded',
+          );
+        if (delay === 'image') {
+          image = document.createElement('img');
+          image.alt = '寸法未確定画像';
+          image.style.cssText = 'display:block';
+          Object.defineProperty(image, 'complete', { get: () => !pendingResource });
+          content.prepend(image);
+          // 先頭目標より上の画像だけが既存待機条件。寸法確定時にはflowも変化させる。
+          image.style.position = 'relative';
+          image.style.top = `${-image.getBoundingClientRect().top}px`;
+        }
+        setContentReadiness({
+          contentEpoch: epoch,
+          root: content,
+          shellCommitId: readCurrentShellCommitId(),
+          status: 'settled',
+          started: true,
+        });
+        if (delay !== 'readiness') {
+          for (let i = 0; i < 6; i++) await frame();
+          expect(content.dataset['readingPositionStatus']).toBe('pending');
+          if (image) image.style.height = '300px';
+          pendingResource = false;
+        }
+        await expect.poll(() => tail).toBe(2);
+        const displayed = samples.filter((value) => value.page === 'b');
+        console.log('reading-H-evidence', JSON.stringify({ delay, apply, displayed }));
+        // 最終先頭だけの試験へ退行しないよう、baselineでも先に最終位置を確認する。
+        expect(Math.abs(scrollY)).toBeLessThanOrEqual(2);
+        expect.soft(apply[0]?.readiness).toBe('pending');
+        expect(displayed[0]?.status).toBe('pending');
+        expect(Math.abs(displayed[0]?.x ?? Infinity)).toBeLessThanOrEqual(2);
+        expect(Math.abs(displayed[0]?.y ?? Infinity)).toBeLessThanOrEqual(2);
+        expect(displayed.every((value) => Math.abs(value.x) <= 2 && Math.abs(value.y) <= 2)).toBe(
+          true,
+        );
+      } finally {
+        cancelAnimationFrame(raf);
+      }
+    },
+  );
+
+  it.each(['wheel', 'Tab', 'pointerdown', 'new-intent', 'mutation', 'dispose'] as const)(
+    '先行適用後の%sは旧jobの追加scroll/focusを止める（V3）',
+    async (action) => {
+      const currentHost = await setupNavigation();
+      await currentHost.navigate('/notes/reading-b');
+      const content = currentHost.getContentRoot();
+      const epoch = readContentContext()?.contentEpoch;
+      if (!content || epoch === undefined) throw new Error('root/epoch');
+      expect(scrollY).toBe(0);
+      expect(content.dataset['readingPositionStatus']).toBe('pending');
+      const scroll = vi.spyOn(window, 'scrollTo');
+      const focus = vi.spyOn(HTMLElement.prototype, 'focus');
+      if (action === 'Tab') window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab' }));
+      else if (action === 'wheel') window.dispatchEvent(new WheelEvent('wheel'));
+      else if (action === 'pointerdown') window.dispatchEvent(new PointerEvent('pointerdown'));
+      else if (action === 'new-intent') beginNavigationIntent('navigation', '/notes/reading-c');
+      else if (action === 'mutation') beginContentMutation(content);
+      else currentHost.remove();
+      // 失効後の本人位置に対して先頭維持を要求しない。
+      window.scrollTo({ top: 700, behavior: 'instant' });
+      scroll.mockClear();
+      setContentReadiness({
+        contentEpoch: epoch,
+        root: content,
+        shellCommitId: readCurrentShellCommitId(),
+        status: 'settled',
+        started: true,
+      });
+      for (let i = 0; i < 4; i++) await frame();
+      expect(scroll).not.toHaveBeenCalled();
+      expect(focus).not.toHaveBeenCalled();
+    },
+  );
+
+  it.each(['focus', 'history-after'] as const)(
+    '%s同期再入で失効したjobは先行適用しない（V3/V4）',
+    async (phase) => {
+      const currentHost = await setupNavigation();
+      const content = currentHost.getContentRoot();
+      if (!content) throw new Error('root');
+      window.scrollTo({ top: 2200, behavior: 'instant' });
+      await frame();
+      const reenter = (): void => {
+        beginNavigationIntent('navigation', '/notes/reading-c');
+      };
+      if (phase === 'focus') content.addEventListener('focus', reenter, { once: true });
+      else stop = observeHistoryEntries(() => undefined, reenter);
+      const scroll = vi.spyOn(window, 'scrollTo');
+      const result = await currentHost.navigate('/notes/reading-b');
+      expect(result.committed).toBe(true);
+      expect(readAddress()).toBe('/notes/reading-b');
+      for (let i = 0; i < 3; i++) await frame();
+      expect(scroll).not.toHaveBeenCalled();
+    },
+  );
+
+  it('連続 A→B→C は B の安定化を破棄し C の job だけを完了する（V3）', async () => {
+    const currentHost = await setupNavigation();
+    await currentHost.navigate('/notes/reading-b');
+    const content = currentHost.getContentRoot();
+    const oldEpoch = readContentContext()?.contentEpoch;
+    if (!content || oldEpoch === undefined) throw new Error('root/epoch');
+    const scroll = vi.spyOn(window, 'scrollTo');
+    const focus = vi.spyOn(HTMLElement.prototype, 'focus');
+    await currentHost.navigate('/notes/reading-c');
+    const epoch = readContentContext()?.contentEpoch;
+    if (epoch === undefined) throw new Error('epoch');
+    expect(epoch).toBeGreaterThan(oldEpoch);
+    for (let i = 0; i < 3; i++) await frame();
+    expect(content.dataset['readingPositionStatus']).toBe('pending');
+    expect(content.querySelector('[data-reading-page="c"]')).not.toBeNull();
+    setContentReadiness({
+      contentEpoch: epoch,
+      root: content,
+      shellCommitId: readCurrentShellCommitId(),
+      status: 'settled',
+      started: true,
+    });
+    await expect.poll(() => content.dataset['readingPositionStatus']).toBe('settled');
+    expect(scroll).toHaveBeenCalledOnce();
+    expect(focus).toHaveBeenCalledOnce();
+    expect(scrollY).toBe(0);
+  });
+
+  it('履歴失敗による本文rollbackは先行scroll/focusを実行しない（V4）', async () => {
+    const currentHost = await setupNavigation();
+    const before = readHistoryEntry();
+    const epoch = readContentContext()?.contentEpoch;
+    window.scrollTo({ top: 2200, behavior: 'instant' });
+    await frame();
+    vi.spyOn(history, 'pushState').mockImplementation(() => {
+      throw new DOMException('fixture', 'SecurityError');
+    });
+    const scroll = vi.spyOn(window, 'scrollTo');
+    const focus = vi.spyOn(HTMLElement.prototype, 'focus');
+    const result = await currentHost.navigate('/notes/reading-b');
+    expect(result.committed).toBe(false);
+    expect(readAddress()).toBe('/notes/reading-a');
+    expect(readHistoryEntry()).toEqual(before);
+    expect(currentHost.querySelector('[data-reading-page="a"]')).not.toBeNull();
+    expect(readContentContext()?.contentEpoch).toBeGreaterThan(epoch ?? Infinity);
+    for (let i = 0; i < 3; i++) await frame();
+    expect(scroll).not.toHaveBeenCalled();
+    expect(focus).not.toHaveBeenCalled();
+  });
+
+  it.each(['push', 'replace'] as const)(
+    '%sの先行適用中は保存値を書き換えずtraverse候補を保持する（V4）',
+    async (mode) => {
+      await setup();
+      if (!root) throw new Error('root');
+      const content = root;
+      reader = new ReadingPositionController((error) => {
+        throw error;
+      });
+      reader.start(content);
+      await expect.poll(() => content.dataset['readingPositionStatus']).toBe('settled');
+      window.scrollTo({ top: 2200, behavior: 'instant' });
+      await frame();
+      const oldState: unknown = history.state;
+      const oldUrl = readAddress();
+      const intent = beginNavigationIntent('navigation', '/notes/reading-b');
+      const epoch = beginContentMutation(content);
+      writeHistoryEntry({ mode, owner: 'router', url: '/notes/reading-b' });
+      adoptContentBinding(readAddress());
+      setContentReadiness({
+        contentEpoch: epoch,
+        root: content,
+        shellCommitId: 0,
+        status: 'pending',
+        started: true,
+      });
+      const write = vi.spyOn(ReadingPositionStore.prototype, 'write');
+      reader.schedule({
+        intent,
+        root: content,
+        url: readAddress(),
+        stateOnly: false,
+        error: false,
+        shellCommitId: 0,
+      });
+      expect(scrollY).toBe(0);
+      await frame();
+      expect(write).not.toHaveBeenCalled();
+      // replaceでもexact URLの異なる旧成功recordを先頭sampleで消さない。
+      history.replaceState(oldState, '', oldUrl);
+      const traverse = beginNavigationIntent('traverse', oldUrl);
+      adoptContentBinding(oldUrl);
+      reader.schedule({
+        intent: traverse,
+        root: content,
+        url: oldUrl,
+        stateOnly: false,
+        error: false,
+        shellCommitId: 0,
+      });
+      expect(scrollY).toBe(0);
+      setContentReadiness({
+        contentEpoch: epoch,
+        root: content,
+        shellCommitId: 0,
+        status: 'settled',
+        started: true,
+      });
+      await expect.poll(() => content.dataset['readingPositionStatus']).toBe('settled');
+      expect(Math.abs(scrollY - 2200)).toBeLessThanOrEqual(2);
+    },
+  );
+
+  it.each([
+    'initial',
+    'native-navigation',
+    'traverse',
+    'state-only',
+    'error',
+    'missing-hash',
+    'opaque',
+    'unadopted',
+  ] as const)('%sは準備前に先頭を適用しない（V5）', async (kind) => {
+    await setup();
+    if (!root) throw new Error('root');
+    const content = root;
+    reader = new ReadingPositionController((error) => {
+      throw error;
+    });
+    reader.start(content);
+    await expect.poll(() => content.dataset['readingPositionStatus']).toBe('settled');
+    window.scrollTo({ top: 2200, behavior: 'instant' });
+    await frame();
+    const url = originalUrl + (kind === 'missing-hash' ? '#does-not-exist' : '');
+    const cause =
+      kind === 'initial' || kind === 'native-navigation' || kind === 'traverse'
+        ? kind
+        : 'navigation';
+    const intent = beginNavigationIntent(cause, url);
+    const epoch = beginContentMutation(content);
+    writeHistoryEntry({
+      mode: 'replace',
+      owner: 'router',
+      url,
+      ...(kind === 'opaque' ? { state: 7 } : {}),
+    });
+    if (kind !== 'unadopted') adoptContentBinding(url);
+    setContentReadiness({
+      contentEpoch: epoch,
+      root: content,
+      shellCommitId: 0,
+      status: 'pending',
+      started: true,
+    });
+    const scroll = vi.spyOn(window, 'scrollTo');
+    reader.schedule({
+      intent,
+      root: content,
+      url,
+      stateOnly: kind === 'state-only',
+      error: kind === 'error',
+      shellCommitId: 0,
+    });
+    await frame();
+    await frame();
+    expect(scroll).not.toHaveBeenCalled();
+    expect(Math.abs(scrollY - 2200)).toBeLessThanOrEqual(2);
+  });
+});
 
 describe('履歴entryと本文生存期間', () => {
   it('pushはfresh ID、replaceはcurrent IDでforeign state採用元を保持する', async () => {

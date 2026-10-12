@@ -26,6 +26,8 @@ passive scroll、History API直前、最初の本文mutation直前、pagehideで
 
 post-commitはjobを予約して戻り、hydration-readyをawaitしない。jobは現epochの初期準備、復元位置より上の寸法未確定画像、loading fontを待ち、rangeと目標が連続2frame安定して実座標が±2 CSS pxなら完了。5秒を上限に到達範囲へclampして打ち切る。将来のvisible/interaction enhancementやSearch Worker結果へ追従しない。
 
+成功full commitの通常hashなしnavigationは、履歴成功・管理entryのbinding採用後、本人取消・復元候補がなくcurrentなjobに限り、最初の準備待ちより前にroot先頭を適用する。最初の適用だけではsettledとせず、同じjobで上記の準備後の安定化と取消を維持する。initial/native/traverse、state-only、error/not-found、hashあり（対象不存在も含む）はこの先行適用の対象にしない。
+
 本人のwheel/touchmove/scroll key/Tab・Shift+Tab/pointer操作、新navigation、本人のTOC/tabs/search操作（URL no-opを含む）、pagehide/disposeで旧jobを取り消す。取消後にhash/top fallbackやfocus奪取をしない。featureはattach時のsource epochとdisplayed/address bindingをURL読取・projection・書込・await後に検査する。feature writerはtokenをHistory API直前に再照合し、成功API直後に新binding/tokenを採用する。after observerで失効した場合も成功entryを維持し、旧scroll/focus/projectionを続けない。TOC settle、tabs再同期、Search結果もcaptureしたtokenを再照合する。Back待機中の旧本文を根拠に宛先URLを正規化しない。本人feature intentは旧未commit router requestを失効し、automatic initialization/normalizationは現intentを維持する。
 
 ## Browser and accessibility
