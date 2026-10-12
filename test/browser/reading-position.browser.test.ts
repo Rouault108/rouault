@@ -61,9 +61,12 @@ beforeAll(() => {
   writeHistoryEntry({ mode: 'replace', owner: 'router', url: originalUrl, state: {} });
   baselineState = history.state;
 });
-afterAll(() => {
+afterAll(async () => {
   history.replaceState(originalState, '', originalUrl);
-});
+  // WebKitの履歴quotaはtop-level sessionを共有する後続suiteにも及ぶ。
+  // 各caseの独立したentryを維持し、最後の書込からquota期間を空けて返す。
+  await new Promise<void>((resolve) => window.setTimeout(resolve, 10_000));
+}, 15_000);
 let root: HTMLElement | null = null;
 let reader: ReadingPositionController | null = null;
 let stop: (() => void) | null = null;
