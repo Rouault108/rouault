@@ -16,7 +16,7 @@ const OVERLAY_HIDE_DELAY = 1000;
 /** スキップインジケータ表示時間（ミリ秒） */
 const SKIP_INDICATOR_DURATION = 600;
 
-/** フローチングバー自動非表示の遅延（ミリ秒） */
+/** フローティングバー自動非表示の遅延（ミリ秒） */
 const FLOATING_BAR_HIDE_DELAY = 3000;
 
 /** ダブルタッチ判定の閾値（ミリ秒） */
@@ -42,9 +42,11 @@ export class VideoController {
 
   private _errorMessage = '';
 
-  private _overlayCenterVisible = true;
+  private _playbackFeedbackVisible = true;
 
-  private _skipButtonsVisible = false;
+  private _rangePointerId: number | null = null;
+
+  private _volumeExpanded = false;
 
   private _isLongPress = false;
 
@@ -69,9 +71,6 @@ export class VideoController {
   /** オーバーレイ自動非表示タイマー */
   private _hideOverlayTimer: ReturnType<typeof setTimeout> | null = null;
 
-  /** スキップボタン自動非表示タイマー */
-  private _hideSkipTimer: ReturnType<typeof setTimeout> | null = null;
-
   /** 長押し判定タイマー */
   private _longPressTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -93,13 +92,10 @@ export class VideoController {
   /** 初回再生時にミュートを強制するためのフラグ */
   private _didApplyInitialPlaybackMute = false;
 
-  private _suppressOverlayOnNextPause = false;
-
   /** 長押し終了直後のクリックを無視するためのフラグ */
   private _wasLongPress = false;
 
   private muted = true;
-  private autoplay = false;
   private queued = false;
   private disposed = false;
   private enhanced = false;
@@ -115,7 +111,16 @@ export class VideoController {
     const controls = player?.querySelector<HTMLElement>(':scope > [data-video-enhanced-controls]');
     if (!media || !player || !controls)
       throw new Error('[video] native media / controls が必要です');
-    for (const action of ['play', 'back', 'forward', 'mute', 'captions', 'fullscreen', 'retry']) {
+    for (const action of [
+      'play',
+      'back',
+      'forward',
+      'mute',
+      'volume',
+      'captions',
+      'fullscreen',
+      'retry',
+    ]) {
       if (!controls.querySelector(`button[data-video-action="${action}"]`))
         throw new Error(`[video] native ${action} control が必要です`);
     }
@@ -128,7 +133,6 @@ export class VideoController {
     this.controls = controls;
     this._retryButton =
       controls.querySelector<HTMLButtonElement>('[data-video-action="retry"]') ?? undefined;
-    this.autoplay = media.autoplay;
     this.muted = media.muted;
     this._volume = media.muted ? 0 : media.volume;
     this._volumeBeforeMute = media.volume > 0 ? media.volume : 1;
@@ -139,7 +143,7 @@ export class VideoController {
       (track) =>
         (track.kind === 'captions' || track.kind === 'subtitles') && track.mode === 'showing',
     );
-    this._hasStartedPlayback = media.played.length > 0 || !media.paused || media.currentTime > 0;
+    this._hasStartedPlayback = media.played.length > 0 || !media.paused || media.ended;
     this._didApplyInitialPlaybackMute = this._hasStartedPlayback || !media.muted;
     this._status = !this._hasMediaSource
       ? 'EMPTY'
@@ -232,15 +236,17 @@ export class VideoController {
               else this._togglePlayback();
               break;
             case 'back':
-              if (floating) this._onFloatingBarSkipBack();
-              else this._onSkipBack();
+              this._onFloatingBarSkipBack();
               break;
             case 'forward':
-              if (floating) this._onFloatingBarSkipForward();
-              else this._onSkipForward();
+              this._onFloatingBarSkipForward();
               break;
             case 'mute':
               this._toggleMuted();
+              break;
+            case 'volume':
+              this._volumeExpanded = !this._volumeExpanded;
+              this.scheduleProjection();
               break;
             case 'captions':
               this._toggleCaptions();
@@ -262,6 +268,44 @@ export class VideoController {
     controls
       .querySelector('[data-video-volume]')
       ?.addEventListener('input', this._onVolumeInput, { signal });
+    player.addEventListener(
+      'focusin',
+      () => {
+        if (!this.enhanced) return;
+        this._showFloatingBar();
+        // 透明なアイドル面へTabで入ったフレームから可視化する。
+        this.project();
+      },
+      { signal },
+    );
+    player.addEventListener(
+      'focusout',
+      () => {
+        queueMicrotask(() => {
+          if (this.disposed || signal.aborted || this._controlsFocused) return;
+          if (this._isPlayingLike) this._scheduleFloatingBarHide();
+          this.scheduleProjection();
+        });
+      },
+      { signal },
+    );
+    controls.addEventListener(
+      'pointerdown',
+      (event) => {
+        if (!(event.target instanceof HTMLInputElement)) return;
+        this._rangePointerId = event.pointerId;
+        this._showFloatingBar();
+      },
+      { signal },
+    );
+    const releaseRange = (event: PointerEvent): void => {
+      if (event.pointerId !== this._rangePointerId) return;
+      this._rangePointerId = null;
+      if (this._isPlayingLike) this._scheduleFloatingBarHide();
+      this.scheduleProjection();
+    };
+    root.ownerDocument.addEventListener('pointerup', releaseRange, { signal });
+    root.ownerDocument.addEventListener('pointercancel', releaseRange, { signal });
     // 起動判定ではなくnative controlからのfocus handoffだけを待つ。
     media.addEventListener(
       'focusout',
@@ -510,9 +554,7 @@ export class VideoController {
   private _scheduleOverlayHide(): void {
     this._cancelOverlayHide();
     this._hideOverlayTimer = setTimeout(() => {
-      this._overlayCenterVisible = false;
-      this.scheduleProjection();
-      this._skipButtonsVisible = false;
+      this._playbackFeedbackVisible = false;
       this.scheduleProjection();
       this._hideOverlayTimer = null;
     }, OVERLAY_HIDE_DELAY);
@@ -525,18 +567,10 @@ export class VideoController {
     }
   }
 
-  private _showOverlayControls(): void {
-    this._overlayCenterVisible = true;
+  private _showPlaybackFeedback(): void {
+    this._playbackFeedbackVisible = true;
     this.scheduleProjection();
-    this._skipButtonsVisible = true;
-    this.scheduleProjection();
-  }
-
-  private _cancelSkipHide(): void {
-    if (this._hideSkipTimer !== null) {
-      clearTimeout(this._hideSkipTimer);
-      this._hideSkipTimer = null;
-    }
+    this._scheduleOverlayHide();
   }
 
   // ─── フローティングバー表示/非表示制御 ───
@@ -552,7 +586,7 @@ export class VideoController {
   }
 
   private _hideFloatingBar(): void {
-    this._floatingBarVisible = false;
+    if (!this._keepControlsVisible) this._floatingBarVisible = false;
     this.scheduleProjection();
     this._cancelFloatingBarHide();
   }
@@ -560,13 +594,8 @@ export class VideoController {
   private _scheduleFloatingBarHide(): void {
     this._cancelFloatingBarHide();
     this._floatingBarTimer = setTimeout(() => {
-      this._floatingBarVisible = false;
+      if (!this._keepControlsVisible) this._floatingBarVisible = false;
       this.scheduleProjection();
-      // モバイルでは再生中にセンターボタンも隠す
-      if (!this._isDesktop && this._isPlayingLike) {
-        this._overlayCenterVisible = false;
-        this.scheduleProjection();
-      }
       this._floatingBarTimer = null;
     }, FLOATING_BAR_HIDE_DELAY);
   }
@@ -578,20 +607,22 @@ export class VideoController {
     }
   }
 
-  private get _floatingBarClasses(): string {
-    // エラー時はフローティングバーを非表示
-    if (this._status === 'ERROR') return 'floating-bar is-bar-hidden';
+  private get _controlsFocused(): boolean {
+    return this.controls.contains(this.root.ownerDocument.activeElement);
+  }
 
-    const isPrePlayBeforeFirstStart =
-      !this.autoplay &&
-      !this._didApplyInitialPlaybackMute &&
-      !this._isPlayingLike &&
-      this._currentTime === 0;
-    if (isPrePlayBeforeFirstStart || (this._status === 'PAUSED' && this._currentTime === 0)) {
-      return 'floating-bar is-pre-play';
-    }
-    if (!this._floatingBarVisible && this._isPlayingLike) return 'floating-bar is-bar-hidden';
-    return 'floating-bar';
+  private get _keepControlsVisible(): boolean {
+    return !this._isPlayingLike || this._controlsFocused || this._rangePointerId !== null;
+  }
+
+  private get _barAvailable(): boolean {
+    return this._hasStartedPlayback && !this._controlDisabled;
+  }
+
+  private get _floatingBarClasses(): string {
+    return this._floatingBarVisible || this._keepControlsVisible
+      ? 'floating-bar'
+      : 'floating-bar is-bar-hidden';
   }
 
   // ─── スキップインジケータ制御 ───
@@ -623,7 +654,7 @@ export class VideoController {
     if (event.composedPath().includes(shell)) return;
     this._hideFloatingBar();
     if (!this._isDesktop && this._isPlayingLike) {
-      this._overlayCenterVisible = false;
+      this._playbackFeedbackVisible = false;
       this.scheduleProjection();
     }
   };
@@ -652,7 +683,7 @@ export class VideoController {
     if (!this._hasStartedPlayback) return;
     this._hideFloatingBar();
     if (!this._isDesktop && this._isPlayingLike) {
-      this._overlayCenterVisible = false;
+      this._playbackFeedbackVisible = false;
       this.scheduleProjection();
     }
   };
@@ -788,23 +819,20 @@ export class VideoController {
   // ─── 再生操作 ───
 
   private _togglePlayback = (): void => {
-    // オーバーレイを一時的に表示
-    this._showOverlayControls();
+    // 操作後のフィードバックだけを短時間表示する。
+    this._showPlaybackFeedback();
 
     if (this._isPlayingLike) {
       this.pauseVideo();
-      // 一時停止時はボタンを表示したまま
-      this._cancelOverlayHide();
       return;
     }
 
     void this.playVideo();
-    // 再生開始後、1秒でボタンを自動非表示
-    this._scheduleOverlayHide();
   };
 
   /** フローティングバーからの再生操作 */
   private _onFloatingBarPlay = (): void => {
+    this._showPlaybackFeedback();
     if (this._isPlayingLike) {
       this.pauseVideo();
       return;
@@ -827,18 +855,6 @@ export class VideoController {
       this.scheduleProjection();
     }
   }
-
-  private _onSkipBack = (): void => {
-    this._seekBy(-10);
-    this._showOverlayControls();
-    this._scheduleOverlayHide();
-  };
-
-  private _onSkipForward = (): void => {
-    this._seekBy(10);
-    this._showOverlayControls();
-    this._scheduleOverlayHide();
-  };
 
   private _onFloatingBarSkipBack = (): void => {
     this._seekBy(-10);
@@ -1089,7 +1105,7 @@ export class VideoController {
     this.scheduleProjection();
     this._hasStartedPlayback = true;
     this.scheduleProjection();
-    // 再生開始時にオーバーレイを自動非表示スケジュール
+    // 再生開始のフィードバックは短時間だけ表示する。
     this._scheduleOverlayHide();
     // フローティングバーを表示後、自動非表示をスケジュール
     this._showFloatingBar();
@@ -1110,13 +1126,7 @@ export class VideoController {
 
     this._status = 'PAUSED';
     this.scheduleProjection();
-    const suppressOverlay = this._suppressOverlayOnNextPause;
-    this._suppressOverlayOnNextPause = false;
-    // 一時停止時にオーバーレイを表示する
-    this._cancelOverlayHide();
-    if (!suppressOverlay) {
-      this._showOverlayControls();
-    }
+    this._showPlaybackFeedback();
     // フローティングバーを表示し、非表示タイマーをキャンセル
     this._showFloatingBar();
     this._cancelFloatingBarHide();
@@ -1178,9 +1188,9 @@ export class VideoController {
     this.scheduleProjection();
     this._status = 'ENDED';
     this.scheduleProjection();
-    // 終了時はオーバーレイを表示
+    // replay操作は下部の再生ボタンへ集約する。
     this._cancelOverlayHide();
-    this._showOverlayControls();
+    this._playbackFeedbackVisible = false;
     this._showFloatingBar();
     this._cancelFloatingBarHide();
   };
@@ -1242,6 +1252,8 @@ export class VideoController {
       } else if (action === 'mute') {
         button.setAttribute('aria-label', this._muteButtonLabel);
         icon = this._muteButtonIcon;
+      } else if (action === 'volume') {
+        button.setAttribute('aria-expanded', String(this._volumeExpanded));
       } else if (action === 'captions') {
         button.hidden = !this._hasTracks;
         button.setAttribute('aria-label', this._captionToggleLabel);
@@ -1267,6 +1279,7 @@ export class VideoController {
       seek.style.setProperty('--seek-progress', `${String(this._seekProgress)}%`);
       seek.style.setProperty('--seek-buffered', `${String(this._seekBufferedProgress)}%`);
     }
+    query('.volume-control')?.classList.toggle('is-open', this._volumeExpanded);
     const volume = this.controls.querySelector<HTMLInputElement>('[data-video-volume]');
     if (volume) {
       volume.value = String(this._volume);
@@ -1278,16 +1291,35 @@ export class VideoController {
     const time = query('.time-label');
     if (time) time.textContent = this._seekValueText;
     const bar = query('.floating-bar');
-    if (bar) bar.className = this._floatingBarClasses;
-    const center = query('.overlay-center');
-    if (center) {
-      center.hidden = this._status === 'ERROR';
-      center
-        .querySelector('.play-button')
-        ?.classList.toggle('is-hidden', !this._overlayCenterVisible);
+    if (bar) {
+      bar.hidden = !this._barAvailable;
+      bar.className = this._floatingBarClasses;
     }
-    for (const button of this.controls.querySelectorAll<HTMLElement>('.skip-button')) {
-      button.classList.toggle('is-visible', this._skipButtonsVisible);
+    const center = query('.overlay-center');
+    const centerPlay = center?.querySelector<HTMLButtonElement>('.play-button');
+    if (centerPlay) {
+      const isEntry = !this._hasStartedPlayback && !this._controlDisabled;
+      if (!isEntry && this.root.ownerDocument.activeElement === centerPlay && this._barAvailable) {
+        this.controls
+          .querySelector<HTMLButtonElement>('.floating-bar [data-video-action="play"]')
+          ?.focus();
+      }
+      centerPlay.hidden = !isEntry;
+      centerPlay.tabIndex = isEntry ? 0 : -1;
+    }
+    const feedback = query('[data-video-feedback]');
+    if (feedback) {
+      feedback.hidden =
+        !this._hasStartedPlayback ||
+        !this._playbackFeedbackVisible ||
+        this._controlDisabled ||
+        this._status === 'ENDED';
+      for (const icon of feedback.querySelectorAll('[data-video-icon]')) {
+        icon.toggleAttribute(
+          'hidden',
+          icon.getAttribute('data-video-icon') !== (this._isPlayingLike ? 'play' : 'pause'),
+        );
+      }
     }
     query('.speed-badge')?.classList.toggle('is-active', this._isLongPress);
     query('.skip-indicator-left')?.classList.toggle('is-active', this._skipIndicator === 'back');
@@ -1305,7 +1337,6 @@ export class VideoController {
   destroy(): void {
     this.disposed = true;
     this._cancelOverlayHide();
-    this._cancelSkipHide();
     this._cancelLongPress();
     this._cancelFloatingBarHide();
     this._cancelSkipIndicator();

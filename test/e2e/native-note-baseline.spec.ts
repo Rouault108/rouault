@@ -23,9 +23,11 @@ const html = normalizeRouaultStaticSurfaceHtml(
   <ui-preview-sandbox id="baseline-sandbox" activation-policy="manual" iframe-title="Isolated preview">
     <template data-preview-kind="html"><p id="payload-only">Inert payload</p></template>
   </ui-preview-sandbox>
+  <button id="video-before">動画前</button>
   <ui-video id="baseline-video" src="/assets/videos/sample-video.mp4" caption="Sample caption">
     <track src="/assets/other/sample-vtt.vtt" kind="captions" label="日本語" srclang="ja" default>
   </ui-video>
+  <button id="video-after">動画後</button>
 `,
   {
     namespace: 'native-note-baseline-e2e',
@@ -109,7 +111,9 @@ test.describe('native note without JavaScript', () => {
     const nativeVideo = page.locator('#baseline-video video');
     await nativeVideo.scrollIntoViewIfNeeded();
     await expect
-      .poll(() => nativeVideo.evaluate((node) => node instanceof HTMLVideoElement && node.readyState))
+      .poll(() =>
+        nativeVideo.evaluate((node) => node instanceof HTMLVideoElement && node.readyState),
+      )
       .toBeGreaterThanOrEqual(2);
     await nativeVideo.focus();
     await nativeVideo.press('Space');
@@ -185,4 +189,282 @@ test('native preview controls preserve author CSS and mobile viewport while vide
   await expect(preview.locator('[data-code-preview-header]')).toBeVisible();
   await expect(preview.locator('#author-header')).toBeVisible();
   await expect(preview.locator('[data-code-preview-control]:visible')).toHaveCount(0);
+});
+
+test('videoの実Tab経路は初回handoff・focus維持・idle復帰を提供する', async ({ page }) => {
+  await mount(page);
+  const root = page.locator('#baseline-video');
+  await root.scrollIntoViewIfNeeded();
+  await expect(root).toHaveAttribute('data-video-enhanced', '');
+  const media = root.locator('video');
+  await media.evaluate((node) => {
+    if (!(node instanceof HTMLVideoElement)) throw new Error('videoが必要です');
+    node.loop = true;
+  });
+  const entry = root.locator('.play-button');
+  const bar = root.locator('.floating-bar');
+  const play = bar.locator('[data-video-action="play"]');
+  await page.locator('#video-before').click();
+  await page.keyboard.press('Tab');
+  await expect(entry).toBeFocused();
+  await expect(bar).toBeHidden();
+  await page.keyboard.press('Enter');
+  await expect(root).toHaveAttribute('data-state', 'playing');
+  await expect(play).toBeFocused();
+  await page.mouse.move(1, 1);
+  await page.waitForTimeout(3200);
+  await expect(bar).toHaveCSS('opacity', '1');
+  await expect(entry).toBeHidden();
+  await page.keyboard.press('Tab');
+  await expect(bar.locator('[data-video-action="back"]')).toBeFocused();
+  await expect(bar).toHaveCSS('opacity', '1');
+  await page.locator('#video-before').click();
+  await page.mouse.move(1, 1);
+  await expect(bar).toHaveCSS('opacity', '0');
+  await page.keyboard.press('Tab');
+  await expect(bar.locator('[data-video-seek]')).toBeFocused();
+  await expect(bar).toHaveCSS('opacity', '1');
+  await page.keyboard.press('ArrowRight');
+  await expect(bar.locator('[data-video-seek]')).not.toHaveAttribute('aria-valuenow', '0');
+  await play.click();
+  await expect(root).toHaveAttribute('data-state', 'paused');
+  await media.evaluate((node) => {
+    if (!(node instanceof HTMLVideoElement)) throw new Error('videoが必要です');
+    node.currentTime = 0;
+  });
+  await expect(bar).toBeVisible();
+  await expect(entry).toBeHidden();
+  await play.click();
+  await play.click();
+  await play.click();
+  await expect(root).toHaveAttribute('data-state', 'playing');
+});
+
+test('videoの実pointer seek・音量展開・ended replayを維持する', async ({ page }) => {
+  await page.setViewportSize({ width: 375, height: 844 });
+  await mount(page);
+  const root = page.locator('#baseline-video');
+  await root.scrollIntoViewIfNeeded();
+  await expect(root).toHaveAttribute('data-video-enhanced', '');
+  const media = root.locator('video');
+  await media.evaluate((node) => {
+    if (!(node instanceof HTMLVideoElement)) throw new Error('videoが必要です');
+    node.loop = true;
+  });
+  await root.locator('.play-button').click();
+  const bar = root.locator('.floating-bar');
+  await expect(root).toHaveAttribute('data-state', 'playing');
+  const seek = bar.locator('[data-video-seek]');
+  const rect = await seek.boundingBox();
+  if (!rect) throw new Error('seek操作域が必要です');
+  expect(rect.height).toBeGreaterThanOrEqual(40);
+  await page.mouse.move(rect.x + rect.width / 2, rect.y + 8);
+  await page.mouse.down();
+  await seek.evaluate((node) => {
+    if (!(node instanceof HTMLInputElement)) throw new Error('seek rangeが必要です');
+    node.blur();
+  });
+  await page.waitForTimeout(3200);
+  await expect(bar).toHaveCSS('opacity', '1');
+  await page.mouse.up();
+  await page.mouse.move(1, 1);
+  await expect(bar).toHaveCSS('opacity', '0');
+  await page.locator('#video-before').click();
+  await page.keyboard.press('Tab');
+  await bar.locator('[data-video-action="volume"]').click();
+  const volume = bar.locator('[data-video-volume]');
+  await expect(volume).toBeVisible();
+  await volume.focus();
+  await volume.press('End');
+  await expect
+    .poll(() =>
+      media.evaluate((node) => {
+        if (!(node instanceof HTMLVideoElement)) throw new Error('videoが必要です');
+        return node.volume;
+      }),
+    )
+    .toBe(1);
+  await bar.locator('[data-video-action="mute"]').click();
+  await expect
+    .poll(() =>
+      media.evaluate((node) => {
+        if (!(node instanceof HTMLVideoElement)) throw new Error('videoが必要です');
+        return node.muted;
+      }),
+    )
+    .toBe(true);
+  await bar.locator('[data-video-action="mute"]').click();
+  await expect
+    .poll(() =>
+      media.evaluate((node) => {
+        if (!(node instanceof HTMLVideoElement)) throw new Error('videoが必要です');
+        return node.muted;
+      }),
+    )
+    .toBe(false);
+  const captions = bar.locator('[data-video-action="captions"]');
+  const initiallyShowing = await media.evaluate((node) => {
+    if (!(node instanceof HTMLVideoElement)) throw new Error('videoが必要です');
+    return node.textTracks[0]?.mode === 'showing';
+  });
+  await captions.click();
+  await expect
+    .poll(() =>
+      media.evaluate((node) => {
+        if (!(node instanceof HTMLVideoElement)) throw new Error('videoが必要です');
+        return node.textTracks[0]?.mode;
+      }),
+    )
+    .toBe(initiallyShowing ? 'hidden' : 'showing');
+  await captions.click();
+  await expect
+    .poll(() =>
+      media.evaluate((node) => {
+        if (!(node instanceof HTMLVideoElement)) throw new Error('videoが必要です');
+        return node.textTracks[0]?.mode;
+      }),
+    )
+    .toBe(initiallyShowing ? 'showing' : 'hidden');
+  await media.evaluate((node) => {
+    if (!(node instanceof HTMLVideoElement)) throw new Error('videoが必要です');
+    node.loop = false;
+    node.currentTime = node.duration - 0.1;
+  });
+  await expect(root).toHaveAttribute('data-state', 'ended');
+  await expect(bar.locator('[data-video-action="play"]')).toHaveAttribute(
+    'aria-label',
+    '動画を最初から再生',
+  );
+  await bar.locator('[data-video-action="play"]').click();
+  await expect(root).toHaveAttribute('data-state', 'playing');
+  await expect
+    .poll(() =>
+      media.evaluate((node) => {
+        if (!(node instanceof HTMLVideoElement)) throw new Error('videoが必要です');
+        return node.currentTime;
+      }),
+    )
+    .toBeLessThan(3);
+});
+
+test('videoの本番CSSで狭幅・テーマ・fullscreenの操作域とcontainを保証する', async ({
+  page,
+}, testInfo) => {
+  await mount(page);
+  const root = page.locator('#baseline-video');
+  await root.scrollIntoViewIfNeeded();
+  await expect(root).toHaveAttribute('data-video-enhanced', '');
+  await root.locator('.play-button').click();
+  await root.locator('.floating-bar [data-video-action="play"]').click();
+  await page.waitForTimeout(1200);
+  for (const width of [320, 375, 600]) {
+    await root.evaluate((node, size) => {
+      node.style.width = `${String(size)}px`;
+    }, width);
+    const player = root.locator('[data-video-player]');
+    const bounds = await player.boundingBox();
+    if (!bounds) throw new Error('playerが必要です');
+    const controls = await root
+      .locator('.floating-bar button:visible, .floating-bar input:visible')
+      .all();
+    for (const control of controls) {
+      const rect = await control.boundingBox();
+      if (!rect) throw new Error('controlが必要です');
+      expect(rect.width).toBeGreaterThanOrEqual(40);
+      expect(rect.height).toBeGreaterThanOrEqual(40);
+      expect(rect.x).toBeGreaterThanOrEqual(bounds.x);
+      expect(rect.x + rect.width).toBeLessThanOrEqual(bounds.x + bounds.width);
+    }
+    expect(
+      await root
+        .locator('.bar-row-bottom')
+        .evaluate((node) => node.scrollWidth <= node.clientWidth),
+    ).toBe(true);
+    await expect(root.locator('video')).toHaveCSS('object-fit', 'contain');
+    await root.screenshot({ path: testInfo.outputPath(`video-${String(width)}-light.png`) });
+  }
+  await root.evaluate((node) => {
+    node.style.width = '320px';
+  });
+  await page.evaluate(() => {
+    document.documentElement.dataset['theme'] = 'dark';
+  });
+  await root.screenshot({ path: testInfo.outputPath('video-320-dark.png') });
+  await page.emulateMedia({ forcedColors: 'active' });
+  await expect(root.locator('.bar-row-bottom')).toHaveCSS('box-shadow', 'none');
+  await root.screenshot({ path: testInfo.outputPath('video-320-forced-colors.png') });
+  await page.emulateMedia({ forcedColors: 'none' });
+  await page.setViewportSize({ width: 375, height: 844 });
+  await root.locator('[data-video-action="fullscreen"]').click();
+  await expect(root.locator('[data-video-player]')).toHaveClass(/is-fullscreen/u);
+  await expect(root.locator('video')).toHaveCSS('object-fit', 'contain');
+  expect(
+    await root.locator('.bar-row-bottom').evaluate((node) => node.scrollWidth <= node.clientWidth),
+  ).toBe(true);
+  await page.screenshot({ path: testInfo.outputPath('video-portrait-fullscreen.png') });
+  await root.locator('[data-video-action="fullscreen"]').click();
+});
+
+test('videoの実長押し2倍速はpointerupとSPA離脱で解除する', async ({ page }) => {
+  await mount(page);
+  const root = page.locator('#baseline-video');
+  await root.scrollIntoViewIfNeeded();
+  await expect(root).toHaveAttribute('data-video-enhanced', '');
+  const media = root.locator('video');
+  await media.evaluate((node) => {
+    if (!(node instanceof HTMLVideoElement)) throw new Error('videoが必要です');
+    node.loop = true;
+  });
+  await root.locator('.play-button').click();
+  await expect(root).toHaveAttribute('data-state', 'playing');
+  const bounds = await root.locator('[data-video-player]').boundingBox();
+  if (!bounds) throw new Error('playerが必要です');
+  await page.mouse.move(bounds.x + bounds.width * 0.2, bounds.y + bounds.height * 0.2);
+  await page.mouse.down();
+  await expect
+    .poll(() =>
+      media.evaluate((node) => {
+        if (!(node instanceof HTMLVideoElement)) throw new Error('videoが必要です');
+        return node.playbackRate;
+      }),
+    )
+    .toBe(2);
+  await page.mouse.up();
+  await expect
+    .poll(() =>
+      media.evaluate((node) => {
+        if (!(node instanceof HTMLVideoElement)) throw new Error('videoが必要です');
+        return node.playbackRate;
+      }),
+    )
+    .toBe(1);
+  await expect(root).toHaveAttribute('data-state', 'playing');
+  await page.mouse.down();
+  await expect
+    .poll(() =>
+      media.evaluate((node) => {
+        if (!(node instanceof HTMLVideoElement)) throw new Error('videoが必要です');
+        return node.playbackRate;
+      }),
+    )
+    .toBe(2);
+  const result = await page.evaluate(async (url) => {
+    const root = document.querySelector('#baseline-video');
+    const media = root?.querySelector('video');
+    const host = document.querySelector('router-document-host');
+    if (!root || !media || !host) throw new Error('video / routerが必要です');
+    const navigation = await host.navigate(url);
+    await new Promise((resolve) => setTimeout(resolve, 350));
+    const state = root.getAttribute('data-state');
+    media.dispatchEvent(new Event('error'));
+    await Promise.resolve();
+    return {
+      committed: navigation.committed,
+      connected: root.isConnected,
+      rate: media.playbackRate,
+      stateStable: state === root.getAttribute('data-state'),
+    };
+  }, e2eNoteFixtures.markdownBasic.normalizedPath);
+  await page.mouse.up();
+  expect(result).toEqual({ committed: true, connected: false, rate: 1, stateStable: true });
 });

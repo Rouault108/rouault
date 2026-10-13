@@ -6,6 +6,12 @@ import { hasDeclarationForSelector, hasDeclarationValueIncluding } from './suppo
 const css = readFileSync(resolve('src/assets/css/video.css'), 'utf8');
 
 describe('videoの環境設定別CSS契約', () => {
+  it('通常・fullscreen共通のmedia表示で全体をcontainすること', () => {
+    expect(
+      hasDeclarationForSelector(css, '[data-video-root] .video-element', 'object-fit', 'contain'),
+    ).toBe(true);
+  });
+
   it('forced colorsでは操作面と字幕をsystem colorで表示すること', () => {
     expect(
       hasDeclarationForSelector(css, '[data-video-root] .floating-bar', 'background', 'Canvas', {

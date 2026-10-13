@@ -3,6 +3,7 @@ import type { HastProperties } from '../../build/rehype/hast-utils.js';
 import { activateVideo } from '../../src/client/post-hydrate/video-enhancer.js';
 import { fixtureAbortController, requireFixtureValue } from './harness/browser-fixture.js';
 import { element, nativeNoteFixture } from './harness/native-note-fixture.js';
+import { compositeOver, contrastRatio, resolveComputedColor } from './helpers/color-contrast.js';
 import { fetchCssText } from './helpers/fetch-css-text.js';
 import {
   dispatchKey,
@@ -186,7 +187,7 @@ describe('native video browser contract', () => {
   it('全画面controlのアイコンと操作面が他のbar controlと同じ寸法で描画される', async () => {
     const root = await makeVideo();
     const media = requireFixtureValue(root.querySelector('video'));
-    installMediaMock(media, state());
+    installMediaMock(media, state({ paused: false }));
     // 実際の共通control CSSを使い、native mappingの欠落による空buttonを検出する。
     const style = document.createElement('style');
     style.textContent = (
@@ -212,8 +213,246 @@ describe('native video browser contract', () => {
     expect(iconSize.width).toBe(playIcon.getBoundingClientRect().width);
     expect(fullscreenSize.width).toBe(playSize.width);
     expect(fullscreenSize.height).toBe(playSize.height);
-    expect(fullscreenSize.width).toBeGreaterThanOrEqual(24);
-    expect(fullscreenSize.height).toBeGreaterThanOrEqual(24);
+    expect(fullscreenSize.width).toBeGreaterThanOrEqual(40);
+    expect(fullscreenSize.height).toBeGreaterThanOrEqual(40);
+  });
+
+  it('初回中央再生はTab対象で、初回下部controlsは対象外になる', async () => {
+    const root = await makeVideo({ muted: false });
+    installMediaMock(requireFixtureValue(root.querySelector('video')), state({ muted: false }));
+    activate(root);
+    expect(button(root, 'play').tabIndex).toBe(0);
+    expect(root.querySelector<HTMLElement>('.floating-bar')?.hidden).toBe(true);
+  });
+
+  it('再生中のfocusはtimeout・leave・外部clickでも操作面を維持する', async () => {
+    const root = await makeVideo();
+    const media = requireFixtureValue(root.querySelector('video'));
+    installMediaMock(media, state({ paused: false, currentTime: 40 }));
+    activate(root);
+    media.dispatchEvent(new Event('playing'));
+    const play = requireFixtureValue(
+      root.querySelector<HTMLButtonElement>('.floating-bar [data-video-action="play"]'),
+    );
+    const bar = requireFixtureValue(root.querySelector<HTMLElement>('.floating-bar'));
+    play.focus();
+    await new Promise((resolve) => setTimeout(resolve, 3200));
+    expect(bar.classList.contains('is-bar-hidden')).toBe(false);
+    requireFixtureValue(root.querySelector('[data-video-player]')).dispatchEvent(
+      new PointerEvent('pointerleave'),
+    );
+    document.body.click();
+    await flush();
+    expect(bar.classList.contains('is-bar-hidden')).toBe(false);
+    requireFixtureValue(root.querySelector<HTMLInputElement>('[data-video-seek]')).focus();
+    await flush();
+    expect(bar.classList.contains('is-bar-hidden')).toBe(false);
+  });
+
+  it('開始後にseek 0してpauseしても初回UIへ戻らない', async () => {
+    const root = await makeVideo();
+    const media = requireFixtureValue(root.querySelector('video'));
+    const current = state();
+    installMediaMock(media, current);
+    activate(root);
+    button(root, 'play').click();
+    await flush();
+    media.pause();
+    await flush();
+    expect(root.querySelector('.floating-bar')?.classList.contains('is-pre-play')).toBe(false);
+    expect(root.querySelector<HTMLButtonElement>('.play-button')?.hidden).toBe(true);
+  });
+
+  it('アイドルcontrolsのfocus復帰とslider操作中のtimeout保護を分離する', async () => {
+    const root = await makeVideo();
+    const media = requireFixtureValue(root.querySelector('video'));
+    installMediaMock(media, state({ paused: false }));
+    activate(root);
+    const bar = requireFixtureValue(root.querySelector<HTMLElement>('.floating-bar'));
+    const seek = requireFixtureValue(root.querySelector<HTMLInputElement>('[data-video-seek]'));
+    vi.useFakeTimers();
+    try {
+      media.dispatchEvent(new Event('playing'));
+      await vi.advanceTimersByTimeAsync(3100);
+      expect(bar.classList.contains('is-bar-hidden')).toBe(true);
+      seek.focus();
+      expect(bar.classList.contains('is-bar-hidden')).toBe(false);
+      seek.blur();
+      await flush();
+      seek.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, pointerId: 17 }));
+      await vi.advanceTimersByTimeAsync(3100);
+      expect(bar.classList.contains('is-bar-hidden')).toBe(false);
+      document.dispatchEvent(new PointerEvent('pointercancel', { pointerId: 17 }));
+      await vi.advanceTimersByTimeAsync(3100);
+      expect(bar.classList.contains('is-bar-hidden')).toBe(true);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it.each([320, 375, 600])('%ipx幅で長い時刻・字幕・音量と40px操作域が収まる', async (width) => {
+    const root = await makeVideo();
+    installMediaMock(
+      requireFixtureValue(root.querySelector('video')),
+      state({ paused: false, duration: 360000 }),
+    );
+    const style = document.createElement('style');
+    style.textContent = (
+      await Promise.all([
+        fetchCssText('/src/assets/css/tokens.css'),
+        fetchCssText('/src/assets/css/note-controls.css'),
+        fetchCssText('/src/assets/css/video.css'),
+      ])
+    ).join('\n');
+    root.prepend(style);
+    root.style.width = `${String(width)}px`;
+    activate(root);
+    button(root, 'volume').click();
+    await flush();
+    const shell = requireFixtureValue(root.querySelector<HTMLElement>('[data-video-player]'));
+    const shellRect = shell.getBoundingClientRect();
+    expect(getComputedStyle(requireFixtureValue(root.querySelector('video'))).objectFit).toBe(
+      'contain',
+    );
+    for (const control of root.querySelectorAll<HTMLElement>(
+      '.floating-bar button, .floating-bar input',
+    )) {
+      const rect = control.getBoundingClientRect();
+      if (rect.width === 0) continue;
+      expect(rect.width).toBeGreaterThanOrEqual(40);
+      expect(rect.height).toBeGreaterThanOrEqual(40);
+      expect(rect.left).toBeGreaterThanOrEqual(shellRect.left);
+      expect(rect.right).toBeLessThanOrEqual(shellRect.right);
+    }
+    const bottom = requireFixtureValue(root.querySelector<HTMLElement>('.bar-row-bottom'));
+    expect(bottom.scrollWidth).toBeLessThanOrEqual(bottom.clientWidth);
+    const controls = [...bottom.querySelectorAll<HTMLButtonElement>('button')].filter(
+      (control) => control.getBoundingClientRect().width > 0,
+    );
+    for (let index = 1; index < controls.length; index += 1) {
+      expect(
+        requireFixtureValue(controls[index]).getBoundingClientRect().left,
+      ).toBeGreaterThanOrEqual(
+        requireFixtureValue(controls[index - 1]).getBoundingClientRect().right,
+      );
+    }
+    const time = requireFixtureValue(root.querySelector<HTMLElement>('.time-label'));
+    expect(time.textContent).toContain('100:00:00');
+    expect(time.getBoundingClientRect().right).toBeLessThanOrEqual(shellRect.right);
+  });
+
+  it('pointercancelとabortで2倍速・待機中single tap・timer/listenerを解除する', async () => {
+    const root = await makeVideo();
+    const media = requireFixtureValue(root.querySelector('video'));
+    const current = state({ paused: false });
+    installMediaMock(media, current);
+    const lifetime = activate(root);
+    const shell = requireFixtureValue(root.querySelector<HTMLElement>('[data-video-player]'));
+    vi.useFakeTimers();
+    try {
+      shell.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }));
+      await vi.advanceTimersByTimeAsync(550);
+      expect(media.playbackRate).toBe(2);
+      shell.dispatchEvent(new PointerEvent('pointercancel', { bubbles: true }));
+      expect(media.playbackRate).toBe(1);
+      shell.click();
+      shell.click();
+      lifetime.abort();
+      await vi.advanceTimersByTimeAsync(4000);
+      expect(current.paused).toBe(false);
+      expect(media.controls).toBe(true);
+      const previousState = root.dataset['state'];
+      media.dispatchEvent(new Event('ended'));
+      shell.click();
+      await vi.advanceTimersByTimeAsync(4000);
+      expect(root.dataset['state']).toBe(previousState);
+      expect(vi.getTimerCount()).toBe(0);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('light/darkの半透明操作面は明暗映像上で4.5以上の文字contrastを保つ', async () => {
+    const root = await makeVideo();
+    installMediaMock(requireFixtureValue(root.querySelector('video')), state({ paused: false }));
+    const style = document.createElement('style');
+    style.textContent = (
+      await Promise.all([
+        fetchCssText('/src/assets/css/tokens.css'),
+        fetchCssText('/src/assets/css/note-controls.css'),
+        fetchCssText('/src/assets/css/video.css'),
+      ])
+    ).join('\n');
+    root.prepend(style);
+    activate(root);
+    const oldTheme = document.documentElement.getAttribute('data-theme');
+    try {
+      for (const theme of ['light', 'dark']) {
+        document.documentElement.dataset['theme'] = theme;
+        for (const selector of ['.bar-row-bottom', '.time-label', '.volume-popover']) {
+          const surface = requireFixtureValue(root.querySelector<HTMLElement>(selector));
+          const bg = resolveComputedColor(
+            'var(--video-control-surface)',
+            surface,
+            'background-color',
+          );
+          const fg = resolveComputedColor('var(--fg-default)', surface, 'color');
+          for (const shade of [0, 255]) {
+            const painted = compositeOver(bg, { r: shade, g: shade, b: shade, a: 1 });
+            expect(contrastRatio(fg, painted)).toBeGreaterThanOrEqual(4.5);
+          }
+        }
+      }
+    } finally {
+      if (oldTheme === null) document.documentElement.removeAttribute('data-theme');
+      else document.documentElement.setAttribute('data-theme', oldTheme);
+    }
+  });
+
+  it('mobileのdouble tapは見える±10と同じ時間計算で左右をseekする', async () => {
+    const mq = window.matchMedia('(max-width: 0px)');
+    const matchMedia = vi.spyOn(window, 'matchMedia').mockReturnValue(mq);
+    const clock = vi.spyOn(Date, 'now');
+    try {
+      const root = await makeVideo();
+      root.style.width = '320px';
+      const media = requireFixtureValue(root.querySelector('video'));
+      const current = state({ paused: false, currentTime: 40 });
+      installMediaMock(media, current);
+      activate(root);
+      const shell = requireFixtureValue(root.querySelector<HTMLElement>('[data-video-player]'));
+      const rect = shell.getBoundingClientRect();
+      clock
+        .mockReturnValueOnce(10000)
+        .mockReturnValueOnce(10100)
+        .mockReturnValueOnce(20000)
+        .mockReturnValueOnce(20100);
+      for (const clientX of [rect.right - 1, rect.right - 1]) {
+        shell.dispatchEvent(new MouseEvent('click', { bubbles: true, clientX }));
+      }
+      expect(current.currentTime).toBe(50);
+      for (const clientX of [rect.left + 1, rect.left + 1]) {
+        shell.dispatchEvent(new MouseEvent('click', { bubbles: true, clientX }));
+      }
+      await flush();
+      expect(current.currentTime).toBe(40);
+      expect(root.querySelector('[data-video-seek]')?.getAttribute('aria-valuenow')).toBe('40');
+      expect(button(root, 'back').textContent).toBe('−10');
+      expect(button(root, 'forward').textContent).toBe('+10');
+    } finally {
+      clock.mockRestore();
+      matchMedia.mockRestore();
+    }
+  });
+
+  it.each([
+    [640, 360, '640 / 360'],
+    [360, 640, '360 / 640'],
+    [400, 400, '400 / 400'],
+    [0, 640, '16 / 9'],
+  ])('有効寸法 %i × %i とfallbackを投影する', async (width, height, ratio) => {
+    const root = await makeVideo({ width, height });
+    expect(root.querySelector<HTMLElement>('[data-video-player]')?.style.aspectRatio).toBe(ratio);
   });
 
   it('unsafe source/trackを出力せずEMPTYを公開する', async () => {

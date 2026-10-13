@@ -1,4 +1,6 @@
 [data-video-root] {
+  --video-control-size: 40px;
+  --video-control-surface: color-mix(in oklab, var(--bg-surface-3, white) 94%, transparent);
   display: block;
 }
 
@@ -23,6 +25,7 @@
   display: block;
   overflow: hidden;
   isolation: isolate;
+  container-type: inline-size;
   border: var(--border-width, 1px) solid var(--border-ghost, oklch(20% 0 0 / 0.08));
   border-radius: var(--radius-md, 6px);
   background: var(--bg-fill-neutral, oklch(95% 0 0));
@@ -35,7 +38,7 @@
   display: block;
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
   filter: brightness(var(--brightness-dimmed, 0.85));
   transition: filter var(--duration-normal, 150ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9));
 }
@@ -55,25 +58,19 @@
   pointer-events: none;
 }
 
-[data-video-root] .skip-row {
-  display: flex;
-  align-items: center;
-  gap: var(--space-4, 16px);
-}
-
 [data-video-root] .play-button {
   pointer-events: auto;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: calc(var(--control-min-touch, 24px) + var(--space-1, 4px));
-  height: calc(var(--control-min-touch, 24px) + var(--space-1, 4px));
+  width: var(--video-control-size);
+  height: var(--video-control-size);
   padding: 0;
   border: var(--border-width, 1px) solid
     var(--video-overlay-border, var(--border-default, oklch(86% 0 0)));
   border-radius: var(--radius-full, 999px);
-  background: var(--video-overlay-bg, var(--bg-surface-3, oklch(100% 0 0 / 0.88)));
-  box-shadow: var(--video-overlay-elevation, var(--elevation-md, 0 4px 12px oklch(0% 0 0 / 0.16)));
+  background: var(--video-control-surface);
+  box-shadow: none;
   color: var(--fg-default, oklch(20% 0 0));
   cursor: pointer;
   transition:
@@ -84,11 +81,6 @@
 [data-video-root] .play-button svg {
   inline-size: var(--icon-xl, 32px);
   block-size: var(--icon-xl, 32px);
-}
-
-[data-video-root] .play-button.is-hidden {
-  opacity: 0;
-  pointer-events: none;
 }
 
 [data-video-root] .play-button:hover:not(:disabled) {
@@ -111,59 +103,21 @@
   transform: none;
 }
 
-/* スキップボタン（10秒戻る/進む） */
-[data-video-root] .skip-button {
-  pointer-events: auto;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: var(--control-min-touch, 24px);
-  height: var(--control-min-touch, 24px);
-  padding: 0;
-  border: var(--border-width, 1px) solid
-    var(--video-overlay-border, var(--border-default, oklch(86% 0 0)));
+/* 開始後の中央表示は操作を重複させず、短いフィードバックだけにする。 */
+[data-video-root] .playback-feedback {
+  display: grid;
+  place-items: center;
+  position: absolute;
+  top: 24%;
+  width: var(--video-control-size);
+  height: var(--video-control-size);
   border-radius: var(--radius-full, 999px);
-  background: var(--video-overlay-bg, var(--bg-surface-3, oklch(100% 0 0 / 0.88)));
-  box-shadow: var(--video-overlay-elevation, var(--elevation-md, 0 4px 12px oklch(0% 0 0 / 0.16)));
-  color: var(--fg-default, oklch(20% 0 0));
-  cursor: pointer;
-  opacity: 0;
-  pointer-events: none;
-  transition:
-    opacity var(--duration-normal, 150ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9)),
-    transform var(--duration-fast, 70ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9));
+  background: var(--video-control-surface);
+  color: var(--fg-default);
 }
-
-[data-video-root] .skip-button svg {
-  inline-size: var(--icon-md, 18px);
-  block-size: var(--icon-md, 18px);
-}
-
-[data-video-root] .skip-button:hover:not(:disabled) {
-  transform: scale(var(--scale-hover-lg, 1.04));
-}
-
-[data-video-root] .skip-button:active:not(:disabled) {
-  transform: scale(var(--scale-pressed, 0.96));
-}
-
-[data-video-root] .skip-button:focus-visible {
-  outline: var(--focus-ring-width, 2px) solid var(--focus-ring-color, oklch(60% 0.15 250));
-  outline-offset: var(--focus-ring-offset, 2px);
-  animation: var(--animation-focus);
-}
-
-/* 全画面 + モバイル (< 768px) でのみスキップボタンを表示 */
-[data-video-root] .player-shell.is-fullscreen .skip-button.is-visible {
-  opacity: 1;
-  pointer-events: auto;
-}
-
-@media (min-width: 768px) {
-  [data-video-root] .player-shell.is-fullscreen .skip-button.is-visible {
-    opacity: 0;
-    pointer-events: none;
-  }
+[data-video-root] .playback-feedback svg {
+  width: var(--icon-lg, 24px);
+  height: var(--icon-lg, 24px);
 }
 
 /* 2倍速バッジ */
@@ -255,7 +209,8 @@
 }
 
 [data-video-root] .retry-button {
-  min-height: var(--control-min-touch, 24px);
+  min-width: var(--video-control-size);
+  min-height: var(--video-control-size);
   padding: 0 var(--space-4, 16px);
   border: var(--border-width, 1px) solid var(--border-default, oklch(86% 0 0));
   border-radius: var(--radius-full, 999px);
@@ -282,58 +237,100 @@
 
 [data-video-root] .floating-bar {
   position: absolute;
-  left: var(--space-4, 16px);
-  right: var(--space-4, 16px);
-  bottom: var(--space-4, 16px);
+  left: var(--space-2, 8px);
+  right: var(--space-2, 8px);
+  bottom: var(--space-2, 8px);
   z-index: 4;
   display: flex;
   flex-direction: column;
-  gap: var(--space-1, 4px);
-  padding: var(--space-3, 12px) var(--space-4, 16px);
-  border: var(--border-width, 1px) solid
-    var(--video-overlay-border, var(--border-default, oklch(86% 0 0)));
-  border-radius: var(--radius-lg, 10px);
-  background: var(--video-overlay-bg, var(--bg-surface-3, oklch(100% 0 0 / 0.88)));
-  box-shadow: var(--video-overlay-elevation, var(--elevation-md, 0 4px 12px oklch(0% 0 0 / 0.16)));
   opacity: 1;
   transition: opacity var(--duration-fast, 70ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9));
 }
 
-/* 初回再生前は非表示 */
-[data-video-root] .floating-bar.is-pre-play {
-  opacity: 0;
-  pointer-events: none;
-}
-
-/* JS制御による非表示 */
 [data-video-root] .floating-bar.is-bar-hidden {
   opacity: 0;
   pointer-events: none;
 }
 
+/* focus復帰の入口は残し、Tabで入った瞬間にJSとCSSの双方で表示する。 */
+[data-video-root] .floating-bar:focus-within {
+  opacity: 1;
+  pointer-events: auto;
+}
+
 [data-video-root] .bar-row {
   display: flex;
   align-items: center;
+  min-width: 0;
+}
+[data-video-root] .bar-row-top {
   gap: var(--space-2, 8px);
 }
-
-[data-video-root] .bar-row-top {
-  gap: var(--space-3, 12px);
-}
-
 [data-video-root] .bar-row-bottom {
   justify-content: space-between;
+  padding-inline: var(--space-1, 4px);
+  border: var(--border-width, 1px) solid var(--border-default);
+  border-radius: var(--radius-md, 6px);
+  background: var(--video-control-surface);
+  color: var(--fg-default);
 }
-
 [data-video-root] .bar-group-left,
 [data-video-root] .bar-group-right {
   display: flex;
   align-items: center;
-  gap: var(--space-1, 4px);
+  min-width: 0;
 }
-
-[data-video-root] .floating-bar button.note-control {
-  --fg-muted: var(--fg-default, oklch(20% 0 0));
+[data-video-root] .floating-bar button.note-control,
+[data-video-root] button[data-video-action='volume'] {
+  box-sizing: border-box;
+  min-width: var(--video-control-size);
+  min-height: var(--video-control-size);
+  width: var(--video-control-size);
+  height: var(--video-control-size);
+  padding: 0;
+  flex-shrink: 0;
+  --fg-muted: var(--fg-default);
+}
+[data-video-root] .floating-bar button[data-video-action='back'],
+[data-video-root] .floating-bar button[data-video-action='forward'] {
+  flex-direction: column;
+  gap: 0;
+  font-size: var(--text-2xs, 11px);
+  line-height: 1;
+}
+[data-video-root] .volume-control {
+  position: relative;
+}
+[data-video-root] button[data-video-action='volume'] {
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  border-radius: var(--radius-md, 6px);
+}
+[data-video-root] .volume-popover {
+  display: none;
+  position: absolute;
+  bottom: calc(100% + var(--space-1, 4px));
+  right: 0;
+  padding-inline: var(--space-2, 8px);
+  background: var(--video-control-surface);
+  border: var(--border-width, 1px) solid var(--border-default);
+  border-radius: var(--radius-md, 6px);
+}
+[data-video-root] .volume-control.is-open .volume-popover {
+  display: block;
+}
+@container (min-width: 560px) {
+  [data-video-root] button[data-video-action='volume'] {
+    display: none;
+  }
+  [data-video-root] .volume-control > .volume-popover {
+    display: block;
+    position: static;
+    background: transparent;
+    border: 0;
+    padding: 0;
+  }
 }
 
 [data-video-root] .seek-input,
@@ -341,7 +338,10 @@
   margin: 0;
   appearance: none;
   -webkit-appearance: none;
-  height: var(--space-1, 4px);
+  height: var(--video-control-size);
+  background-size: 100% var(--space-1, 4px);
+  background-repeat: no-repeat;
+  background-position: center;
   border-radius: var(--radius-full, 999px);
   background: var(--bg-fill-neutral, oklch(95% 0 0));
   cursor: pointer;
@@ -370,6 +370,18 @@
     var(--bg-fill-neutral, oklch(95% 0 0)) var(--volume-progress, 100%),
     var(--bg-fill-neutral, oklch(95% 0 0)) 100%
   );
+}
+
+[data-video-root] .seek-input,
+[data-video-root] .volume-input {
+  background-size: 100% var(--space-1, 4px);
+  background-repeat: no-repeat;
+  background-position: center;
+  touch-action: pan-y;
+}
+[data-video-root] .seek-input::-moz-range-track,
+[data-video-root] .volume-input::-moz-range-track {
+  background: transparent;
 }
 
 [data-video-root] .seek-input:disabled,
@@ -421,7 +433,10 @@
 }
 
 [data-video-root] .time-label {
-  color: var(--fg-muted, oklch(48% 0 0));
+  color: var(--fg-default);
+  background: var(--video-control-surface);
+  padding: var(--space-1, 4px);
+  border-radius: var(--radius-sm, 4px);
   font-size: var(--text-xs, 12px);
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
@@ -487,7 +502,6 @@
   [data-video-root] .video-element,
   [data-video-root] .floating-bar,
   [data-video-root] .play-button,
-  [data-video-root] .skip-button,
   [data-video-root] .speed-badge,
   [data-video-root] .fullscreen-caption,
   [data-video-root] .skip-indicator,
@@ -504,9 +518,20 @@
 }
 
 @media (forced-colors: active) {
+  [data-video-root] button[data-video-action='volume'] {
+    color: CanvasText;
+    border: 1px solid CanvasText;
+  }
+  [data-video-root] .seek-input,
+  [data-video-root] .volume-input {
+    appearance: auto;
+  }
   [data-video-root] .floating-bar,
+  [data-video-root] .bar-row-bottom,
+  [data-video-root] .time-label,
+  [data-video-root] .volume-popover,
+  [data-video-root] .playback-feedback,
   [data-video-root] .play-button,
-  [data-video-root] .skip-button,
   [data-video-root] .retry-button {
     background: Canvas;
     border: var(--border-width, 1px) solid CanvasText;
@@ -522,6 +547,7 @@
   }
 
   [data-video-root] .fullscreen-caption {
+    background: Canvas;
     color: CanvasText;
     text-shadow: none;
   }
@@ -557,7 +583,6 @@
   }
 
   [data-video-root] .play-button:focus-visible,
-  [data-video-root] .skip-button:focus-visible,
   [data-video-root] .retry-button:focus-visible,
   [data-video-root] .seek-input:focus-visible,
   [data-video-root] .volume-input:focus-visible {

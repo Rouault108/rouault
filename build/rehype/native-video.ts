@@ -36,11 +36,19 @@ const button = (
       className: [className],
       'data-video-action': action,
       'aria-label': label,
-      ...(['skip-button', 'play-button'].includes(className) ? { tabIndex: -1 } : {}),
     },
-    icons.map((icon, index) =>
-      createStaticIconHast(icon, { 'data-video-icon': icon, ...(index ? { hidden: true } : {}) }),
-    ),
+    [
+      ...icons.map((icon, index) =>
+        createStaticIconHast(icon, { 'data-video-icon': icon, ...(index ? { hidden: true } : {}) }),
+      ),
+      ...(['back', 'forward'].includes(action)
+        ? [
+            el('span', { className: ['skip-label'], 'aria-hidden': 'true' }, [
+              text(action === 'back' ? '−10' : '+10'),
+            ]),
+          ]
+        : []),
+    ],
   );
 
 export const lowerNativeVideo = (
@@ -167,11 +175,20 @@ export const lowerNativeVideo = (
         [text(caption)],
       ),
       el('div', { className: ['overlay-center'] }, [
-        el('div', { className: ['skip-row'] }, [
-          button('back', '10秒戻る', ['rotate-ccw'], 'skip-button'),
-          button('play', '再生', ['play', 'pause', 'rotate-ccw'], 'play-button'),
-          button('forward', '10秒進む', ['rotate-cw'], 'skip-button'),
-        ]),
+        button('play', '再生', ['play', 'pause', 'rotate-ccw'], 'play-button'),
+        el(
+          'span',
+          {
+            className: ['playback-feedback'],
+            'data-video-feedback': '',
+            'aria-hidden': 'true',
+            hidden: true,
+          },
+          [
+            createStaticIconHast('play', { 'data-video-icon': 'play' }),
+            createStaticIconHast('pause', { 'data-video-icon': 'pause', hidden: true }),
+          ],
+        ),
       ]),
       el('div', { className: ['floating-bar'] }, [
         el('div', { className: ['bar-row', 'bar-row-top'] }, [
@@ -184,7 +201,10 @@ export const lowerNativeVideo = (
             button('back', '10秒戻る', ['rewind']),
             button('forward', '10秒進む', ['fast-forward']),
             button('mute', 'ミュート解除', ['volume-x', 'volume-1', 'volume-2']),
-            range('volume', '音量', 1, 0.05),
+            el('div', { className: ['volume-control'] }, [
+              button('volume', '音量調整', ['volume-2']),
+              el('div', { className: ['volume-popover'] }, [range('volume', '音量', 1, 0.05)]),
+            ]),
           ]),
           el('div', { className: ['bar-group-right'] }, [
             button('captions', '字幕をオン', ['captions-off', 'captions']),
