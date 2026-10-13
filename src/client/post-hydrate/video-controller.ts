@@ -101,6 +101,7 @@ export class VideoController {
   private enhanced = false;
   private readonly player: HTMLElement;
   private readonly controls: HTMLElement;
+  private readonly nativeTabIndex: string | null;
 
   constructor(
     private readonly root: HTMLElement,
@@ -129,6 +130,7 @@ export class VideoController {
         throw new Error(`[video] native ${range} range が必要です`);
     }
     this._videoElement = media;
+    this.nativeTabIndex = media.getAttribute('tabindex');
     this.player = player;
     this.controls = controls;
     this._retryButton =
@@ -332,6 +334,8 @@ export class VideoController {
     this.project();
     this.controls.hidden = false;
     this.root.setAttribute('data-video-enhanced', '');
+    // Firefoxでもnative mediaをcustom controlsと重複するTab入口にしない。
+    media.tabIndex = -1;
     media.controls = false;
     this.enhanced = true;
   }
@@ -1341,7 +1345,12 @@ export class VideoController {
     this._cancelFloatingBarHide();
     this._cancelSkipIndicator();
     if (this._singleTapTimer !== null) clearTimeout(this._singleTapTimer);
-    if (this._videoElement?.isConnected) this._videoElement.controls = true;
+    const media = this._videoElement;
+    if (media) {
+      if (media.isConnected) media.controls = true;
+      if (this.nativeTabIndex === null) media.removeAttribute('tabindex');
+      else media.setAttribute('tabindex', this.nativeTabIndex);
+    }
     this.controls.hidden = true;
     this.root.removeAttribute('data-video-enhanced');
   }

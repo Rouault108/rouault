@@ -117,7 +117,7 @@ repository searchでproduction外部consumerが存在しないことをDelete Ga
 - 初回入口は中央のTab到達可能な再生ボタン。初回再生済みはmediaのplayed / playing / endedから独立して保持し、currentTime=0や初回ミュート方針から導出しない。
 - 開始後の再生・停止・終了後replay・±10秒は下部へ集約する。中央は約1秒の非操作フィードバックのみとし、mobile fullscreenにも重複した中央skip操作を置かない。中央再生にfocusがあるまま開始した場合は下部再生へ渡す。
 - 再生中のアイドル時だけ下部を透明にする。操作面内focusまたはrangeのpointer操作中はtimeout・pointerleave・外部clickで隠さない。focusoutは内部移動と外部移動を区別し、外部移動後はアイドル待機を再開する。透明なアイドル面はTab入口を保持し、focusinで即時表示する。
-- 初回下部、EMPTY / ERROR時の非提供操作はhidden / disabledでTab対象から外す。復帰入口にinertを適用しない。ERRORの再試行とatomic enhancement / native focus handoff / abort復帰を維持する。
+- 初回下部、EMPTY / ERROR時の非提供操作はhidden / disabledでTab対象から外す。復帰入口にinertを適用しない。ERRORの再試行とatomic enhancement / native focus handoff / abort復帰を維持する。enhancement成功時だけnative videoをtabindex=-1にし、abort時は元のtabindex属性へ戻す。
 - video内buttonは実効40×40px以上、seek / volume rangeは縦40px以上の操作域と中央4pxの細い表示を分離する。共通note-control tokenは変更しない。
 - player幅560px未満では音量rangeを「音量調整」buttonから展開し、mute操作は独立して残す。560px以上では音量rangeを常時提供する。320 / 375 / 600pxのplayer、字幕、長い時刻でも横overflowや操作の重なりを生まない。
 - skip buttonには見える−10 / +10表示と既存の「10秒戻る / 10秒進む」accessible nameを併用する。時間clampとARIA値を維持する。

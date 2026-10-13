@@ -493,10 +493,23 @@ describe('native video browser contract', () => {
     expect(media.controls).toBe(false);
     lifetime.abort();
     expect(media.controls).toBe(true);
+    expect(media.hasAttribute('tabindex')).toBe(false);
     expect(root.querySelector<HTMLElement>('[data-video-enhanced-controls]')?.hidden).toBe(true);
     media.dispatchEvent(new Event('error'));
     await flush();
     expect(root.dataset['state']).toBe('playing');
+  });
+
+  it('enhance/abortでnative tabindex属性を復元する', async () => {
+    const root = await makeVideo();
+    const media = requireFixtureValue(root.querySelector('video'));
+    installMediaMock(media, state());
+    media.setAttribute('tabindex', '2');
+    const lifetime = activate(root);
+    expect(media.tabIndex).toBe(-1);
+    lifetime.abort();
+    expect(media.getAttribute('tabindex')).toBe('2');
+    expect(media.controls).toBe(true);
   });
 
   it('native controlsのfocus中は切替を延期し、focusout後だけ切り替える', async () => {
@@ -511,6 +524,7 @@ describe('native video browser contract', () => {
     media.blur();
     await flush();
     expect(media.controls).toBe(false);
+    expect(media.getAttribute('tabindex')).toBe('-1');
     expect(root.hasAttribute('data-video-enhanced')).toBe(true);
   });
 
