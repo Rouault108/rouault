@@ -23,6 +23,45 @@ const cases = [
   { name: 'typography', path: '/tools/ui-check/cases/typography.html' },
 ] as const;
 
+test('opens every case through index links with styles, modules and return links', async ({
+  page,
+}) => {
+  const errors: string[] = [];
+  page.on('pageerror', (error) => {
+    // 連続navigationで中断されるブラウザーのview transitionはmodule読み込み失敗ではない。
+    if (
+      error.message ===
+      'Transition was aborted because of invalid state. ViewTransition opt-in disabled'
+    )
+      return;
+    errors.push(error.message);
+  });
+  page.on('requestfailed', (request) =>
+    errors.push(`${request.url()}: ${request.failure()?.errorText ?? 'unknown'}`),
+  );
+  page.on('response', (response) => {
+    if (response.status() >= 400) errors.push(`${response.url()}: ${response.status().toString()}`);
+  });
+  for (const workbenchCase of cases.filter((item) => item.name !== 'index')) {
+    await page.goto('/tools/ui-check/');
+    await page.locator(`a[href="./cases/${workbenchCase.name}.html"]`).click();
+    await expect(page.locator('h1').first()).toBeVisible();
+    await expect.poll(() => page.evaluate(() => document.styleSheets.length)).toBeGreaterThan(0);
+    if (workbenchCase.name === 'reading-interactions') {
+      await expect(page.locator('#preview-responsive [data-command-menu]').first()).toBeVisible();
+    }
+    if (workbenchCase.name === 'video') {
+      await expect(page.locator('#video-default .player-shell')).toBeVisible();
+    }
+    if (workbenchCase.name === 'search-controls') {
+      await expect.poll(() => page.url()).toContain('q=');
+    }
+    await page.getByRole('link', { name: 'UI Check Workbench', exact: true }).click();
+    await expect(page.getByRole('heading', { name: 'UI Check Workbench' })).toBeVisible();
+  }
+  expect(errors).toEqual([]);
+});
+
 test('captures ui-check workbench screenshots', async ({ page }) => {
   await mkdir(screenshotDir, { recursive: true });
 

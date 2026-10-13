@@ -1,6 +1,11 @@
 import { readFileSync } from 'node:fs';
+import { mkdtemp, readdir, rm, stat } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import path from 'node:path';
 import { parse, serialize, type DefaultTreeAdapterMap } from 'parse5';
-import { describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { generateUiCheckCases } from '../../tools/ui-check/codegen-ui-check-cases.js';
+import { generatedCaseNames } from '../../tools/ui-check/generated-cases.js';
 import {
   renderFooterCase,
   renderNotFoundCase,
@@ -16,6 +21,35 @@ const elements = (node: Node): Element[] => [
 ];
 
 describe('UI Check生成fixture', () => {
+  let temporaryDirectory: string;
+  let outputDirectory: string;
+  beforeAll(async () => {
+    temporaryDirectory = await mkdtemp(path.join(tmpdir(), 'rouault-ui-check-'));
+    outputDirectory = path.join(temporaryDirectory, 'cases');
+    await generateUiCheckCases(outputDirectory);
+  }, 30_000);
+  afterAll(async () => {
+    if (temporaryDirectory) await rm(temporaryDirectory, { recursive: true, force: true });
+  });
+
+  it('7件だけを生成し、別領域への再生成と一致し、同じ出力は書き換えないこと', async () => {
+    const filenames = generatedCaseNames.map((name) => `${name}.html`).sort();
+    expect((await readdir(outputDirectory)).sort()).toEqual(filenames);
+    const repeatedDirectory = path.join(temporaryDirectory, 'repeated');
+    const previousStats = await Promise.all(
+      filenames.map((filename) => stat(path.join(outputDirectory, filename))),
+    );
+    await generateUiCheckCases(repeatedDirectory);
+    await generateUiCheckCases(outputDirectory);
+    for (const [index, filename] of filenames.entries()) {
+      const file = path.join(outputDirectory, filename);
+      expect(readFileSync(file, 'utf8')).toBe(
+        readFileSync(path.join(repeatedDirectory, filename), 'utf8'),
+      );
+      expect((await stat(file)).mtimeMs).toBe(previousStats[index]?.mtimeMs);
+    }
+  }, 30_000);
+
   for (const [name, render] of [
     ['footer', renderFooterCase],
     ['not-found', renderNotFoundCase],
@@ -23,7 +57,7 @@ describe('UI Check生成fixture', () => {
     ['video', renderVideoCase],
   ] as const) {
     it(`${name}は生成元と同期し、IDとstylesheetの接続を維持すること`, () => {
-      const generated = readFileSync(`tools/ui-check/cases/${name}.html`, 'utf8');
+      const generated = readFileSync(path.join(outputDirectory, `${name}.html`), 'utf8');
       expect(serialize(parse(generated))).toEqual(
         serialize(parse(render().replace(/[ \t]+$/gmu, ''))),
       );

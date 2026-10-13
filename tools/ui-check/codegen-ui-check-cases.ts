@@ -12,6 +12,7 @@ import { rehypeStaticCodeGroups } from '../../build/rehype/static-code-groups.js
 import { createStaticRenderIdContext } from '../../shared/static-render-id-context.js';
 import { renderSearchPageHtml } from '../../src/layouts/search-page-html.js';
 import { searchPageFixture } from './fixtures/search-page-fixture.js';
+import { generatedCasesDirectory } from './generated-cases.js';
 import {
   renderFooterCase,
   renderNotFoundCase,
@@ -26,12 +27,6 @@ const filterDetailsStartTagRe =
   /<details\b(?=[^>]*\bclass="(?:[^"]*\s)?filter-details(?:\s[^"]*)?")[^>]*>/gu;
 
 const normalizeGeneratedHtml = (html: string): string => html.replace(/[ \t]+$/gmu, '');
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const codeSurfacePath = path.join(__dirname, 'cases', 'code-surface.html');
-const codeSurfaceDarkPath = path.join(__dirname, 'cases', 'code-surface-dark.html');
-const searchControlsPath = path.join(__dirname, 'cases', 'search-controls.html');
 
 const CANONICAL_CODE_SURFACE_SOURCE = [
   '// Rouault canonical syntax palette fixture',
@@ -350,7 +345,7 @@ ${generatedComment}
   </head>
   <body>
     <main>
-      <p><a href="../">UI Check Workbench</a></p>
+      <p><a href="/tools/ui-check/">UI Check Workbench</a></p>
       ${openVariant}
     </main>
     <script type="module">
@@ -397,21 +392,27 @@ const writeIfChanged = async (filePath: string, content: string): Promise<void> 
   await writeFile(filePath, content, 'utf8');
 };
 
-await writeIfChanged(searchControlsPath, normalizeGeneratedHtml(renderSearchControlsCase()));
-await writeIfChanged(codeSurfacePath, normalizeGeneratedHtml(await renderCodeSurfaceCase()));
-await writeIfChanged(
-  codeSurfaceDarkPath,
-  normalizeGeneratedHtml(await renderCodeSurfaceCase('dark')),
-);
+export const generateUiCheckCases = async (
+  outputDirectory = generatedCasesDirectory,
+): Promise<void> => {
+  const writeCase = (name: string, html: string): Promise<void> =>
+    writeIfChanged(path.join(outputDirectory, `${name}.html`), normalizeGeneratedHtml(html));
 
-for (const [name, renderCase] of [
-  ['footer', renderFooterCase],
-  ['not-found', renderNotFoundCase],
-  ['reading-interactions', renderReadingInteractionsCase],
-  ['video', renderVideoCase],
-] as const) {
-  await writeIfChanged(
-    path.join(__dirname, 'cases', `${name}.html`),
-    normalizeGeneratedHtml(renderCase()),
-  );
+  await writeCase('search-controls', renderSearchControlsCase());
+  await writeCase('code-surface', await renderCodeSurfaceCase());
+  await writeCase('code-surface-dark', await renderCodeSurfaceCase('dark'));
+
+  for (const [name, renderCase] of [
+    ['footer', renderFooterCase],
+    ['not-found', renderNotFoundCase],
+    ['reading-interactions', renderReadingInteractionsCase],
+    ['video', renderVideoCase],
+  ] as const) {
+    await writeCase(name, renderCase());
+  }
+};
+
+const entryPoint = process.argv[1];
+if (typeof entryPoint === 'string' && fileURLToPath(import.meta.url) === path.resolve(entryPoint)) {
+  await generateUiCheckCases();
 }
