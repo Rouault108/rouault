@@ -1,6 +1,20 @@
 [data-video-root] {
   --video-control-size: 40px;
-  --video-control-surface: color-mix(in oklab, var(--bg-surface-3, white) 94%, transparent);
+  --video-control-surface: color-mix(
+    in oklab,
+    color-mix(in oklab, var(--bg-control-muted) 95%, var(--primary)) 96%,
+    transparent
+  );
+  --video-control-accent: color-mix(in oklab, var(--primary) 72%, var(--fg-default));
+  --video-track-buffered: color-mix(in oklab, var(--fg-default) 58%, var(--bg-control-muted));
+  --video-track-empty: color-mix(in oklab, var(--fg-default) 45%, var(--bg-control-muted));
+  --video-control-hover: color-mix(in oklab, var(--video-control-accent) 12%, transparent);
+  --video-control-active: color-mix(in oklab, var(--video-control-accent) 20%, transparent);
+  /* themeの前景明度を使い、lightは42%、darkは76%の青灰にする。 */
+  --video-entry-foreground: oklch(
+    from var(--fg-default) clamp(0.42, l, 0.76) 0.04 var(--hue-primary, 250)
+  );
+  --video-entry-icon-size: 20px;
   display: block;
 }
 
@@ -21,6 +35,7 @@
 }
 
 [data-video-root] .player-shell {
+  box-sizing: border-box;
   position: relative;
   display: block;
   overflow: hidden;
@@ -59,6 +74,7 @@
 }
 
 [data-video-root] .play-button {
+  box-sizing: border-box;
   pointer-events: auto;
   display: inline-flex;
   align-items: center;
@@ -71,30 +87,34 @@
   border-radius: var(--radius-full, 999px);
   background: var(--video-control-surface);
   box-shadow: none;
-  color: var(--fg-default, oklch(20% 0 0));
+  color: var(--video-entry-foreground);
   cursor: pointer;
-  transition:
-    transform var(--duration-fast, 70ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9)),
-    opacity var(--duration-normal, 150ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9));
+  transition: opacity var(--duration-normal, 150ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9));
 }
 
 [data-video-root] .play-button svg {
-  inline-size: var(--icon-xl, 32px);
-  block-size: var(--icon-xl, 32px);
+  inline-size: var(--video-entry-icon-size);
+  block-size: var(--video-entry-icon-size);
+}
+
+[data-video-root] .play-button svg[data-icon='play'] :is(path, polygon) {
+  fill: currentColor;
+  stroke-width: 0;
 }
 
 [data-video-root] .play-button:hover:not(:disabled) {
-  transform: scale(var(--scale-hover-lg, 1.04));
+  background: color-mix(in oklab, var(--fg-default) 6%, var(--bg-control-muted));
 }
 
 [data-video-root] .play-button:active:not(:disabled) {
-  transform: scale(var(--scale-pressed, 0.96));
+  background: color-mix(in oklab, var(--video-control-accent) 12%, var(--bg-control-muted));
 }
 
 [data-video-root] .play-button:focus-visible {
   outline: var(--focus-ring-width, 2px) solid var(--focus-ring-color, oklch(60% 0.15 250));
   outline-offset: var(--focus-ring-offset, 2px);
-  animation: var(--animation-focus);
+  animation: none;
+  box-shadow: 0 0 0 2px var(--video-control-surface);
 }
 
 [data-video-root] .play-button:disabled {
@@ -223,28 +243,50 @@
 [data-video-root] .retry-button:focus-visible {
   outline: var(--focus-ring-width, 2px) solid var(--focus-ring-color, oklch(60% 0.15 250));
   outline-offset: var(--focus-ring-offset, 2px);
-  animation: var(--animation-focus);
+  animation: none;
+  box-shadow: 0 0 0 2px var(--video-control-surface);
 }
 
 [data-video-root] .loading-spinner {
   width: var(--icon-xl, 32px);
   height: var(--icon-xl, 32px);
   border: 2px solid var(--border-default, oklch(86% 0 0));
-  border-top-color: var(--primary, oklch(56% 0.16 252));
+  border-top-color: var(--video-control-accent);
   border-radius: var(--radius-full, 999px);
   animation: ui-video-spin 0.9s linear infinite;
 }
 
 [data-video-root] .floating-bar {
+  --video-controls-layout: stacked;
+  --video-volume-layout: popover;
   position: absolute;
   left: var(--space-2, 8px);
   right: var(--space-2, 8px);
   bottom: var(--space-2, 8px);
   z-index: 4;
-  display: flex;
-  flex-direction: column;
+  box-sizing: border-box;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-rows: var(--video-control-size) var(--video-control-size);
+  padding-inline: var(--space-1, 4px);
+  border: var(--border-width, 1px) solid transparent;
+  color: var(--fg-default);
+  font-family: var(--font-sans);
+  line-height: var(--line-height-snug);
   opacity: 1;
   transition: opacity var(--duration-fast, 70ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9));
+}
+
+/* 狭幅の上段は映像を残し、背景面は操作行と時刻だけにする。 */
+[data-video-root] .floating-bar::before {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  inset: var(--video-control-size) 0 0;
+  border: var(--border-width, 1px) solid var(--border-default);
+  border-radius: var(--radius-md, 6px);
+  background: var(--video-control-surface);
+  pointer-events: none;
 }
 
 [data-video-root] .floating-bar.is-bar-hidden {
@@ -264,15 +306,9 @@
   min-width: 0;
 }
 [data-video-root] .bar-row-top {
+  grid-column: 1 / -1;
+  grid-row: 1;
   gap: var(--space-2, 8px);
-}
-[data-video-root] .bar-row-bottom {
-  justify-content: space-between;
-  padding-inline: var(--space-1, 4px);
-  border: var(--border-width, 1px) solid var(--border-default);
-  border-radius: var(--radius-md, 6px);
-  background: var(--video-control-surface);
-  color: var(--fg-default);
 }
 [data-video-root] .bar-group-left,
 [data-video-root] .bar-group-right {
@@ -280,16 +316,43 @@
   align-items: center;
   min-width: 0;
 }
-[data-video-root] .floating-bar button.note-control,
-[data-video-root] button[data-video-action='volume'] {
+[data-video-root] .bar-group-left {
+  grid-column: 1;
+  grid-row: 2;
+}
+[data-video-root] .bar-group-right {
+  grid-column: 2;
+  grid-row: 2;
+  justify-self: end;
+}
+[data-video-root] .floating-bar button.note-control {
   box-sizing: border-box;
   min-width: var(--video-control-size);
   min-height: var(--video-control-size);
   width: var(--video-control-size);
   height: var(--video-control-size);
   padding: 0;
+  position: relative;
   flex-shrink: 0;
   --fg-muted: var(--fg-default);
+}
+/* 共通note-controlより詳細度を上げ、読み込み順に依存せず動画の記号寸法を保つ。 */
+[data-video-root] .floating-bar button.note-control[data-video-action] > svg[data-icon] {
+  inline-size: var(--icon-md, 18px);
+  block-size: var(--icon-md, 18px);
+}
+[data-video-root] .floating-bar button.note-control:hover:not(:disabled) {
+  background: var(--video-control-hover);
+}
+[data-video-root] .floating-bar button.note-control:active:not(:disabled) {
+  background: var(--video-control-active);
+  transform: none;
+}
+[data-video-root] .floating-bar button.note-control:focus-visible {
+  outline: var(--focus-ring-width, 2px) solid var(--focus-ring-color);
+  outline-offset: var(--focus-ring-offset, 2px);
+  animation: none;
+  box-shadow: 0 0 0 2px var(--video-control-surface);
 }
 [data-video-root] .floating-bar button[data-video-action='back'],
 [data-video-root] .floating-bar button[data-video-action='forward'] {
@@ -298,14 +361,28 @@
   font-size: var(--text-2xs, 11px);
   line-height: 1;
 }
+[data-video-root] button[data-video-action='captions'][aria-pressed='true']::after {
+  content: '';
+  position: absolute;
+  bottom: var(--space-1, 4px);
+  inline-size: var(--space-3, 12px);
+  block-size: 2px;
+  border-radius: var(--radius-full, 999px);
+  background: var(--video-control-accent);
+}
 [data-video-root] .volume-control {
+  display: flex;
+  align-items: center;
   position: relative;
 }
-[data-video-root] button[data-video-action='volume'] {
+[data-video-root] .floating-bar button[data-video-action='volume'] {
   display: grid;
   place-items: center;
   cursor: pointer;
   border-radius: var(--radius-md, 6px);
+}
+[data-video-root] button[data-video-action='volume'][aria-expanded='true'] svg {
+  transform: rotate(180deg);
 }
 [data-video-root] .volume-popover {
   display: none;
@@ -313,6 +390,7 @@
   bottom: calc(100% + var(--space-1, 4px));
   right: 0;
   padding-inline: var(--space-2, 8px);
+  line-height: 0;
   background: var(--video-control-surface);
   border: var(--border-width, 1px) solid var(--border-default);
   border-radius: var(--radius-md, 6px);
@@ -321,7 +399,10 @@
   display: block;
 }
 @container (min-width: 560px) {
-  [data-video-root] button[data-video-action='volume'] {
+  [data-video-root] .floating-bar {
+    --video-volume-layout: inline;
+  }
+  [data-video-root] .floating-bar button[data-video-action='volume'] {
     display: none;
   }
   [data-video-root] .volume-control > .volume-popover {
@@ -332,10 +413,34 @@
     padding: 0;
   }
 }
+@container (min-width: 640px) {
+  [data-video-root] .floating-bar {
+    --video-controls-layout: inline;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-rows: var(--video-control-size);
+    column-gap: var(--space-2, 8px);
+  }
+  [data-video-root] .floating-bar::before {
+    inset: 0;
+  }
+  [data-video-root] .bar-row-top {
+    grid-column: 2;
+    grid-row: 1;
+  }
+  [data-video-root] .bar-group-left {
+    grid-column: 1;
+    grid-row: 1;
+  }
+  [data-video-root] .bar-group-right {
+    grid-column: 3;
+    grid-row: 1;
+  }
+}
 
 [data-video-root] .seek-input,
 [data-video-root] .volume-input {
   margin: 0;
+  display: block;
   appearance: none;
   -webkit-appearance: none;
   height: var(--video-control-size);
@@ -352,23 +457,23 @@
   min-width: 0;
   background: linear-gradient(
     to right,
-    var(--primary, oklch(56% 0.16 252)) 0%,
-    var(--primary, oklch(56% 0.16 252)) var(--seek-progress, 0%),
-    var(--border-muted, oklch(82% 0 0)) var(--seek-progress, 0%),
-    var(--border-muted, oklch(82% 0 0)) var(--seek-buffered, 0%),
-    var(--bg-fill-neutral, oklch(95% 0 0)) var(--seek-buffered, 0%),
-    var(--bg-fill-neutral, oklch(95% 0 0)) 100%
+    var(--video-control-accent) 0%,
+    var(--video-control-accent) var(--seek-progress, 0%),
+    var(--video-track-buffered) var(--seek-progress, 0%),
+    var(--video-track-buffered) var(--seek-buffered, 0%),
+    var(--video-track-empty) var(--seek-buffered, 0%),
+    var(--video-track-empty) 100%
   );
 }
 
 [data-video-root] .volume-input {
-  width: clamp(72px, 14vw, 108px);
+  width: calc(var(--space-20, 80px) + var(--space-3, 12px));
   background: linear-gradient(
     to right,
-    var(--primary, oklch(56% 0.16 252)) 0%,
-    var(--primary, oklch(56% 0.16 252)) var(--volume-progress, 100%),
-    var(--bg-fill-neutral, oklch(95% 0 0)) var(--volume-progress, 100%),
-    var(--bg-fill-neutral, oklch(95% 0 0)) 100%
+    var(--video-control-accent) 0%,
+    var(--video-control-accent) var(--volume-progress, 100%),
+    var(--video-track-empty) var(--volume-progress, 100%),
+    var(--video-track-empty) 100%
   );
 }
 
@@ -394,7 +499,8 @@
 [data-video-root] .volume-input:focus-visible {
   outline: var(--focus-ring-width, 2px) solid var(--focus-ring-color, oklch(60% 0.15 250));
   outline-offset: var(--focus-ring-offset, 2px);
-  animation: var(--animation-focus);
+  animation: none;
+  box-shadow: 0 0 0 2px var(--video-control-surface);
 }
 
 [data-video-root] .seek-input::-webkit-slider-thumb,
@@ -404,7 +510,7 @@
   height: 12px;
   border-radius: var(--radius-full, 999px);
   border: none;
-  background: var(--primary, oklch(56% 0.16 252));
+  background: var(--video-control-accent);
   transition: transform var(--duration-fast, 70ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9));
 }
 
@@ -421,7 +527,7 @@
   height: 12px;
   border-radius: var(--radius-full, 999px);
   border: none;
-  background: var(--primary, oklch(56% 0.16 252));
+  background: var(--video-control-accent);
   transition: transform var(--duration-fast, 70ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9));
 }
 
@@ -437,9 +543,31 @@
   background: var(--video-control-surface);
   padding: var(--space-1, 4px);
   border-radius: var(--radius-sm, 4px);
+  font-family: var(--font-sans);
   font-size: var(--text-xs, 12px);
+  line-height: var(--line-height-snug, 1.35);
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
+}
+
+@container (min-width: 640px) {
+  [data-video-root] .time-label {
+    padding: 0;
+    background: transparent;
+  }
+}
+
+/* 映像上の細いtrackにも支持境界を置き、rangeの40px操作域とは分離する。 */
+[data-video-root] .seek-input::-webkit-slider-runnable-track {
+  height: var(--space-1, 4px);
+  box-shadow: 0 0 0 1px var(--video-control-surface);
+}
+[data-video-root] .seek-input::-webkit-slider-thumb {
+  margin-top: -4px;
+}
+[data-video-root] .seek-input::-moz-range-track {
+  height: var(--space-1, 4px);
+  box-shadow: 0 0 0 1px var(--video-control-surface);
 }
 
 [data-video-root] .caption {
@@ -518,6 +646,12 @@
 }
 
 @media (forced-colors: active) {
+  [data-video-root] {
+    --video-control-surface: Canvas;
+    --video-control-accent: Highlight;
+    --video-control-hover: Canvas;
+    --video-control-active: Canvas;
+  }
   [data-video-root] button[data-video-action='volume'] {
     color: CanvasText;
     border: 1px solid CanvasText;
@@ -527,7 +661,7 @@
     appearance: auto;
   }
   [data-video-root] .floating-bar,
-  [data-video-root] .bar-row-bottom,
+  [data-video-root] .floating-bar::before,
   [data-video-root] .time-label,
   [data-video-root] .volume-popover,
   [data-video-root] .playback-feedback,
@@ -582,6 +716,7 @@
     forced-color-adjust: none;
   }
 
+  [data-video-root] .floating-bar button.note-control:focus-visible,
   [data-video-root] .play-button:focus-visible,
   [data-video-root] .retry-button:focus-visible,
   [data-video-root] .seek-input:focus-visible,

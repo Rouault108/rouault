@@ -195,21 +195,19 @@ export const lowerNativeVideo = (
           range('seek', '再生位置', 0, 0.1),
           el('span', { className: ['time-label'] }, [text('0:00 / 不明')]),
         ]),
-        el('div', { className: ['bar-row', 'bar-row-bottom'] }, [
-          el('div', { className: ['bar-group-left'] }, [
-            button('play', '再生', ['play', 'pause', 'rotate-ccw']),
-            button('back', '10秒戻る', ['rewind']),
-            button('forward', '10秒進む', ['fast-forward']),
-            button('mute', 'ミュート解除', ['volume-x', 'volume-1', 'volume-2']),
-            el('div', { className: ['volume-control'] }, [
-              button('volume', '音量調整', ['volume-2']),
-              el('div', { className: ['volume-popover'] }, [range('volume', '音量', 1, 0.05)]),
-            ]),
+        el('div', { className: ['bar-group-left'] }, [
+          button('play', '再生', ['play', 'pause', 'rotate-ccw']),
+          button('back', '10秒戻る', ['rotate-ccw']),
+          button('forward', '10秒進む', ['rotate-cw']),
+        ]),
+        el('div', { className: ['bar-group-right'] }, [
+          button('mute', 'ミュート解除', ['volume-x', 'volume-1', 'volume-2']),
+          el('div', { className: ['volume-control'] }, [
+            button('volume', '音量調整', ['chevron-up']),
+            el('div', { className: ['volume-popover'] }, [range('volume', '音量', 1, 0.05)]),
           ]),
-          el('div', { className: ['bar-group-right'] }, [
-            button('captions', '字幕をオン', ['captions-off', 'captions']),
-            button('fullscreen', '全画面表示', ['maximize', 'minimize']),
-          ]),
+          button('captions', '字幕をオン', ['captions']),
+          button('fullscreen', '全画面表示', ['maximize', 'minimize']),
         ]),
       ]),
     ],

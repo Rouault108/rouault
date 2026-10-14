@@ -1,4 +1,5 @@
 import type { IconName } from '../../../shared/icons/icon-paths.js';
+import { VideoControlsLayout } from './video-controls-layout.js';
 export type VideoState =
   | 'EMPTY'
   | 'LOADING'
@@ -45,6 +46,12 @@ export class VideoController {
   private _playbackFeedbackVisible = true;
 
   private _rangePointerId: number | null = null;
+
+  private _rangePointerTarget: HTMLInputElement | null = null;
+
+  private _focusedVolumeInline = false;
+
+  private _restoreVolumeFocus = false;
 
   private _volumeExpanded = false;
 
@@ -102,6 +109,7 @@ export class VideoController {
   private readonly player: HTMLElement;
   private readonly controls: HTMLElement;
   private readonly nativeTabIndex: string | null;
+  private readonly controlsLayout: VideoControlsLayout;
 
   constructor(
     private readonly root: HTMLElement,
@@ -247,6 +255,9 @@ export class VideoController {
               this._toggleMuted();
               break;
             case 'volume':
+              // 明示的な開閉は、幅変更前のfocus復元要求より優先する。
+              this._restoreVolumeFocus = false;
+              this._focusedVolumeInline = false;
               this._volumeExpanded = !this._volumeExpanded;
               this.scheduleProjection();
               break;
@@ -272,8 +283,14 @@ export class VideoController {
       ?.addEventListener('input', this._onVolumeInput, { signal });
     player.addEventListener(
       'focusin',
-      () => {
+      (event) => {
         if (!this.enhanced) return;
+        if (
+          event.target instanceof HTMLInputElement &&
+          event.target.hasAttribute('data-video-volume')
+        ) {
+          this._focusedVolumeInline = this.controlsLayout.read().inlineVolume;
+        }
         this._showFloatingBar();
         // 透明なアイドル面へTabで入ったフレームから可視化する。
         this.project();
@@ -282,7 +299,24 @@ export class VideoController {
     );
     player.addEventListener(
       'focusout',
-      () => {
+      (event) => {
+        const target = event.target;
+        // CSSで操作が隠れた際のfocusoutは、外部への明示的な移動と区別する。
+        if (
+          event.relatedTarget === null &&
+          this._barAvailable &&
+          target instanceof HTMLElement &&
+          target.getClientRects().length === 0
+        ) {
+          const inlineVolume = this.controlsLayout.read().inlineVolume;
+          const hiddenTrigger = target.dataset['videoAction'] === 'volume' && inlineVolume;
+          const hiddenRange =
+            target.hasAttribute('data-video-volume') && !inlineVolume && this._focusedVolumeInline;
+          if (hiddenTrigger || hiddenRange) {
+            this._restoreVolumeFocus = true;
+            this.scheduleProjection();
+          }
+        }
         queueMicrotask(() => {
           if (this.disposed || signal.aborted || this._controlsFocused) return;
           if (this._isPlayingLike) this._scheduleFloatingBarHide();
@@ -296,6 +330,7 @@ export class VideoController {
       (event) => {
         if (!(event.target instanceof HTMLInputElement)) return;
         this._rangePointerId = event.pointerId;
+        this._rangePointerTarget = event.target;
         this._showFloatingBar();
       },
       { signal },
@@ -303,6 +338,7 @@ export class VideoController {
     const releaseRange = (event: PointerEvent): void => {
       if (event.pointerId !== this._rangePointerId) return;
       this._rangePointerId = null;
+      this._rangePointerTarget = null;
       if (this._isPlayingLike) this._scheduleFloatingBarHide();
       this.scheduleProjection();
     };
@@ -317,6 +353,14 @@ export class VideoController {
         });
       },
       { signal },
+    );
+    this.controlsLayout = new VideoControlsLayout(
+      player,
+      controls,
+      () => {
+        this.scheduleProjection();
+      },
+      signal,
     );
     this.commitEnhancement();
   }
@@ -497,10 +541,6 @@ export class VideoController {
   }
   private get _captionToggleLabel(): string {
     return this._captionsActive ? '字幕をオフ' : '字幕をオン';
-  }
-
-  private get _captionToggleIcon(): IconName {
-    return this._captionsActive ? 'captions' : 'captions-off';
   }
 
   private get _controlDisabled(): boolean {
@@ -1219,6 +1259,25 @@ export class VideoController {
   }
 
   private project(): void {
+    const layout = this.controlsLayout.read();
+    const active = this.root.ownerDocument.activeElement;
+    const restoreVolumeFocus = this._restoreVolumeFocus && this._barAvailable;
+    this._restoreVolumeFocus = false;
+    const volumeInput = this.controls.querySelector<HTMLInputElement>('[data-video-volume]');
+    const volumeButton = this.controls.querySelector<HTMLButtonElement>(
+      '[data-video-action="volume"]',
+    );
+    // inline音量を狭幅へ移しても、focus/drag中のrangeを閉じない。
+    if (
+      !layout.inlineVolume &&
+      (active === volumeInput || this._rangePointerTarget === volumeInput || restoreVolumeFocus)
+    ) {
+      this._volumeExpanded = true;
+    }
+    const focusInlineVolume =
+      (layout.inlineVolume && active === volumeButton) || restoreVolumeFocus;
+    if (active === volumeInput) this._focusedVolumeInline = layout.inlineVolume;
+    this.controlsLayout.sync(layout.inline, this._rangePointerId !== null);
     const query = (selector: string): HTMLElement | null =>
       this.controls.querySelector<HTMLElement>(selector);
     this.root.dataset['state'] = this._status.toLowerCase();
@@ -1262,7 +1321,7 @@ export class VideoController {
         button.hidden = !this._hasTracks;
         button.setAttribute('aria-label', this._captionToggleLabel);
         button.setAttribute('aria-pressed', String(this._captionsActive));
-        icon = this._captionToggleIcon;
+        icon = 'captions';
       } else if (action === 'fullscreen') {
         button.setAttribute('aria-label', this._fullscreenButtonLabel);
         icon = this._fullscreenButtonIcon;
@@ -1284,6 +1343,7 @@ export class VideoController {
       seek.style.setProperty('--seek-buffered', `${String(this._seekBufferedProgress)}%`);
     }
     query('.volume-control')?.classList.toggle('is-open', this._volumeExpanded);
+    if (focusInlineVolume) volumeInput?.focus({ preventScroll: true });
     const volume = this.controls.querySelector<HTMLInputElement>('[data-video-volume]');
     if (volume) {
       volume.value = String(this._volume);
@@ -1340,6 +1400,7 @@ export class VideoController {
 
   destroy(): void {
     this.disposed = true;
+    this.controlsLayout.destroy();
     this._cancelOverlayHide();
     this._cancelLongPress();
     this._cancelFloatingBarHide();

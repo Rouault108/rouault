@@ -44,6 +44,33 @@ describe('videoの環境設定別CSS契約', () => {
     ).toBe(true);
   });
 
+  it('狭幅の上段は塗らず、表示幅のmarkerをCSSで定義すること', () => {
+    expect(
+      hasDeclarationForSelector(
+        css,
+        '[data-video-root] .floating-bar',
+        '--video-controls-layout',
+        'stacked',
+      ),
+    ).toBe(true);
+    expect(
+      hasDeclarationForSelector(
+        css,
+        '[data-video-root] .floating-bar',
+        '--video-volume-layout',
+        'popover',
+      ),
+    ).toBe(true);
+    expect(
+      hasDeclarationForSelector(
+        css,
+        '[data-video-root] .floating-bar::before',
+        'inset',
+        'var(--video-control-size) 0 0',
+      ),
+    ).toBe(true);
+  });
+
   it('printではplayerの操作面を非表示にすること', () => {
     expect(
       hasDeclarationForSelector(css, '[data-video-root] .player-shell', 'display', 'none', {

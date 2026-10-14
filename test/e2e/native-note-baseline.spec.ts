@@ -222,8 +222,14 @@ test('videoの実Tab経路は初回handoff・focus維持・idle復帰を提供�
   await page.mouse.move(1, 1);
   await expect(bar).toHaveCSS('opacity', '0');
   await page.keyboard.press('Tab');
-  await expect(bar.locator('[data-video-seek]')).toBeFocused();
+  await expect(play).toBeFocused();
   await expect(bar).toHaveCSS('opacity', '1');
+  for (const action of ['back', 'forward']) {
+    await page.keyboard.press('Tab');
+    await expect(bar.locator(`[data-video-action="${action}"]`)).toBeFocused();
+  }
+  await page.keyboard.press('Tab');
+  await expect(bar.locator('[data-video-seek]')).toBeFocused();
   await page.keyboard.press('ArrowRight');
   await expect(bar.locator('[data-video-seek]')).not.toHaveAttribute('aria-valuenow', '0');
   await play.click();
@@ -347,6 +353,103 @@ test('videoの実pointer seek・音量展開・ended replayを維持する', asy
     .toBeLessThan(3);
 });
 
+test('video B案の実Tab順・幅変更focus・音量展開を本番CSSで繰り返し操作する', async ({ page }) => {
+  await mount(page);
+  const root = page.locator('#baseline-video');
+  await root.scrollIntoViewIfNeeded();
+  await expect(root).toHaveAttribute('data-video-enhanced', '');
+  await root.evaluate((node) => {
+    node.style.width = '739px';
+  });
+  const entry = root.locator('.play-button');
+  const entryBox = await entry.boundingBox();
+  expect(entryBox?.width).toBe(40);
+  expect(entryBox?.height).toBe(40);
+  const glyphBox = await entry.locator('svg:not([hidden])').boundingBox();
+  expect(glyphBox?.width).toBe(20);
+  await entry.focus();
+  await page.keyboard.press('Enter');
+  await expect(root).toHaveAttribute('data-state', 'playing');
+  await expect(root.locator('.floating-bar [data-video-action="play"]')).toBeFocused();
+  const bar = root.locator('.floating-bar');
+  await expect(bar).toHaveCSS('height', '42px');
+  const readFocus = () =>
+    page.evaluate(() => {
+      const active = document.activeElement;
+      if (!(active instanceof HTMLElement)) return '';
+      return active.dataset['videoAction'] ?? active.getAttribute('aria-label');
+    });
+  for (const expected of ['back', 'forward', '再生位置']) {
+    await page.keyboard.press('Tab');
+    expect(await readFocus()).toBe(expected);
+  }
+  const seek = root.locator('[data-video-seek]');
+  const media = root.locator('video');
+  await media.evaluate((node) => {
+    if (!(node instanceof HTMLVideoElement)) throw new Error('videoが必要です');
+    node.pause();
+  });
+  await expect(root).toHaveAttribute('data-state', 'paused');
+  for (const width of [320, 739, 375, 739, 320]) {
+    await root.evaluate((node, size) => {
+      node.style.width = `${String(size)}px`;
+    }, width);
+    await expect(seek).toBeFocused();
+    await expect
+      .poll(() => bar.evaluate((node) => node.firstElementChild?.className))
+      .toBe(width >= 642 ? 'bar-group-left' : 'bar-row bar-row-top');
+    await expect(seek).toBeFocused();
+  }
+  await expect(bar).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
+  for (const expected of ['play', 'back', 'forward', 'mute', 'volume', 'captions', 'fullscreen']) {
+    await page.keyboard.press('Tab');
+    expect(await readFocus()).toBe(expected);
+  }
+  const volumeButton = root.locator('[data-video-action="volume"]');
+  const volume = root.locator('[data-video-volume]');
+  for (let iteration = 0; iteration < 3; iteration += 1) {
+    await volumeButton.click();
+    await expect(volumeButton).toHaveAttribute('aria-expanded', 'true');
+    await page.keyboard.press('Tab');
+    await expect(volume).toBeFocused();
+    await root.evaluate((node) => {
+      node.style.width = '600px';
+    });
+    await expect(volumeButton).toBeHidden();
+    await expect(volume).toBeFocused();
+    await root.evaluate((node) => {
+      node.style.width = '320px';
+    });
+    await expect(volumeButton).toBeVisible();
+    await expect(volumeButton).toHaveAttribute('aria-expanded', 'true');
+    await expect(volume).toBeFocused();
+    await volumeButton.click();
+    await expect(volumeButton).toHaveAttribute('aria-expanded', 'false');
+    await expect(volume).toBeHidden();
+    await volumeButton.focus();
+    await root.evaluate((node) => {
+      node.style.width = '600px';
+    });
+    await expect(volume).toBeFocused();
+    await root.evaluate((node) => {
+      node.style.width = '320px';
+    });
+    await expect(volumeButton).toHaveAttribute('aria-expanded', 'true');
+    await expect(volume).toBeFocused();
+    await volumeButton.click();
+  }
+  const captions = root.locator('[data-video-action="captions"]');
+  const initiallySelected = (await captions.getAttribute('aria-pressed')) === 'true';
+  for (let iteration = 0; iteration < 4; iteration += 1) {
+    await captions.click();
+    await expect(captions).toHaveAttribute(
+      'aria-pressed',
+      String(iteration % 2 === 0 ? !initiallySelected : initiallySelected),
+    );
+    await expect(captions.locator('svg[data-icon="captions"]')).toBeVisible();
+  }
+});
+
 test('videoの本番CSSで狭幅・テーマ・fullscreenの操作域とcontainを保証する', async ({
   page,
 }, testInfo) => {
@@ -357,7 +460,7 @@ test('videoの本番CSSで狭幅・テーマ・fullscreenの操作域とcontain�
   await root.locator('.play-button').click();
   await root.locator('.floating-bar [data-video-action="play"]').click();
   await page.waitForTimeout(1200);
-  for (const width of [320, 375, 600]) {
+  for (const width of [320, 375, 560, 640, 642, 739]) {
     await root.evaluate((node, size) => {
       node.style.width = `${String(size)}px`;
     }, width);
@@ -376,9 +479,7 @@ test('videoの本番CSSで狭幅・テーマ・fullscreenの操作域とcontain�
       expect(rect.x + rect.width).toBeLessThanOrEqual(bounds.x + bounds.width);
     }
     expect(
-      await root
-        .locator('.bar-row-bottom')
-        .evaluate((node) => node.scrollWidth <= node.clientWidth),
+      await root.locator('.floating-bar').evaluate((node) => node.scrollWidth <= node.clientWidth),
     ).toBe(true);
     await expect(root.locator('video')).toHaveCSS('object-fit', 'contain');
     await root.screenshot({ path: testInfo.outputPath(`video-${String(width)}-light.png`) });
@@ -391,7 +492,7 @@ test('videoの本番CSSで狭幅・テーマ・fullscreenの操作域とcontain�
   });
   await root.screenshot({ path: testInfo.outputPath('video-320-dark.png') });
   await page.emulateMedia({ forcedColors: 'active' });
-  await expect(root.locator('.bar-row-bottom')).toHaveCSS('box-shadow', 'none');
+  await expect(root.locator('.floating-bar')).toHaveCSS('box-shadow', 'none');
   await root.screenshot({ path: testInfo.outputPath('video-320-forced-colors.png') });
   await page.emulateMedia({ forcedColors: 'none' });
   await page.setViewportSize({ width: 375, height: 844 });
@@ -399,7 +500,7 @@ test('videoの本番CSSで狭幅・テーマ・fullscreenの操作域とcontain�
   await expect(root.locator('[data-video-player]')).toHaveClass(/is-fullscreen/u);
   await expect(root.locator('video')).toHaveCSS('object-fit', 'contain');
   expect(
-    await root.locator('.bar-row-bottom').evaluate((node) => node.scrollWidth <= node.clientWidth),
+    await root.locator('.floating-bar').evaluate((node) => node.scrollWidth <= node.clientWidth),
   ).toBe(true);
   await page.screenshot({ path: testInfo.outputPath('video-portrait-fullscreen.png') });
   await root.locator('[data-video-action="fullscreen"]').click();

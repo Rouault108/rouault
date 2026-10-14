@@ -172,6 +172,19 @@ const flush = async () => {
   await Promise.resolve();
 };
 
+let videoStyles: Promise<string> | undefined;
+const applyVideoStyles = async (root: HTMLElement): Promise<void> => {
+  // 本番のmain.cssと同じ順にし、後置される共通controlとのcascadeも検証する。
+  videoStyles ??= Promise.all([
+    fetchCssText('/src/assets/css/tokens.css'),
+    fetchCssText('/src/assets/css/video.css'),
+    fetchCssText('/src/assets/css/note-controls.css'),
+  ]).then((styles) => styles.join('\n'));
+  const style = document.createElement('style');
+  style.textContent = await videoStyles;
+  root.prepend(style);
+};
+
 describe('native video browser contract', () => {
   it('no-JSのnative media、caption、trackとhidden controlsを出力する', async () => {
     const root = await makeVideo();
@@ -184,19 +197,185 @@ describe('native video browser contract', () => {
     expect(root.dataset['hydrationTrigger']).toBe('visible');
   });
 
+  it('本番のCSS順でも広幅音量は一列になり、18px記号と40px操作域を分離する', async () => {
+    const root = await makeVideo();
+    installMediaMock(requireFixtureValue(root.querySelector('video')), state({ paused: false }));
+    await applyVideoStyles(root);
+    root.style.width = '739px';
+    activate(root);
+    const bar = requireFixtureValue(root.querySelector<HTMLElement>('.floating-bar'));
+    expect(getComputedStyle(button(root, 'volume')).display).toBe('none');
+    expect(bar.getBoundingClientRect().height).toBe(42);
+    const play = requireFixtureValue(
+      bar.querySelector<HTMLButtonElement>('[data-video-action="play"]'),
+    );
+    expect(play.getBoundingClientRect().width).toBe(40);
+    expect(play.querySelector('svg:not([hidden])')?.getBoundingClientRect().width).toBe(18);
+  });
+
+  it('開始記号は青灰20pxの塗りで、40px操作域とthemeの判別性を保つ', async () => {
+    const root = await makeVideo();
+    installMediaMock(requireFixtureValue(root.querySelector('video')), state());
+    await applyVideoStyles(root);
+    activate(root);
+    const entry = button(root, 'play');
+    const glyph = requireFixtureValue(entry.querySelector<SVGElement>('svg[data-icon="play"]'));
+    const shape = requireFixtureValue(glyph.querySelector<SVGElement>('path'));
+    expect(entry.getBoundingClientRect().width).toBe(40);
+    expect(entry.getBoundingClientRect().height).toBe(40);
+    expect(glyph.getBoundingClientRect().width).toBe(20);
+    expect(getComputedStyle(shape).fill).not.toBe('none');
+    expect(getComputedStyle(shape).strokeWidth).toBe('0px');
+    const oldTheme = document.documentElement.getAttribute('data-theme');
+    try {
+      for (const theme of ['light', 'dark']) {
+        document.documentElement.dataset['theme'] = theme;
+        const fg = resolveComputedColor('var(--video-entry-foreground)', entry, 'color');
+        const bg = resolveComputedColor('var(--video-control-surface)', entry, 'background-color');
+        if (theme === 'light') expect(fg).toMatchObject({ r: 60, g: 79, b: 98 });
+        for (const shade of [0, 255]) {
+          expect(
+            contrastRatio(fg, compositeOver(bg, { r: shade, g: shade, b: shade, a: 1 })),
+          ).toBeGreaterThanOrEqual(3);
+        }
+      }
+    } finally {
+      if (oldTheme === null) document.documentElement.removeAttribute('data-theme');
+      else document.documentElement.setAttribute('data-theme', oldTheme);
+    }
+  });
+
+  it('狭幅は上段を透明にし、幅変更で視覚順とDOM順・seek focusを揃える', async () => {
+    const root = await makeVideo();
+    installMediaMock(requireFixtureValue(root.querySelector('video')), state({ paused: false }));
+    await applyVideoStyles(root);
+    root.style.width = '320px';
+    activate(root);
+    const bar = requireFixtureValue(root.querySelector<HTMLElement>('.floating-bar'));
+    const timeline = requireFixtureValue(root.querySelector<HTMLElement>('.bar-row-top'));
+    const left = requireFixtureValue(root.querySelector<HTMLElement>('.bar-group-left'));
+    const right = requireFixtureValue(root.querySelector<HTMLElement>('.bar-group-right'));
+    const seek = requireFixtureValue(root.querySelector<HTMLInputElement>('[data-video-seek]'));
+    expect([...bar.children]).toEqual([timeline, left, right]);
+    expect(getComputedStyle(bar).backgroundColor).toBe('rgba(0, 0, 0, 0)');
+    expect(bar.getBoundingClientRect().height).toBe(82);
+    expect(getComputedStyle(bar, '::before').top).toBe('40px');
+    seek.focus();
+    for (const width of [739, 320, 739, 375]) {
+      root.style.width = `${String(width)}px`;
+      await waitForCondition(
+        () => bar.firstElementChild === (width >= 642 ? left : timeline),
+        'control DOM整列',
+      );
+      expect([...bar.children]).toEqual(
+        width >= 642 ? [left, timeline, right] : [timeline, left, right],
+      );
+      expect(document.activeElement).toBe(seek);
+      expect(bar.classList.contains('is-bar-hidden')).toBe(false);
+    }
+  });
+
+  it('幅変更で音量rangeのfocusと展開triggerの到達先を維持する', async () => {
+    const root = await makeVideo();
+    installMediaMock(requireFixtureValue(root.querySelector('video')), state({ paused: false }));
+    await applyVideoStyles(root);
+    root.style.width = '739px';
+    activate(root);
+    const volume = requireFixtureValue(root.querySelector<HTMLInputElement>('[data-video-volume]'));
+    volume.focus();
+    root.style.width = '320px';
+    await waitForCondition(
+      () => button(root, 'volume').getAttribute('aria-expanded') === 'true',
+      '音量focusを狭幅へ保持',
+    );
+    expect(document.activeElement).toBe(volume);
+    expect(volume.getBoundingClientRect().width).toBeGreaterThanOrEqual(40);
+    for (let iteration = 0; iteration < 3; iteration += 1) {
+      button(root, 'volume').focus();
+      button(root, 'volume').click();
+      await flush();
+      expect(button(root, 'volume').getAttribute('aria-expanded')).toBe('false');
+      button(root, 'volume').focus();
+      await nextAnimationFrame();
+      root.style.width = '600px';
+      await waitForCondition(
+        () => document.activeElement === volume,
+        '展開triggerからinline音量へfocus移動',
+      );
+      expect(getComputedStyle(button(root, 'volume')).display).toBe('none');
+      root.style.width = '320px';
+      await waitForCondition(
+        () => button(root, 'volume').getAttribute('aria-expanded') === 'true',
+        '狭幅へfocusと展開状態を復帰',
+      );
+      expect(getComputedStyle(button(root, 'volume')).display).not.toBe('none');
+      expect(document.activeElement).toBe(volume);
+    }
+  });
+
+  it('range drag中の幅変更は対象を残し、release後にDOMを整列する', async () => {
+    const root = await makeVideo();
+    installMediaMock(requireFixtureValue(root.querySelector('video')), state({ paused: false }));
+    await applyVideoStyles(root);
+    root.style.width = '739px';
+    const lifetime = activate(root);
+    const bar = requireFixtureValue(root.querySelector<HTMLElement>('.floating-bar'));
+    const seek = requireFixtureValue(root.querySelector<HTMLInputElement>('[data-video-seek]'));
+    const left = requireFixtureValue(root.querySelector<HTMLElement>('.bar-group-left'));
+    const timeline = requireFixtureValue(root.querySelector<HTMLElement>('.bar-row-top'));
+    seek.focus();
+    seek.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, pointerId: 71 }));
+    root.style.width = '320px';
+    await nextAnimationFrame();
+    await nextAnimationFrame();
+    expect(bar.firstElementChild).toBe(left);
+    expect(document.activeElement).toBe(seek);
+    document.dispatchEvent(new PointerEvent('pointerup', { pointerId: 71 }));
+    await waitForCondition(() => bar.firstElementChild === timeline, 'range release後のDOM整列');
+    expect(document.activeElement).toBe(seek);
+    const volume = requireFixtureValue(root.querySelector<HTMLInputElement>('[data-video-volume]'));
+    root.style.width = '739px';
+    await waitForCondition(() => bar.firstElementChild === left, '広幅へ復帰');
+    volume.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, pointerId: 72 }));
+    root.style.width = '320px';
+    await waitForCondition(
+      () => button(root, 'volume').getAttribute('aria-expanded') === 'true',
+      'drag中の音量を表示',
+    );
+    expect(volume.getBoundingClientRect().width).toBeGreaterThanOrEqual(40);
+    document.dispatchEvent(new PointerEvent('pointercancel', { pointerId: 72 }));
+    await waitForCondition(() => bar.firstElementChild === timeline, 'pointercancel後のDOM整列');
+    lifetime.abort();
+    root.style.width = '739px';
+    await nextAnimationFrame();
+    await nextAnimationFrame();
+    expect(bar.firstElementChild).toBe(timeline);
+  });
+
+  it('字幕の形を保ち、繰返しtoggleで下線とARIAを同期する', async () => {
+    const root = await makeVideo();
+    installMediaMock(requireFixtureValue(root.querySelector('video')), state({ paused: false }));
+    await applyVideoStyles(root);
+    activate(root);
+    const captions = button(root, 'captions');
+    for (let iteration = 0; iteration < 4; iteration += 1) {
+      captions.click();
+      await flush();
+      const selected = iteration % 2 === 0;
+      expect(captions.getAttribute('aria-pressed')).toBe(String(selected));
+      expect(captions.querySelector('svg:not([hidden])')?.getAttribute('data-icon')).toBe(
+        'captions',
+      );
+      expect(getComputedStyle(captions, '::after').content).toBe(selected ? '""' : 'none');
+    }
+  });
+
   it('全画面controlのアイコンと操作面が他のbar controlと同じ寸法で描画される', async () => {
     const root = await makeVideo();
     const media = requireFixtureValue(root.querySelector('video'));
     installMediaMock(media, state({ paused: false }));
     // 実際の共通control CSSを使い、native mappingの欠落による空buttonを検出する。
-    const style = document.createElement('style');
-    style.textContent = (
-      await Promise.all([
-        fetchCssText('/src/assets/css/note-controls.css'),
-        fetchCssText('/src/assets/css/video.css'),
-      ])
-    ).join('\n');
-    root.prepend(style);
+    await applyVideoStyles(root);
     root.style.width = '600px';
     activate(root);
     const fullscreen = button(root, 'fullscreen');
@@ -296,15 +475,7 @@ describe('native video browser contract', () => {
       requireFixtureValue(root.querySelector('video')),
       state({ paused: false, duration: 360000 }),
     );
-    const style = document.createElement('style');
-    style.textContent = (
-      await Promise.all([
-        fetchCssText('/src/assets/css/tokens.css'),
-        fetchCssText('/src/assets/css/note-controls.css'),
-        fetchCssText('/src/assets/css/video.css'),
-      ])
-    ).join('\n');
-    root.prepend(style);
+    await applyVideoStyles(root);
     root.style.width = `${String(width)}px`;
     activate(root);
     button(root, 'volume').click();
@@ -324,9 +495,9 @@ describe('native video browser contract', () => {
       expect(rect.left).toBeGreaterThanOrEqual(shellRect.left);
       expect(rect.right).toBeLessThanOrEqual(shellRect.right);
     }
-    const bottom = requireFixtureValue(root.querySelector<HTMLElement>('.bar-row-bottom'));
-    expect(bottom.scrollWidth).toBeLessThanOrEqual(bottom.clientWidth);
-    const controls = [...bottom.querySelectorAll<HTMLButtonElement>('button')].filter(
+    const bar = requireFixtureValue(root.querySelector<HTMLElement>('.floating-bar'));
+    expect(bar.scrollWidth).toBeLessThanOrEqual(bar.clientWidth);
+    const controls = [...bar.querySelectorAll<HTMLButtonElement>('button')].filter(
       (control) => control.getBoundingClientRect().width > 0,
     );
     for (let index = 1; index < controls.length; index += 1) {
@@ -375,21 +546,13 @@ describe('native video browser contract', () => {
   it('light/darkの半透明操作面は明暗映像上で4.5以上の文字contrastを保つ', async () => {
     const root = await makeVideo();
     installMediaMock(requireFixtureValue(root.querySelector('video')), state({ paused: false }));
-    const style = document.createElement('style');
-    style.textContent = (
-      await Promise.all([
-        fetchCssText('/src/assets/css/tokens.css'),
-        fetchCssText('/src/assets/css/note-controls.css'),
-        fetchCssText('/src/assets/css/video.css'),
-      ])
-    ).join('\n');
-    root.prepend(style);
+    await applyVideoStyles(root);
     activate(root);
     const oldTheme = document.documentElement.getAttribute('data-theme');
     try {
       for (const theme of ['light', 'dark']) {
         document.documentElement.dataset['theme'] = theme;
-        for (const selector of ['.bar-row-bottom', '.time-label', '.volume-popover']) {
+        for (const selector of ['.floating-bar', '.time-label', '.volume-popover']) {
           const surface = requireFixtureValue(root.querySelector<HTMLElement>(selector));
           const bg = resolveComputedColor(
             'var(--video-control-surface)',

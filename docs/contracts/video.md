@@ -119,7 +119,11 @@ repository searchでproduction外部consumerが存在しないことをDelete Ga
 - 再生中のアイドル時だけ下部を透明にする。操作面内focusまたはrangeのpointer操作中はtimeout・pointerleave・外部clickで隠さない。focusoutは内部移動と外部移動を区別し、外部移動後はアイドル待機を再開する。透明なアイドル面はTab入口を保持し、focusinで即時表示する。
 - 初回下部、EMPTY / ERROR時の非提供操作はhidden / disabledでTab対象から外す。復帰入口にinertを適用しない。ERRORの再試行とatomic enhancement / native focus handoff / abort復帰を維持する。enhancement成功時だけnative videoをtabindex=-1にし、abort時は元のtabindex属性へ戻す。
 - video内buttonは実効40×40px以上、seek / volume rangeは縦40px以上の操作域と中央4pxの細い表示を分離する。共通note-control tokenは変更しない。
-- player幅560px未満では音量rangeを「音量調整」buttonから展開し、mute操作は独立して残す。560px以上では音量rangeを常時提供する。320 / 375 / 600pxのplayer、字幕、長い時刻でも横overflowや操作の重なりを生まない。
+- playerのcontent幅560px未満では音量rangeを「音量調整」buttonから展開し、mute操作は独立して残す。560px以上では音量rangeを常時提供する。320 / 375 / 600pxのplayer、字幕、長い時刻でも横overflowや操作の重なりを生まない。
 - skip buttonには見える−10 / +10表示と既存の「10秒戻る / 10秒進む」accessible nameを併用する。時間clampとARIA値を維持する。
 - 通常・fullscreen・posterは同じvideo要素のobject-fit: containを使う。正規寸法のaspect-ratioと16/9 fallbackを維持する。
-- 背景のある操作面を下部button行と時刻へ限定し、余白・影を抑える。テーマsurfaceを94%使った半透明色とfg-defaultで可読性を保ち、forced colorsではCanvas / CanvasTextとnative range描画を使う。
+- 背景のある操作面は、狭幅では下部button行と時刻へ限定し、上段のseek周囲は透明にする。playerのcontent幅640px以上では一段へ揃える。面はbg-control-mutedにprimaryを5%混ぜた青灰を96%使い、fg-defaultで文字・記号の可読性を保つ。進捗・buffered・未再生のtrack状態を維持し、forced colorsではCanvas / CanvasText / Highlightとnative range描画を使う。
+- 初回の再生記号は既存Lucideのpathを塗った20pxの三角。lightはoklch(42% 0.04 250)、darkはoklch(76% 0.04 250)の青灰を使い、40px操作域と分離する。下部記号は18px、skipはrotate-ccw / rotate-cwと±10、音量展開はchevron-up、字幕はcaptionsの形を保ち選択下線とaria-pressedを併用する。
+- hover / activeは限定されたbutton面で返し、操作button自体を拡大・縮小しない。focus-visibleは既存focus tokenの輪郭と支持境界で示し、focusの色animationを抑える。
+- 音量は右の補助操作群へ集約する。音量表示と段数の閾値はvideo.cssのcontainer queryを正本とし、VideoControlsLayoutはCSSのlayout markerを読んで同じcontrol groupのDOM順を合わせる。広幅は再生群→seek→補助操作群、狭幅はseek→再生群→補助操作群のTab順となる。正のtabindexで補正しない。
+- 幅変更で移動するseek group内のfocusは同じ要素へpreventScroll付きで復元する。inline音量rangeを操作中に狭幅へ変えた場合は展開を保ち、狭幅の展開triggerが広幅で隠れる場合はinline rangeへfocusを渡す。range drag中のreparentはrelease / cancelまで保留し、操作対象を消さない。ResizeObserverは起動後のpresentation更新のみを担当し、abort時にobserver / resize listenerを解除する。初回起動ownerはHydrationSchedulerのまま。
