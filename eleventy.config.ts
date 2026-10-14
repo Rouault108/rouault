@@ -196,6 +196,7 @@ export default function configureEleventy(eleventyConfig: UserConfig) {
   });
 
   eleventyConfig.addPassthroughCopy({ 'src/assets': 'assets' });
+  eleventyConfig.addPassthroughCopy({ 'src/assets/favicon.ico': 'favicon.ico' });
   eleventyConfig.addPassthroughCopy({
     [NOTO_SANS_JP_FONT_DIR_REPO_PATH]: 'assets/fonts/noto-sans-jp',
   });

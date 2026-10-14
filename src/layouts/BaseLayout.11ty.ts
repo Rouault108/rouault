@@ -175,6 +175,23 @@ export class BaseLayout {
       basePath: rawSiteUrlContext.basePath,
       sourceLabel: 'BaseLayout',
     });
+    const faviconLinks = [
+      { pathname: '/favicon.ico', type: 'image/x-icon', sizes: '16x16 32x32' },
+      { pathname: '/assets/favicon-32.png', type: 'image/png', sizes: '32x32' },
+      { pathname: '/assets/favicon.svg', type: 'image/svg+xml', sizes: 'any' },
+    ]
+      .map(
+        ({ pathname, type, sizes }) =>
+          `<link rel="icon"${serializeHtmlAttributes([
+            {
+              name: 'href',
+              value: applyBasePathToRenderHref({ pathname, search: '', hash: '', siteUrlContext }),
+            },
+            { name: 'type', value: type },
+            { name: 'sizes', value: sizes },
+          ])}>`,
+      )
+      .join('\n  ');
 
     const idContext = createStaticRenderIdContext(
       data.page?.url ? `shell:${data.page.url}` : `shell:${title}`,
@@ -293,6 +310,7 @@ export class BaseLayout {
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="format-detection" content="telephone=no">
+  ${faviconLinks}
   <title>${escapeHtmlText(title)}</title>
   <meta name="description"${serializeHtmlAttributes([{ name: 'content', value: description }])}>
   ${buildIdMeta}
