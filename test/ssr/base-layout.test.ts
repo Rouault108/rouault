@@ -72,6 +72,38 @@ const TEST_SITE_URL_CONTEXT = loadSiteUrlContextData({
 });
 
 describe('BaseLayout', () => {
+  it.each(['', '/nested'])(
+    'basePath=%s の head に ICO、PNG32、SVG の favicon を重複なくこの順で出力すること',
+    (basePath) => {
+      const rendered = new BaseLayout().render({
+        content: '<p>Home</p>',
+        buildMetadata: TEST_BUILD_METADATA,
+        siteUrlContext: { ...TEST_SITE_URL_CONTEXT, basePath },
+      });
+      const head = requireElement(
+        collectElements(parse5.parse(rendered)).find((element) => element.tagName === 'head'),
+        'head',
+      );
+      const faviconLinks = collectElements(head).filter(
+        (element) =>
+          element.tagName === 'link' &&
+          (getAttribute(element, 'rel') ?? '').split(/[\t\n\f\r ]+/u).includes('icon'),
+      );
+
+      expect(
+        faviconLinks.map((element) => ({
+          href: getAttribute(element, 'href'),
+          type: getAttribute(element, 'type'),
+          sizes: getAttribute(element, 'sizes'),
+        })),
+      ).toEqual([
+        { href: `${basePath}/favicon.ico`, type: 'image/x-icon', sizes: '16x16 32x32' },
+        { href: `${basePath}/assets/favicon-32.png`, type: 'image/png', sizes: '32x32' },
+        { href: `${basePath}/assets/favicon.svg`, type: 'image/svg+xml', sizes: 'any' },
+      ]);
+    },
+  );
+
   it('basePath付き共通shellは検索footerとhashリンクの分類を維持すること', () => {
     const rendered = new BaseLayout().render({
       content: '<p>本文</p>',

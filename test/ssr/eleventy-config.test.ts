@@ -1,7 +1,11 @@
+import { execFile } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
-import { mkdir, rm } from 'node:fs/promises';
+import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
 import path from 'node:path';
+import { promisify } from 'node:util';
 import type { UserConfig } from '@11ty/eleventy';
+import { parse, type DefaultTreeAdapterMap } from 'parse5';
 import { describe, expect, it, vi } from 'vitest';
 
 type GlobalData = () => unknown;
@@ -14,8 +18,23 @@ const noop = (): void => {
   return;
 };
 
+const runFile = promisify(execFile);
+
+const collectFaviconHrefs = (node: DefaultTreeAdapterMap['node']): string[] => {
+  if (
+    'tagName' in node &&
+    node.tagName === 'link' &&
+    node.attrs.some(
+      ({ name, value }) => name === 'rel' && value.split(/[\t\n\f\r ]+/u).includes('icon'),
+    )
+  ) {
+    return [node.attrs.find(({ name }) => name === 'href')?.value ?? ''];
+  }
+  return 'childNodes' in node ? node.childNodes.flatMap(collectFaviconHrefs) : [];
+};
+
 const createConfigCapture = () => {
-  const passthroughCopies: unknown[] = [];
+  const passthroughCopies: Record<string, string>[] = [];
   const globalData = new Map<string, GlobalData>();
   const afterHooks: EleventyHook[] = [];
 
@@ -26,7 +45,7 @@ const createConfigCapture = () => {
     addGlobalData(name: string, callback: GlobalData) {
       globalData.set(name, callback);
     },
-    addPassthroughCopy(value: unknown) {
+    addPassthroughCopy(value: Record<string, string>) {
       passthroughCopies.push(value);
     },
     addLayoutAlias: noop,
@@ -47,6 +66,91 @@ const createConfigCapture = () => {
 };
 
 describe('eleventy config', () => {
+  it.each(['', '/nested'])(
+    'basePath=%s の生成 HTML が参照する favicon を実際の passthrough copy で配置すること',
+    async (basePath) => {
+      const fixtureRoot = await mkdtemp(path.join(tmpdir(), 'rouault-favicon-'));
+      const inputDir = path.join(fixtureRoot, 'input');
+      const outputDir = path.join(fixtureRoot, 'output');
+      const configPath = path.join(fixtureRoot, 'eleventy.config.cjs');
+
+      try {
+        const { config, passthroughCopies } = createConfigCapture();
+        const moduleUrl = new URL('../../eleventy.config.ts', import.meta.url).href;
+        const { default: configureEleventy } = (await import(moduleUrl)) as EleventyConfigModule;
+        configureEleventy(config as unknown as UserConfig);
+        const faviconCopies = passthroughCopies.map((copy) =>
+          Object.fromEntries(
+            Object.entries(copy).filter(([, target]) =>
+              ['assets', 'favicon.ico', 'assets/favicon-32.png', 'assets/favicon.svg'].includes(
+                target,
+              ),
+            ),
+          ),
+        );
+
+        // コピー契約だけを実際の Eleventy で検証し、並列 SSR テストの生成物と共有しない。
+        await mkdir(inputDir);
+        await writeFile(
+          configPath,
+          `module.exports = (config) => {
+            for (const copy of ${JSON.stringify(faviconCopies)}) config.addPassthroughCopy(copy);
+            return { templateFormats: ['11ty.js'] };
+          };`,
+        );
+        const layoutUrl = new URL('../../src/layouts/BaseLayout.11ty.ts', import.meta.url).href;
+        const layoutData = {
+          content: '<p>Favicon build fixture</p>',
+          page: { url: '/' },
+          buildMetadata: {
+            buildId: 'favicon-test',
+            buildLabel: 'favicon test',
+            generatedAt: '2026-01-01T00:00:00.000Z',
+          },
+          siteUrlContext: { siteOrigin: 'https://example.com', basePath },
+        };
+        await writeFile(
+          path.join(inputDir, 'index.11ty.cjs'),
+          `module.exports = async () => {
+            const { BaseLayout } = await import(${JSON.stringify(layoutUrl)});
+            return new BaseLayout().render(${JSON.stringify(layoutData)});
+          };`,
+        );
+        await runFile(
+          process.execPath,
+          [
+            '--import',
+            import.meta.resolve('tsx'),
+            path.resolve('node_modules/@11ty/eleventy/cmd.cjs'),
+            `--config=${configPath}`,
+            `--input=${inputDir}`,
+            `--output=${outputDir}`,
+            '--quiet',
+          ],
+          { timeout: 30_000 },
+        );
+
+        const html = await readFile(path.join(outputDir, 'index.html'), 'utf8');
+        const hrefs = collectFaviconHrefs(parse(html));
+        expect(hrefs).toEqual([
+          `${basePath}/favicon.ico`,
+          `${basePath}/assets/favicon-32.png`,
+          `${basePath}/assets/favicon.svg`,
+        ]);
+        for (const href of hrefs) {
+          const outputPath = path.join(outputDir, href.slice(basePath.length + 1));
+          const sourcePath = path.resolve('src/assets', path.basename(href));
+          const [copied, source] = await Promise.all([readFile(outputPath), readFile(sourcePath)]);
+          expect(source.byteLength, sourcePath).toBeGreaterThan(0);
+          expect(copied, outputPath).toEqual(source);
+        }
+      } finally {
+        await rm(fixtureRoot, { recursive: true, force: true });
+      }
+    },
+    45_000,
+  );
+
   it('開発時の Velite は Eleventy 側の watch に委譲し、内部 watch を起動しないこと', () => {
     const configPath = new URL('../../eleventy.config.ts', import.meta.url);
     const source = readFileSync(configPath, 'utf8');
