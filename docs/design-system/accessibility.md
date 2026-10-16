@@ -47,10 +47,6 @@ Guide、ADR、component文書はこの文書を上書きしてはならない。
 | --------------------- | ----- |
 | `--control-min-touch` | 24px  |
 
-```text
-| `--control-min-touch` | 24px |
-```
-
 ### Contrast and Color
 
 - 色だけに状態識別を依存してはならない。

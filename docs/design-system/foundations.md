@@ -6,7 +6,7 @@
 ## 1. Status
 
 - Type: Normative for Design System
-- Source of truth: `src/components/styles/tokens.css`、Design System component styles、browser/SSR tests
+- Source of truth: `src/assets/css/tokens.css`、Design System component styles、browser/SSR tests
 - Applies to: color、typography、motion、spacing、shell constants、theme variants
 - Non-goals: token全値一覧、component固有契約、機能Contract
 

@@ -22,7 +22,7 @@ Reading surface flowは本文のCSS余白patternだけを所有する。Markdown
 
 ### Content Tabs / Embedded Code Tabs Boundary
 
-Content Tabsの正本は`docs/contracts/tabs.md`であり、実装は`ui-tabs`である。用途は本文構造、説明コンテンツ、主セクション切替である。
+Content Tabsの正本は`docs/contracts/tabs.md`であり、最終HTMLは`section[data-tabs-root]`、操作は`tabs-enhancer`が所有する。`ui-tabs`は内部中間HASTの表現であり、`build/rehype/native-tabs.ts`でnative HTMLへ変換する。用途は本文構造、説明コンテンツ、主セクション切替である。
 
 Embedded Code Tabsの正本は`docs/contracts/code-surfaces.md`であり、実装は`section[data-code-group]`と`code-group-enhancer`である。用途はcode surface内部の局所切替である。
 
@@ -46,7 +46,7 @@ touch環境でもprimary色へ昇格しない。metadata面では、発見可能
 
 このvariantは`data-link-surface="metadata"`を持つlink全体へ適用されるわけではない。article header source linkなど、独自classと独自CSSで視覚外観を所有するmetadata surface linkとは別分類である。また、`src/components/not-found/not-found-page.ts`の正規404 fallback control linkとは別surfaceであり、今回のvariant変更対象ではない。
 
-今回の下線サリエンス採用値は`oklch(from var(--fg-muted) l c h / 0.65)`である。将来値を変更する場合は、CSS、CSS contract test、必要に応じて本節を同時に更新する。`text-underline-offset`などの下線メトリクスはDesign System側で調整可能な実装値であり、Home Contractは具体値を所有しない。CSS内での物理的なrule順序は、読みやすさのための配置方針に留める。契約としてはselector限定、primary系token非使用、`:visited`の所有property制限、surface隔離を重視する。
+今回の下線サリエンス採用値は、Relative Color Syntax対応環境（`@supports (color: oklch(from white l c h / 0.65))`）では`oklch(from var(--fg-muted) l c h / 0.65)`である。非対応環境では既存の`var(--fg-subtle, var(--fg-muted))`をfallbackとして使う。実装は`src/assets/css/link-primitives.css`を参照する。将来値を変更する場合は、CSS、CSS contract test、必要に応じて本節を同時に更新する。`text-underline-offset`などの下線メトリクスはDesign System側で調整可能な実装値であり、Home Contractは具体値を所有しない。CSS内での物理的なrule順序は、読みやすさのための配置方針に留める。契約としてはselector限定、primary系token非使用、`:visited`の所有property制限、surface隔離を重視する。
 
 ### Block Link Surface
 
@@ -84,7 +84,7 @@ result-cardでは`.result-card:has(> .result-link:focus-visible)`、Markdown lin
 
 Corpus Index Rowは、`/corpora/`overviewで公開コーパスを静かに列挙するための索引行patternであり、Block Link Surfaceとは別分類である。
 
-行全体はnative `<a>`だが、カード面ではない。titleは主ラベルであり、通常時からごく弱い中立色下線を持つ。通常時のtitle下線は`fg-muted`由来の0.30 alpha相当に抑え、thicknessは`0.04em`、underline offsetは`0.2em`を基準にする。hoverはtitle装飾の軽微な強調に限定する。
+行全体はnative `<a>`だが、カード面ではない。titleは主ラベルであり、通常時からごく弱い中立色下線を持つ。通常時のtitle下線は、Relative Color Syntax対応環境（`@supports (color: oklch(from white l c h / 0.3))`）では`fg-muted`由来の0.30 alpha相当に抑える。非対応環境では既存の`var(--fg-subtle, var(--fg-muted))`をfallbackとして使う。実装は`src/assets/css/page-corpora.css`を参照する。thicknessは`0.04em`、underline offsetは`0.2em`を基準にする。hoverはtitle装飾の軽微な強調に限定する。
 
 Corpus Index Rowのroot listは先頭borderを持たない。section説明文から最初のrowへ自然に流し、row間の分離は各itemのend borderで担う。
 
