@@ -59,6 +59,8 @@ Copy smokeの再現条件: `src/assets/css/main.css`の相対`@import`を再帰�
 
 - ローカルSSR: `pnpm run test:ssr --run`、83 files / 605 tests passed。tokensの文書文字列契約、static-first docs、TOC/header、reading flow、callout、metadata/card/corpus等を含む。
 - 関連Node: `pnpm exec vitest run --project node test/node/remark-rouault-directives.test.ts test/node/native-note-output.test.ts test/node/native-tabs-output.test.ts test/node/testing-taxonomy-contract.test.ts`、4 files / 125 tests passed。
+- Node全体再検証: `pnpm run test:node --run`、136 files / 1243 tests passed / 1 skipped。skipは合格に含めない。
+- 初回CIで新監査文書の日本語ASCII境界スペース370箇所が既存表記規約testに抵触したため、既存detectorに従い空白だけを補正。独立デルタレビューで条項・根拠・コード・リンク・表構造の不変を確認し、上記Node全体で再検証した。
 - 文書修正後の関連SSR再検証: tokens / static-first-docs / TOC HTML / static-header parse5 / reading flowの5 files / 54 tests passed。
 - 関連Browser: `ROUAULT_BROWSER_TEST_BROWSERS=chromium pnpm exec vitest run --project='browser-*' test/browser/layout-header-toc-bridge.browser.test.ts test/browser/layout-toc-controller.browser.test.ts test/browser/layout-toc-static-nav.browser.test.ts test/browser/static-copy-button-enhancer.browser.test.ts test/browser/tabs.browser.test.ts`、5 files / 41 tests passed。
 - 先行したBrowser全体実行はChromium 61 files / 567 testsが通過した一方、Firefox接続timeoutでexit 1。全体実行は不合格であり、未実行Firefoxを合格に数えない。CIの全browser検証と区別する。
@@ -67,7 +69,7 @@ Copy smokeの再現条件: `src/assets/css/main.css`の相対`@import`を再帰�
 - 専用検証ブランチへのcommit/push後、既存`ci-cd`の`workflow_dispatch`を使用する。`scripts/ci/classify_changes.py`はdispatch時にfull runを選ぶため、docs-onlyのskippedで済ませない。deployはmainへのpush条件なので実行対象外。CIのrun URL・終端結果はcommitの外部検証証跡として最終報告へ添付する。
 - 7文書と目録の具体的参照先を追跡。`src/not-found/not-found-page.ts`と`src/components/not-found/not-found-page.ts`は両方現存し用途が異なる。削除済みpathと誤認しない。曖昧なTOC/component docs参照は現行Contractの具体pathへ変更。ADRの現行仕様への書換えは行わない。
 
-## Foundations / Accessibility 根拠キー
+## Foundations / Accessibility根拠キー
 
 - F1: `src/assets/css/tokens.css`（primitive/semantic/reading/nav recipes/shell dimensions、root light/dark/system、forced-colors、reduced-motion）。`test/ssr/tokens-css-contract.test.ts`はsnug=1.35、touch=24pxの文書一致とtheme/recipe/forced-colorsを固定。
 - F2: `src/assets/css/main.css`（reset/prose/reading typography、global focus、main logical focus）、`src/assets/css/stateful-note-bridges.css`（tabs panel reading flow）、`src/assets/css/about-shell.css`。`test/ssr/reading-surface-flow-css-contract.test.ts`、`test/ssr/static-css-contracts.test.ts`。
@@ -82,7 +84,7 @@ Copy smokeの再現条件: `src/assets/css/main.css`の相対`@import`を再帰�
 - A7: `shared/static-copy-button-html.ts`、`src/client/post-hydrate/static-copy-button-enhancer.ts`、`src/assets/css/static-copy-button.css`、`build/rehype/rouault-components.ts`。`test/node/static-copy-button-html.test.ts`、`test/browser/static-copy-button-enhancer.browser.test.ts`、`test/ssr/static-css-contracts.test.ts`。
 - A8: `docs/contracts/testing-taxonomy.md`、`package.json`、`vitest.config.ts`、`playwright.config.ts`、`tools/ui-check/README.md`。既存自動テストはmanual AT/zoomの実施記録の代替ではない。
 
-## Foundations 全条項
+## Foundations全条項
 
 | ID / 節 | 条項 | 判定 | 根拠・確認範囲 |
 | --- | --- | --- | --- |
@@ -115,7 +117,7 @@ Copy smokeの再現条件: `src/assets/css/main.css`の相対`@import`を再帰�
 | F-26 / 8 | 参照token層が明確 | 整合 | F-03–F-08とF1実装分類。 |
 | F-27 / 8 | A11y/Patterns/Componentと責務分離 | 整合 | F-19–F-21、patterns.md、各feature contracts。Foundationsの文書変更は不要。 |
 
-## Accessibility 全条項
+## Accessibility全条項
 
 | ID / 節 | 条項 | 判定 | 根拠・確認範囲 |
 | --- | --- | --- | --- |
@@ -150,7 +152,7 @@ Copy smokeの再現条件: `src/assets/css/main.css`の相対`@import`を再帰�
 | A-28 / 4 Tabs | selected/panel関係露出 | 整合 | A3 browser testsがaria-selected/aria-controls/aria-labelledbyを直接確認。 |
 | A-29 / 4 Toast/Banner | 必要通知だけlive | 手動確認または判断が必要 | 独立toast/banner実装はsourceに見当たらず、この条項は導入時の横断要求。A5 empty/statusで通知抑制を確認できるが、専用component実装済みと扱わない。§4に導入済み一覧ではない旨を追記済み。 |
 | A-30 / 4 Form | label/description/error関連付け | 整合 | A5 search native labels、tag checkbox description/status、combobox instructions/busy。専用validation error formを実装済みとは主張しない。全AT読み上げはA-35。 |
-| A-31 / 4 Icon Button | 必須accessible name | 整合 | A2/A5 search/close、`image-lightbox-enhancer.ts`close aria-label、A6 video、A7 copy label。対応 testsはA2/A5/A6/A7。全ビルド出力内全buttonの機械走査は未実施。 |
+| A-31 / 4 Icon Button | 必須accessible name | 整合 | A2/A5 search/close、`image-lightbox-enhancer.ts`close aria-label、A6 video、A7 copy label。対応testsはA2/A5/A6/A7。全ビルド出力内全buttonの機械走査は未実施。 |
 | A-32 / 4 Loading/Skeleton | busy/no-JS考慮 | 整合 | A1/A5 loading/busy/no-JS、A6 video busy。専用skeletonは撤去済み（`test/ssr/static-css-contracts.test.ts:842`はremoved skeleton utility CSS不在をassert）。存在を要求する文ではないが導入時要件という適用範囲注記が有用。 |
 | A-33 / 4 | component詳細はcontracts | 整合 | static-header/search/toc/tabs/video/static-empty-state/static-checkbox/code-surfaces等の契約へ分離。 |
 | A-34 / 5 | 分類はtesting taxonomy | 整合 | A8がSSR構造/computed browser/E2E/no-JS/manualの境界を定義。 |
@@ -166,7 +168,7 @@ Copy smokeの再現条件: `src/assets/css/main.css`の相対`@import`を再帰�
 | A-FOCUS / 3 | logical main focusは操作focusと区別し、ring非表示の例外をbutton/linkへ広げない | 修正済み | F2の明示コメント、A4 not-found-page.spec.tsのoutline none/0px検査。WCAG適合済み認定ではない。 |
 | A-NEW / 4 | Component要件は該当surface実装時の横断要求であり導入済み一覧ではない | 修正済み | A5/A8、撤去済みskeletonの不在を固定するstatic CSS test。Toast/Bannerの実装済み保証を追加しない。 |
 
-## Patterns / Reading Surface 根拠セット
+## Patterns / Reading Surface根拠セット
 
 | 根拠ID | 対応する具体的な実装・契約・テスト |
 | --- | --- |
@@ -186,7 +188,7 @@ Copy smokeの再現条件: `src/assets/css/main.css`の相対`@import`を再帰�
 | RS-E2 | `src/assets/css/main.css:209`, `src/assets/css/translation.css`; `test/ssr/reading-surface-flow-css-contract.test.ts:252`。supports内限定、body/prose opt-in、nested tabsの継承、記号要素/子孫除外、translation resetなし。 |
 | RS-E3 | `src/assets/css/main.css:209`, `src/assets/css/translation.css`, `tools/ui-check/fixtures/retained-surfaces.ts`, `tools/ui-check/playwright/screenshot.spec.ts`; `test/browser/translation.browser.test.ts`, `test/e2e/translation-no-js.spec.ts`。実際の字間/休止の主観的品質はソース・構造testだけで合格にせず、対応browserでの視覚確認を残す。 |
 
-### patterns.md 逐条一覧
+### patterns.md逐条一覧
 
 | ID | 原文の条項（修正後） | 判定 | 根拠・補足 |
 | --- | --- | --- | --- |
@@ -299,7 +301,7 @@ Copy smokeの再現条件: `src/assets/css/main.css`の相対`@import`を再帰�
 | P-107 | 8. Reading Chrome Reservation: Hydration markerはbuild-time / runtimeの接続点を示す属性であり、見た目のvariantとして扱わない。 | 整合 | P-E10。 |
 | P-108 | 8. Reading Chrome Reservation: Reading chromeの配置・密度・侵入度は専用pattern文書を参照し、本書では機能Contractを再定義しない。 | 整合 | P-E10。 |
 
-### pattern-reading-surface.md 逐条一覧
+### pattern-reading-surface.md逐条一覧
 
 | ID | 原文の条項（修正後） | 判定 | 根拠・補足 |
 | --- | --- | --- | --- |
@@ -353,7 +355,7 @@ Copy smokeの再現条件: `src/assets/css/main.css`の相対`@import`を再帰�
 - V: `src/assets/css/layout-toc.css`、VS: `src/assets/css/layout-sidebar.css`、VT: `src/assets/css/tokens.css`、VN: `src/assets/css/note-shell.css`、VR: `src/assets/css/router-shell.css`、VH: `src/assets/css/layout-header.css`。
 - I: `src/components/layout/layout-toc-controller.ts`、IM: `src/components/layout/layout-toc-mobile-controller.ts`、IB: `src/client/post-hydrate/layout-header-toc-bridge.ts`、IH: `src/layouts/layout-header-html.ts`、ID: `src/toc/toc-density-tier.ts`。
 - Q: `test/ssr/layout-toc-css-contract.test.ts`（rail/current、focus、wrapping、density、forced-colors）、QT: `test/ssr/tokens-css-contract.test.ts`（sidebar surface、light/dark paths、gutter）、QS: `test/ssr/static-css-contracts.test.ts`（viewport gutter、note frame geometry、header contracts）、QM: `test/ssr/mobile-toc-css-contract.test.ts`、QH: `test/ssr/toc-html.test.ts`。
-- B: `test/browser/layout-toc-controller.browser.test.ts`（current 同期、stale state削除、panel close/focus return）、BB: `test/browser/layout-header-toc-bridge.browser.test.ts`（reserved/ready/validation generations、aria state）、BV: `test/browser/layout-toc-static-nav.browser.test.ts`（CSS browser contract）。
+- B: `test/browser/layout-toc-controller.browser.test.ts`（current同期、stale state削除、panel close/focus return）、BB: `test/browser/layout-header-toc-bridge.browser.test.ts`（reserved/ready/validation generations、aria state）、BV: `test/browser/layout-toc-static-nav.browser.test.ts`（CSS browser contract）。
 - E: `test/e2e/toc-active-scroll.spec.ts`、EH: `test/e2e/header-layout-contract.spec.ts`、EN: `test/e2e/header-no-js.spec.ts`。
 - PN: `build/projections/reading-page-projection.ts`、PM: `build/projections/memo-page-projection.ts`、TM: `test/ssr/memo-reading.test.ts`（shared TOC/header with absent sidebar）。
 - NS: `src/search/navigation.ts`、BS: `src/search/bootstrap.ts`、SN: `test/browser/search-navigation.browser.test.ts`、SB: `test/browser/search-bootstrap.browser.test.ts`、SI: `test/node/search-dialog-import-boundary.test.ts`。
@@ -363,48 +365,48 @@ Copy smokeの再現条件: `src/assets/css/main.css`の相対`@import`を再帰�
 
 | 条項 | 原文の要旨 | 判定 | 対応するファイル／テスト／根拠・処置 |
 | --- | --- | --- | --- |
-| RC-0 | pattern は見え方と配置のみ、機能契約を正本にする | 整合 | C §2/7。router/search/hydration 自体を本書は定義していない。H/T への明示リンクをRC-1.2と前文に補完済み。 |
-| RC-1.1 | Normative DS pattern | 整合 | `docs/README.md` の DS 正本分類、C §7。 |
-| RC-1.2 | 正本 reading-chrome、TOC component docs、各 test | 修正済み | 「TOC component docs」は現在の正式所在が不明瞭。T が controller の現行契約。H が trigger の二重契約正本。修正: `docs/contracts/toc.md` / `docs/contracts/static-header-contract.md` を明示済み。 |
-| RC-1.3 | applies note trigger/sidebar/frame、TOC、search return、diagnostics | 修正済み | PN/PM/TM は note と memo の共通 TOC/header を実装。scope の note-only 表記は shared reading chrome を網羅していない。修正: note / memo 共通 trigger/TOC と note 専用 sidebar/frame を明記済み。 |
+| RC-0 | patternは見え方と配置のみ、機能契約を正本にする | 整合 | C §2/7。router/search/hydration 自体を本書は定義していない。H/T への明示リンクをRC-1.2と前文に補完済み。 |
+| RC-1.1 | Normative DS pattern | 整合 | `docs/README.md`のDS正本分類、C §7。 |
+| RC-1.2 | 正本reading-chrome、TOC component docs、各test | 修正済み | 「TOC component docs」は現在の正式所在が不明瞭。Tがcontrollerの現行契約。Hがtriggerの二重契約正本。修正: `docs/contracts/toc.md` / `docs/contracts/static-header-contract.md`を明示済み。 |
+| RC-1.3 | applies note trigger/sidebar/frame、TOC、search return、diagnostics | 修正済み | PN/PM/TM はnoteとmemoの共通TOC/header を実装。scopeのnote-only表記はshared reading chromeを網羅していない。修正: note / memo共通trigger/TOC とnote専用sidebar/frame を明記済み。 |
 | RC-1.4 | URL/schema/ranking/hydration/tree/navigation は対象外 | 整合 | C §2/4、NS/BS/SI。機能境界に踏み込む規定なし。 |
-| RC-2.1 | 本文理解を補助する場合だけ前へ出す | 手動確認または判断が必要 | V/VS/VH は控えめな token surface と fixed/sticky chrome、Q/QT/QS は構造を検証する。本文に対する視覚主従の良否は screenshot/人手評価が必要（不一致と断定しない）。 |
-| RC-2.2 | rhythm を壊す fixed bar / 過剰 shadow / 強い色面を導入しない | 手動確認または判断が必要 | T §2.6 は旧 summary bar 禁止。V の mobile panel は明示操作時のみ、VN の TOC は sticky。Q/QS は構造を固定。過剰かどうかは視覚評価。 |
-| RC-2.3 | sidebar/TOC current は left rail を共有 | 整合 | V `__link::before`、VS `[aria-current='page']::after`、VT `--nav-item-indicator-*`、Q の rail/current と QT。 |
-| RC-2.4 | primary blue は広面積背景より rail/focus 中心 | 整合 | VT `--toc-item-active-bg` alpha .028、sidebar alpha .045/.075、VS/V の primary rail、focus token、Q/QT。forced-colors は Highlight に置換（色指定は通常色の指針）。 |
-| RC-2.5 | focus outline は current と独立 | 整合 | V `:focus-visible` outline と current pseudo rail、VS focus outline、Q focus/background responsibilities。 |
-| RC-2.6 | sidebar current surface は global active surface に直結しない | 整合 | VT 専用 `--sidebar-item-active-bg-alpha` / `--sidebar-item-active-bg`、VS 使用箇所、QT 専用低 salience recipe を固定。fallback `--bg-surface-active` は token 不在時のみ。 |
-| RC-2.7 | desktop TOC は本文より控えめな補助 nav | 手動確認または判断が必要 | T の semantic nav、QH landmark ownership、V muted text/small typography、VN narrow track。相対的視覚階層の良否は人手評価。 |
-| RC-2.8 | 章題/節題を認識できない圧縮をしない | 手動確認または判断が必要 | V の wrapping/clamp と Q 長見出し契約、BV browser geometry が構造上の裏付け。実本文で意味を把握できるかは人手評価。 |
-| RC-2.9 | mobile trigger は入口、内容 owner でない | 整合 | IH href/label only、I desktop nav clone、IB runtime snapshot/IM open state、BB/B。 |
-| RC-2.1.1 | sidebar は構造 navigation で TOC より強い | 整合 | VT sidebar active .045(light)/.075(dark) > TOC .028、QT 専用 surface、V/VS。知覚上の強さは RC-2.1/2.7 の手動評価範囲。 |
-| RC-2.1.2 | TOC は rail 主、active surface 従 | 整合 | V current rail+subtle after、VT TOC recipe、Q rail/surface grammar。 |
-| RC-2.1.3 | rail 語彙は共通、背景濃度は同一にしない | 整合 | VT sidebar .045/.075 と TOC .028、Q/QT。 |
-| RC-3.1 | edge に貼る管理画面風でなく控えめ frame | 手動確認または判断が必要 | VR の desktop note frame width/minimum gutter と QS note frame contract は edge 非接触を保証。「管理画面風」の知覚判断は手動。 |
-| RC-3.2 | fixed sidebar と desktop TOC 外余白は同じ原理 | 整合 | C desktop geometry、VR 共通 note frame の width/gutter、QS 810 行以降。sidebar と TOC を別 padding で代用しない。 |
-| RC-3.3 | outer gutter は最小値、wide の中央寄せで拡大可 | 整合 | VT `--note-frame-outer-gutter`、VR width calc/max width/margin、QS 810 行以降、QT geometry token。 |
-| RC-3.4 | item padding/rail/indent は別責務 | 整合 | V/VS item token と VR frame token は別 selector、Q/QS/QT。 |
-| RC-3.5 | tree/navigation は機能契約、pattern は余白/intrusion | 整合 | C/H/T、`docs/contracts/sidebar-state.md`、VS/VR visual vs sidebar controller/state の分離。 |
-| RC-4.1 | trigger は短ラベル/icon-only、button の名前役割状態維持 | 修正済み | **確定不一致**。IH `renderTocTrigger` は href 付き a。H TOC Trigger は「button化しない」、No-JS fragment と JS panel 二重契約。EN fallback href/static controls、BB ready/expanded/label、EH <640 visibility。修正: 固定 label「目次」/icon-only、native link role、accessible name、fallback href、runtime-ready panel state/controls を維持すると修正済み。 |
-| RC-4.2 | panel は header 直下、header を覆わない | 整合 | V panel `top: var(--header-height)`、T §2.6、B body直下生成、EH geometry と QM CSS boundary。 |
-| RC-4.3 | panel current は left rail と aria-current=location | 整合 | I clone + sync、`src/toc/toc-desktop-nav-sync.ts`、V current rules、B current DOM/mobile nav と Q rail。 |
-| RC-4.4 | close focus return は trigger | 修正済み | IM returnFocusTarget、I `_connectMobileController` consumes connected target → focusWithoutScroll、B 560 行以降 link close/focus return。target removed/disposed は return しない。  接続中triggerへのreturnと切断/破棄の例外を文書へ補完済み。 |
-| RC-5.1 | compact/comfortable/expanded | 整合 | ID union/normalization/resolve、I/V data-density recipe、Q density、B 137 行以降。 |
-| RC-5.2 | 見出し量と階層の visual input、URL/id 不変 | 整合 | ID headings length/depth only、I `_syncDensityTier` attribute only、Q/B density vs current。 |
-| RC-5.3 | compact 長TOC、expanded 短TOC の余白 | 整合 | ID >=12件 or depth>=3 compact、<=4件 and depth<=1 expanded、V min-height24/30/padding3/8、Q。 |
-| RC-5.4 | compact は余白縮小、情報過剰欠落ではない | 整合 | V inactive2/active3 line vs expanded3/4、Q depth-independent wrapping。意味判読性は RC-2.8 の手動範囲。 |
-| RC-5.5 | 右 TOC は補助だが現在地と章題を把握できる | 手動確認または判断が必要 | Q clamp/current + E current tracking は構造保証。内容の実用的認識は人手視覚確認。 |
-| RC-5.6 | desktop と static-first mobile clone は共通 wrapping | 整合 | I cloneNode desktop、V shared `.layout-toc__link-label`、Q/QM/BV 同 recipe。static-only fixture の mobile static nav も同 class (QH)。 |
-| RC-5.7 | DOM hook と CSS hook を分ける | 整合 | `src/toc/toc-mobile-panel-dom-css-contract.ts`、I 両 hook、QM exact selectors。 |
-| RC-6.1 | diagnostics は開発検証面、常時読書文言にしない | 整合 | DG/DS は structured issues/snapshots、I/IB は reader text に変換しない。B diagnostic snapshot ケース、OV validation。 |
-| RC-6.2 | owner/source 欠落を曖昧な空状態へ変換しない | 整合 | OV fail validation、DG/DS issue reasons、I source lookup/hydration session、BB invalid/validated activation boundary。reader empty message の fallback 実装なし。 |
-| RC-6.3 | fail-closed でも本文/static TOC を優先 | 整合 | SSR nav 正本 (`src/layouts/toc-html.ts`)、IH fallback href、IB ready=false 非 interactive、QH/EN/BB。No-JS mobile baseline の最終読解性は CI e2e と別途目視対象。 |
-| RC-7.1 | chrome が本文の主従を壊さない | 手動確認または判断が必要 | RC-2.1/2.7/2.8 と同じ。Q/QS/B/E は機械的契約を保証し、読書全体の知覚評価は保証しない。 |
-| RC-7.2 | trigger/panel/desktop/search return の owner 分離 | 整合 | IH/IB/IM/I と BS→NS、SI/SN/SB、C ownership。 |
-| RC-7.3 | density は視覚密度以外の意味論なし | 整合 | ID/V/I に限定、Q/B。URL/heading id/search ranking の書換えなし。 |
-| RC-7.4 | router/search/hydration 機能契約を上書きしない | 整合 | C/T/S、SI/BB の boundary。RC-4.1 の button 誤記は H を上書きするため修正済みとして別途記録。 |
+| RC-2.1 | 本文理解を補助する場合だけ前へ出す | 手動確認または判断が必要 | V/VS/VH は控えめなtoken surfaceとfixed/sticky chrome、Q/QT/QS は構造を検証する。本文に対する視覚主従の良否はscreenshot/人手評価が必要（不一致と断定しない）。 |
+| RC-2.2 | rhythmを壊すfixed bar / 過剰shadow / 強い色面を導入しない | 手動確認または判断が必要 | T §2.6は旧summary bar禁止。Vのmobile panelは明示操作時のみ、VNのTOCはsticky。Q/QS は構造を固定。過剰かどうかは視覚評価。 |
+| RC-2.3 | sidebar/TOC currentはleft railを共有 | 整合 | V `__link::before`、VS `[aria-current='page']::after`、VT `--nav-item-indicator-*`、Qのrail/current とQT。 |
+| RC-2.4 | primary blueは広面積背景よりrail/focus 中心 | 整合 | VT `--toc-item-active-bg` alpha .028、sidebar alpha .045/.075、VS/V のprimary rail、focus token、Q/QT。forced-colorsはHighlightに置換（色指定は通常色の指針）。 |
+| RC-2.5 | focus outlineはcurrentと独立 | 整合 | V `:focus-visible` outlineとcurrent pseudo rail、VS focus outline、Q focus/background responsibilities。 |
+| RC-2.6 | sidebar current surfaceはglobal active surfaceに直結しない | 整合 | VT専用`--sidebar-item-active-bg-alpha` / `--sidebar-item-active-bg`、VS使用箇所、QT専用低salience recipeを固定。fallback `--bg-surface-active`はtoken不在時のみ。 |
+| RC-2.7 | desktop TOCは本文より控えめな補助nav | 手動確認または判断が必要 | Tのsemantic nav、QH landmark ownership、V muted text/small typography、VN narrow track。相対的視覚階層の良否は人手評価。 |
+| RC-2.8 | 章題/節題を認識できない圧縮をしない | 手動確認または判断が必要 | Vのwrapping/clamp とQ長見出し契約、BV browser geometryが構造上の裏付け。実本文で意味を把握できるかは人手評価。 |
+| RC-2.9 | mobile triggerは入口、内容ownerでない | 整合 | IH href/label only、I desktop nav clone、IB runtime snapshot/IM open state、BB/B。 |
+| RC-2.1.1 | sidebarは構造navigationでTOCより強い | 整合 | VT sidebar active .045(light)/.075(dark) > TOC .028、QT専用surface、V/VS。知覚上の強さはRC-2.1/2.7 の手動評価範囲。 |
+| RC-2.1.2 | TOCはrail主、active surface従 | 整合 | V current rail+subtle after、VT TOC recipe、Q rail/surface grammar。 |
+| RC-2.1.3 | rail語彙は共通、背景濃度は同一にしない | 整合 | VT sidebar .045/.075 とTOC .028、Q/QT。 |
+| RC-3.1 | edgeに貼る管理画面風でなく控えめframe | 手動確認または判断が必要 | VRのdesktop note frame width/minimum gutterとQS note frame contractはedge非接触を保証。「管理画面風」の知覚判断は手動。 |
+| RC-3.2 | fixed sidebarとdesktop TOC外余白は同じ原理 | 整合 | C desktop geometry、VR共通note frameのwidth/gutter、QS 810行以降。sidebarとTOCを別paddingで代用しない。 |
+| RC-3.3 | outer gutterは最小値、wideの中央寄せで拡大可 | 整合 | VT `--note-frame-outer-gutter`、VR width calc/max width/margin、QS 810行以降、QT geometry token。 |
+| RC-3.4 | item padding/rail/indent は別責務 | 整合 | V/VS item tokenとVR frame tokenは別selector、Q/QS/QT。 |
+| RC-3.5 | tree/navigation は機能契約、patternは余白/intrusion | 整合 | C/H/T、`docs/contracts/sidebar-state.md`、VS/VR visual vs sidebar controller/state の分離。 |
+| RC-4.1 | triggerは短ラベル/icon-only、buttonの名前役割状態維持 | 修正済み | **確定不一致**。IH `renderTocTrigger`はhref付きa。H TOC Triggerは「button化しない」、No-JS fragmentとJS panel二重契約。EN fallback href/static controls、BB ready/expanded/label、EH <640 visibility。修正: 固定label「目次」/icon-only、native link role、accessible name、fallback href、runtime-ready panel state/controls を維持すると修正済み。 |
+| RC-4.2 | panelはheader直下、headerを覆わない | 整合 | V panel `top: var(--header-height)`、T §2.6、B body直下生成、EH geometryとQM CSS boundary。 |
+| RC-4.3 | panel currentはleft railとaria-current=location | 整合 | I clone + sync、`src/toc/toc-desktop-nav-sync.ts`、V current rules、B current DOM/mobile navとQ rail。 |
+| RC-4.4 | close focus returnはtrigger | 修正済み | IM returnFocusTarget、I `_connectMobileController` consumes connected target → focusWithoutScroll、B 560行以降link close/focus return。target removed/disposed はreturnしない。  接続中triggerへのreturnと切断/破棄の例外を文書へ補完済み。 |
+| RC-5.1 | compact/comfortable/expanded | 整合 | ID union/normalization/resolve、I/V data-density recipe、Q density、B 137行以降。 |
+| RC-5.2 | 見出し量と階層のvisual input、URL/id 不変 | 整合 | ID headings length/depth only、I `_syncDensityTier` attribute only、Q/B density vs current。 |
+| RC-5.3 | compact長TOC、expanded短TOCの余白 | 整合 | ID >=12件or depth>=3 compact、<=4件and depth<=1 expanded、V min-height24/30/padding3/8、Q。 |
+| RC-5.4 | compactは余白縮小、情報過剰欠落ではない | 整合 | V inactive2/active3 line vs expanded3/4、Q depth-independent wrapping。意味判読性はRC-2.8の手動範囲。 |
+| RC-5.5 | 右TOCは補助だが現在地と章題を把握できる | 手動確認または判断が必要 | Q clamp/current + E current trackingは構造保証。内容の実用的認識は人手視覚確認。 |
+| RC-5.6 | desktopとstatic-first mobile cloneは共通wrapping | 整合 | I cloneNode desktop、V shared `.layout-toc__link-label`、Q/QM/BV 同recipe。static-only fixtureのmobile static navも同class (QH)。 |
+| RC-5.7 | DOM hookとCSS hookを分ける | 整合 | `src/toc/toc-mobile-panel-dom-css-contract.ts`、I両hook、QM exact selectors。 |
+| RC-6.1 | diagnosticsは開発検証面、常時読書文言にしない | 整合 | DG/DS はstructured issues/snapshots、I/IB はreader textに変換しない。B diagnostic snapshotケース、OV validation。 |
+| RC-6.2 | owner/source 欠落を曖昧な空状態へ変換しない | 整合 | OV fail validation、DG/DS issue reasons、I source lookup/hydration session、BB invalid/validated activation boundary。reader empty messageのfallback実装なし。 |
+| RC-6.3 | fail-closedでも本文/static TOCを優先 | 整合 | SSR nav正本 (`src/layouts/toc-html.ts`)、IH fallback href、IB ready=false非interactive、QH/EN/BB。No-JS mobile baselineの最終読解性はCI e2eと別途目視対象。 |
+| RC-7.1 | chromeが本文の主従を壊さない | 手動確認または判断が必要 | RC-2.1/2.7/2.8 と同じ。Q/QS/B/E は機械的契約を保証し、読書全体の知覚評価は保証しない。 |
+| RC-7.2 | trigger/panel/desktop/search returnのowner分離 | 整合 | IH/IB/IM/I とBS→NS、SI/SN/SB、C ownership。 |
+| RC-7.3 | densityは視覚密度以外の意味論なし | 整合 | ID/V/I に限定、Q/B。URL/heading id/search rankingの書換えなし。 |
+| RC-7.4 | router/search/hydration 機能契約を上書きしない | 整合 | C/T/S、SI/BB のboundary。RC-4.1のbutton誤記はHを上書きするため修正済みとして別途記録。 |
 
-補完済み: C の `Viewport Scrollbar Gutter` は `src/assets/css/main.css` の `html { scrollbar-gutter: stable }`、dialog CSS の body lock ownership、QS 757 行以降で明示固定されている。pattern の placement 原理へ位置安定性を1条追加した。既存文の直接的矛盾ではなく網羅性補完である。
+補完済み: Cの`Viewport Scrollbar Gutter`は`src/assets/css/main.css`の`html { scrollbar-gutter: stable }`、dialog CSSのbody lock ownership、QS 757行以降で明示固定されている。patternのplacement原理へ位置安定性を1条追加した。既存文の直接的矛盾ではなく網羅性補完である。
 
 | 条項 | 要旨 | 判定 | 根拠・処置 |
 | --- | --- | --- | --- |
@@ -414,26 +416,26 @@ Copy smokeの再現条件: `src/assets/css/main.css`の相対`@import`を再帰�
 
 | 条項 | 原文の要旨 | 判定 | 対応するファイル／テスト／根拠・処置 |
 | --- | --- | --- | --- |
-| RBI-0 | 本文 UI の intrusion 判断のみ | 整合 | C ownership/non-goals と一致。具体的 component behavior は本書で上書きしていない。 |
-| RBI-1.1 | Normative pattern | 整合 | `docs/README.md` DS 正本分類、C §7。 |
-| RBI-1.2 | reading contract/component/test 正本 | 修正済み | C/T/H/S に対応。具体的な参照へ直すなら C/H/T を inline link として追記済み（直接不一致なし）。 |
-| RBI-1.3 | note body 周辺 trigger/inline/TOC/search/diagnostics | 修正済み | PN/PM/TM は memo にも reading chrome を適用。網羅性のため `note / memo body` へ scope 表記を補完済み。 |
-| RBI-1.4 | Markdown/router/search/note semantics と属性全列挙は対象外 | 整合 | C、S、T および本書残りの規定。 |
-| RBI-2.1 | none が既定 | 整合 | reading prose は VN と本文 render が所有、IH/I/検索 dialog は本文外。追加 UI の判断原則として実装矛盾なし。 |
-| RBI-2.2 | adjacent: TOC/header/search trigger は本文外 | 整合 | IH header、VN desktop aside track、I panel body直下、`src/layouts/search-dialog-html.ts`、QH/B/QS。 |
-| RBI-2.3 | inline-support は本文理解に必要な補助のみ | 手動確認または判断が必要 | 許容性を決める設計判断原則であり必要性の一般的自動判定はない。`pattern-reading-surface.md`/各 Markdown contract に委譲。実装不一致は発見せず。 |
-| RBI-2.4 | blocking は dialog/panel の明示操作のみ | 整合 | IB trigger toggle、I close/escape/outside handling、検索 controller open-request; B/BB と `test/browser/search-dialog-lifecycle.browser.test.ts`。 |
-| RBI-3.1 | 本文意味変更なら content/Markdown 契約へ | 整合 | C non-goals、本文変換は build/content・build/rehype、UI state I/IB は本文意味を書換えない。 |
-| RBI-3.2 | 常時補助UI は adjacent 以内 | 整合 | IH/VN 常設 chrome、I panel は hidden/inert baseline、検索 dialog closed baseline。B/QH と search lifecycle。 |
-| RBI-3.3 | blocking は explicit/focus/escape/close/return 定義必須 | 整合 | I/IM close button/document Escape/return target、検索 DOM controller と enhancer close pipeline、B と search lifecycle close-request/focus-return テスト。TOC は non-modal surface で focus trap を要求していない。 |
-| RBI-3.4 | diagnostics を本文へ inline 注入しない | 整合 | DG/DS/OV structured issues; B diagnostics snapshot。I/IB に本文 inline diagnostic output なし。 |
-| RBI-4.1 | TOC は本文から導出、authoring へ逆流しない | 整合 | `build/content/extract-toc-from-html.ts` → PN → `src/layouts/toc-html.ts` → I、`test/node/extract-toc-from-html.test.ts`/QH。 |
-| RBI-4.2 | search 到達補助、選択後 return は adapter | 整合 | BS selection → `dispatchSearchReturnToReading` → NS manifest validation/navigation、SI/SB 370 行以降/SN 79 行以降。 |
-| RBI-4.3 | mobile panel は一時 surface、header 非被覆、本文非置換 | 整合 | V top header-height、I desktop clone を body append（本文を置換しない）、B/QM、T mobile UX。 |
-| RBI-5.1 | 本文内必要 UI と adjacent を区別 | 手動確認または判断が必要 | RBI-2.3 同様、各新 UI の必要性判断は人手。現行 header/TOC/search の配置は IH/I/VN と B/QH で整合。 |
-| RBI-5.2 | UI 都合で Markdown/frontmatter を汚染しない | 整合 | PN/ID は表示密度とTOC projectionを導出、runtime cloneはI、`test/node/extract-toc-from-html.test.ts`/TM/QH。追加 authoring field を要求しない。 |
-| RBI-5.3 | blocking surface は close/focus return を持つ | 整合 | I/IM と検索 close pipeline、B 560 行以降/search lifecycle 174 行以降。 |
-| RBI-5.4 | 機能契約を上書きしない | 整合 | C/H/T/S。本文外配置と判断条件だけで current state/URL/owner の新規仕様なし。 |
+| RBI-0 | 本文UIのintrusion判断のみ | 整合 | C ownership/non-goals と一致。具体的component behaviorは本書で上書きしていない。 |
+| RBI-1.1 | Normative pattern | 整合 | `docs/README.md` DS正本分類、C §7。 |
+| RBI-1.2 | reading contract/component/test 正本 | 修正済み | C/T/H/S に対応。具体的な参照へ直すならC/H/T をinline linkとして追記済み（直接不一致なし）。 |
+| RBI-1.3 | note body周辺trigger/inline/TOC/search/diagnostics | 修正済み | PN/PM/TM はmemoにもreading chromeを適用。網羅性のため`note / memo body`へscope表記を補完済み。 |
+| RBI-1.4 | Markdown/router/search/note semanticsと属性全列挙は対象外 | 整合 | C、S、Tおよび本書残りの規定。 |
+| RBI-2.1 | noneが既定 | 整合 | reading proseはVNと本文renderが所有、IH/I/検索dialogは本文外。追加UIの判断原則として実装矛盾なし。 |
+| RBI-2.2 | adjacent: TOC/header/search triggerは本文外 | 整合 | IH header、VN desktop aside track、I panel body直下、`src/layouts/search-dialog-html.ts`、QH/B/QS。 |
+| RBI-2.3 | inline-supportは本文理解に必要な補助のみ | 手動確認または判断が必要 | 許容性を決める設計判断原則であり必要性の一般的自動判定はない。`pattern-reading-surface.md`/各Markdown contractに委譲。実装不一致は発見せず。 |
+| RBI-2.4 | blockingはdialog/panel の明示操作のみ | 整合 | IB trigger toggle、I close/escape/outside handling、検索controller open-request; B/BB と`test/browser/search-dialog-lifecycle.browser.test.ts`。 |
+| RBI-3.1 | 本文意味変更ならcontent/Markdown 契約へ | 整合 | C non-goals、本文変換はbuild/content・build/rehype、UI state I/IB は本文意味を書換えない。 |
+| RBI-3.2 | 常時補助UIはadjacent以内 | 整合 | IH/VN 常設chrome、I panelはhidden/inert baseline、検索dialog closed baseline。B/QH とsearch lifecycle。 |
+| RBI-3.3 | blockingはexplicit/focus/escape/close/return 定義必須 | 整合 | I/IM close button/document Escape/return target、検索DOM controllerとenhancer close pipeline、Bとsearch lifecycle close-request/focus-return テスト。TOCはnon-modal surfaceでfocus trapを要求していない。 |
+| RBI-3.4 | diagnosticsを本文へinline注入しない | 整合 | DG/DS/OV structured issues; B diagnostics snapshot。I/IB に本文inline diagnostic outputなし。 |
+| RBI-4.1 | TOCは本文から導出、authoringへ逆流しない | 整合 | `build/content/extract-toc-from-html.ts` → PN → `src/layouts/toc-html.ts` → I、`test/node/extract-toc-from-html.test.ts`/QH。 |
+| RBI-4.2 | search到達補助、選択後returnはadapter | 整合 | BS selection → `dispatchSearchReturnToReading` → NS manifest validation/navigation、SI/SB 370行以降/SN 79行以降。 |
+| RBI-4.3 | mobile panelは一時surface、header非被覆、本文非置換 | 整合 | V top header-height、I desktop cloneをbody append（本文を置換しない）、B/QM、T mobile UX。 |
+| RBI-5.1 | 本文内必要UIとadjacentを区別 | 手動確認または判断が必要 | RBI-2.3同様、各新UIの必要性判断は人手。現行header/TOC/search の配置はIH/I/VN とB/QH で整合。 |
+| RBI-5.2 | UI都合でMarkdown/frontmatter を汚染しない | 整合 | PN/ID は表示密度とTOC projectionを導出、runtime cloneはI、`test/node/extract-toc-from-html.test.ts`/TM/QH。追加authoring fieldを要求しない。 |
+| RBI-5.3 | blocking surfaceはclose/focus returnを持つ | 整合 | I/IM と検索close pipeline、B 560行以降/search lifecycle 174行以降。 |
+| RBI-5.4 | 機能契約を上書きしない | 整合 | C/H/T/S。本文外配置と判断条件だけでcurrent state/URL/owner の新規仕様なし。 |
 
 
 
@@ -446,26 +448,26 @@ Copy smokeの再現条件: `src/assets/css/main.css`の相対`@import`を再帰�
 
 | 条項 | 判定 | 実装・契約とテストによる根拠 |
 | --- | --- | --- |
-| 導入: 短い注記surface、UI通知・操作カード・長い情報の器ではない、本文へ戻れる軽さ | 整合 | `src/assets/css/callout.css` は静的な読書面scopeの左線surface。`build/rehype/rouault-components.ts::toStaticCallout` は `aside` を生成しhydrationしない。`test/ssr/callout-css-contract.test.ts` と `test/ssr/rehype-rouault-components.test.ts`。用途は執筆時の判断規範であり短さの機械的保証ではない。 |
-| Responsibility 1: calloutは短い補足・ヒント・注意・警告 | 整合 | `build/remark/directives/payload/normalize-surface-payload.ts` の5 kindと `toStaticCallout`。`test/node/remark-rouault-directives.test.ts`、`test/ssr/rehype-rouault-components.test.ts`。 |
-| Responsibility 2: info-boxは構造化情報surface | 整合 | `src/assets/css/info-box.css` と `toStaticInfoBox` のheader/body分離。`test/ssr/rehype-rouault-components.test.ts`、`test/ssr/note-content-contracts.test.ts`。 |
-| Responsibility 3: detailsは展開して読む補足 | 整合 | `src/assets/css/details-block.css`、`build/rehype/rouault-components.ts` のnative details/summary。`test/ssr/details-block-contract.test.ts`、`test/ssr/rehype-rouault-components.test.ts`。 |
-| Responsibility 4: translationは原文・訳文の対応surface | 整合 | [Translation契約](../contracts/translation.md)、`src/assets/css/translation.css` と `build/rehype/native-translation.ts`。`test/node/native-note-output.test.ts`。 |
-| Responsibility末尾: 長い表・複数section・操作UIはinfo-boxまたは本文へ分ける | 手動確認または判断が必要 | 構造の選択に関する執筆規範。`build/remark/directives/grammar/structural-rules.ts` はsection数や文字数を判定しない。個別contentの適切さは本監査の実装照合から保証しない。 |
-| Kind Roles note: 中立・最弱・semantic colorを主面に使わない | 整合 | `callout.css` はdefault/noteを同じ `--bg-note-subtle` の70%混色、muted左線にする。`test/ssr/callout-css-contract.test.ts` がneutral proxyを固定。 |
-| Kind Roles tip: 助言・弱から中・青い面を控えめにする | 整合 | `callout.css` は `--bg-info-subtle` / `--border-info-subtle`。同CSS testのnote/tip/danger proxy。意味はauthorのkind選択規範。 |
-| Kind Roles success: 検証済み短注記・中 | 整合 | `callout.css` はsuccess背景50%混色、左線幅はdefault。同CSS testのdefault/note/success proxy。検証済みかは執筆者が判断。 |
-| Kind Roles warning: 制約・中から強・可視heading推奨 | 整合 | `callout.css` warning token、`toStaticCallout` はheading時 `aria-labelledby`、headingなしはkind fallbackの `aria-label`。`test/ssr/rehype-rouault-components.test.ts`。headingは必須でなく推奨と整合。 |
-| Kind Roles danger: 危険・最強・heading推奨・左線識別 | 整合 | `callout.css` danger専用2倍左線、`toStaticCallout` のheading/label。`test/ssr/callout-css-contract.test.ts`、`test/ssr/rehype-rouault-components.test.ts`。 |
-| Visual 1: rootは本文に従属する軽いsurface | 手動確認または判断が必要 | `callout.css` の余白・色・左線とCSS testが構造proxyを固定する。本文との視覚的主従、実データの長さ、themeごとの見え方は目視が必要。 |
+| 導入: 短い注記surface、UI通知・操作カード・長い情報の器ではない、本文へ戻れる軽さ | 整合 | `src/assets/css/callout.css`は静的な読書面scopeの左線surface。`build/rehype/rouault-components.ts::toStaticCallout`は`aside`を生成しhydrationしない。`test/ssr/callout-css-contract.test.ts`と`test/ssr/rehype-rouault-components.test.ts`。用途は執筆時の判断規範であり短さの機械的保証ではない。 |
+| Responsibility 1: calloutは短い補足・ヒント・注意・警告 | 整合 | `build/remark/directives/payload/normalize-surface-payload.ts`の5 kindと`toStaticCallout`。`test/node/remark-rouault-directives.test.ts`、`test/ssr/rehype-rouault-components.test.ts`。 |
+| Responsibility 2: info-boxは構造化情報surface | 整合 | `src/assets/css/info-box.css`と`toStaticInfoBox`のheader/body分離。`test/ssr/rehype-rouault-components.test.ts`、`test/ssr/note-content-contracts.test.ts`。 |
+| Responsibility 3: detailsは展開して読む補足 | 整合 | `src/assets/css/details-block.css`、`build/rehype/rouault-components.ts`のnative details/summary。`test/ssr/details-block-contract.test.ts`、`test/ssr/rehype-rouault-components.test.ts`。 |
+| Responsibility 4: translationは原文・訳文の対応surface | 整合 | [Translation契約](../contracts/translation.md)、`src/assets/css/translation.css`と`build/rehype/native-translation.ts`。`test/node/native-note-output.test.ts`。 |
+| Responsibility末尾: 長い表・複数section・操作UIはinfo-boxまたは本文へ分ける | 手動確認または判断が必要 | 構造の選択に関する執筆規範。`build/remark/directives/grammar/structural-rules.ts`はsection数や文字数を判定しない。個別contentの適切さは本監査の実装照合から保証しない。 |
+| Kind Roles note: 中立・最弱・semantic colorを主面に使わない | 整合 | `callout.css`はdefault/noteを同じ`--bg-note-subtle`の70%混色、muted左線にする。`test/ssr/callout-css-contract.test.ts`がneutral proxyを固定。 |
+| Kind Roles tip: 助言・弱から中・青い面を控えめにする | 整合 | `callout.css`は`--bg-info-subtle` / `--border-info-subtle`。同CSS testのnote/tip/danger proxy。意味はauthorのkind選択規範。 |
+| Kind Roles success: 検証済み短注記・中 | 整合 | `callout.css`はsuccess背景50%混色、左線幅はdefault。同CSS testのdefault/note/success proxy。検証済みかは執筆者が判断。 |
+| Kind Roles warning: 制約・中から強・可視heading推奨 | 整合 | `callout.css` warning token、`toStaticCallout`はheading時`aria-labelledby`、headingなしはkind fallbackの`aria-label`。`test/ssr/rehype-rouault-components.test.ts`。headingは必須でなく推奨と整合。 |
+| Kind Roles danger: 危険・最強・heading推奨・左線識別 | 整合 | `callout.css` danger専用2倍左線、`toStaticCallout`のheading/label。`test/ssr/callout-css-contract.test.ts`、`test/ssr/rehype-rouault-components.test.ts`。 |
+| Visual 1: rootは本文に従属する軽いsurface | 手動確認または判断が必要 | `callout.css`の余白・色・左線とCSS testが構造proxyを固定する。本文との視覚的主従、実データの長さ、themeごとの見え方は目視が必要。 |
 | Visual 2: default/noteは背景抑制・左線・余白 | 整合 | `callout.css` root/default/note、同CSS testのroot layoutとneutral background。 |
 | Visual 3: tipはinfo subtle優先 | 整合 | `callout.css` tip rule、同CSS testでinfo tokenと過剰なtip token非使用を検査。 |
 | Visual 4: successは緑面を強くしすぎない | 整合 | `callout.css` success 50%混色、同CSS testで無混色success面でないことを固定。最終知覚はVisual 1の手動対象。 |
-| Visual 5: warning/dangerは背景だけに意味を依存しない | 整合 | `toStaticCallout` がnameとiconを出力、`callout.css` 左線・headingを保持。`test/ssr/rehype-rouault-components.test.ts`、`test/ssr/callout-css-contract.test.ts`。 |
+| Visual 5: warning/dangerは背景だけに意味を依存しない | 整合 | `toStaticCallout`がnameとiconを出力、`callout.css`左線・headingを保持。`test/ssr/rehype-rouault-components.test.ts`、`test/ssr/callout-css-contract.test.ts`。 |
 | Visual 6: kind別左線幅強化はdangerだけ | 整合 | `callout.css` danger rule、同CSS testが他4 kindにwidth overrideなしを検査。 |
-| Visual 7: rootへhover/active/focus/transition/animation/shadowを付けない | 整合 | `callout.css` に該当宣言なし。同CSS testのroot操作surface化禁止。 |
-| Visual 8: 内部native link/buttonのfocus-visibleを維持 | 手動確認または判断が必要 | 同CSS testはoutline/box-shadow抑制がないことを検査し、`src/assets/css/main.css` がglobal focus-visibleを提供。ただし内部要素の全組合せ・支援技術の実測は未実施。横断的なcopy buttonの既知問題は本監査の未解決一覧を参照。 |
+| Visual 7: rootへhover/active/focus/transition/animation/shadowを付けない | 整合 | `callout.css`に該当宣言なし。同CSS testのroot操作surface化禁止。 |
+| Visual 8: 内部native link/buttonのfocus-visibleを維持 | 手動確認または判断が必要 | 同CSS testはoutline/box-shadow抑制がないことを検査し、`src/assets/css/main.css`がglobal focus-visibleを提供。ただし内部要素の全組合せ・支援技術の実測は未実施。横断的なcopy buttonの既知問題は本監査の未解決一覧を参照。 |
 | Visual 9: forced-colorsはborder/左線/text/icon識別 | 整合 | `callout.css` forced-colorsのCanvas/CanvasText・外周border・danger左線、`tokens.css` system color。`test/ssr/callout-css-contract.test.ts` forced-colors scope/danger識別検査。実機の最終識別性は手動対象。 |
 | Compatibility 1: --callout-accent-color aliasを維持 | 整合 | `callout.css` rootがprivate accentからalias設定、iconがalias参照。同CSS testの互換accent alias。 |
-| Compatibility 2: 新しい公開overrideとせず内部変数は --_callout-* | 整合 | `callout.css` がprivate背景/左線/accent/widthを所有。同CSS testのscope検査。新たなoverride interfaceは本書に追加していない。 |
-| Compatibility 3: .callout-iconと[data-callout-icon-svg]をscope付きで維持 | 整合 | `toStaticCallout` / `createInlineIcon` が両hook生成、`callout.css` 読書面・tabs panel scope。同CSS testが4 selectorを固定。 |
+| Compatibility 2: 新しい公開overrideとせず内部変数は --_callout-* | 整合 | `callout.css`がprivate背景/左線/accent/widthを所有。同CSS testのscope検査。新たなoverride interfaceは本書に追加していない。 |
+| Compatibility 3: .callout-iconと[data-callout-icon-svg]をscope付きで維持 | 整合 | `toStaticCallout` / `createInlineIcon`が両hook生成、`callout.css`読書面・tabs panel scope。同CSS testが4 selectorを固定。 |
