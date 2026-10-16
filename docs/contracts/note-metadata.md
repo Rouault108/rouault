@@ -82,6 +82,6 @@ reader-facing変更として扱うものは、Markdown本文、`title`、`descri
 
 `docs/contracts/permanent-url.md`には`updated_at`表記があるが、現行frontmatter名は`updated`である。
 
-Permanent URL hash生成実装の所在と実効性が未確認であるため、本Changeでは修正しない。別ChangeでPermanent URL contractを精査する。
+現行repositoryではPermanent URLは未実装である。`updated_at`を現行の`updated`とhash対象除外上でどう対応させるかは、実装時に必要な設計判断として区別する。今回の文書追従ではhash対象・正規化・生成規則を変更しない。
 
 このKnown inconsistencyは記録であり、Permanent URL contractを変更しない。Permanent URLの正本は引き続き`docs/contracts/permanent-url.md`である。

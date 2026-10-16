@@ -60,7 +60,7 @@ Guide、ADR、component文書はこの文書を上書きしてはならない。
 
 ### Live Region and Async State
 
-- Navigation、toast、validation、loadingは必要な場合にだけ通知する。
+- Navigation、validation、loadingなどの状態は必要な場合にだけ通知する。
 - Announcementはrouter coreではなくpost-commit / UI adapterの責務とする。
 
 ### Forced Colors
@@ -75,7 +75,6 @@ Guide、ADR、component文書はこの文書を上書きしてはならない。
 - Dialog / Modal: focus trap、initial focus、escape close、return focusを定義する。
 - Dropdown / Popover: trigger relationship、keyboard navigation、outside closeを定義する。
 - Tabs: selected tabとpanel relationshipを露出する。
-- Toast / Banner: 必要な通知だけをlive regionへ送る。
 - Form Controls: label、description、error stateを関連付ける。
 - Icon Button: accessible nameを必ず持つ。
 - Loading / Skeleton: busy stateとno-JS fallbackを考慮する。
