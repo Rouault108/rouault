@@ -1,13 +1,13 @@
 # Reading Block Intrusion Pattern
 
 この文書は、本文の読書blockにUI補助要素を入れるかどうかを判断するDesign System patternである。
-機能契約は`docs/contracts/reading-chrome.md`と各component / contract docsを正本とし、本書はintrusion判断だけを扱う。
+機能契約は[Reading Chrome](../contracts/reading-chrome.md)、[TOC](../contracts/toc.md)、[Static Header](../contracts/static-header-contract.md)、[Search](../contracts/search.md)と各機能Contractを正本とし、本書はintrusion判断だけを扱う。
 
 ## 1. Status
 
 - Type: Normative for Design System patterns
-- Source of truth: reading chrome contract、component docs、SSR / browser visual structure tests
-- Applies to: note body周辺のtrigger、inline affordance、TOC / search / diagnosticsの補助表示
+- Source of truth: `docs/contracts/reading-chrome.md`、`docs/contracts/toc.md`、`docs/contracts/static-header-contract.md`、`docs/contracts/search.md`、SSR / browser visual structure tests
+- Applies to: note / memo body周辺のtrigger、inline affordance、TOC / search / diagnosticsの補助表示
 - Non-goals: Markdown authoring記法、router / search / note semanticsの再定義、component固有属性の網羅
 
 ## 2. Intrusion Levels

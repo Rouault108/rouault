@@ -17,7 +17,7 @@ Rouaultは静的HTML版ヘッダーを今後の正とする。旧Lit版ヘッダ
 静的HTML版を正とする理由は次の通り。
 
 - Static-first / no-JS baselineと整合し、JS無効時にもheaderの主要導線が意味を持つ。
-- Search triggerは`/search/`へのfallback link、TOC triggerは`#static-toc`へのfallback linkとして成立できる。
+- Search triggerは`/search/`へのfallback link、TOC triggerはstatic TOC rootへのfragment fallback linkとして成立できる。
 - Header全体をLit islandに戻さなくても、hydrated後に必要な操作契約、状態同期、アクセシビリティ契約はpost-hydrate層で補正できる。
 - 現在の課題は静的HTML版であること自体ではなく、旧Lit版が暗黙に持っていたgeometry、visual density、keyboard、focus、ARIA、state sync contractが明文化されていないことにある。
 
@@ -101,7 +101,7 @@ Header search triggerは、旧`ui-search-trigger`の完全復元ではなく、�
 | `ui-dropdown`の完全なmenu role contract                              | Restoreしない。     | Corpusはnavigation disclosure、themeはbutton groupとして扱うため。                                                                      |
 | `role="menu"` / `role="menuitem"` / roving tabindex                  | 採用しない。        | 現行構造の意味論、native Tab order、fallback link contractと衝突するため。                                                              |
 | Corpus linkのSpace activation                                        | 原則restoreしない。 | Corpus itemはnative linkとして扱い、Enter activationを基本とするため。                                                                  |
-| TOC triggerのbutton化                                                | Restoreしない。     | `#static-toc` fallback linkを維持するため。                                                                                             |
+| TOC triggerのbutton化                                                | Restoreしない。     | static TOC rootへのfragment fallback linkを維持するため。                                                                                             |
 | Search triggerのanchor fallback廃止                                  | 廃止しない。        | `/search/` fallbackを維持するため。                                                                                                     |
 
 ## 6. Public Contract
@@ -300,9 +300,9 @@ Search triggerは、通常時にはinput-like surfaceを持たないquiet launch
 
 ### TOC Trigger
 
-TOC triggerは`#static-toc` fallbackとmobile TOC panel triggerの二重contractを持つ。
+TOC triggerはstatic TOC rootへのfragment fallbackとmobile TOC panel triggerの二重contractを持つ。fallback先のIDは`shared/toc/layout-toc-static-root-id.ts`の`resolveLayoutTocStaticRootId(tocRuntimeId)`でruntime IDをtrimして投影する`layout-toc-${tocRuntimeId}`であり、固定IDではない。
 
-- No-JS: `#static-toc`へのfragment linkとして機能する。
+- No-JS: 投影されたstatic TOC rootへのfragment linkとして機能する。
 - JS enabled and TOC runtime ready: mobile TOC panel triggerとして機能する。
 - Runtime ready前は、fallback anchorを維持したままreadyではない状態を表現する。
 - `aria-controls`は初期static TOC rootからhydrated後のmobile panel idへ切り替わるcontractとして扱う。
@@ -314,7 +314,7 @@ TOC triggerは`#static-toc` fallbackとmobile TOC panel triggerの二重contract
 
 - Headerはstatic HTMLとして成立しなければならない。
 - Search triggerは`/search/` fallback hrefを保持する。
-- TOC triggerは`#static-toc` fallback hrefを保持する。
+- TOC triggerはstatic TOC rootへのfragment fallback hrefを保持する。
 - Corpus navigationはJS無効時にも通常linkとして機能する。
 
 ### Client Runtime

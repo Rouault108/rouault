@@ -12,7 +12,7 @@ Markdown出力の構造契約は`docs/contracts/markdown.md`と`docs/references/
 
 ## 2. Flow Tokens
 
-- `--reading-flow-space`は段落以外も含む読書block遷移の既定余白である。
+- `--reading-flow-space`は汎用flow ruleが列挙する段落・リスト・表・図・コード・引用・calloutなどの読書block遷移の既定余白である。見出しや区切りなどの専用余白は含めない。
 - `--reading-paragraph-space`は連続する段落同士、つまり`p + p`専用の余白である。
 - `--reading-flow-space`は後方互換性のため削除、rename、値変更をしない。
 - `--reading-body-size`、`--reading-body-line-height`、`--reading-measure`は本文スケール契約であり、段落間余白の調整理由で変更しない。
@@ -27,7 +27,8 @@ tabsは読書面内の一時的な表示容器であり、panel内の連続段�
 
 ## 4. Block Flow
 
-段落以外の読書block遷移、または段落から表、図、コード、引用、callout、リストなどへ移る余白は`--reading-flow-space`を維持する。
+汎用flow ruleが列挙するblockへの遷移は、直下の`p + p`を除き`--reading-flow-space`を維持する。対象selectorは`src/assets/css/main.css`と`src/assets/css/stateful-note-bridges.css`を正本とする。
+見出し`h2`〜`h6`への遷移は`--reading-h2-space`〜`--reading-h6-space`、`hr`は専用の余白を持つ。段落・block間余白の区別を、これらの専用ruleへ一般化しない。
 段落間余白を詰めるために、汎用flow ruleの対象を狭めたり、非段落blockの余白を減らしたりしない。
 
 ## 5. Ownership Boundaries
@@ -50,8 +51,8 @@ tabsは読書面内の一時的な表示容器であり、panel内の連続段�
 - `code`、`pre`、`kbd`、`samp`、`.katex`、`[data-math]`、`pre[data-code-block]`、`[data-code-block-root]`、`section[data-code-group]`、`[data-score]`は記号的表示として`no-autospace`へ戻す。
 - `[data-translation-overlay]`と`.translation-static`の表示テキストは、読書面内の本文補助要素としてautospace継承を許容する。
 
-translation trigger / fallback / overlayに過剰な字間変化が見つかった場合、このChangeは完了不可とする。
-その場で個別scopeを追加せず、別ChangeまたはChange Plan更新で扱う。
+translation trigger / fallback / overlayに過剰な字間変化がないことを視覚確認する。
+個別scopeの追加が必要な場合は、translationの機能契約とautospace継承への影響を確認し、変更範囲を明示して扱う。
 
 未対応ブラウザーでは現状表示を許容し、autospace効果が見えないことをfailure扱いにしない。
 
@@ -59,6 +60,6 @@ translation trigger / fallback / overlayに過剰な字間変化が見つかっ�
 
 - `.prose` / `.about-prose`直下の`p + p`が`--reading-paragraph-space`を使う。
 - `[data-tabs-root]` panel内の直下`p + p`も`--reading-paragraph-space`を使う。
-- 非段落block遷移は`--reading-flow-space`を維持する。
+- 汎用flow ruleのblock遷移は`--reading-flow-space`を維持し、見出し・区切りの専用余白を変更しない。
 - About専用hack、Markdown parser変更、runtime測定を導入していない。
 - Japanese/ASCII visual spacingは読書面CSSの継承制御だけで扱い、Markdown / DOM / search / hydrationを変更しない。

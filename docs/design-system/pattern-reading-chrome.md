@@ -1,13 +1,13 @@
 # Reading Chrome Pattern
 
 この文書はDesign System patternとしてのreading chromeを定義する。
-機能契約は`docs/contracts/reading-chrome.md`、router / search / hydrationの意味論は各`docs/contracts/**`を正本とし、本書は見え方と配置判断だけを扱う。
+機能契約は[Reading Chrome](../contracts/reading-chrome.md)、[TOC](../contracts/toc.md)、header triggerは[Static Header](../contracts/static-header-contract.md)を正本とする。router / search / hydrationの意味論は各`docs/contracts/**`を正本とし、本書は見え方と配置判断だけを扱う。
 
 ## 1. Status
 
 - Type: Normative for Design System patterns
-- Source of truth: `docs/contracts/reading-chrome.md`、TOC component docs、browser / ssr / e2e tests
-- Applies to: note header trigger、fixed note sidebar surface、desktop note frame outer gutter、desktop TOC、mobile TOC panel、search return affordance、diagnostic surfaces
+- Source of truth: `docs/contracts/reading-chrome.md`、`docs/contracts/toc.md`、`docs/contracts/static-header-contract.md`、browser / ssr / e2e tests
+- Applies to: note / memo共通のheader trigger、desktop TOC、mobile TOC panel、search return affordance、diagnostic surfaces、およびnote専用のfixed sidebar surface / desktop note frame outer gutter
 - Non-goals: URL state、NavigationEnvelope schema、search ranking、hydration triggerの再定義、sidebar tree状態管理、navigation意味論
 
 ## 2. Reading Surface Priority
@@ -35,13 +35,14 @@
 - Outer gutterはframe全体の最小値契約であり、wide viewportでは中央寄せにより実際の余白が最小値より大きくなってよい。
 - Sidebar item padding、TOC item padding、active rail、TOC indentはそれぞれの役割に合わせて最適化してよいが、outer gutterの代替として扱わない。
 - Sidebar treeの状態管理やnavigation意味論は機能契約側の責務であり、このpatternは視覚的な余白とintrusion判断だけを扱う。
+- Modal scroll lockの前後もheader、note frame、TOCのinline位置を安定させる。viewport gutterはrootの`html { scrollbar-gutter: stable; }`が所有し、個別dialogのbody scroll lockで余白補正を重ねない。詳細はReading Chrome契約のViewport Scrollbar Gutterに従う。
 
 ## 4. Trigger And Panel Pattern
 
-- Header triggerは短いlabelまたはicon-onlyへ縮退してよいが、buttonとしての名前・役割・状態は維持する。
+- HeaderのTOC triggerは固定label「目次」またはicon-onlyとして表示し、accessible nameとnative linkの役割を維持する。No-JSでは投影されたstatic TOC rootへのfragment link、JSのruntime-ready後はpanel triggerという二重契約に従い、fallbackの`href`とpanelの`aria-expanded` / `aria-controls`同期を保つ。button化しない。
 - Panelはheader直下から開き、headerを覆わない。
 - Panel内のcurrent stateはactive itemのleft railと`aria-current="location"`で示す。
-- Close後のfocus returnはtriggerへ戻す。
+- Close後のfocus returnは接続中のtriggerへ戻す。triggerが切断された場合やcontroller破棄時の扱いはTOCの機能契約とcontrollerに従う。
 
 ## 5. Density Pattern
 

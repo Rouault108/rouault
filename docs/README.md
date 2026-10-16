@@ -76,6 +76,7 @@ Design System patternはUIの見え方と配置判断を扱う。Router、search
 - `docs/references/markdown-authoring-syntax.md`
 - `docs/references/markdown-output.md`
 - `docs/references/compatibility.md`
+- [Design System実装追従監査（2026-10-16）](references/design-system-implementation-audit-2026-10-16.md)（7正本文書の全条項照合記録。現行Contractを上書きしない）
 
 ## Guides
 

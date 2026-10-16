@@ -35,6 +35,7 @@ Guide、ADR、component文書はこの文書を上書きしてはならない。
 ### Focus
 
 - Focus visibleを消してはならない。
+- 操作対象のfocus visibleと、本文到達先へのlogical focusを区別する。現行の`main#main-content`はrouter / skip linkの到達先としてfocusを受けるが、操作affordanceのringは表示しない（`src/assets/css/main.css`、`test/e2e/not-found-page.spec.ts`）。この例外をbutton、linkなどの操作対象へ広げない。
 - Focus ringはforced colorsとdark modeで視認できる。
 - Dialog / popover / overlayはfocus returnを定義する。
 
@@ -69,6 +70,8 @@ Guide、ADR、component文書はこの文書を上書きしてはならない。
 
 ## 4. Component Requirements
 
+以下は該当surfaceを実装する場合の横断要件であり、導入済みcomponentの一覧ではない。
+
 - Dialog / Modal: focus trap、initial focus、escape close、return focusを定義する。
 - Dropdown / Popover: trigger relationship、keyboard navigation、outside closeを定義する。
 - Tabs: selected tabとpanel relationshipを露出する。
@@ -83,7 +86,7 @@ Component固有の詳細は`docs/contracts/`に置く。
 
 - 検証レイヤの一般分類は`docs/contracts/testing-taxonomy.md`に従う。
 - 自動検証だけでなく、keyboard、screen reader、forced colors、reduced motion、zoomの手動確認を行う。
-- UI Checkは観察用であり、アクセシビリティの合否はSSR / browser / E2Eで検証する。
+- UI Checkは観察用であり、自動検証はSSR / browser / E2Eで行う。アクセシビリティの合否は手動確認と併せて判定する。
 
 ## 6. Forbidden
 
