@@ -56,3 +56,5 @@ A1通常/hash移動、A2entry座標復元、A3同URLの別entry、A4state/native
 ## Content transition boundary
 
 通常の対象navigationでは、既存post-commitのpreventScroll focusと、`ReadingPositionController.schedule`開始時のhashなし先頭適用までをView Transition更新callback内で実行する。新snapshot取得前に反映するが、content readinessと最大5秒の安定化は引き続き非同期jobでありcallbackは待たない。coordinatorはscroll/focus/announcementを複製せず、intent取消・contentEpoch・shellCommitId・entry bindingの所有権を変更しない。演出終了はnavigation完了条件にしない。対象判定と失敗意味論は[Router Contract](router.md#content-transition-integration)を参照。
+
+配置変更を伴う既知note/tag/discovery間でも、履歴成功・binding採用・preventScroll focus・通常先頭適用を同じ更新callback内に保つ。shell配置の変化を理由に別のscroll writerや復元待機を追加しない。traverseの演出は引き続き対象外であり、既存entry座標の復元と取消を維持する。HookdeckのWindows Chromeでの履歴fadeに関するユーザー観察と将来目標は[Content navigation motion](../design-system/patterns.md#content-navigation-motion)を参照。

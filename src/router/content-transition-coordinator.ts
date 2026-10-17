@@ -1,7 +1,10 @@
 import type { NavigationShellSnapshot } from '../../shared/navigation/navigation-shell-snapshot.js';
 import { MAIN_CONTENT_SELECTOR } from '../../shared/navigation/main-landmark-contract.js';
 import type { AppShellValidatedDetail } from '../components/app/shell/app-shell-events.js';
-import { parseAndValidateStaticHeaderHtml } from '../components/app/shell/static-header-shell-mutation.js';
+import {
+  readContentTransitionShell,
+  type ContentTransitionShell,
+} from './content-transition-shell.js';
 import {
   readContentContext,
   type NavigationIntent,
@@ -12,38 +15,10 @@ interface ActiveTransition {
   release: () => void;
 }
 
-// URLや選択項目ではなく、検証済みshellの配置条件を比較する。
-const shellLayoutKey = (shell: NavigationShellSnapshot, owner: Document): string | null => {
-  try {
-    const header = parseAndValidateStaticHeaderHtml(shell.headerHtml, owner);
-    if (header.getAttribute('data-note-layout') !== 'true') return null;
-    const sidebar = shell.sidebarProjection;
-    return JSON.stringify([
-      header.className,
-      header.getAttribute('data-note-layout'),
-      header.getAttribute('data-sidebar-enabled'),
-      header.getAttribute('data-toc-trigger-reserved'),
-      header.getAttribute('data-toc-presence'),
-      sidebar
-        ? [
-            sidebar.sidebarId,
-            sidebar.stateScopeId,
-            sidebar.presentation,
-            sidebar.fixedBreakpoint,
-            sidebar.topologyRevision,
-          ]
-        : null,
-      shell.footerCopyrightText ?? null,
-    ]);
-  } catch {
-    return null;
-  }
-};
-
 export class ContentTransitionCoordinator {
   private readonly lifetime = new AbortController();
   private readonly motion = window.matchMedia('(prefers-reduced-motion: reduce)');
-  private verifiedLayout: string | null = null;
+  private verifiedShell: ContentTransitionShell | null = null;
   private active: ActiveTransition | null = null;
   private interruptedIntent: number | undefined;
   private disposed = false;
@@ -54,7 +29,7 @@ export class ContentTransitionCoordinator {
       'app-shell:validated',
       (event) => {
         const detail = (event as CustomEvent<AppShellValidatedDetail>).detail;
-        this.verifiedLayout = shellLayoutKey(detail.shell, document);
+        this.verifiedShell = readContentTransitionShell(detail.shell, document);
       },
       { signal },
     );
@@ -62,7 +37,7 @@ export class ContentTransitionCoordinator {
       'app-shell:rollback-start',
       () => {
         // 復元通知はshell snapshotを持たない。次の検証完了までは通常commitへ縮退する。
-        this.verifiedLayout = null;
+        this.verifiedShell = null;
         this.skip();
       },
       { signal },
@@ -145,13 +120,14 @@ export class ContentTransitionCoordinator {
       intent.signal.aborted ||
       this.interruptedIntent === intent.intentId ||
       !main?.isConnected ||
-      this.verifiedLayout === null ||
+      this.verifiedShell === null ||
       typeof document.startViewTransition !== 'function' ||
       this.motion.matches ||
       document.visibilityState !== 'visible'
     )
       return update();
-    if (shellLayoutKey(shell, document) !== this.verifiedLayout) return update();
+    // 両端のprofileが既知なら配置差を許容する。位置・寸法の補間はCSSでも行わない。
+    if (!readContentTransitionShell(shell, document)) return update();
 
     const updateState: { promise: Promise<T> | null } = { promise: null };
     const once = (): Promise<T> => {

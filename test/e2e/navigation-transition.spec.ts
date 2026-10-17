@@ -1,3 +1,4 @@
+import { registerLayoutChangeTransitionTests } from './support/layout-change-transition.js';
 import { expect, test, type Page } from '@playwright/test';
 import { e2eNoteFixtures } from './support/note-fixtures.js';
 
@@ -399,9 +400,7 @@ test('mock: callback前の連打でskipされても旧callbackは最新intentを
   expect((await counts(page)).replaced - before.replaced).toBe(1);
 });
 
-test('mock: initial・hash・state-only・traverse・shell変更・not-foundは演出しない', async ({
-  page,
-}) => {
+test('mock: initial・hash・state-only・traverse・not-foundは演出しない', async ({ page }) => {
   await installProbe(page, 'hold');
   await page.goto(e2eNoteFixtures.markdownBasic.directPath);
   await ready(page);
@@ -410,9 +409,6 @@ test('mock: initial・hash・state-only・traverse・shell変更・not-foundは�
   await ready(page);
   await navigate(page, `${target()}?tab=example`);
   await page.goBack();
-  await ready(page);
-  expect((await counts(page)).starts).toBe(0);
-  await navigate(page, '/tags/Programming/');
   await ready(page);
   expect((await counts(page)).starts).toBe(0);
   await navigate(page, '/transition-missing-page/');
@@ -469,3 +465,5 @@ test('mock: callback内のhistory失敗は旧本文・URLへrollbackし演出を
   expect((await counts(page)).updates).toBe(1);
   await expect(page.locator('html')).not.toHaveAttribute('data-content-transition');
 });
+
+registerLayoutChangeTransitionTests();

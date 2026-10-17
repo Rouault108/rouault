@@ -153,7 +153,11 @@ History entryの識別・cause・取消signalをpost-renderへ渡す。共通wri
 
 ## Content transition integration
 
-第一段階は通常`navigation`のfull commitで、前後ともhashなし・正常なnote shellに限定する。`app-shell:validated`で採用したshellと取得・検証済みenvelopeのheader layout属性（note/sidebar/TOC列・trigger予約・class）、sidebar有無・ID・scope・presentation・fixedBreakpoint・topology、footer文言を比較する。URLから配置を推測しない。未知の配置、non-note、初期表示、traverse、state-only、error/not-foundとその直後、document fallback、外部リンク、sidebarの枝開閉は演出しない。rollback後は次のshell検証成功まで通常commitへ縮退する。
+通常`navigation`のfull commitで、前後ともhashなし・正常結果かつroute manifest掲載済みの移動に適用する。両端の`app-shell:validated`／取得・検証済みenvelopeから既知shellを判定し、配置一致は別の情報として扱う。`readContentTransitionShell`はshell schema、canonical header DOM、`layout-header` class、sidebar flagとprojectionの有無・ID整合、有限正数breakpoint、TOC不在時のtrigger非予約を検証する。note profileはsidebarあり／なし、TOCあり／なしを許容する。page profileはsidebarなし、TOCあり／なしを許容する（memo等のreading pageも含む）。note以外のsidebar profileや未知class・不正・不整合profileへは拡張しない。
+
+対象は現在のBaseLayoutを使う公開note、`/tags/{tag}/`、`/search/`、`/corpora/`と個別corpus、`/`、`/about/`、`/memos/`と公開memoなどの既知ページ。note↔tag/search/corpora、sidebar・TOCの有無や本文列幅が変わる組を含め、両端が既知profileなら通常移動を許容する。route manifestのpresenceとshell検証が判定の正本であり、URL prefixから配置を推測しない。`layoutKey`は同配置かを比較する情報であって、演出可否の安全性検証の代替にしない。
+
+初期表示、traverse、hash、state-only、error/not-foundとその直後、manifest未掲載route、document fallback、外部リンク、sidebarの枝開閉は引き続き演出しない。rollback後は次のshell検証成功まで通常commitへ縮退する。
 
 `ContentTransitionCoordinator`はAPI対応・reduced motion・表示状態・演出寿命だけを所有する。`commitLoadedSnapshot`は既存ContentCommitterの本文→shell→DOM検証→head→historyから、current URL・binding採用、`content:load`、既存post-commitのfocusと通常先頭位置適用までを一つの更新callbackへ渡す。callback入口でdestroy/abort/最新intentを再照合し、同じexecution signalをContentCommitterの既存checkCurrentへ渡し、transaction・rollback・epochを維持する。履歴確定後の中断はcommit成功とbindingを保ち、後続post-commitを抑止する。hydration-readyや読書位置の安定化jobはawaitしない。
 

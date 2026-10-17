@@ -504,6 +504,16 @@ export class Router {
     }
   }
 
+  private isKnownNavigationRoute(url: string): boolean {
+    const result = validateInternalDocumentNavigationRequest({
+      requestedUrl: url,
+      currentUrl: this.getCurrentAbsoluteUrl(),
+      siteUrlContext: this.urlDependencies.siteUrlContext,
+      routeManifestState: this.urlDependencies.routeManifestState,
+    });
+    return result.ok && result.routePresence === 'known-route';
+  }
+
   private async commitLoadedSnapshot(
     request: NormalizedNavigationRequest,
     previousUrl: string,
@@ -523,6 +533,8 @@ export class Router {
     if (!canCommit()) return this.createCommitSupersededResult(request);
     const eligible =
       request.intent?.cause === 'navigation' &&
+      request.routePresence === 'known-route' &&
+      this.isKnownNavigationRoute(previousUrl) &&
       !request.normalizedUrl.includes('#') &&
       !previousUrl.includes('#') &&
       envelope.document.renderedKind === 'page' &&

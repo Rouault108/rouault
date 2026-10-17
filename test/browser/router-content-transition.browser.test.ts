@@ -87,7 +87,7 @@ const envelope = (): NavigationEnvelope => ({
   shell,
   hydrationPlan: null,
 });
-const dependencies = (): RouterRuntimeUrlDependencies => ({
+const dependencies = (unknownPath?: string): RouterRuntimeUrlDependencies => ({
   siteUrlContext: { siteOrigin: location.origin, basePath: '' },
   isInternalDocumentPathname: (path) => routes.includes(path.replace(/\/$/u, '')),
   routeManifestState: {
@@ -101,7 +101,10 @@ const dependencies = (): RouterRuntimeUrlDependencies => ({
       basePath: '',
       routes,
     },
-    routeSet: { routes, has: (path) => routes.includes(path) },
+    routeSet: {
+      routes: routes.filter((path) => path !== unknownPath),
+      has: (path) => path !== unknownPath && routes.includes(path),
+    },
   },
 });
 
@@ -144,6 +147,7 @@ const setup = async (
     shellPrepareFailure?: Error;
     navigationTimeoutMs?: number;
     beforeLoad?: () => void | Promise<void>;
+    unknownPath?: string;
   } = {},
 ) => {
   writeHistoryEntry({ mode: 'replace', owner: 'router', url: '/notes/a', state: {} });
@@ -203,7 +207,7 @@ const setup = async (
   vi.spyOn(window, 'matchMedia').mockReturnValue(media);
   vi.spyOn(media, 'matches', 'get').mockReturnValue(false);
   vi.spyOn(document, 'visibilityState', 'get').mockReturnValue('visible');
-  const runtimeDependencies = dependencies();
+  const runtimeDependencies = dependencies(options.unknownPath);
   const currentRouter = new Router(content, runtimeDependencies, {
     skipInitialNavigation: true,
     ...(options.navigationTimeoutMs === undefined
@@ -307,6 +311,19 @@ const setup = async (
 };
 
 describe('Router content transition transaction integration', () => {
+  it.each(['/notes/a', '/notes/b'])(
+    'manifest未掲載の%sを含む正常結果は通常commitへ縮退する',
+    async (unknownPath) => {
+      const state = await setup({ unknownPath });
+      const result = await state.router.navigate({ url: '/notes/b' });
+      expect(result.committed).toBe(true);
+      expect(result.renderedKind).toBe('page');
+      expect(state.start).not.toHaveBeenCalled();
+      expect(state.contentCommit).toHaveBeenCalledTimes(1);
+      expect(state.contentLoad).toHaveBeenCalledTimes(1);
+    },
+  );
+
   it('callback開始前の新navigateは古いcallbackをcommitせず履歴とbindingを維持する', async () => {
     const state = await setup();
     const before = readContentContext();

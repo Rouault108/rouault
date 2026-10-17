@@ -136,6 +136,8 @@ row全体のbackground hover、shadow、transform、elevationは禁止する。`
 
 ## Content navigation motion
 
-第一段階の目的はnote間の本文切替を短いopacity変化で和らげること。`main#main-content`だけをnamed snapshotにし、root/header/sidebar/footer/背景をfadeしない。既定groupの位置・サイズ補間、scale、blurを使わない。旧snapshotは表示せず、新本文はopacity 0.82から1へ変えるため、透明な瞬間と新旧の文字の重なりを作らない。演出中のsnapshotはpointer操作を遮らず、介入時は効果を止める。
+通常移動の目的は、既知のnote・tag・discovery等の本文切替を短いopacity変化で和らげること。`main#main-content`だけをnamed snapshotにし、root/header/sidebar/footer/背景をfadeしない。既定groupの位置・サイズ補間、scale、blurを使わない。旧snapshotは表示せず、新本文はopacity 0.82から1へ変えるため、透明な瞬間と新旧の文字の重なりを作らない。演出中のsnapshotはpointer操作を遮らず、介入時は効果を止める。
 
-初期候補150〜200msから180ms（`--duration-content-transition`）を採用する。これは他サイトの測定値ではない。適用範囲・対象外・commit順序は[Router Contract](../contracts/router.md#content-transition-integration)を正本とし、同配置を確認できない組や幅・列構成が変わる組は既存の即時表示とする。cross-documentの`navigation:auto`はopt-inしない。API非対応とreduced motionでは通常表示を保つ。
+初期候補150〜200msから180ms（`--duration-content-transition`）を採用する。これは他サイトの測定値ではない。適用範囲・対象外・commit順序は[Router Contract](../contracts/router.md#content-transition-integration)を正本とし、両端が検証済みの既知shellなら、幅・列構成が変わる組にも同じ表示効果を適用する。shellのレイアウト変更自体は即時commitし、位置や寸法を補間しない。未知・不正profileは既存の通常commitへ縮退する。cross-documentの`navigation:auto`はopt-inしない。API非対応とreduced motionでは通常表示を保つ。
+
+設計背景として、ユーザーはWindows ChromeでHookdeckの履歴移動が正確な位置復元とfadeを両立していると報告している。最終的な目標はその読書体験の連続性である。この観察はユーザーの実測報告であり、本実装によるHookdeckの仕様・時間・方式の測定結果ではない。今回は既知shell間の通常移動だけを拡張し、履歴移動への演出追加は別の検討とする。

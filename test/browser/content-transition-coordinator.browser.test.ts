@@ -9,7 +9,11 @@ import {
 } from '../../src/navigation/content-navigation-context.js';
 import { parseAndValidateStaticHeaderHtml } from '../../src/components/app/shell/static-header-shell-mutation.js';
 import { ContentTransitionCoordinator } from '../../src/router/content-transition-coordinator.js';
-import { STATIC_HEADER_CONTRACT_ACCEPTED_HTML } from '../fixtures/static-header-contract-cases.js';
+import { readContentTransitionShell } from '../../src/router/content-transition-shell.js';
+import {
+  STATIC_HEADER_CONTRACT_ACCEPTED_HTML,
+  STATIC_HEADER_CONTRACT_ACCEPTED_TOC_ABSENT_HTML,
+} from '../fixtures/static-header-contract-cases.js';
 import { fixture } from './harness/browser-fixture.js';
 
 const deferred = <T>() => {
@@ -219,9 +223,6 @@ describe('ContentTransitionCoordinator', () => {
   });
 
   it.each([
-    'root class',
-    'note layout',
-    'sidebar enabled',
     'toc reservation',
     'toc presence',
     'sidebar presence',
@@ -231,42 +232,89 @@ describe('ContentTransitionCoordinator', () => {
     'breakpoint',
     'topology',
     'footer',
-  ])('%sの配置差を検証済みsnapshotから検出すること', async (field) => {
+    'page shell',
+  ])('%sが変わっても既知の有効profile間なら演出すること', async (field) => {
     const next = shell();
     const sidebar = next.sidebarProjection;
     if (!sidebar) throw new Error('Expected sidebar fixture');
-    if (field === 'root class')
-      next.headerHtml = next.headerHtml.replace(
-        'class="layout-header"',
-        'class="layout-header changed"',
-      );
-    if (field === 'note layout')
-      next.headerHtml = next.headerHtml.replace(
-        'data-note-layout="true"',
-        'data-note-layout="false"',
-      );
-    if (field === 'sidebar enabled')
-      next.headerHtml = next.headerHtml
-        .replace('data-sidebar-enabled="true"', 'data-sidebar-enabled="false"')
-        .replace(/<button[\s\S]*?<\/button>/, '');
     if (field === 'toc reservation')
-      next.headerHtml = next.headerHtml.replaceAll(
+      next.headerHtml = next.headerHtml.replace(
         'data-toc-trigger-reserved="true"',
         'data-toc-trigger-reserved="false"',
       );
     if (field === 'toc presence') {
       next.headerHtml = next.headerHtml
         .replace('data-toc-presence="present"', 'data-toc-presence="absent"')
+        .replace('data-toc-trigger-reserved="true"', 'data-toc-trigger-reserved="false"')
         .replace(/\sdata-toc-(?:runtime|owner)-id="[^"]*"/gu, '');
-      expect(() => parseAndValidateStaticHeaderHtml(next.headerHtml, document)).not.toThrow();
     }
-    if (field === 'sidebar presence') next.sidebarProjection = null;
-    if (field === 'sidebar id') sidebar.sidebarId = 'other';
+    if (field === 'sidebar presence') {
+      next.sidebarProjection = null;
+      next.headerHtml = next.headerHtml
+        .replace('data-sidebar-enabled="true"', 'data-sidebar-enabled="false"')
+        .replace(/<button[\s\S]*?<\/button>/u, '');
+    }
+    if (field === 'sidebar id') {
+      sidebar.sidebarId = 'other';
+      next.headerHtml = next.headerHtml.replaceAll('note-primary', 'other');
+    }
     if (field === 'state scope') sidebar.stateScopeId = 'other';
     if (field === 'presentation') sidebar.presentation = 'fixed';
     if (field === 'breakpoint') sidebar.fixedBreakpoint = 1200;
     if (field === 'topology') sidebar.topologyRevision = 'tree-v2';
     if (field === 'footer') next.footerCopyrightText = 'Other footer';
+    if (field === 'page shell') {
+      next.headerHtml = STATIC_HEADER_CONTRACT_ACCEPTED_TOC_ABSENT_HTML;
+      next.sidebarProjection = null;
+    }
+    expect(() => parseAndValidateStaticHeaderHtml(next.headerHtml, document)).not.toThrow();
+    const previousProfile = readContentTransitionShell(shell(), document);
+    const nextProfile = readContentTransitionShell(next, document);
+    expect(previousProfile).not.toBeNull();
+    expect(nextProfile).not.toBeNull();
+    expect(nextProfile?.layoutKey).not.toBe(previousProfile?.layoutKey);
+    validate(shell());
+    const { result, update } = run(undefined, next);
+    await currentTransition().update();
+    expect(await result).toBe('committed');
+    expect(update).toHaveBeenCalledTimes(1);
+    expect(start).toHaveBeenCalledTimes(1);
+  });
+
+  it.each([
+    'unknown class',
+    'sidebar flag',
+    'sidebar id',
+    'non-note sidebar',
+    'absent TOC reservation',
+    'invalid sidebar',
+    'invalid breakpoint',
+    'invalid footer',
+  ])('%sは配置変更ではなく未知・不正profileとして演出を除外すること', async (field) => {
+    const next = shell();
+    if (field === 'unknown class')
+      next.headerHtml = next.headerHtml.replace(
+        'class="layout-header"',
+        'class="layout-header changed"',
+      );
+    if (field === 'sidebar flag') next.sidebarProjection = null;
+    if (field === 'sidebar id' && next.sidebarProjection)
+      next.sidebarProjection.sidebarId = 'other';
+    if (field === 'non-note sidebar')
+      next.headerHtml = next.headerHtml.replace(
+        'data-note-layout="true"',
+        'data-note-layout="false"',
+      );
+    if (field === 'absent TOC reservation')
+      next.headerHtml = next.headerHtml
+        .replace('data-toc-presence="present"', 'data-toc-presence="absent"')
+        .replace(/\sdata-toc-(?:runtime|owner)-id="[^"]*"/gu, '');
+    if (field === 'invalid sidebar' && next.sidebarProjection)
+      next.sidebarProjection.stateScopeId = 'invalid scope';
+    if (field === 'invalid breakpoint' && next.sidebarProjection)
+      next.sidebarProjection.fixedBreakpoint = Number.NaN;
+    if (field === 'invalid footer') next.footerCopyrightText = '';
+    expect(readContentTransitionShell(next, document)).toBeNull();
     validate(shell());
     const { result, update } = run(undefined, next);
     expect(await result).toBe('committed');
@@ -286,14 +334,40 @@ describe('ContentTransitionCoordinator', () => {
     expect(start).toHaveBeenCalledTimes(1);
   });
 
-  it('両方ともnote以外のshellではheaderが同じでも配置を推測して演出しないこと', async () => {
-    const nonNote = shell();
-    nonNote.headerHtml = nonNote.headerHtml.replace(
-      'data-note-layout="true"',
-      'data-note-layout="false"',
-    );
-    validate(nonNote);
-    const { result } = run(undefined, nonNote);
+  it('pageからnoteへの逆方向も配置一致を要求せず演出すること', async () => {
+    const page = {
+      ...shell(),
+      headerHtml: STATIC_HEADER_CONTRACT_ACCEPTED_TOC_ABSENT_HTML,
+      sidebarProjection: null,
+    };
+    validate(page);
+    const { result } = run();
+    await currentTransition().update();
+    expect(await result).toBe('committed');
+    expect(start).toHaveBeenCalledTimes(1);
+  });
+
+  it('sidebarなしのpage profileはmemo等のTOCありreading pageも認識すること', async () => {
+    const next = shell();
+    next.sidebarProjection = null;
+    next.headerHtml = next.headerHtml
+      .replace('data-note-layout="true"', 'data-note-layout="false"')
+      .replace('data-sidebar-enabled="true"', 'data-sidebar-enabled="false"')
+      .replace(/<button[\s\S]*?<\/button>/u, '');
+    expect(readContentTransitionShell(next, document)?.kind).toBe('page');
+    validate(shell());
+    const { result } = run(undefined, next);
+    await currentTransition().update();
+    expect(await result).toBe('committed');
+    expect(start).toHaveBeenCalledTimes(1);
+  });
+
+  it('未知の旧profileから既知profileへの更新は次の検証成功まで通常更新すること', async () => {
+    validate({
+      ...shell(),
+      headerHtml: shell().headerHtml.replace('class="layout-header"', 'class="future-shell"'),
+    });
+    const { result } = run();
     expect(await result).toBe('committed');
     expect(start).not.toHaveBeenCalled();
   });

@@ -1,3 +1,4 @@
+import { registerLayoutChangeTransitionTests } from './support/layout-change-transition.js';
 import { expect, test } from '@playwright/test';
 import { e2eNoteFixtures } from './support/note-fixtures.js';
 import { resolveRouterArtifactPathname } from '../../shared/navigation/router-artifact-path.js';
@@ -78,3 +79,5 @@ test('mobile viewportのtouchmoveで待機復元を中断する', async ({ page 
     release();
   }
 });
+
+registerLayoutChangeTransitionTests();
