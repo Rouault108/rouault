@@ -1,13 +1,13 @@
 # Reading Surface Flow Pattern
 
-この文書は、Rouaultの読書面における本文flow余白を定義するDesign System patternである。
-Markdown出力の構造契約は`docs/contracts/markdown.md`と`docs/references/markdown-output.md`を正本とし、本書は`.prose` / `.about-prose`上の読書面余白だけを扱う。
+この文書は、Rouaultの読書面における本文flow余白と、CSSによる和欧間・和数字間の表示上のアキを定義するDesign System patternである。
+Markdown出力の構造契約は`docs/contracts/markdown.md`と`docs/references/markdown-output.md`を正本とし、本書は`.prose` / `.about-prose`上の読書面余白と、`text-autospace`によるJapanese/ASCII visual spacingの継承制御を扱う。
 
 ## 1. Status
 
 - Type: Normative for Design System patterns
 - Source of truth: Design System CSS tokens、SSR CSS contract tests
-- Applies to: `.prose`、`.about-prose`、`[data-tabs-root]` panel内の読書本文flow
+- Applies to: `.prose`、`.about-prose`、`[data-tabs-root]` panel内の読書本文flowと、読書面のJapanese/ASCII visual spacingの継承制御
 - Non-goals: Markdown parser / transformerの変更、About専用表示調整、router / URL / hydration / search / TOCの再定義
 
 ## 2. Flow Tokens

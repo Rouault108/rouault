@@ -17,8 +17,8 @@
 
 | 分類 | 対応行数 | 読み方 |
 | --- | ---: | --- |
-| 文書整合 | 243 | 文書上の整合確認 |
-| 文書修正 | 19 | 文書だけの補正を反映 |
+| 文書整合 | 238 | 文書上の整合確認 |
+| 文書修正 | 24 | 文書だけの補正を反映 |
 | 実装残件 | 5 | 複数行をIMP-01〜IMP-03の3件に集約 |
 | 条件付き設計規範 | 21 | 適用時の規範。現在の回答待ちではない |
 | 今回対象外 | 13 | 評価範囲外。文書追従の残件ではない |
@@ -30,8 +30,8 @@
 | --- | --- | --- |
 | [foundations.md](../design-system/foundations.md) | F-00〜F-27 | 変更不要。4層token、実装値、snug=1.35、theme/motion/shellの証拠を保持。 |
 | [accessibility.md](../design-system/accessibility.md) | A-00〜A-39（欠番A-29）、A-NEW、A-FOCUS | logical main focusと操作focus、component要件の適用条件、自動検証と手動QAの関係を明確化。 |
-| [patterns.md](../design-system/patterns.md) | P-001〜P-108 | 変更不要。リンク種別・metadata・カード・corpus row・状態・overlay・URLを全照合。実装残件は下記3件に集約。 |
-| [pattern-reading-surface.md](../design-system/pattern-reading-surface.md) | RS-001〜RS-040 | 汎用flowと見出し/区切りの専用余白を区別し、特定Changeの作業指示を継続規範に更新。 |
+| [patterns.md](../design-system/patterns.md) | P-001〜P-108 | リンク種別・metadata・カード・corpus row・状態・overlay・URLを全照合。Reading Surfaceの責務説明へ既存のautospaceを含める文書修正を反映。実装残件は下記3件に集約。 |
+| [pattern-reading-surface.md](../design-system/pattern-reading-surface.md) | RS-001〜RS-040 | 汎用flowと見出し/区切りの専用余白を区別し、特定Changeの作業指示を継続規範に更新。冒頭・適用範囲を既存のautospace継承制御まで含む説明へ修正。 |
 | [pattern-reading-chrome.md](../design-system/pattern-reading-chrome.md) | RC-0〜RC-7.4、RC-NEW | native TOC link、具体的契約参照、memo共通範囲、scrollbar gutter、接続中triggerへのfocus returnを追従。 |
 | [pattern-reading-block-intrusion.md](../design-system/pattern-reading-block-intrusion.md) | RBI-0〜RBI-5.4 | memo共通範囲と実在する契約への具体参照を補完。intrusion判断自体は変更不要。 |
 | [callout.md](../design-system/callout.md) | Callout一覧の全行 | 変更不要。5 kind、静的surface、左線、互換alias/hooks、forced-colorsを照合。 |
@@ -44,6 +44,7 @@
 4. 汎用flow余白を全非段落blockへ一般化していた箇所を限定。見出しh2〜h6とhrは専用余白。`main.css`、`stateful-note-bridges.css`、`test/ssr/reading-surface-flow-css-contract.test.ts`。
 5. Accessibilityのlogical main focus例外は`main.css`の意図コメントと`test/e2e/not-found-page.spec.ts`に明示されていた。操作対象へのfocus要求を維持して区別を記載。手動QAを自動合否から除外しないようVerificationを明確化。
 6. Chromeの位置安定性は[Reading Chrome契約](../contracts/reading-chrome.md)のViewport Scrollbar Gutterと`test/ssr/static-css-contracts.test.ts`に既存の規定がある。root gutter / body scroll lockの責務をpatternにも補完。実装は変更しない。
+7. Reading Surfaceの第6節と`src/assets/css/main.css`には既存の`text-autospace`契約がある一方、冒頭とPatternsの責務説明が余白だけに限定されていた。CSS余白とJapanese/ASCII visual spacingの継承制御を含む説明へ修正し、Statusと参照説明も揃えた。P-004/P-012/RS-001/RS-002/RS-005を文書修正へ更新。実装や機能契約を追加する変更ではない。
 
 ## 未完了の実装課題（3件）
 
@@ -102,7 +103,9 @@ Copy smokeの再現条件: `src/assets/css/main.css`の相対`@import`を再帰�
 - `pnpm run test:node --run`: 136 files / 1243 tests passed / 1 skipped。skipは合格件数に含めない。
 - `pnpm exec vitest run --project ssr test/ssr/tokens-css-contract.test.ts test/ssr/static-first-doc-contracts.test.ts`: 2 files / 14 tests passed。
 - 独立デルタレビューで、履歴根拠と未実装判定、5分類の再集計、hash規範とアクセシビリティ要求の維持、品質評価を今回残件から外す整理を確認。重大な矛盾・範囲逸脱なし。指摘された旧表現を今回対象外またはIMP-01へ統一した。
-- 11文書の具体path 507箇所とrelative link 29箇所の存在、対応行と表構造、`git diff --check`を確認。既存CIの終端結果とrun URLは、当該commitの外部検証証跡として最終報告に添付する。
+- 11文書の具体path 509箇所とrelative link 29箇所の存在、対応行と表構造、`git diff --check`を確認。既存CIの終端結果とrun URLは、当該commitの外部検証証跡として最終報告に添付する。
+
+Reading Surface責務説明の追加追従では、関連SSRの3 files / 23 tests、表記規約Nodeの1 file / 4 testsが通過。独立デルタレビューで5行の引用と正本の一致、第6節・既存CSSとの整合、分類集計、実装残件3課題の不変を確認した。追加指摘なし。
 
 ## Foundations / Accessibility根拠キー
 
@@ -217,7 +220,7 @@ Copy smokeの再現条件: `src/assets/css/main.css`の相対`@import`を再帰�
 | P-E8 | `src/components/ui/tabs/tabs-url-sync-controller.ts`, `src/components/ui/tabs/tabs-url-sync-strategy.ts`, `src/client/post-hydrate/search-page-controller.ts`, `shared/navigation/normalize-note-navigation-url.ts`; `docs/contracts/tabs.md`, `docs/contracts/search.md`, `docs/contracts/note-navigation.md`, `docs/contracts/router-document.md`; `test/browser/search-page-url-state.browser.test.ts`, `test/browser/primary-tab-url-state.browser.test.ts`, `test/node/note-navigation-path.test.ts`, `test/node/note-navigation-model.test.ts`, `test/node/primary-tab-navigation-policy.test.ts`。 |
 | P-E9 | `docs/contracts/permanent-url.md`と本監査「Permanent URLの実装状態と履歴根拠」。未完了の旧計画と文書再編を区別し、現行tree/build/route/wrangler/CIを照合して未実装と確認。`src/components/app/navigation/primary-tab-url-state.ts`と`test/node/primary-tab-navigation-policy.test.ts`はarchive除外の証拠。一般copyの`shared/static-copy-button-html.ts`、`src/client/post-hydrate/static-copy-button-enhancer.ts`、`test/browser/static-copy-button-enhancer.browser.test.ts`は通知の参考でありPermanent URL UIの実装証拠ではない。 |
 | P-E10 | `src/layouts/layout-header-html.ts`, `src/client/post-hydrate/layout-header-toc-bridge.ts`, `src/assets/css/layout-header.css`, `src/client/hydration/scheduler.ts`, `src/client/hydration/registry.ts`; `docs/contracts/reading-chrome.md`; `test/browser/layout-header-toc-bridge.browser.test.ts`, `test/e2e/header-static-contract.spec.ts`, `test/ssr/layout-toc-css-contract.test.ts`, `test/ssr/static-css-contracts.test.ts`。 |
-| RS-E0 | `docs/contracts/markdown.md`, `docs/references/markdown-output.md`; `src/assets/css/tokens.css:379`, `src/assets/css/main.css:363`, `src/assets/css/stateful-note-bridges.css:29`; `test/ssr/reading-surface-flow-css-contract.test.ts`。CSS限定ownerと共通surfaceを照合。 |
+| RS-E0 | `docs/contracts/markdown.md`, `docs/references/markdown-output.md`; `src/assets/css/tokens.css:379`, `src/assets/css/main.css:363`, `src/assets/css/stateful-note-bridges.css:29`; `test/ssr/reading-surface-flow-css-contract.test.ts`。CSS限定ownerと共通surfaceを照合。第6節のautospaceは`src/assets/css/main.css:209`と同SSR testのsupports・継承・除外検査を根拠とする。 |
 | RS-E1 | `src/assets/css/tokens.css:379`, `src/assets/css/main.css:363`, `src/assets/css/stateful-note-bridges.css:29`; `test/ssr/reading-surface-flow-css-contract.test.ts:172`。flow=space-4、paragraph=space-3、p+p後段override。h2〜h6は専用--reading-hN-space、hrも専用余白。 |
 | RS-E2 | `src/assets/css/main.css:209`, `src/assets/css/translation.css`; `test/ssr/reading-surface-flow-css-contract.test.ts:252`。supports内限定、body/prose opt-in、nested tabsの継承、記号要素/子孫除外、translation resetなし。 |
 | RS-E3 | `src/assets/css/main.css:209`, `src/assets/css/translation.css`, `tools/ui-check/fixtures/retained-surfaces.ts`, `tools/ui-check/playwright/screenshot.spec.ts`; `test/browser/translation.browser.test.ts`, `test/e2e/translation-no-js.spec.ts`。実際の字間/休止の主観的品質はソース・構造testだけで合格にせず、対応browserでの視覚確認を残す。 |
@@ -229,7 +232,7 @@ Copy smokeの再現条件: `src/assets/css/main.css`の相対`@import`を再帰�
 | P-001 | 冒頭: この文書はDesign Systemの横断UI patternを定義する正本である。 | 文書整合 | P-E0。 |
 | P-002 | 冒頭: URL、routing、search、note identity、Permanent URLの意味論は機能Contractを正本とし、本書はUI patternとしての扱いだけを説明する。 | 文書整合 | P-E0。 |
 | P-003 | 冒頭: Reading chromeの機能契約は`docs/contracts/reading-chrome.md`を正本とし、詳細patternは`docs/design-system/pattern-reading-chrome.md`と`docs/design-system/pattern-reading-block-intrusion.md`に分離する。 | 文書整合 | P-E0。 |
-| P-004 | 冒頭: 読書面の段落間余白とblock間余白の分離は`docs/design-system/pattern-reading-surface.md`を正本とする。 | 文書整合 | P-E0。 |
+| P-004 | 冒頭: 読書面の段落間余白とblock間余白の分離、および`text-autospace`によるJapanese/ASCII visual spacingは`docs/design-system/pattern-reading-surface.md`を正本とする。 | 文書修正 | P-E0 / RS-E0 / RS-E2。余白の分離に加え、既存のJapanese/ASCII visual spacingも参照先の責務として明記。 |
 | P-005 | 1. Status: Type: Normative for Design System patterns | 文書整合 | P-E0。 |
 | P-006 | 1. Status: Source of truth: Design System components、layout patterns、browser/e2e tests | 文書整合 | P-E0。 |
 | P-007 | 1. Status: Applies to: link classification、selected/current/active/focused、overlay、URL-aware UI controls、Permanent URL UI | 文書整合 | P-E0。 |
@@ -237,7 +240,7 @@ Copy smokeの再現条件: `src/assets/css/main.css`の相対`@import`を再帰�
 | P-009 | 1.1 Pattern Index: Reading surface flow: `docs/design-system/pattern-reading-surface.md` | 文書整合 | P-E0。 |
 | P-010 | 1.1 Pattern Index: Reading chrome: `docs/design-system/pattern-reading-chrome.md` | 文書整合 | P-E0。 |
 | P-011 | 1.1 Pattern Index: Reading block intrusion: `docs/design-system/pattern-reading-block-intrusion.md` | 文書整合 | P-E0。 |
-| P-012 | 1.1 Pattern Index: Reading surface flowは本文のCSS余白patternだけを所有する。 | 文書整合 | P-E0。 |
+| P-012 | 1.1 Pattern Index: Reading surface flowは本文のCSS余白と、`text-autospace`によるJapanese/ASCII visual spacingの継承制御を所有する。 | 文書修正 | P-E0 / RS-E0 / RS-E2。「CSS余白だけ」の限定を除き、既存のtext-autospace継承制御を含む責務へ訂正。Markdown/DOM/URL等を変更しない境界は維持。 |
 | P-013 | 1.1 Pattern Index: Markdown parser / transformer、About本文データ、router、URL、ARIA、hydration、search、TOCの契約を変更しない。 | 文書整合 | P-E0。 |
 | P-014 | 1.1 Pattern Index / Content Tabs / Embedded Code Tabs Boundary: Content Tabsの正本は`docs/contracts/tabs.md`であり、最終HTMLは`section[data-tabs-root]`、操作は`tabs-enhancer`が所有する。 | 文書整合 | P-E1。 |
 | P-015 | 1.1 Pattern Index / Content Tabs / Embedded Code Tabs Boundary: `ui-tabs`は内部中間HASTの表現であり、`build/rehype/native-tabs.ts`でnative HTMLへ変換する。 | 文書整合 | P-E1。 |
@@ -339,11 +342,11 @@ Copy smokeの再現条件: `src/assets/css/main.css`の相対`@import`を再帰�
 
 | ID | 原文の条項（修正後） | 判定 | 根拠・補足 |
 | --- | --- | --- | --- |
-| RS-001 | 冒頭: この文書は、Rouaultの読書面における本文flow余白を定義するDesign System patternである。 | 文書整合 | RS-E0。 |
-| RS-002 | 冒頭: Markdown出力の構造契約は`docs/contracts/markdown.md`と`docs/references/markdown-output.md`を正本とし、本書は`.prose` / `.about-prose`上の読書面余白だけを扱う。 | 文書整合 | RS-E0。 |
+| RS-001 | 冒頭: この文書は、Rouaultの読書面における本文flow余白と、CSSによる和欧間・和数字間の表示上のアキを定義するDesign System patternである。 | 文書修正 | RS-E0 / RS-E2。本文flow余白に加え、第6節と実装済みCSSが所有する和欧間・和数字間のvisual spacingを冒頭へ反映。 |
+| RS-002 | 冒頭: Markdown出力の構造契約は`docs/contracts/markdown.md`と`docs/references/markdown-output.md`を正本とし、本書は`.prose` / `.about-prose`上の読書面余白と、`text-autospace`によるJapanese/ASCII visual spacingの継承制御を扱う。 | 文書修正 | RS-E0 / RS-E2。「読書面余白だけ」の限定を除き、text-autospaceの継承制御を含む説明へ訂正。Markdown構造契約への委譲は維持。 |
 | RS-003 | 1. Status: Type: Normative for Design System patterns | 文書整合 | RS-E0。 |
 | RS-004 | 1. Status: Source of truth: Design System CSS tokens、SSR CSS contract tests | 文書整合 | RS-E0。 |
-| RS-005 | 1. Status: Applies to: `.prose`、`.about-prose`、`[data-tabs-root]` panel内の読書本文flow | 文書整合 | RS-E0。 |
+| RS-005 | 1. Status: Applies to: `.prose`、`.about-prose`、`[data-tabs-root]` panel内の読書本文flowと、読書面のJapanese/ASCII visual spacingの継承制御 | 文書修正 | RS-E0 / RS-E2。本文flowと既存のvisual spacing継承制御の両方を適用範囲に明記。 |
 | RS-006 | 1. Status: Non-goals: Markdown parser / transformerの変更、About専用表示調整、router / URL / hydration / search / TOCの再定義 | 文書整合 | RS-E0。 |
 | RS-007 | 2. Flow Tokens: `--reading-flow-space`は汎用flow ruleが列挙する段落・リスト・表・図・コード・引用・calloutなどの読書block遷移の既定余白である。見出しや区切りなどの専用余白は含めない。 | 文書修正 | RS-E1。汎用flow対象と専用余白の範囲を明示。 |
 | RS-008 | 2. Flow Tokens: `--reading-paragraph-space`は連続する段落同士、つまり`p + p`専用の余白である。 | 文書整合 | RS-E1。 |

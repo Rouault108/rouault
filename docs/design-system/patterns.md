@@ -3,7 +3,7 @@
 この文書はDesign Systemの横断UI patternを定義する正本である。
 URL、routing、search、note identity、Permanent URLの意味論は機能Contractを正本とし、本書はUI patternとしての扱いだけを説明する。
 Reading chromeの機能契約は`docs/contracts/reading-chrome.md`を正本とし、詳細patternは`docs/design-system/pattern-reading-chrome.md`と`docs/design-system/pattern-reading-block-intrusion.md`に分離する。
-読書面の段落間余白とblock間余白の分離は`docs/design-system/pattern-reading-surface.md`を正本とする。
+読書面の段落間余白とblock間余白の分離、および`text-autospace`によるJapanese/ASCII visual spacingは`docs/design-system/pattern-reading-surface.md`を正本とする。
 
 ## 1. Status
 
@@ -18,7 +18,7 @@ Reading chromeの機能契約は`docs/contracts/reading-chrome.md`を正本と�
 - Reading chrome: `docs/design-system/pattern-reading-chrome.md`
 - Reading block intrusion: `docs/design-system/pattern-reading-block-intrusion.md`
 
-Reading surface flowは本文のCSS余白patternだけを所有する。Markdown parser / transformer、About本文データ、router、URL、ARIA、hydration、search、TOCの契約を変更しない。
+Reading surface flowは本文のCSS余白と、`text-autospace`によるJapanese/ASCII visual spacingの継承制御を所有する。Markdown parser / transformer、About本文データ、router、URL、ARIA、hydration、search、TOCの契約を変更しない。
 
 ### Content Tabs / Embedded Code Tabs Boundary
 
