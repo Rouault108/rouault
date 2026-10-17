@@ -50,9 +50,17 @@ beforeAll(() => {
   baselineState = history.state;
 });
 
-afterAll(() => {
-  history.replaceState(originalState, '', originalUrl);
-});
+const restoreHistoryState = (state: unknown, url: string): void => {
+  // 参照の差だけで履歴を書き直さず、保存したstateの内容を比較する。
+  if (readAddress() !== url || JSON.stringify(history.state) !== JSON.stringify(state))
+    history.replaceState(state, '', url);
+};
+
+afterAll(async () => {
+  restoreHistoryState(originalState, originalUrl);
+  // navigation-state shardはtop-level sessionを共有する。既存reading suiteと同じ境界待機を設ける。
+  await new Promise<void>((resolve) => window.setTimeout(resolve, 10_000));
+}, 15_000);
 
 describe('HistoryPresentationCoordinator', () => {
   let coordinator: HistoryPresentationCoordinator;
@@ -121,8 +129,7 @@ describe('HistoryPresentationCoordinator', () => {
     resetShellLifecycleForTest();
     if (originalVisibility) Object.defineProperty(document, 'visibilityState', originalVisibility);
     else Reflect.deleteProperty(document, 'visibilityState');
-    if (readAddress() !== originalUrl || history.state !== baselineState)
-      history.replaceState(baselineState, '', originalUrl);
+    restoreHistoryState(baselineState, originalUrl);
     vi.restoreAllMocks();
   });
 
@@ -512,7 +519,29 @@ describe('HistoryPresentationCoordinator', () => {
   });
 
   it('実Backで90ms pauseの旧Animationを解除しURLとentryを戻すこと', async () => {
+    const traverse = async (direction: 'back' | 'forward'): Promise<PopStateEvent> => {
+      const observed: { event: PopStateEvent | null } = { event: null };
+      const record = (event: PopStateEvent): void => {
+        observed.event = event;
+      };
+      window.addEventListener('popstate', record);
+      try {
+        history[direction]();
+        await waitForCondition(
+          () => observed.event !== null,
+          `Expected native ${direction} popstate`,
+          { timeout: 2_000, interval: 10 },
+        );
+        if (!observed.event) throw new Error(`Missing native ${direction} event`);
+        return observed.event;
+      } finally {
+        window.removeEventListener('popstate', record);
+      }
+    };
+    // iframeの初期entryへのreplaceに依存せず、戻り先も明示的なmanaged entryとして作る。
+    writeHistoryEntry({ mode: 'push', owner: 'router', url: originalUrl });
     const previousEntryId = readHistoryEntry()?.id;
+    expect(previousEntryId).toBeTruthy();
     const nextUrl = `${location.pathname}?history-presentation=next`;
     writeHistoryEntry({ mode: 'push', owner: 'router', url: nextUrl });
     initializeContentContext(root);
@@ -524,15 +553,27 @@ describe('HistoryPresentationCoordinator', () => {
     const current = animation();
     current.pause();
     current.currentTime = 90;
-    const popped = new Promise<void>((resolve) =>
-      window.addEventListener('popstate', () => resolve(), { once: true }),
-    );
-    history.back();
-    await popped;
-    expect(readAddress()).toBe(originalUrl);
-    expect(readHistoryEntry()?.id).toBe(previousEntryId);
-    expect(current.playState).toBe('idle');
-    expect(owned()).toHaveLength(0);
-    expect(getComputedStyle(root).opacity).toBe('1');
+    let returned = false;
+    try {
+      const popped = await traverse('back');
+      returned = true;
+      expect(readAddress()).toBe(originalUrl);
+      expect(readHistoryEntry(popped.state)?.id).toBe(previousEntryId);
+      await expect.poll(() => readHistoryEntry()?.id).toBe(previousEntryId);
+      expect(current.playState).toBe('idle');
+      expect(owned()).toHaveLength(0);
+      expect(getComputedStyle(root).opacity).toBe('1');
+    } finally {
+      // forward entryを残したまま次suiteへ渡すと、後続pushが履歴を切り詰めてlength契約を壊す。
+      try {
+        if (returned || readAddress() !== nextUrl) {
+          const forwarded = await traverse('forward');
+          expect(readHistoryEntry(forwarded.state)?.id).toBe(nextOwner.entryId);
+          await expect.poll(() => readHistoryEntry()?.id).toBe(nextOwner.entryId);
+        }
+      } finally {
+        restoreHistoryState(baselineState, originalUrl);
+      }
+    }
   });
 });

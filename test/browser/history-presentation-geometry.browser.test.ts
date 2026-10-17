@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 
 import {
   captureHistoryGeometry,
@@ -15,13 +15,29 @@ const proseId = 'note-content-testing-toc-readable-long-heading';
 const originalUrl = location.pathname + location.search + location.hash;
 const originalState: unknown = history.state;
 
+const readAddress = (): string => location.pathname + location.search + location.hash;
+const settleHistoryQuota = (): Promise<void> =>
+  new Promise((resolve) => window.setTimeout(resolve, 10_000));
+
+beforeAll(async () => {
+  // WebKitのquotaは同じtop-level sessionの前suiteから引き継ぐ。
+  // URL検証に必要な実書込みだけを、quota期間を空けて開始する。
+  await settleHistoryQuota();
+  history.replaceState(originalState, '', target);
+}, 15_000);
+
 afterEach(() => {
   vi.restoreAllMocks();
-  history.replaceState(originalState, '', originalUrl);
+  if (readAddress() !== target) history.replaceState(originalState, '', target);
 });
 
+afterAll(async () => {
+  history.replaceState(originalState, '', originalUrl);
+  // 次suiteの既存履歴試験がこのsuiteの書込みをquotaとして負担しない。
+  await settleHistoryQuota();
+}, 15_000);
+
 const setup = async () => {
-  history.replaceState(null, '', target);
   const main =
     await fixture<HTMLElement>(`<main id="main-content" style="display:flow-root;width:720px;font-family:serif">
     <section class="note-shell" data-hydration-scope="note-shell" style="display:grid;grid-template-columns:minmax(0,1fr) 240px;gap:32px;align-items:start"><article data-hydration-scope="note-content" style="grid-column:1;min-width:0">
@@ -133,22 +149,22 @@ describe('限定履歴経路の幾何checkpoint', () => {
     parent.style.opacity = '0';
     expect(captureHistoryGeometry(main, position, 'verified-layout')).toBeNull();
     parent.style.opacity = '1';
-    history.replaceState(null, '', `${target}#heading-1`);
+    history.replaceState(originalState, '', `${target}#heading-1`);
     expect(captureHistoryGeometry(main, position, 'verified-layout')).toBeNull();
-    history.replaceState(null, '', target);
+    history.replaceState(originalState, '', target);
     main.remove();
     expect(captureHistoryGeometry(main, position, 'verified-layout')).toBeNull();
   });
 
   it('scopeはtrailing slashを許可し保存URLと実addressのexact一致は維持する', async () => {
     const { main, position } = await setup();
-    history.replaceState(null, '', `${target}/`);
+    history.replaceState(originalState, '', `${target}/`);
     expect(captureHistoryGeometry(main, position, 'verified-layout')).toBeNull();
     const exact = { ...position, url: `${target}/` };
     const captured = checkpoint(main, exact);
     expect(captured.position.url).toBe(`${target}/`);
     expect(matchesHistoryGeometry(main, captured, 'verified-layout')).toBe(true);
-    history.replaceState(null, '', target);
+    history.replaceState(originalState, '', target);
     expect(matchesHistoryGeometry(main, captured, 'verified-layout')).toBe(false);
   });
 
