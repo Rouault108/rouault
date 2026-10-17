@@ -21,6 +21,15 @@ import {
 } from '../navigation/reading-position-store.js';
 import { readDecodedHash } from '../navigation/primary-tab-url-state.js';
 import { readCurrentShellCommitId } from '../shell/app-shell-lifecycle.js';
+import { readContentTransitionShell } from '../../../router/content-transition-shell.js';
+import type { AppShellValidatedDetail } from '../shell/app-shell-events.js';
+import { HistoryPresentationCoordinator } from './history-presentation-coordinator.js';
+import {
+  captureHistoryGeometry,
+  isHistoryPresentationVerificationPair,
+  matchesHistoryGeometry,
+  type HistoryGeometryCheckpoint,
+} from './history-presentation-geometry.js';
 
 interface ScrollJob {
   readonly intent: NavigationIntent;
@@ -30,6 +39,8 @@ interface ScrollJob {
   readonly shellCommitId: number;
   readonly stateOnly: boolean;
   readonly error: boolean;
+  readonly entryId: string | null;
+  readonly previousUrl: string | undefined;
   candidate: ReadingPosition | null;
   url: string;
 }
@@ -63,6 +74,12 @@ export class ReadingPositionController {
   private originalMode: ScrollRestoration = history.scrollRestoration;
   private ownedMode: ScrollRestoration | null = null;
   private stops: (() => void)[] = [];
+  private readonly presentation = new HistoryPresentationCoordinator();
+  private readonly geometry = new Map<string, HistoryGeometryCheckpoint>();
+  private verifiedLayout: string | null = null;
+  private previousLayout: string | null = null;
+  private traverseVisual: { entryId: string | null; url: string; active: boolean | null } | null =
+    null;
   constructor(private readonly reportError: (error: unknown) => void) {}
 
   start(root: HTMLElement): void {
@@ -72,6 +89,41 @@ export class ReadingPositionController {
     this.renderedUrl = readAddress();
     this.sampleCurrent();
     const signal = this.lifetime.signal;
+    document.addEventListener(
+      'app-shell:validated',
+      (event) => {
+        this.previousLayout = this.verifiedLayout;
+        this.verifiedLayout =
+          readContentTransitionShell(
+            (event as CustomEvent<AppShellValidatedDetail>).detail.shell,
+            document,
+          )?.layoutKey ?? null;
+      },
+      { signal },
+    );
+    document.addEventListener(
+      'app-shell:rollback-start',
+      () => {
+        this.previousLayout = null;
+        this.verifiedLayout = null;
+      },
+      { signal },
+    );
+    window.addEventListener(
+      'popstate',
+      (event) => {
+        // UA自身の演出が不明な環境も、この限定実験では対象にしない。
+        this.traverseVisual = {
+          entryId: readHistoryEntry()?.id ?? null,
+          url: readAddress(),
+          active:
+            'hasUAVisualTransition' in event && typeof event.hasUAVisualTransition === 'boolean'
+              ? event.hasUAVisualTransition
+              : null,
+        };
+      },
+      { capture: true, signal },
+    );
     document.addEventListener(
       'reading-position:native-start',
       () => {
@@ -136,6 +188,7 @@ export class ReadingPositionController {
       'pageshow',
       (event) => {
         if (!event.persisted) return;
+        this.traverseVisual = null;
         const context = readContentContext();
         const entry = adoptHistoryEntry();
         const url = readAddress();
@@ -272,9 +325,11 @@ export class ReadingPositionController {
     stateOnly: boolean;
     error: boolean;
     shellCommitId: number;
+    previousUrl?: string;
   }): void {
     if (this.disposed || options.intent.signal.aborted) return;
     this.cancel();
+    delete options.root.dataset['historyPresentationEligibility'];
     const context = readContentContext();
     if (!context || readHistoryEntry() === null) {
       this.pendingIntent = null;
@@ -297,6 +352,8 @@ export class ReadingPositionController {
     const controller = new AbortController();
     const job: ScrollJob = {
       ...options,
+      entryId: this.renderedId,
+      previousUrl: options.previousUrl,
       error: options.error || this.renderedError,
       epoch: context.contentEpoch,
       controller,
@@ -317,6 +374,7 @@ export class ReadingPositionController {
     void this.restore(job)
       .catch((error: unknown) => {
         failed = true;
+        this.cancelJobPresentation(job, 'position-failed');
         this.reportError(error);
       })
       .finally(() => {
@@ -391,6 +449,7 @@ export class ReadingPositionController {
     job.controller.signal.addEventListener('abort', abortReady, { once: true });
     const readyTimer = window.setTimeout(abortReady, 5000);
     try {
+      this.restoreVerifiedHistoryBeforePaint(job);
       // 履歴成功・binding採用後の既知の先頭だけを描画待ちより前に適用する。
       // 完了判定と取消は、このjobの準備後の安定化まで引き続き所有する。
       const binding = readContentContext()?.displayedBinding;
@@ -409,8 +468,10 @@ export class ReadingPositionController {
       if (
         !this.current(job) ||
         (readiness === 'invalidated' && !readinessController.signal.aborted)
-      )
+      ) {
+        this.cancelJobPresentation(job, 'position-invalidated');
         return;
+      }
       await Promise.resolve();
       let stable = 0;
       let previous = '';
@@ -463,8 +524,11 @@ export class ReadingPositionController {
             : 0;
         previous = values.join(':');
         if (!pending || expired()) {
-          if (Math.abs(window.scrollX - target.x) > 2 || Math.abs(window.scrollY - target.y) > 2)
+          if (Math.abs(window.scrollX - target.x) > 2 || Math.abs(window.scrollY - target.y) > 2) {
+            this.cancelJobPresentation(job, 'position-correction');
+            if (!this.current(job)) return;
             window.scrollTo({ left: target.x, top: target.y, behavior: 'instant' });
+          }
           if (stable >= 2 || expired()) return;
         }
       }
@@ -473,6 +537,88 @@ export class ReadingPositionController {
       readinessController.abort();
       job.controller.signal.removeEventListener('abort', abortReady);
     }
+  }
+  private restoreVerifiedHistoryBeforePaint(job: ScrollJob): void {
+    // この同期経路は一つの検証済みpairだけ。settledや候補の寿命を短縮しない。
+    if (
+      job.intent.cause !== 'traverse' ||
+      job.stateOnly ||
+      job.error ||
+      !job.candidate ||
+      !job.entryId ||
+      !job.previousUrl ||
+      !isHistoryPresentationVerificationPair(job.previousUrl, job.url)
+    )
+      return;
+    job.root.dataset['historyPresentationEligibility'] = 'unavailable';
+    try {
+      if (document.visibilityState !== 'visible') return;
+      const checkpoint = this.geometry.get(job.entryId);
+      const visual = this.traverseVisual;
+      if (
+        !checkpoint ||
+        !this.verifiedLayout ||
+        this.previousLayout !== this.verifiedLayout ||
+        visual?.entryId !== job.entryId ||
+        visual.url !== job.url ||
+        visual.active !== false ||
+        checkpoint.position.url !== job.candidate.url ||
+        checkpoint.position.x !== job.candidate.x ||
+        checkpoint.position.y !== job.candidate.y ||
+        !this.presentationCurrent(job) ||
+        !matchesHistoryGeometry(job.root, checkpoint, this.verifiedLayout)
+      )
+        return;
+      this.cancelJobPresentation(job, 'verified-position-apply');
+      if (!this.presentationCurrent(job)) return;
+      window.scrollTo({ left: job.candidate.x, top: job.candidate.y, behavior: 'instant' });
+      const anchor = document.getElementById(checkpoint.anchorId);
+      if (
+        !this.presentationCurrent(job) ||
+        !anchor ||
+        !job.root.contains(anchor) ||
+        Math.abs(scrollX - job.candidate.x) > 2 ||
+        Math.abs(scrollY - job.candidate.y) > 2 ||
+        Math.abs(anchor.getBoundingClientRect().top - (checkpoint.anchorY - job.candidate.y)) > 2
+      )
+        return;
+      job.root.dataset['historyPresentationEligibility'] = 'ready';
+      this.presentation.start({
+        root: job.root,
+        contentEpoch: job.epoch,
+        shellCommitId: job.shellCommitId,
+        intent: job.intent,
+        entryId: job.entryId,
+        url: job.url,
+      });
+    } catch {
+      // 表示試行の例外を受理済みtransactionや既存の安定化へ伝播させない。
+      this.cancelJobPresentation(job, 'presentation-unavailable');
+      if (this.job === job) job.root.dataset['historyPresentationEligibility'] = 'unavailable';
+    }
+  }
+  private presentationCurrent(job: ScrollJob): boolean {
+    const context = readContentContext();
+    return (
+      this.current(job) &&
+      context?.root === job.root &&
+      !context.mutation &&
+      context.displayedBinding.entryId === job.entryId &&
+      context.displayedBinding.url === job.url &&
+      context.addressBinding.entryId === job.entryId &&
+      context.addressBinding.url === job.url &&
+      readHistoryEntry()?.id === job.entryId
+    );
+  }
+  private cancelPresentation(reason: string): void {
+    try {
+      this.presentation.cancel(reason);
+    } catch {
+      /* 表示後始末の失敗で位置jobを停止しない。 */
+    }
+  }
+  private cancelJobPresentation(job: ScrollJob, reason: string): void {
+    if (this.job === job) this.cancelPresentation(reason);
   }
   private range(): { x: number; y: number } {
     const root = document.scrollingElement ?? document.documentElement;
@@ -498,6 +644,20 @@ export class ReadingPositionController {
       y: Math.max(0, window.scrollY),
     };
     this.store.write(this.renderedId, this.sample);
+    if (
+      this.renderedId &&
+      this.verifiedLayout &&
+      context?.root &&
+      context.displayedBinding.entryId === this.renderedId &&
+      context.displayedBinding.url === this.renderedUrl
+    ) {
+      try {
+        const checkpoint = captureHistoryGeometry(context.root, this.sample, this.verifiedLayout);
+        if (checkpoint) this.geometry.set(this.renderedId, checkpoint);
+      } catch {
+        /* 未証明の幾何は通常復元だけへ渡す。保存candidateは変更しない。 */
+      }
+    }
   }
   private checkpoint(): void {
     if (this.restoring) return;
@@ -516,6 +676,7 @@ export class ReadingPositionController {
     this.sampleCurrent();
   }
   private cancel(): void {
+    this.cancelPresentation('position-job-cancelled');
     if (this.job) this.job.root.dataset['readingPositionStatus'] = 'cancelled';
     this.job?.controller.abort();
     this.job = null;
@@ -529,6 +690,7 @@ export class ReadingPositionController {
     this.disposed = true;
     this.cancel();
     this.lifetime.abort();
+    this.presentation.dispose();
     for (const stop of this.stops) stop();
     this.stops = [];
     if (history.scrollRestoration === this.ownedMode) history.scrollRestoration = this.originalMode;

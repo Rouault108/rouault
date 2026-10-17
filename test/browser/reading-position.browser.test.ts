@@ -51,6 +51,7 @@ import {
 import { STATIC_HEADER_CONTRACT_ACCEPTED_TOC_ABSENT_HTML } from '../fixtures/static-header-contract-cases.js';
 import { NAVIGATION_ENVELOPE_SCHEMA_VERSION } from '../../shared/navigation/navigation-envelope.js';
 import { ReadingPositionStore } from '../../src/components/app/navigation/reading-position-store.js';
+import type { AppShellValidatedDetail } from '../../src/components/app/shell/app-shell-events.js';
 
 const originalUrl = readAddress();
 const originalState: unknown = history.state;
@@ -528,6 +529,168 @@ describe('通常 full navigation の初回適用と安定化', () => {
     expect(scroll).not.toHaveBeenCalled();
     expect(Math.abs(scrollY - 2200)).toBeLessThanOrEqual(2);
   });
+});
+
+describe('検証済み履歴経路の表示状態', () => {
+  it.each(['visible', 'hidden'] as const)(
+    '%s完了時の先行復元を区別し、hidden中も候補を保全して通常settledへ渡す',
+    async (visibility) => {
+      const target = '/notes/testing/toc-readable-long-heading';
+      const previous = '/notes/testing/reader-basic';
+      history.replaceState(baselineState, '', target);
+      root =
+        await fixture(`<main id="main-content" style="display:flow-root;width:720px;font-family:serif">
+        <section class="note-shell" data-hydration-scope="note-shell" style="display:grid;grid-template-columns:minmax(0,1fr) 240px;gap:32px;align-items:start">
+          <article data-hydration-scope="note-content" style="grid-column:1;min-width:0">
+            <header data-article-header><h1>履歴復元の本文</h1></header>
+            <div class="prose" id="note-content-testing-toc-readable-long-heading">
+              <p>静的な日本語本文を保存位置へ戻します。</p>
+              ${Array.from({ length: 12 }, (_, index) => `<h2 id="history-visibility-heading-${index}" style="margin-top:110px"><span>第${index + 1}章の見出し</span></h2><p>本文とアンカーの実座標を確認します。</p>`).join('')}
+            </div>
+          </article>
+          <div data-layout-toc-root style="position:sticky;top:64px;align-self:start;height:calc(100vh - 64px);max-height:calc(100vh - 64px);grid-column:2;min-width:0;overflow:hidden">
+            ${Array.from({ length: 12 }, (_, index) => `<a href="#history-visibility-heading-${index}" style="font-weight:400;display:block"><span>第${index + 1}章の目次</span></a>`).join('')}
+          </div>
+        </section>
+      </main>`);
+      const content = root;
+      initializeContentContext(content);
+      adoptContentBinding(target);
+      await document.fonts.ready;
+      const ready = (epoch: number, status: 'pending' | 'settled'): void => {
+        setContentReadiness({
+          contentEpoch: epoch,
+          root: content,
+          shellCommitId: 0,
+          status,
+          started: true,
+        });
+      };
+      const validated = (url: string): void => {
+        const routes = [target, previous];
+        document.dispatchEvent(
+          new CustomEvent<AppShellValidatedDetail>('app-shell:validated', {
+            detail: {
+              header: document.createElement('header'),
+              shellCommitId: 0,
+              navigationUrl: url,
+              shell: {
+                headerHtml: STATIC_HEADER_CONTRACT_ACCEPTED_TOC_ABSENT_HTML,
+                sidebarProjection: null,
+              },
+              linkValidationContext: {
+                siteUrlContext: { siteOrigin: location.origin, basePath: '' },
+                currentAbsoluteUrl: `${location.origin}${url}`,
+                normalizedNavigationUrl: url,
+                routeManifestState: {
+                  status: 'loaded',
+                  manifest: {
+                    version: 1,
+                    buildId: 'history-visible',
+                    buildLabel: 'history-visible',
+                    generatedAt: '2026-10-17T00:00:00.000Z',
+                    siteOrigin: location.origin,
+                    basePath: '',
+                    routes,
+                  },
+                  routeSet: { routes, has: (pathname) => routes.includes(pathname) },
+                },
+              },
+            },
+          }),
+        );
+      };
+      ready(readContentContext()?.contentEpoch ?? -1, 'settled');
+      const errors = vi.fn();
+      reader = new ReadingPositionController(errors);
+      reader.start(content);
+      await expect.poll(() => content.dataset['readingPositionStatus']).toBe('settled');
+      validated(target);
+      window.scrollTo({ left: 0, top: 650, behavior: 'instant' });
+      await frame();
+      window.dispatchEvent(new Event('scroll'));
+      const savedState: unknown = history.state;
+      const savedEntryId = readHistoryEntry()?.id;
+      expect(savedEntryId).toBeTruthy();
+      const savedHtml = content.innerHTML;
+
+      const leaving = beginNavigationIntent('navigation', previous);
+      const sourceEpoch = beginContentMutation(content);
+      writeHistoryEntry({ mode: 'push', owner: 'router', url: previous });
+      content.innerHTML = '<article style="height:3000px"><h1>移動先の本文</h1></article>';
+      adoptContentBinding(previous);
+      validated(previous);
+      ready(sourceEpoch, 'settled');
+      reader.schedule({
+        intent: leaving,
+        root: content,
+        url: previous,
+        stateOnly: false,
+        error: false,
+        shellCommitId: 0,
+      });
+      await expect.poll(() => content.dataset['readingPositionStatus']).toBe('settled');
+
+      history.replaceState(savedState, '', target);
+      const popped = new PopStateEvent('popstate', { state: history.state });
+      Object.defineProperty(popped, 'hasUAVisualTransition', { value: false });
+      window.dispatchEvent(popped);
+      const intent = beginNavigationIntent('traverse', target);
+      const restoredEpoch = beginContentMutation(content);
+      content.innerHTML = savedHtml;
+      adoptContentBinding(target);
+      validated(target);
+      ready(restoredEpoch, 'pending');
+      window.scrollTo({ left: 0, top: 200, behavior: 'instant' });
+      await frame();
+      expect(Math.abs(scrollY - 200)).toBeLessThanOrEqual(2);
+      let state: DocumentVisibilityState = visibility;
+      vi.spyOn(document, 'visibilityState', 'get').mockImplementation(() => state);
+      const scroll = vi.spyOn(window, 'scrollTo');
+      const animate = vi.spyOn(content, 'animate');
+      const writes = vi.spyOn(ReadingPositionStore.prototype, 'write');
+      reader.schedule({
+        intent,
+        root: content,
+        url: target,
+        previousUrl: previous,
+        stateOnly: false,
+        error: false,
+        shellCommitId: 0,
+      });
+
+      expect(scroll).toHaveBeenCalledTimes(visibility === 'visible' ? 1 : 0);
+      expect(animate).toHaveBeenCalledTimes(visibility === 'visible' ? 1 : 0);
+      expect(Math.abs(scrollY - (visibility === 'visible' ? 650 : 200))).toBeLessThanOrEqual(2);
+      await frame();
+      await frame();
+      expect(content.dataset['readingPositionStatus']).toBe('pending');
+      expect(writes).not.toHaveBeenCalled();
+      expect(readHistoryEntry()?.id).toBe(savedEntryId);
+      expect(intent.signal.aborted).toBe(false);
+      if (visibility === 'hidden') {
+        expect(scroll).not.toHaveBeenCalled();
+        expect(animate).not.toHaveBeenCalled();
+        expect(
+          content.getAnimations().filter((effect) => effect.id === 'rouault-history-content'),
+        ).toHaveLength(0);
+      }
+
+      // hidden中は新しい同期経路だけを検証する。既存rAF復元はvisibleへ戻してから解放する。
+      state = 'visible';
+      document.dispatchEvent(new Event('visibilitychange'));
+      ready(restoredEpoch, 'settled');
+      await expect.poll(() => content.dataset['readingPositionStatus']).toBe('settled');
+      expect(Math.abs(scrollY - 650)).toBeLessThanOrEqual(2);
+      expect(
+        writes.mock.calls.some(
+          ([entryId, position]) =>
+            entryId === savedEntryId && position.url === target && Math.abs(position.y - 650) <= 2,
+        ),
+      ).toBe(true);
+      expect(errors).not.toHaveBeenCalled();
+    },
+  );
 });
 
 describe('履歴entryと本文生存期間', () => {

@@ -69,6 +69,7 @@ export class RouterDocumentHostPostRenderController {
             stateOnly: context.stateOnly,
             error: context.renderedKind === 'error' || context.renderedKind === 'not-found',
             shellCommitId: readCurrentShellCommitId(),
+            previousUrl: context.previousUrl,
           });
       },
     };

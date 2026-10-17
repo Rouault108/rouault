@@ -57,4 +57,14 @@ A1通常/hash移動、A2entry座標復元、A3同URLの別entry、A4state/native
 
 通常の対象navigationでは、既存post-commitのpreventScroll focusと、`ReadingPositionController.schedule`開始時のhashなし先頭適用までをView Transition更新callback内で実行する。新snapshot取得前に反映するが、content readinessと最大5秒の安定化は引き続き非同期jobでありcallbackは待たない。coordinatorはscroll/focus/announcementを複製せず、intent取消・contentEpoch・shellCommitId・entry bindingの所有権を変更しない。演出終了はnavigation完了条件にしない。対象判定と失敗意味論は[Router Contract](router.md#content-transition-integration)を参照。
 
-配置変更を伴う既知note/tag/discovery間でも、履歴成功・binding採用・preventScroll focus・通常先頭適用を同じ更新callback内に保つ。shell配置の変化を理由に別のscroll writerや復元待機を追加しない。traverseの演出は引き続き対象外であり、既存entry座標の復元と取消を維持する。HookdeckのWindows Chromeでの履歴fadeに関するユーザー観察と将来目標は[Content navigation motion](../design-system/patterns.md#content-navigation-motion)を参照。
+配置変更を伴う既知note/tag/discovery間でも、履歴成功・binding採用・preventScroll focus・通常先頭適用を同じ更新callback内に保つ。shell配置の変化を理由に別のscroll writerや復元待機を追加しない。HookdeckのWindows Chromeでの履歴fadeに関するユーザー観察と将来目標は[Content navigation motion](../design-system/patterns.md#content-navigation-motion)を参照。
+
+### 限定した履歴表示の検証
+
+第4版の最小検証は、Reader BasicからTOC Readable Long Headingへ戻る、hash/queryなしの別文書traverse一方向だけとする。逆方向や他route、同一文書、BFCache、UA演出あり／情報未提供は演出対象外。URLは対象範囲の制限に使い、安全性は検証済み同配置shellと実DOMから判断する。
+
+保存時の同entryに本文text、実使用fontと文字列のload確認、viewport、main/prose/全見出し/range、読書アンカーの幾何checkpointを保持する。戻ったDOMの実測と一致し、未知hydrator・画像・table等がなくclamp不要でdocumentがvisibleの場合に限り、同じReadingPositionJobが最初のawaitより前に保存位置を適用する。binding/root/entry/URL/epoch/shell/intent、実座標とアンカーを再照合して、独立した表示適格性をreadyにする。最初の可視フレームが保存位置と一致することを実描画で検証する。未証明は演出なしの既存復元へ戻し、その経路の無ジャンプを保証しない。
+
+HistoryPresentationCoordinatorは位置を書かず、当該mainのAnimationと固定ownerだけを所有する。opacity 0.82→1、180msで表示し、finishedをnavigationや位置jobの完了条件にしない。新intent、Back/Forward、本人入力、pagehide、破棄等で取消し、後続位置補正は取消→通常表示→job再照合→scrollの順序を守る。旧finished／旧位置jobの終端は新sessionを取消さない。表示の成否でcandidate/restoring/settledやhydrationの寿命を短縮しない。
+
+この検証は第4版全体の採用判定ではない。noneの独立したimmutable受理記録・binding採用失敗後の回復管理は追加しておらず、その故障経路は表示readyにしない。既存transaction、通知、hydration起動、BFCacheの位置補償へ新しいawaitや再commit経路を加えない。

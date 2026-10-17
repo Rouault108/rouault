@@ -157,7 +157,7 @@ History entryの識別・cause・取消signalをpost-renderへ渡す。共通wri
 
 対象は現在のBaseLayoutを使う公開note、`/tags/{tag}/`、`/search/`、`/corpora/`と個別corpus、`/`、`/about/`、`/memos/`と公開memoなどの既知ページ。note↔tag/search/corpora、sidebar・TOCの有無や本文列幅が変わる組を含め、両端が既知profileなら通常移動を許容する。route manifestのpresenceとshell検証が判定の正本であり、URL prefixから配置を推測しない。`layoutKey`は同配置かを比較する情報であって、演出可否の安全性検証の代替にしない。
 
-初期表示、traverse、hash、state-only、error/not-foundとその直後、manifest未掲載route、document fallback、外部リンク、sidebarの枝開閉は引き続き演出しない。rollback後は次のshell検証成功まで通常commitへ縮退する。
+初期表示、traverse、hash、state-only、error/not-foundとその直後、manifest未掲載route、document fallback、外部リンク、sidebarの枝開閉はnative演出に含めない。rollback後は次のshell検証成功まで通常commitへ縮退する。別所有者による一方向の限定履歴表示検証は[Reading Position Contract](reading-position.md#限定した履歴表示の検証)を参照。Routerのcommit callbackへ履歴用Animation待機を追加しない。
 
 `ContentTransitionCoordinator`はAPI対応・reduced motion・表示状態・演出寿命だけを所有する。`commitLoadedSnapshot`は既存ContentCommitterの本文→shell→DOM検証→head→historyから、current URL・binding採用、`content:load`、既存post-commitのfocusと通常先頭位置適用までを一つの更新callbackへ渡す。callback入口でdestroy/abort/最新intentを再照合し、同じexecution signalをContentCommitterの既存checkCurrentへ渡し、transaction・rollback・epochを維持する。履歴確定後の中断はcommit成功とbindingを保ち、後続post-commitを抑止する。hydration-readyや読書位置の安定化jobはawaitしない。
 

@@ -1,6 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import { e2eNoteFixtures } from './support/note-fixtures.js';
 import { resolveRouterArtifactPathname } from '../../shared/navigation/router-artifact-path.js';
+import { registerHistoryLivePresentationTests } from './support/history-live-presentation.js';
 
 interface ReloadProbe {
   modeAtLoad: ScrollRestoration | null;
@@ -1314,3 +1315,5 @@ for (const variant of [
   }) => {
     await compareNativeReload(page, variant);
   });
+
+registerHistoryLivePresentationTests();
