@@ -52,3 +52,7 @@ reloadのnative対照はapp moduleをmode handoffだけのscriptへ置き換え�
 ## Verification
 
 A1通常/hash移動、A2entry座標復元、A3同URLの別entry、A4state/native互換、A5遅延/epoch、A6本人取消/stale feature、A7focus/TOC、A8native/reload/fallback/clamp、A9既存owner/transaction/SSRをnode/browser/production E2Eで検証する。新E2EはChromium・Firefox・WebKitに明示選択する。BFCacheはpersistedを観測したrunのみ成功判定する。正式環境未実施を互換browserの結果で置き換えない。
+
+## Content transition boundary
+
+通常の対象navigationでは、既存post-commitのpreventScroll focusと、`ReadingPositionController.schedule`開始時のhashなし先頭適用までをView Transition更新callback内で実行する。新snapshot取得前に反映するが、content readinessと最大5秒の安定化は引き続き非同期jobでありcallbackは待たない。coordinatorはscroll/focus/announcementを複製せず、intent取消・contentEpoch・shellCommitId・entry bindingの所有権を変更しない。演出終了はnavigation完了条件にしない。対象判定と失敗意味論は[Router Contract](router.md#content-transition-integration)を参照。

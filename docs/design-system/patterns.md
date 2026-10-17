@@ -133,3 +133,9 @@ row全体のbackground hover、shadow、transform、elevationは禁止する。`
 - 予約状態とinteractive状態は分離し、未確定のTOC ownerを操作可能UIとして見せない。
 - Hydration markerはbuild-time / runtimeの接続点を示す属性であり、見た目のvariantとして扱わない。
 - Reading chromeの配置・密度・侵入度は専用pattern文書を参照し、本書では機能Contractを再定義しない。
+
+## Content navigation motion
+
+第一段階の目的はnote間の本文切替を短いopacity変化で和らげること。`main#main-content`だけをnamed snapshotにし、root/header/sidebar/footer/背景をfadeしない。既定groupの位置・サイズ補間、scale、blurを使わない。旧snapshotは表示せず、新本文はopacity 0.82から1へ変えるため、透明な瞬間と新旧の文字の重なりを作らない。演出中のsnapshotはpointer操作を遮らず、介入時は効果を止める。
+
+初期候補150〜200msから180ms（`--duration-content-transition`）を採用する。これは他サイトの測定値ではない。適用範囲・対象外・commit順序は[Router Contract](../contracts/router.md#content-transition-integration)を正本とし、同配置を確認できない組や幅・列構成が変わる組は既存の即時表示とする。cross-documentの`navigation:auto`はopt-inしない。API非対応とreduced motionでは通常表示を保つ。

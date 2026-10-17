@@ -36,6 +36,7 @@ interface CommitRequest {
   historyMode: HistoryMode;
   state: Record<string, unknown> | undefined;
   intent?: NavigationIntent;
+  signal?: AbortSignal;
 }
 
 interface PreparedMutation {
@@ -110,7 +111,7 @@ export class ContentCommitter {
     );
 
     const checkCurrent = (): void => {
-      if (request.intent && !isNavigationIntentCurrent(request.intent))
+      if (request.signal?.aborted || (request.intent && !isNavigationIntentCurrent(request.intent)))
         throw new DOMException('superseded', 'AbortError');
     };
     checkCurrent();

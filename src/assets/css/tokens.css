@@ -630,6 +630,7 @@
   --animation-flash: flash var(--duration-fast) var(--ease-out);
 
   /* View Transitions で参照する値 */
+  --duration-content-transition: 180ms;
   --view-transition-fade: plus-lighter;
   --view-transition-slide-to-left: translateX(-20px);
   --view-transition-slide-to-right: translateX(20px);

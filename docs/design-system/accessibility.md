@@ -46,7 +46,7 @@ Guide、ADR、component文書はこの文書を上書きしてはならない。
 
 | Token                 | Value |
 | --------------------- | ----- |
-| `--control-min-touch` | 24px |
+| `--control-min-touch` | 24px  |
 
 ### Contrast and Color
 
@@ -55,7 +55,8 @@ Guide、ADR、component文書はこの文書を上書きしてはならない。
 
 ### Motion
 
-- `prefers-reduced-motion`を尊重する。
+- `prefers-reduced-motion`を尊重する。本文navigation演出はJavaScriptの開始判定とCSSの両方で抑止し、設定が途中でreduceへ変わった場合も効果を止める。API非対応時と同じ通常commitへ縮退する。
+- 本文演出はkeyboard/pointer操作を遮らず、focus/scroll/announcementは既存ownerが一度だけ実行する。演出完了を操作応答や読み上げの待機条件にしない。
 - 常時animation、強い視差、読書を妨げる遷移を避ける。
 
 ### Live Region and Async State

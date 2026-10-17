@@ -1,26 +1,50 @@
-@supports (view-transition-name: root) {
-  @view-transition {
-    navigation: auto;
-  }
-
-  ::view-transition-group(*) {
-    animation-duration: 0.2s;
-    animation-timing-function: cubic-bezier(0, 0, 0.2, 1);
-    mix-blend-mode: var(--view-transition-fade);
-  }
+/* 対象と寿命はcoordinatorが管理し、静的表示とdocument navigationは演出しない。 */
+html[data-content-transition] {
+  view-transition-name: none;
 }
 
-@supports not (view-transition-name: root) {
-  .page-transition {
-    animation: fade-in var(--duration-normal) var(--ease-out);
-  }
+html[data-content-transition] main#main-content {
+  view-transition-name: rouault-content;
 }
 
-@keyframes fade-in {
+html[data-content-transition]::view-transition,
+html[data-content-transition]::view-transition-group(rouault-content),
+html[data-content-transition]::view-transition-image-pair(rouault-content),
+html[data-content-transition]::view-transition-old(rouault-content),
+html[data-content-transition]::view-transition-new(rouault-content) {
+  pointer-events: none;
+}
+
+html[data-content-transition]::view-transition-group(rouault-content) {
+  animation: none;
+}
+
+html[data-content-transition]::view-transition-image-pair(rouault-content) {
+  isolation: isolate;
+}
+
+/* 新旧の文字を重ねず、現在の本文だけを短く表示する。 */
+html[data-content-transition]::view-transition-old(rouault-content) {
+  display: none;
+  animation: none;
+}
+
+html[data-content-transition]::view-transition-new(rouault-content) {
+  animation: content-navigation-appear var(--duration-content-transition) ease-out both;
+  mix-blend-mode: normal;
+}
+
+@keyframes content-navigation-appear {
   from {
-    opacity: 0;
+    opacity: 0.82;
   }
   to {
     opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html[data-content-transition]::view-transition-new(rouault-content) {
+    animation: none;
   }
 }

@@ -38,6 +38,7 @@ const webkitNavigationStateTestFiles = [
   'test/browser/reading-position.browser.test.ts',
   'test/browser/layout-toc-controller.browser.test.ts',
   'test/browser/router-stale-fetch-artifact-fallback.browser.test.ts',
+  'test/browser/router-content-transition.browser.test.ts',
   'test/browser/toc-active-tracker.browser.test.ts',
   'test/browser/toc-navigation-controller.browser.test.ts',
 ] as const;

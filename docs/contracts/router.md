@@ -150,3 +150,13 @@
 ## Reading position integration
 
 History entryの識別・cause・取消signalをpost-renderへ渡す。共通writerのstate保全を使い、本人feature intentで未commit requestを失効する。durable後の取消はcommitted:trueを維持する。scroll/focus/announcementはcoreへ移さない。 詳細は[Reading Position Contract](reading-position.md)。
+
+## Content transition integration
+
+第一段階は通常`navigation`のfull commitで、前後ともhashなし・正常なnote shellに限定する。`app-shell:validated`で採用したshellと取得・検証済みenvelopeのheader layout属性（note/sidebar/TOC列・trigger予約・class）、sidebar有無・ID・scope・presentation・fixedBreakpoint・topology、footer文言を比較する。URLから配置を推測しない。未知の配置、non-note、初期表示、traverse、state-only、error/not-foundとその直後、document fallback、外部リンク、sidebarの枝開閉は演出しない。rollback後は次のshell検証成功まで通常commitへ縮退する。
+
+`ContentTransitionCoordinator`はAPI対応・reduced motion・表示状態・演出寿命だけを所有する。`commitLoadedSnapshot`は既存ContentCommitterの本文→shell→DOM検証→head→historyから、current URL・binding採用、`content:load`、既存post-commitのfocusと通常先頭位置適用までを一つの更新callbackへ渡す。callback入口でdestroy/abort/最新intentを再照合し、同じexecution signalをContentCommitterの既存checkCurrentへ渡し、transaction・rollback・epochを維持する。履歴確定後の中断はcommit成功とbindingを保ち、後続post-commitを抑止する。hydration-readyや読書位置の安定化jobはawaitしない。
+
+callbackは保存したPromiseで最大一度実行する。APIの同期開始失敗のみ同じcallbackで通常commitへ縮退する。`updateCallbackDone`で更新完了を待つが、`ready`/`finished`の演出失敗を理由に再commit・history再書込・error文書化しない。実commit失敗は既存failure semanticsへ返す。NavigationQueueは`finished`を待たない。
+
+execution abort/timeout、新intent、pointer/wheel/touchmove、scroll key/Tab/Escape/Enter、非表示化、viewport変更、pagehide、reduced-motion変更、destroyで演出をskipする。skipはcallbackを取り消さないため、既存intent検査が古い更新を防ぐ。演出オブジェクトの同一性でcleanupを守り、古いfinishedが新しいmarkerを消さない。
