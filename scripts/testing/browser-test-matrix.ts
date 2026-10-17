@@ -37,6 +37,7 @@ const webkitUrlStateTestFiles = [
 const webkitNavigationStateTestFiles = [
   'test/browser/history-presentation-coordinator.browser.test.ts',
   'test/browser/history-presentation-geometry.browser.test.ts',
+  'test/browser/layout-sidebar-selection-patch.browser.test.ts',
   'test/browser/reading-position.browser.test.ts',
   'test/browser/layout-toc-controller.browser.test.ts',
   'test/browser/router-stale-fetch-artifact-fallback.browser.test.ts',

@@ -17,7 +17,7 @@
 
 ## 3. DOMとNo-JS
 
-presentの正本はpersistent root内の`nav[data-sidebar-nav]`1実体であり、absent時は0実体である。mode変更ではrootをsource hostとoverlay layer間で移し、navをclone / serializeしない。route更新だけがnav subtreeを交換する。
+presentの正本はpersistent root内の`nav[data-sidebar-nav]`1実体であり、absent時は0実体である。mode変更ではrootをsource hostとoverlay layer間で移し、navをclone / serializeしない。route更新は原則としてnav subtreeを交換する。限定した履歴検証では、Reader BasicからTOC Readable Long Headingへ戻るdesktopの別ページtraverseに限り、以下の選択属性更新で既存nav/linkの実体を保持できる。
 
 rootは初期openの`details[data-layout-sidebar-disclosure]`とnative summaryを持つ。branchは`details[data-sidebar-nav-branch] > summary + ul`を使う。branchの`open`だけが開閉を表し、重複する`aria-expanded`や子ulの`hidden`を持たない。group idは安定させる。No-JSでは全幅でsummary、branch、linkを操作できる。狭幅fallbackは本文の前に通常flowで配置し、0px trackにしない。
 
@@ -50,6 +50,10 @@ return-focus descriptorはheader triggerのsidebarId、同documentへ接続中�
 ## 6. Transactionとfailure
 
 canonical snapshotはtransaction内だけで生成し、runtime expanded state / tabindex等を除去する。adapterはprevious canonical projectionとcontrollerのraw overlay state / descriptorを保持する。derived modeやphysical placement、generationを複製しない。generationと最終成功通知はContentCommitter / app shell lifecycleが所有する。
+
+限定した選択属性更新は、currentなmanaged intent・旧displayed binding・宛先entry/address・接続root/surface/navをprepare時とcommit直前に照合する。sidebar ID、scope、topology、初期展開、heading、presentation、breakpointとplacementが同じで、唯一のselected leafと`aria-current="page"`が整合し、その属性だけを除いたcanonical DOMが完全一致する場合だけ適用する。href、text、子順、branch marker、未知属性など他の差は従来の全交換へ戻す。
+
+同じ実node上の`aria-current`とrootの`selected-id`だけを更新し、runtimeのopen、tabindex、inert、style、overlay、focus、storageは既存ownerへ委ねる。成功した差分更新のrollbackも同じnode上で旧選択へ戻し、controller snapshotとgenerationの既存復元は維持する。prepare後の構造変更などで実体保持の条件が失われた場合は既存snapshot交換へ縮退する。入力待機や合成click再送は加えず、main/headerなど別surfaceのDOM差替えをまたぐ操作保証へ拡張しない。
 
 初期化失敗、abort、unexpected disconnectではlistener / observer / subscriptionを解除し、共有state属性を除去する。header readiness喪失はnative fallbackへ収束する。schedulerがactivation timingを所有し、componentによる自己起動を追加しない。
 

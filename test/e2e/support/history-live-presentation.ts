@@ -28,6 +28,7 @@ interface HistoryLiveProbe {
   epoch: number | null;
   nativeSupported: boolean;
   nativeStarts: number;
+  blockedHistoryAnimations: number;
   replaced: number;
   committed: number;
   focus: number;
@@ -44,10 +45,17 @@ interface HistoryLiveProbe {
     currentTime: number | null;
     href: string | null;
     tag: string | null;
+    raceAnchorMatches: boolean;
+    raceAnchorConnected: boolean;
+    raceNavConnected: boolean;
+    raceLabelConnected: boolean;
   }[];
   visual: { provided: boolean; value: boolean | null } | null;
   animations: Animation[];
   raceTarget: Element | null;
+  raceNav: Element | null;
+  raceLabel: Element | null;
+  raceDetachments: { at: number; kind: string }[];
   stateChanges: number;
 }
 declare global {
@@ -95,9 +103,10 @@ const installProbe = async (
   page: Page,
   pause = false,
   visual: 'native' | 'true' | 'undefined' = 'native',
+  presentation: 'live' | 'none' = 'live',
 ): Promise<void> => {
   await page.addInitScript(
-    ({ pause, visual }) => {
+    ({ pause, visual, presentation }) => {
       if (visual !== 'native')
         Object.defineProperty(PopStateEvent.prototype, 'hasUAVisualTransition', {
           configurable: true,
@@ -110,6 +119,7 @@ const installProbe = async (
         epoch: null,
         nativeSupported: typeof document.startViewTransition === 'function',
         nativeStarts: 0,
+        blockedHistoryAnimations: 0,
         replaced: 0,
         committed: 0,
         focus: 0,
@@ -123,6 +133,9 @@ const installProbe = async (
         visual: null,
         animations: [],
         raceTarget: null,
+        raceNav: null,
+        raceLabel: null,
+        raceDetachments: [],
         stateChanges: 0,
       });
       const read = (phase: string, frame = 0): HistoryLiveFrame => {
@@ -145,6 +158,14 @@ const installProbe = async (
       };
       const animate = Element.prototype.animate;
       Element.prototype.animate = function (keyframes, options): Animation {
+        if (
+          presentation === 'none' &&
+          typeof options === 'object' &&
+          options.id === 'rouault-history-content'
+        ) {
+          probe.blockedHistoryAnimations++;
+          throw new Error('History animation disabled for the input baseline');
+        }
         const animation = animate.call(this, keyframes, options);
         if (animation.id !== 'rouault-history-content') return animation;
         const index = probe.animations.push(animation) - 1;
@@ -168,7 +189,12 @@ const installProbe = async (
         return animation;
       };
       const nativeStart = document.startViewTransition?.bind(document);
-      if (nativeStart)
+      if (presentation === 'none')
+        Object.defineProperty(document, 'startViewTransition', {
+          configurable: true,
+          value: undefined,
+        });
+      else if (nativeStart)
         Object.defineProperty(document, 'startViewTransition', {
           configurable: true,
           value: (update: () => Promise<void>) => {
@@ -238,19 +264,32 @@ const installProbe = async (
                 typeof animation?.currentTime === 'number' ? animation.currentTime : null,
               href: target?.closest('a')?.getAttribute('href') ?? null,
               tag: target?.closest('a, summary, button')?.localName ?? null,
+              raceAnchorMatches: target?.closest('a') === probe.raceTarget,
+              raceAnchorConnected: target?.closest('a')?.isConnected ?? false,
+              raceNavConnected: probe.raceNav?.isConnected ?? false,
+              raceLabelConnected: probe.raceLabel?.isConnected ?? false,
             });
           },
           { capture: true },
         );
       new MutationObserver((records) => {
         if (!probe.active) return;
-        for (const record of records)
+        for (const record of records) {
+          for (const removed of record.removedNodes)
+            for (const [kind, target] of [
+              ['nav', probe.raceNav],
+              ['link', probe.raceTarget],
+              ['label', probe.raceLabel],
+            ] as const)
+              if (target && (removed === target || removed.contains(target)))
+                probe.raceDetachments.push({ at: performance.now(), kind });
           if (
             record.target instanceof HTMLElement &&
             record.target.matches('[data-router-document-host-announcement]') &&
             record.target.textContent
           )
             probe.announcements.push(record.target.textContent);
+        }
       }).observe(document, { childList: true, subtree: true });
       let frame = 0;
       const channel = new MessageChannel();
@@ -266,7 +305,7 @@ const installProbe = async (
       };
       requestAnimationFrame(sample);
     },
-    { pause, visual },
+    { pause, visual, presentation },
   );
 };
 
@@ -375,6 +414,7 @@ const snapshot = async (page: Page) =>
       epoch,
       nativeSupported,
       nativeStarts,
+      blockedHistoryAnimations,
       replaced,
       committed,
       focus,
@@ -387,6 +427,7 @@ const snapshot = async (page: Page) =>
       inputs,
       visual,
       stateChanges,
+      raceDetachments,
     } = window.__rouaultHistoryLiveProbe;
     return {
       active,
@@ -395,6 +436,7 @@ const snapshot = async (page: Page) =>
       epoch,
       nativeSupported,
       nativeStarts,
+      blockedHistoryAnimations,
       replaced,
       committed,
       focus,
@@ -407,7 +449,10 @@ const snapshot = async (page: Page) =>
       inputs,
       visual,
       stateChanges,
+      raceDetachments,
       raceOriginalTargetConnected: window.__rouaultHistoryLiveProbe.raceTarget?.isConnected ?? null,
+      raceOriginalNavConnected: window.__rouaultHistoryLiveProbe.raceNav?.isConnected ?? null,
+      raceOriginalLabelConnected: window.__rouaultHistoryLiveProbe.raceLabel?.isConnected ?? null,
     };
   });
 const evidence = async (page: Page, info: TestInfo, classification: string): Promise<void> => {
@@ -587,40 +632,78 @@ export const registerHistoryLivePresentationTests = (): void => {
           await evidence(page, info, `native UA=false: 自然${phase} ${control} 実入力成立`);
         });
 
-    test('DOM差替えをまたぐ一度のpointer down/upは成立と消失を観測して区別する', async ({
-      page,
-    }, info) => {
-      await installProbe(page);
-      await prepare(page);
-      const link = page.locator('aside').getByRole('link', { name: title, exact: true });
-      const point = await link.boundingBox();
-      if (!point) throw new Error('sidebar return link');
-      await link.evaluate((element) => {
-        window.__rouaultHistoryLiveProbe.raceTarget = element;
-      });
-      await page.mouse.move(point.x + point.width / 2, point.y + point.height / 2);
-      await page.mouse.down();
-      await back(page);
-      await page.mouse.up();
-      await finishFrames(page);
-      const probe = await snapshot(page);
-      expect(probe.inputs.filter((event) => event.type === 'pointerdown')).toHaveLength(1);
-      expect(probe.inputs.filter((event) => event.type === 'pointerup')).toHaveLength(1);
-      const clicks = probe.inputs.filter((event) => event.type === 'click');
-      expect(clicks.length).toBeLessThanOrEqual(1);
-      expect(probe.stateChanges).toBeLessThanOrEqual(1);
-      expect(probe.replaced).toBe(1);
-      const delivered =
-        clicks.length === 1 && clicks[0]?.href === longNote && probe.stateChanges === 1;
-      // node破棄でclickが失われた場合も、replayや追加clickで成功へ変換しない。
-      await evidence(
+    for (const presentation of ['live', 'none'] as const)
+      test(`DOM差替えをまたぐ一度の押下は同じsidebar linkへ届く: ${presentation}`, async ({
         page,
-        info,
-        delivered
-          ? '差替え跨ぎ: 一回のclickとstate-only結果を観測（一般的な入力保証には拡張しない）'
-          : '差替え跨ぎ: clickまたは結果の未成立を観測。入力成功に数えない',
-      );
-    });
+      }, info) => {
+        await installProbe(page, false, 'native', presentation);
+        const saved = await prepare(page);
+        const link = page.locator('aside').getByRole('link', { name: title, exact: true });
+        const point = await link.boundingBox();
+        if (!point) throw new Error('sidebar return link');
+        await link.evaluate((element) => {
+          const probe = window.__rouaultHistoryLiveProbe;
+          probe.raceTarget = element;
+          probe.raceNav = element.closest('[data-sidebar-nav]');
+          probe.raceLabel = element.querySelector('[data-sidebar-nav-label]');
+        });
+        await page.mouse.move(point.x + point.width / 2, point.y + point.height / 2);
+        await page.mouse.down();
+        await back(page);
+        const returned = await snapshot(page);
+        expect(returned.raceOriginalTargetConnected).toBe(true);
+        expect(returned.raceOriginalNavConnected).toBe(true);
+        expect(returned.raceOriginalLabelConnected).toBe(true);
+        expect(returned.raceDetachments).toHaveLength(0);
+        expect(returned.committed).toBe(1);
+        expect(returned.epoch).not.toBeNull();
+        expect(await page.evaluate(() => history.state?.__rouaultHistoryEntry?.id)).toBe(
+          saved.entryId,
+        );
+        expect(Math.abs((await page.evaluate(() => scrollY)) - saved.y)).toBeLessThanOrEqual(2);
+        await page.mouse.up();
+        await expect.poll(() => snapshot(page).then((probe) => probe.committed)).toBe(2);
+        await finishFrames(page);
+        const probe = await snapshot(page);
+        expect(probe.inputs.filter((event) => event.type === 'pointerdown')).toHaveLength(1);
+        expect(probe.inputs.filter((event) => event.type === 'pointerup')).toHaveLength(1);
+        const clicks = probe.inputs.filter((event) => event.type === 'click');
+        expect(clicks).toHaveLength(1);
+        expect(clicks[0]?.href).toBe(longNote);
+        expect(probe.stateChanges).toBe(0);
+        expect(probe.replaced).toBe(2);
+        expect(probe.committed).toBe(2);
+        expect(probe.focus).toBe(2);
+        const activatedAt = clicks[0]?.at ?? Infinity;
+        expect(probe.raceDetachments.filter((event) => event.at < activatedAt)).toHaveLength(0);
+        for (const event of probe.inputs.filter((event) => event.type !== 'pointermove')) {
+          expect(event.trusted).toBe(true);
+          expect(event.raceAnchorMatches).toBe(true);
+          expect(event.raceAnchorConnected).toBe(true);
+          expect(event.raceNavConnected).toBe(true);
+          expect(event.raceLabelConnected).toBe(true);
+        }
+        expect(probe.epoch).toBe((returned.epoch ?? 0) + 1);
+        const clickedEntryId: unknown = await page.evaluate(
+          () => history.state?.__rouaultHistoryEntry?.id,
+        );
+        expect(typeof clickedEntryId).toBe('string');
+        expect(clickedEntryId).toBeTruthy();
+        expect(clickedEntryId).not.toBe(saved.entryId);
+        // このhashなし通常clickは既存policyどおりfull navigationとなり、本人の先頭移動を保つ。
+        expect(await page.evaluate(() => location.pathname)).toBe(longNote);
+        expect(await page.evaluate(() => scrollY)).toBeLessThanOrEqual(2);
+        if (presentation === 'none') {
+          expect(probe.nativeStarts).toBe(0);
+          expect(probe.starts).toHaveLength(0);
+        }
+        // 物理押下一回の成立だけを数え、入力再送で結果を補わない。
+        await evidence(
+          page,
+          info,
+          `${presentation}: clickまでsidebar実体保持、trusted clickと既存full navigation各一回（他surfaceへ一般化しない）`,
+        );
+      });
 
     test('90ms pauseのBack/Forward取消とnative→live→nativeで旧効果を残さない', async ({
       page,

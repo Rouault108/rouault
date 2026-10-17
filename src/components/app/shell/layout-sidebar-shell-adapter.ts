@@ -8,6 +8,7 @@ import type {
 import { createCanonicalAbsentRuntimeSidebarProjection } from '../../../../shared/navigation/sidebar-shell-projection-contract.js';
 import { validateRuntimeSidebarProjection } from '../../../../shared/navigation/navigation-shell-validator.js';
 import { layoutSidebarController } from '../../layout/layout-sidebar-controller.js';
+import { prepareSidebarTraverseSelectionPatch } from './sidebar-traverse-selection-patch.js';
 import { LAYOUT_SIDEBAR_ROOT_SELECTOR } from '../../../../shared/navigation/sidebar-enhancement-contract.js';
 
 export const SIDEBAR_ROOT_SELECTOR = LAYOUT_SIDEBAR_ROOT_SELECTOR;
@@ -136,12 +137,24 @@ export const createLayoutSidebarShellAdapter = () => ({
     if (!root) throw new Error('persistent sidebar root is required');
     const previous = readSidebarShellSnapshot(root);
     const state = layoutSidebarController.readRuntimeSnapshot(previous.sidebarId);
+    const next = validateRuntimeSidebarProjection(
+      update.shell.sidebarProjection ?? createCanonicalAbsentRuntimeSidebarProjection(),
+    );
+    const selectionPatch = prepareSidebarTraverseSelectionPatch({
+      root,
+      navigationUrl: update.navigationUrl,
+      previous,
+      next,
+      readCurrentSnapshot: () => readSidebarShellSnapshot(root),
+    });
     const commit = prepareProjection(update.shell.sidebarProjection, root);
     const rollback = prepareProjection(previous, root);
     return {
-      commit,
+      commit() {
+        if (!selectionPatch?.commit()) commit();
+      },
       rollback() {
-        rollback();
+        if (!selectionPatch?.rollback()) rollback();
         layoutSidebarController.restoreRuntimeSnapshot(previous.sidebarId, state);
       },
     };

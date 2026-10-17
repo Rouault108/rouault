@@ -67,4 +67,6 @@ A1通常/hash移動、A2entry座標復元、A3同URLの別entry、A4state/native
 
 HistoryPresentationCoordinatorは位置を書かず、当該mainのAnimationと固定ownerだけを所有する。opacity 0.82→1、180msで表示し、finishedをnavigationや位置jobの完了条件にしない。新intent、Back/Forward、本人入力、pagehide、破棄等で取消し、後続位置補正は取消→通常表示→job再照合→scrollの順序を守る。旧finished／旧位置jobの終端は新sessionを取消さない。表示の成否でcandidate/restoring/settledやhydrationの寿命を短縮しない。
 
+同じ代表traverseのsidebarで、押下中のリンクをnav全交換によって失わないための選択属性更新は[Sidebar State Contract](sidebar-state.md#6-transactionとfailure)が所有する。位置jobや演出coordinatorへ入力待機・click再送を加えず、他surfaceの実体保持を保証しない。
+
 この検証は第4版全体の採用判定ではない。noneの独立したimmutable受理記録・binding採用失敗後の回復管理は追加しておらず、その故障経路は表示readyにしない。既存transaction、通知、hydration起動、BFCacheの位置補償へ新しいawaitや再commit経路を加えない。
