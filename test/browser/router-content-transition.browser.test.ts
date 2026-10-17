@@ -140,6 +140,8 @@ const setup = async (
   options: {
     afterContentCommit?: () => void | Promise<void>;
     shellFailure?: Error;
+    contentPrepareFailure?: Error;
+    shellPrepareFailure?: Error;
     navigationTimeoutMs?: number;
     beforeLoad?: () => void | Promise<void>;
   } = {},
@@ -210,6 +212,7 @@ const setup = async (
     postCommitController: { run: postCommit },
     contentAdapter: {
       prepare({ html }) {
+        if (options.contentPrepareFailure) throw options.contentPrepareFailure;
         const previousHtml = content.innerHTML;
         return {
           async commit() {
@@ -241,12 +244,15 @@ const setup = async (
       },
     },
     shellAdapter: {
-      prepare: () => ({
-        commit() {
-          if (options.shellFailure) throw options.shellFailure;
-        },
-        rollback: shellRollback,
-      }),
+      prepare() {
+        if (options.shellPrepareFailure) throw options.shellPrepareFailure;
+        return {
+          commit() {
+            if (options.shellFailure) throw options.shellFailure;
+          },
+          rollback: shellRollback,
+        };
+      },
     },
   });
   router = currentRouter;
@@ -562,6 +568,43 @@ describe('Router content transition transaction integration', () => {
     expect(state.announcements).toEqual(['ページが読み込まれました']);
     expect(state.header).toBe(document.querySelector('[data-layout-header]'));
   });
+
+  it.each(['content', 'shell'] as const)(
+    '%s prepare失敗は未変更本文の演出を止め同じerrorの失敗結果を一度だけ返す',
+    async (stage) => {
+      const error = new Error(`${stage} prepare failed`);
+      const state = await setup(
+        stage === 'content' ? { contentPrepareFailure: error } : { shellPrepareFailure: error },
+      );
+      const before = readContentContext();
+      const entry = readHistoryEntry();
+      const historyLength = history.length;
+      const { result, transition } = await state.begin();
+      await transition.update();
+      const failed = await result;
+      expect(failed.kind).toBe('load-failure');
+      expect(failed.outcome).toBe('failed');
+      expect(failed.committed).toBe(false);
+      expect(failed.error).toBe(error);
+      expect(state.start).toHaveBeenCalledTimes(1);
+      expect(transition.skipTransition).toHaveBeenCalledTimes(1);
+      expect(state.contentCommit).not.toHaveBeenCalled();
+      expect(state.contentRollback).not.toHaveBeenCalled();
+      expect(state.shellRollback).not.toHaveBeenCalled();
+      expect(state.restored).toHaveLength(0);
+      expect(state.content.textContent).toContain('本文 A');
+      expect(readContentContext()?.contentEpoch).toBe(before?.contentEpoch);
+      expect(readContentContext()?.displayedBinding).toEqual(before?.displayedBinding);
+      expect(readCurrentShellCommitId()).toBe(0);
+      expect(readHistoryEntry()).toEqual(entry);
+      expect(readAddress()).toBe('/notes/a');
+      expect(history.length).toBe(historyLength);
+      expect(state.contentLoad).not.toHaveBeenCalled();
+      expect(state.postCommit).not.toHaveBeenCalled();
+      expect(state.announcements).toEqual([]);
+      expect(document.documentElement.hasAttribute('data-content-transition')).toBe(false);
+    },
+  );
 
   it('callback内の実commit失敗は一回rollbackして失敗結果を返し再commitしない', async () => {
     const error = new Error('shell mutation failed');

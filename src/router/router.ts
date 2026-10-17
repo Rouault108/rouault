@@ -542,6 +542,8 @@ export class Router {
           ...(request.intent ? { intent: request.intent } : {}),
         });
       } catch (error) {
+        // prepare失敗はrollback通知を出さないため、更新前の失敗でも演出を止める。
+        this.transitions.skip();
         if (!canCommit()) return this.createCommitSupersededResult(request);
         const normalizedError = error instanceof Error ? error : new Error(String(error));
         this.eventBus.emit('error', {
