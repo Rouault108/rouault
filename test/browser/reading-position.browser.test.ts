@@ -532,6 +532,14 @@ describe('通常 full navigation の初回適用と安定化', () => {
 });
 
 describe('検証済み履歴経路の表示状態', () => {
+  const historyQuotaBoundary = (): Promise<void> =>
+    new Promise((resolve) => window.setTimeout(resolve, 10_000));
+
+  // この2ケースの実履歴書込みを、前後の既存52ケースのquota期間から分離する。
+  // 履歴APIをmockせず、既存geometry suiteと同じ実時間の境界待機を使う。
+  beforeAll(historyQuotaBoundary, 15_000);
+  afterAll(historyQuotaBoundary, 15_000);
+
   it.each(['visible', 'hidden'] as const)(
     '%s完了時の先行復元を区別し、hidden中も候補を保全して通常settledへ渡す',
     async (visibility) => {
