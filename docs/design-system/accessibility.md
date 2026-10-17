@@ -46,7 +46,7 @@ Guide、ADR、component文書はこの文書を上書きしてはならない。
 
 | Token                 | Value |
 | --------------------- | ----- |
-| `--control-min-touch` | 24px  |
+| `--control-min-touch` | 24px |
 
 ### Contrast and Color
 
