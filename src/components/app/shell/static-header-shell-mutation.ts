@@ -4,7 +4,7 @@ import { THEME_UI_OPTIONS } from '../../../theme/theme-ui-options.js';
 import { resolveStaticIconBody } from '../../../../shared/icons/icon-paths.js';
 
 export interface PreparedStaticHeaderMutation {
-  commit(): void;
+  commit(): undefined;
   rollback(): void;
 }
 
@@ -94,7 +94,7 @@ export const prepareStaticHeaderMutation = (headerHtml: string): PreparedStaticH
   const previousHeaderHtml = readCanonicalStaticHeaderHtml(currentHeader);
 
   return {
-    commit() {
+    commit(): undefined {
       currentHeader.replaceWith(nextHeader);
     },
     rollback() {

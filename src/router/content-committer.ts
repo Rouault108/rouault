@@ -27,6 +27,7 @@ import type {
   ContentUpdateAdapter,
   HistoryMode,
   NavigationCommitReceipt,
+  PreparedContentUpdate,
   PreparedShellUpdate,
   RouterRuntimeUrlDependencies,
   ShellAdapter,
@@ -41,14 +42,12 @@ interface CommitRequest {
   signal?: AbortSignal;
 }
 
-interface PreparedMutation {
-  commit(): void | Promise<void>;
-  rollback(): void | Promise<void>;
-}
+type PreparedMutation = PreparedContentUpdate;
 
 const createNoopMutation = (): PreparedMutation => ({
-  commit() {
-    // no-op
+  commitTiming: 'synchronous',
+  commit(): undefined {
+    return undefined;
   },
   rollback() {
     // no-op
@@ -119,6 +118,11 @@ export class ContentCommitter {
       request.normalizedUrl,
       shellCommitId,
     );
+    // DOMを書き始める前の宣言だけを採用し、受理時のcurrent値で保証を昇格しない。
+    const declaredSynchronousCommit =
+      preparedContentMutation.commitTiming === 'synchronous' &&
+      preparedShellMutation.commitTiming === 'synchronous';
+    let synchronousCommit = declaredSynchronousCommit;
 
     const checkCurrent = (): void => {
       if (request.signal?.aborted || (request.intent && !isNavigationIntentCurrent(request.intent)))
@@ -142,15 +146,21 @@ export class ContentCommitter {
         root: contentRoot,
         shellCommitId,
         stateOnly: false,
+        ...(synchronousCommit ? { commitTiming: 'synchronous' as const } : {}),
       });
     };
     try {
       checkCurrent();
-      await preparedContentMutation.commit();
+      const contentCommit = preparedContentMutation.commit();
+      // 型外のadapterが同期宣言に違反した場合も、既存awaitを保って保証だけ取り下げる。
+      if (contentCommit !== undefined) synchronousCommit = false;
+      await contentCommit;
       contentEpoch = readContentContext()?.contentEpoch ?? 0;
       contentRoot = readContentContext()?.root ?? this.outlet;
       checkCurrent();
-      await preparedShellMutation.commit();
+      const shellCommit = preparedShellMutation.commit();
+      if (shellCommit !== undefined) synchronousCommit = false;
+      await shellCommit;
       checkCurrent();
       commitShellGeneration(shellCommitId);
       const header = document.querySelector<HTMLElement>(STATIC_HEADER_ROOT_SELECTOR);
@@ -264,7 +274,8 @@ export class ContentCommitter {
     const previousHtml = this.outlet.innerHTML;
 
     return {
-      commit: () => {
+      commitTiming: 'synchronous',
+      commit: (): undefined => {
         replaceElementChildrenFromHtml(
           this.outlet,
           envelope.document.html,
@@ -292,10 +303,7 @@ export class ContentCommitter {
       shellCommitId,
     });
 
-    return {
-      commit: () => preparedShellUpdate.commit(),
-      rollback: () => preparedShellUpdate.rollback(),
-    };
+    return preparedShellUpdate;
   }
 
   private async rollbackCommit(args: {

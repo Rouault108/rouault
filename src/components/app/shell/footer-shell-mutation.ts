@@ -1,7 +1,7 @@
 const FOOTER_COPYRIGHT_SELECTOR = '[data-layout-footer] .ui-footer__copyright';
 
 export interface PreparedFooterCopyrightMutation {
-  commit(): void;
+  commit(): undefined;
   rollback(): void;
 }
 
@@ -29,7 +29,7 @@ export const prepareFooterCopyrightMutation = (
 ): PreparedFooterCopyrightMutation => {
   if (nextCopyrightText === undefined) {
     return {
-      commit() {
+      commit(): undefined {
         return undefined;
       },
       rollback() {
@@ -41,7 +41,7 @@ export const prepareFooterCopyrightMutation = (
   const previousCopyrightText = readLayoutFooterCopyrightText();
   const normalizedNextCopyrightText = requireCopyrightText(nextCopyrightText);
   return {
-    commit() {
+    commit(): undefined {
       element.textContent = normalizedNextCopyrightText;
     },
     rollback() {

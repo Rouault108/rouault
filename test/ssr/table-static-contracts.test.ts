@@ -4,7 +4,11 @@ import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 
 import { expectCssExcludes, expectCssIncludes } from './css-contract-test-helpers.js';
-import { hasDeclarationForSelector, hasRuleForSelector } from './support/css-contract.js';
+import {
+  hasDeclarationForSelector,
+  hasImportantDeclarationForSelector,
+  hasRuleForSelector,
+} from './support/css-contract.js';
 
 const dirname = path.dirname(fileURLToPath(import.meta.url));
 const tableCssPath = path.resolve(dirname, '../../src/assets/css/table.css');
@@ -88,10 +92,22 @@ const splitSelectorPreludeListAtTopLevelComma = (selectorList: string): string[]
 };
 
 describe('table static css contracts', () => {
+  it('reduced motionでrail準備時の表root marginを補間しない', () => {
+    for (const selector of [
+      ':is(.prose, .about-prose) > [data-table-root]',
+      ':is(.prose, .about-prose) > [data-tabs-root] > [data-tab-panel] > [data-table-root]',
+    ])
+      expect(
+        hasImportantDeclarationForSelector(tableCss, selector, 'transition-duration', '0ms', {
+          scope: 'reduced-motion',
+        }),
+      ).toBe(true);
+  });
+
   it('prose 内 table root が static scroll container / focus-visible / reduced-motion 契約を保持すること', () => {
     expectCssIncludes(tableCss, [
       ':is(.prose, .about-prose) > [data-table-root]',
-      ":is(.prose, .about-prose) > [data-tabs-root] > [data-tab-panel] > [data-table-root]",
+      ':is(.prose, .about-prose) > [data-tabs-root] > [data-tab-panel] > [data-table-root]',
       'width: 100%',
       'margin-inline: 0',
       'box-sizing: border-box',
@@ -129,9 +145,9 @@ describe('table static css contracts', () => {
       '--_table-scroll-fade-color: oklch(from var(--fg-default, oklch(20% 0 0)) l c h / 0.08)',
       'box-shadow:\n    var(--_table-scroll-fade-left-shadow),\n    var(--_table-scroll-fade-right-shadow)',
       ':is(.prose, .about-prose) > [data-table-root][data-fade-left]',
-      ":is(.prose, .about-prose) > [data-tabs-root] > [data-tab-panel] > [data-table-root][data-fade-left]",
+      ':is(.prose, .about-prose) > [data-tabs-root] > [data-tab-panel] > [data-table-root][data-fade-left]',
       ':is(.prose, .about-prose) > [data-table-root][data-fade-right]',
-      ":is(.prose, .about-prose) > [data-tabs-root] > [data-tab-panel] > [data-table-root][data-fade-right]",
+      ':is(.prose, .about-prose) > [data-tabs-root] > [data-tab-panel] > [data-table-root][data-fade-right]',
       '--_table-scroll-fade-left-shadow: inset 10px 0 10px -10px var(--_table-scroll-fade-color)',
       '--_table-scroll-fade-right-shadow: inset -10px 0 10px -10px var(--_table-scroll-fade-color)',
       '@media (forced-colors: active)',
@@ -176,7 +192,9 @@ describe('table static css contracts', () => {
       for (const selector of selectors) {
         expect(hasRuleForSelector(tableCss, selector, { scope: 'base' }), selector).toBe(true);
         expect(
-          hasDeclarationForSelector(tableCss, selector, 'scrollbar-width', 'thin', { scope: 'base' }),
+          hasDeclarationForSelector(tableCss, selector, 'scrollbar-width', 'thin', {
+            scope: 'base',
+          }),
           selector,
         ).toBe(true);
         expect(
@@ -195,24 +213,20 @@ describe('table static css contracts', () => {
       }
     }
 
-    expectCssExcludes(tableCss, [
-      'scrollbar-color:',
-      '--_table-scrollbar-',
-      '::-webkit-scrollbar',
-    ]);
+    expectCssExcludes(tableCss, ['scrollbar-color:', '--_table-scrollbar-', '::-webkit-scrollbar']);
   });
 
   it('top scroll rail CSS は prose / about-prose 直下と [data-tabs-root] panel 直下に限定されること', () => {
     expectCssIncludes(tableCss, [
       ':is(.prose, .about-prose) > [data-table-scroll-rail]',
-      ":is(.prose, .about-prose) > [data-tabs-root] > [data-tab-panel] > [data-table-scroll-rail]",
+      ':is(.prose, .about-prose) > [data-tabs-root] > [data-tab-panel] > [data-table-scroll-rail]',
       'overflow-x: auto',
       'overflow-y: hidden',
       'block-size: 0.875rem',
       'margin-block: var(--space-1, 0.25rem) calc(var(--space-1, 0.25rem) * -1)',
       'scrollbar-gutter: stable',
       ':is(.prose, .about-prose) > [data-table-scroll-rail] > [data-table-scroll-rail-spacer]',
-      ":is(.prose, .about-prose) > [data-tabs-root] > [data-tab-panel] > [data-table-scroll-rail] > [data-table-scroll-rail-spacer]",
+      ':is(.prose, .about-prose) > [data-tabs-root] > [data-tab-panel] > [data-table-scroll-rail] > [data-table-scroll-rail-spacer]',
       'block-size: 1px',
     ]);
 
@@ -224,15 +238,13 @@ describe('table static css contracts', () => {
       }
     }
 
-    expectCssExcludes(tableCss, [
-      'ui-table [data-table-scroll-rail]',
-    ]);
+    expectCssExcludes(tableCss, ['ui-table [data-table-scroll-rail]']);
   });
 
   it('top scroll rail は focus-visible / reduced-motion / coarse pointer / forced-colors 契約を持つこと', () => {
     expectCssIncludes(tableCss, [
       ':is(.prose, .about-prose) > [data-table-scroll-rail]:focus-visible',
-      ":is(.prose, .about-prose) > [data-tabs-root] > [data-tab-panel] > [data-table-scroll-rail]:focus-visible",
+      ':is(.prose, .about-prose) > [data-tabs-root] > [data-tab-panel] > [data-table-scroll-rail]:focus-visible',
       'outline: var(--focus-ring-width, 2px) solid var(--focus-ring-color',
       'outline-offset: var(--focus-ring-offset, 2px)',
       'animation: var(--animation-focus)',
@@ -240,7 +252,7 @@ describe('table static css contracts', () => {
       'animation: none',
       '@media (hover: none) and (pointer: coarse)',
       ':is(.prose, .about-prose) > [data-table-scroll-rail]',
-      ":is(.prose, .about-prose) > [data-tabs-root] > [data-tab-panel] > [data-table-scroll-rail]",
+      ':is(.prose, .about-prose) > [data-tabs-root] > [data-tab-panel] > [data-table-scroll-rail]',
       'display: none',
       '@media (forced-colors: active)',
       'outline-color: Highlight',

@@ -16,6 +16,7 @@ import {
 import { waitForContentReadiness } from '../../../client/hydration/content-readiness.js';
 import {
   clampReadingPosition,
+  validateReadingPosition,
   ReadingPositionStore,
   type ReadingPosition,
 } from '../navigation/reading-position-store.js';
@@ -25,6 +26,7 @@ import { readContentTransitionShell } from '../../../router/content-transition-s
 import type { AppShellValidatedDetail } from '../shell/app-shell-events.js';
 import type { NavigationCommitReceipt } from '../../../router/router-types.js';
 import { HistoryPresentationCoordinator } from './history-presentation-coordinator.js';
+import { ownsAcceptedHistoryCommit } from './accepted-history-commit.js';
 import {
   captureHistoryGeometry,
   readHistoryGeometryAnchor,
@@ -52,6 +54,7 @@ interface ScrollJob {
   readonly error: boolean;
   readonly entryId: string | null;
   readonly receipt?: NavigationCommitReceipt;
+  readonly prepaintGeometryReady?: boolean;
   presentation: PresentationEligibility;
   candidate: ReadingPosition | null;
   url: string;
@@ -350,10 +353,12 @@ export class ReadingPositionController {
     shellCommitId: number;
     previousUrl?: string;
     receipt?: NavigationCommitReceipt;
+    prepaintGeometryReady?: boolean;
   }): void {
     if (this.disposed || options.intent.signal.aborted) return;
     this.cancel();
     delete options.root.dataset['historyPresentationEligibility'];
+    delete options.root.dataset['readingPositionPrepaint'];
     const context = readContentContext();
     if (context?.recoveryRequired) {
       this.pendingIntent = null;
@@ -486,7 +491,8 @@ export class ReadingPositionController {
     job.controller.signal.addEventListener('abort', abortReady, { once: true });
     const readyTimer = window.setTimeout(abortReady, 5000);
     try {
-      this.restoreVerifiedHistoryBeforePaint(job);
+      const rawApplied = this.restoreRawHistoryBeforePaint(job);
+      this.restoreVerifiedHistoryBeforePaint(job, rawApplied);
       // 履歴成功・binding採用後の既知の先頭だけを描画待ちより前に適用する。
       // 完了判定と取消は、このjobの準備後の安定化まで引き続き所有する。
       const binding = readContentContext()?.displayedBinding;
@@ -575,7 +581,53 @@ export class ReadingPositionController {
       job.controller.signal.removeEventListener('abort', abortReady);
     }
   }
-  private restoreVerifiedHistoryBeforePaint(job: ScrollJob): void {
+  private restoreRawHistoryBeforePaint(job: ScrollJob): boolean {
+    const outcome = (status: 'applied' | 'unavailable' | 'skipped'): boolean => {
+      if (this.job === job) job.root.dataset['readingPositionPrepaint'] = status;
+      return status === 'applied';
+    };
+    if (job.intent.cause !== 'traverse' || job.stateOnly || job.error || job.url.includes('#'))
+      return outcome('skipped');
+    outcome('unavailable');
+    const receipt = job.receipt;
+    const candidate = validateReadingPosition(job.candidate, job.url);
+    if (
+      receipt?.commitTiming !== 'synchronous' ||
+      job.prepaintGeometryReady !== true ||
+      !candidate ||
+      !job.entryId ||
+      document.visibilityState !== 'visible' ||
+      !this.presentationCurrent(job) ||
+      !ownsAcceptedHistoryCommit(job.root, job.intent, receipt)
+    )
+      return false;
+    try {
+      const range = this.range();
+      const target = clampReadingPosition(candidate, range.x, range.y);
+      // 仮clampを最初の位置が復元済みという証明にせず、通常jobへ候補を残す。
+      if (target.x !== candidate.x || target.y !== candidate.y) return false;
+      this.cancelJobPresentation(job, 'raw-position-apply');
+      if (
+        !this.presentationCurrent(job) ||
+        !ownsAcceptedHistoryCommit(job.root, job.intent, receipt)
+      )
+        return false;
+      if (Math.abs(scrollX - target.x) > 2 || Math.abs(scrollY - target.y) > 2)
+        window.scrollTo({ left: target.x, top: target.y, behavior: 'instant' });
+      if (
+        !this.presentationCurrent(job) ||
+        !ownsAcceptedHistoryCommit(job.root, job.intent, receipt) ||
+        Math.abs(scrollX - target.x) > 2 ||
+        Math.abs(scrollY - target.y) > 2
+      )
+        return false;
+      return outcome('applied');
+    } catch {
+      // 先行適用の失敗はcandidateや通常のsettled復元を失わせない。
+      return false;
+    }
+  }
+  private restoreVerifiedHistoryBeforePaint(job: ScrollJob, rawApplied: boolean): void {
     // URLや移動方向で選別せず、復帰先entry自身の保存時の証跡と新DOMを照合する。
     if (job.intent.cause !== 'traverse') return;
     const outcome = (status: PresentationEligibility): void => {
@@ -613,7 +665,11 @@ export class ReadingPositionController {
         return;
       this.cancelJobPresentation(job, 'verified-position-apply');
       if (!this.presentationCurrent(job)) return;
-      window.scrollTo({ left: job.candidate.x, top: job.candidate.y, behavior: 'instant' });
+      if (
+        !rawApplied &&
+        (Math.abs(scrollX - job.candidate.x) > 2 || Math.abs(scrollY - job.candidate.y) > 2)
+      )
+        window.scrollTo({ left: job.candidate.x, top: job.candidate.y, behavior: 'instant' });
       const anchor = readHistoryGeometryAnchor(job.root, checkpoint);
       if (
         !this.presentationCurrent(job) ||

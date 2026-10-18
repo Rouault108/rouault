@@ -1,6 +1,6 @@
 import type {
   PayloadDocumentShellSnapshot,
-  PreparedShellUpdate,
+  SynchronousPreparedUpdate,
   RuntimeDocumentShellSnapshot,
   RuntimeSidebarShellSnapshot,
   ShellUpdatePayload,
@@ -68,7 +68,10 @@ export const readSidebarShellSnapshot = (root: Element): RuntimeSidebarShellSnap
   });
 };
 
-const prepareProjection = (snapshot: RuntimeSidebarShellSnapshot | null, root: HTMLElement) => {
+const prepareProjection = (
+  snapshot: RuntimeSidebarShellSnapshot | null,
+  root: HTMLElement,
+): (() => undefined) => {
   const validated = validateRuntimeSidebarProjection(
     snapshot ?? createCanonicalAbsentRuntimeSidebarProjection(),
   );
@@ -132,7 +135,7 @@ export const applyRuntimeSidebarSnapshotForRollback = (
 export const applySidebarSnapshot = applyPayloadShellSnapshot;
 
 export const createLayoutSidebarShellAdapter = () => ({
-  prepare(update: ShellUpdatePayload): PreparedShellUpdate {
+  prepare(update: ShellUpdatePayload): SynchronousPreparedUpdate {
     const root = document.querySelector<HTMLElement>(SIDEBAR_ROOT_SELECTOR);
     if (!root) throw new Error('persistent sidebar root is required');
     const previous = readSidebarShellSnapshot(root);
@@ -150,7 +153,8 @@ export const createLayoutSidebarShellAdapter = () => ({
     const commit = prepareProjection(update.shell.sidebarProjection, root);
     const rollback = prepareProjection(previous, root);
     return {
-      commit() {
+      commitTiming: 'synchronous',
+      commit(): undefined {
         if (!selectionPatch?.commit()) commit();
       },
       rollback() {

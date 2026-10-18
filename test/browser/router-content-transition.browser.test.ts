@@ -34,6 +34,8 @@ import {
   Router,
   type NavigationCommitReceipt,
   type NavigationResult,
+  type PreparedContentUpdate,
+  type PreparedShellUpdate,
   type RouterRuntimeUrlDependencies,
 } from '../../src/router/router.js';
 import { STATIC_HEADER_CONTRACT_ACCEPTED_TOC_ABSENT_HTML } from '../fixtures/static-header-contract-cases.js';
@@ -160,6 +162,13 @@ const setup = async (
     unknownPath?: string;
     stateOnly?: boolean;
     allowNextCommit?: boolean;
+    synchronousContent?: boolean;
+    synchronousShell?: boolean;
+    afterSynchronousContentCommit?: () => void;
+    prepareContent?: (
+      prepared: PreparedContentUpdate,
+    ) => PreparedContentUpdate | Promise<PreparedContentUpdate>;
+    prepareShell?: (prepared: PreparedShellUpdate) => PreparedShellUpdate;
   } = {},
 ) => {
   writeHistoryEntry({ mode: 'replace', owner: 'router', url: '/notes/a', state: {} });
@@ -233,44 +242,59 @@ const setup = async (
       prepare({ html }) {
         if (options.contentPrepareFailure) throw options.contentPrepareFailure;
         const previousHtml = content.innerHTML;
-        return {
-          async commit() {
-            contentCommit();
-            const epoch = beginContentMutation(content);
-            setContentReadiness({
-              contentEpoch: epoch,
-              root: content,
-              shellCommitId: readCurrentShellCommitId(),
-              status: 'pending',
-              started: false,
-            });
-            content.innerHTML = html;
-            await options.afterContentCommit?.();
-          },
-          rollback() {
-            contentRollback();
-            const epoch = beginContentMutation(content);
-            setContentReadiness({
-              contentEpoch: epoch,
-              root: content,
-              shellCommitId: readCurrentShellCommitId(),
-              status: 'pending',
-              started: false,
-            });
-            content.innerHTML = previousHtml;
-          },
+        const commit = (): void => {
+          contentCommit();
+          const epoch = beginContentMutation(content);
+          setContentReadiness({
+            contentEpoch: epoch,
+            root: content,
+            shellCommitId: readCurrentShellCommitId(),
+            status: 'pending',
+            started: false,
+          });
+          content.innerHTML = html;
         };
+        const rollback = (): void => {
+          contentRollback();
+          const epoch = beginContentMutation(content);
+          setContentReadiness({
+            contentEpoch: epoch,
+            root: content,
+            shellCommitId: readCurrentShellCommitId(),
+            status: 'pending',
+            started: false,
+          });
+          content.innerHTML = previousHtml;
+        };
+        const prepared: PreparedContentUpdate = options.synchronousContent
+          ? {
+              commitTiming: 'synchronous',
+              commit(): undefined {
+                commit();
+                options.afterSynchronousContentCommit?.();
+              },
+              rollback,
+            }
+          : {
+              async commit() {
+                commit();
+                await options.afterContentCommit?.();
+              },
+              rollback,
+            };
+        return options.prepareContent?.(prepared) ?? prepared;
       },
     },
     shellAdapter: {
       prepare() {
         if (options.shellPrepareFailure) throw options.shellPrepareFailure;
-        return {
-          commit() {
-            if (options.shellFailure) throw options.shellFailure;
-          },
-          rollback: shellRollback,
+        const commit = (): undefined => {
+          if (options.shellFailure) throw options.shellFailure;
         };
+        const prepared: PreparedShellUpdate = options.synchronousShell
+          ? { commitTiming: 'synchronous', commit, rollback: shellRollback }
+          : { commit, rollback: shellRollback };
+        return options.prepareShell?.(prepared) ?? prepared;
       },
     },
   });
@@ -1211,5 +1235,180 @@ describe('history noneとbinding採用の受理境界', () => {
     expect(push).not.toHaveBeenCalled();
     expect(replace).not.toHaveBeenCalled();
     expect(readContentContext()?.contentEpoch).toBe(epoch);
+  });
+});
+
+describe('描画前commitの事前同期契約', () => {
+  // 実History APIのwriteを独立した検証群の頻度制限へ持ち越さない。
+  beforeAll(settleHistoryQuota, 15_000);
+
+  const traverse = (currentRouter: Router): Promise<NavigationResult> => {
+    writeHistoryEntry({ mode: 'push', owner: 'router', url: '/notes/b' });
+    return currentRouter.navigate({ url: '/notes/b', historyMode: 'none', cause: 'traverse' });
+  };
+
+  it.each([false, true])(
+    '両preparedの同期宣言を固定receiptとpostcommitへ渡す（DOM前の非同期prepare=%s）',
+    async (asynchronousPrepare) => {
+      let contentBeforePrepared: string | null = null;
+      const firstFrame = deferred();
+      let readPostCommitCalls = (): number => 0;
+      let postCommitCallsAtFirstFrame = -1;
+      const current = await setup({
+        synchronousContent: true,
+        synchronousShell: true,
+        afterSynchronousContentCommit: () => {
+          requestAnimationFrame(() => {
+            postCommitCallsAtFirstFrame = readPostCommitCalls();
+            firstFrame.resolve();
+          });
+        },
+        ...(asynchronousPrepare
+          ? {
+              prepareContent: (prepared: PreparedContentUpdate) =>
+                new Promise<PreparedContentUpdate>((resolve) => {
+                  window.setTimeout(() => {
+                    contentBeforePrepared = main?.textContent ?? null;
+                    resolve(prepared);
+                  }, 0);
+                }),
+            }
+          : {}),
+      });
+      readPostCommitCalls = () => current.postCommit.mock.calls.length;
+      Object.defineProperty(document, 'startViewTransition', {
+        configurable: true,
+        value: undefined,
+      });
+      const result = await traverse(current.router);
+      await firstFrame.promise;
+      expect(result).toMatchObject({ committed: true, receipt: { commitTiming: 'synchronous' } });
+      const receipt = 'receipt' in result ? result.receipt : undefined;
+      expect(Object.isFrozen(receipt)).toBe(true);
+      expect(current.postCommit).toHaveBeenCalledOnce();
+      expect(postCommitCallsAtFirstFrame).toBe(1);
+      expect(current.postCommit.mock.calls[0]?.[0].receipt).toBe(receipt);
+      expect(current.contentCommit).toHaveBeenCalledOnce();
+      expect(current.contentLoad).toHaveBeenCalledOnce();
+      expect(current.start).not.toHaveBeenCalled();
+      expect(current.contentRollback).not.toHaveBeenCalled();
+      if (asynchronousPrepare) expect(contentBeforePrepared).toContain('本文 A');
+      expect(receipt).toMatchObject({
+        entryId: readHistoryEntry()?.id,
+        url: readAddress(),
+        root: current.content,
+        contentEpoch: readContentContext()?.contentEpoch,
+        shellCommitId: readCurrentShellCommitId(),
+      });
+    },
+  );
+
+  it.each([
+    { synchronousContent: false, synchronousShell: false },
+    { synchronousContent: true, synchronousShell: false },
+    { synchronousContent: false, synchronousShell: true },
+  ])('片側でも同期宣言がなければ通常commitに保つ %j', async (options) => {
+    const current = await setup(options);
+    const result = await traverse(current.router);
+    expect(result.committed).toBe(true);
+    expect('receipt' in result && result.receipt?.commitTiming).toBeUndefined();
+    expect(current.postCommit).toHaveBeenCalledOnce();
+    expect(current.contentRollback).not.toHaveBeenCalled();
+  });
+
+  it.each(['content', 'shell'] as const)(
+    '同期宣言の%sが型外のPromiseを返せば保証だけ取り下げ通常awaitを続ける',
+    async (stage) => {
+      const wait = deferred();
+      const violate = <T extends PreparedContentUpdate>(prepared: T): T => {
+        const commit = prepared.commit.bind(prepared);
+        // JavaScript利用者の契約違反も、実commitや既存待機を二重に実行せず隔離する。
+        Object.defineProperty(prepared, 'commit', {
+          value: () => {
+            commit();
+            return wait.promise;
+          },
+        });
+        return prepared;
+      };
+      const current = await setup({
+        synchronousContent: true,
+        synchronousShell: true,
+        ...(stage === 'content' ? { prepareContent: violate } : { prepareShell: violate }),
+      });
+      const pending = traverse(current.router);
+      await expect.poll(() => current.contentCommit.mock.calls.length).toBe(1);
+      expect(current.postCommit).not.toHaveBeenCalled();
+      expect(current.contentLoad).not.toHaveBeenCalled();
+      wait.resolve();
+      const result = await pending;
+      expect(result.committed).toBe(true);
+      expect('receipt' in result && result.receipt?.commitTiming).toBeUndefined();
+      expect(current.contentCommit).toHaveBeenCalledOnce();
+      expect(current.postCommit).toHaveBeenCalledOnce();
+      expect(current.contentRollback).not.toHaveBeenCalled();
+    },
+  );
+
+  it.each([false, true])(
+    'DOM変更中の宣言書換えで事前判定を組み直さない（初期同期=%s）',
+    async (initiallySynchronous) => {
+      let shellPrepared: PreparedShellUpdate | undefined;
+      const current = await setup({
+        synchronousContent: true,
+        synchronousShell: initiallySynchronous,
+        prepareShell: (prepared) => {
+          shellPrepared = prepared;
+          return prepared;
+        },
+        afterSynchronousContentCommit: () => {
+          Object.defineProperty(requireFixtureValue(shellPrepared), 'commitTiming', {
+            value: initiallySynchronous ? 'unspecified' : 'synchronous',
+          });
+        },
+      });
+      const result = await traverse(current.router);
+      expect(result.committed).toBe(true);
+      expect('receipt' in result && result.receipt?.commitTiming).toBe(
+        initiallySynchronous ? 'synchronous' : undefined,
+      );
+      expect(current.postCommit).toHaveBeenCalledOnce();
+    },
+  );
+
+  it('両同期宣言があっても受理前失敗は一回rollbackしreceiptを発行しない', async () => {
+    const error = new Error('同期shell commit failure');
+    const current = await setup({
+      synchronousContent: true,
+      synchronousShell: true,
+      shellFailure: error,
+    });
+    const result = await traverse(current.router);
+    expect(result).toMatchObject({ committed: false, error });
+    expect('receipt' in result ? result.receipt : undefined).toBeUndefined();
+    expect(current.contentCommit).toHaveBeenCalledOnce();
+    expect(current.contentRollback).toHaveBeenCalledOnce();
+    expect(current.shellRollback).toHaveBeenCalledOnce();
+    expect(current.contentLoad).not.toHaveBeenCalled();
+    expect(current.postCommit).not.toHaveBeenCalled();
+    expect(current.content.textContent).toContain('本文 A');
+  });
+
+  it('同一文書none受理へfull文書の同期保証を流用しない', async () => {
+    const current = await setup({
+      synchronousContent: true,
+      synchronousShell: true,
+      stateOnly: true,
+    });
+    writeHistoryEntry({ mode: 'replace', owner: 'router', url: '/notes/a#section' });
+    const result = await current.router.navigate({
+      url: '/notes/a#section',
+      historyMode: 'none',
+      cause: 'traverse',
+    });
+    expect(result).toMatchObject({ committed: true, stateOnly: true });
+    expect('receipt' in result && result.receipt?.commitTiming).toBeUndefined();
+    expect(current.contentCommit).not.toHaveBeenCalled();
+    expect(current.postCommit).toHaveBeenCalledOnce();
   });
 });

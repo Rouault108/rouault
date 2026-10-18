@@ -78,6 +78,8 @@ export interface NavigationCommitReceipt {
   readonly root: HTMLElement;
   readonly shellCommitId: number;
   readonly stateOnly: boolean;
+  // 描画前の位置writerへ渡す保証は、受理後の状態から推測し直さない。
+  readonly commitTiming?: 'synchronous';
 }
 
 export interface NavigationResultMetadata {
@@ -207,10 +209,21 @@ export interface ContentUpdatePayload {
   navigationUrl: string;
 }
 
-export interface PreparedContentUpdate {
+export interface SynchronousPreparedUpdate {
+  // 所有するcommitの変更を呼出し内で完了し、後続taskへtransactionを持ち越さない。
+  readonly commitTiming: 'synchronous';
+  // voidはasync関数も代入可能なため、同期宣言はundefined返却で固定する。
+  commit(): undefined;
+  rollback(): void | Promise<void>;
+}
+
+interface UnspecifiedPreparedUpdate {
+  readonly commitTiming?: 'unspecified';
   commit(): void | Promise<void>;
   rollback(): void | Promise<void>;
 }
+
+export type PreparedContentUpdate = SynchronousPreparedUpdate | UnspecifiedPreparedUpdate;
 
 export interface ContentUpdateAdapter {
   prepare(update: ContentUpdatePayload): PreparedContentUpdate | Promise<PreparedContentUpdate>;
@@ -236,10 +249,7 @@ export interface ShellUpdatePayload {
   shellCommitId: number;
 }
 
-export interface PreparedShellUpdate {
-  commit(): void | Promise<void>;
-  rollback(): void | Promise<void>;
-}
+export type PreparedShellUpdate = SynchronousPreparedUpdate | UnspecifiedPreparedUpdate;
 
 export interface ShellAdapter {
   prepare?(update: ShellUpdatePayload): PreparedShellUpdate | Promise<PreparedShellUpdate>;

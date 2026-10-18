@@ -61,9 +61,15 @@ A1通常/hash移動、A2entry座標復元、A3同URLの別entry、A4state/native
 
 ### 履歴表示の共通判定
 
+保存したraw XYの先行適用と、以下の演出判定は別契約とする。正常なhashなしfull traverseでは、受理済みreceiptが本文・shellの同期prepared commitを事前に保証し、built-in hostの同期post-commitから呼ばれた場合だけ、既知table railの幾何準備、preventScroll focus、Readingによる保存XYの適用と実XY/rangeの確認を最初のreadiness待機より前に行う。entry/exact URL/intent/root/epoch/shell/bindingの一致、abortと本人介入、mutation/recoveryの抑止を適用前後で照合する。位置のwriterは同じReading jobだけとし、clampや未成立時も保存candidateを失わず既存の通常復元を継続する。
+
+`data-reading-position-prepaint=applied`は現在DOMで保存XYへ到達したことだけを示す。過去と同じ行の画面位置、後発font/image/任意hydrationによるshift皆無、fadeのreadyを意味しない。raw XYに全表の内容・全font・全行geometryの同一性証明を要求しない。表は幾何準備と操作有効化を分け、準備した同じrailを後のactivationが採用する。main/tableは通常表示と操作を保ち、準備だけのrailは操作面として公開しない。一般のhydration完了・fonts.ready・Animation finishedを同期区間で待たない。8msや16ms以内、native layout途中の中断は保証しない。
+
+通常移動、hash、state-only、error/not-found、初期/reload、native/BFCache、未知または非同期adapterの経路はこの先行処理の対象外とし、既存の規則を維持する。描画前保証は事後のPromise判定から推定しない。対象のproduction prepared commitとhost処理の同期性を契約として明示し、詳細は[Router Contract](router.md#commit-acceptance-and-recovery)に従う。
+
 全ページのBack/Forwardを候補にし、ページ名・URL prefix・移動方向によるallowlistを持たない。候補になることと、演出が実際に適用されることは異なる。正常な別文書traverseの復帰先entry自身について、保存時の検証済みshell profileと現在のprofile、exact URL・entry ID・本文版・使用字体・viewport・main/本文要素/読書アンカー/rangeの実幾何を照合する。離脱元と復帰先でsidebar、TOC、本文幅が変わっても、復帰先の保存時配置が再現されていればよい。hash/queryを含むfull traverseも保存座標優先とし、URLからそれらを捨てない。
 
-同じReadingPositionJobが、固定のNavigationCommitReceiptとbinding/root/entry/URL/epoch/shell/intentを再照合し、最初のawaitより前に保存座標を適用する。実座標と読書アンカーが±2 CSS pxで一致した場合だけ`historyPresentationEligibility=ready`とする。これは位置証明でありAnimationがactiveであることを意味しない。content readinessと最大5秒のsettledは同じjobが継続し、表示の成否でcandidate/restoring状態を早期解放しない。後から復元できただけの経路を、最初の表示位置まで証明済みとしてreadyにしない。
+同じReadingPositionJobが、固定のNavigationCommitReceiptとbinding/root/entry/URL/epoch/shell/intentを再照合し、最初のawaitより前に保存座標を適用する。raw XYを既に適用している場合は同じ座標を書き直さない。実座標と読書アンカーが±2 CSS pxで一致した場合だけ`historyPresentationEligibility=ready`とする。これは演出用の位置証明でありAnimationがactiveであることを意味しない。content readinessと最大5秒のsettledは同じjobが継続し、表示の成否でcandidate/restoring状態を早期解放しない。後から復元できただけの経路を、最初の表示位置まで証明済みとしてreadyにしない。
 
 本文はmain全体から判定し、見出し数、固定ID、単一proseを要求しない。見出しがなければparagraph等の近傍要素を、IDとrootからのelement pathで識別する。複数proseや静的discoveryページも同じ判定を使う。TOCのactive weight差を比較から外す場合、desktopでは独立2列grid、宣言された実track、sticky列、固定高さ予約とoverflow制約を要求する。computed `--note-toc-track`は正のpxまたは`clamp(rem, vw, rem)`をrootのcomputed font-sizeとviewportのCSS pxで解決して実第2trackと照合し、DPRは掛けない。未解決・未知の式・非正/非有限値・逆転clampは許可しない。640 CSS px未満では、既知TOCがstatic配置・高さ0・全子孫の実boxが0で、shellが正の単一grid trackを持つ場合だけ許可する。body配下のTOC panelもすべてhidden/inert/aria-hiddenかつ実boxが0であることを確認する。640〜1023 CSS pxのTOC配置は独立性を未証明として縮退する。TOCがないページへこれらの条件を課さない。
 

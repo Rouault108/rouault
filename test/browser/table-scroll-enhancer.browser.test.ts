@@ -1,6 +1,9 @@
 import { afterEach, describe, expect, it } from 'vitest';
 
-import { enhanceTableScroll } from '../../src/client/post-hydrate/table-scroll-enhancer.js';
+import {
+  enhanceTableScroll,
+  prepareTableGeometry,
+} from '../../src/client/post-hydrate/table-scroll-enhancer.js';
 import { waitForCondition } from './harness/browser-test-utilities.js';
 
 const nextFrame = async (): Promise<void> => {
@@ -959,5 +962,137 @@ describe('table-scroll-enhancer Phase3B accessible top scroll rail', () => {
 
     expect(root.dataset['fadeLeft']).to.equal('true');
     expect(root.dataset['fadeRight']).to.equal('true');
+  });
+});
+
+describe('table railの同期準備と後続activation', () => {
+  const controllers: AbortController[] = [];
+  const owner = (): AbortController => {
+    const controller = new AbortController();
+    controllers.push(controller);
+    return controller;
+  };
+  afterEach(() => {
+    for (const controller of controllers) controller.abort();
+    controllers.length = 0;
+    document.body.replaceChildren();
+  });
+
+  it('準備railだけを非操作にしてmain/tableを維持し、同じ実体とboxで活性化する', async () => {
+    const root = createEligibleTableFixture();
+    const table = getOwnedTableInFixture(root);
+    const controller = owner();
+    expect(prepareTableGeometry(root, { isCurrent: () => true, signal: controller.signal })).toBe(
+      true,
+    );
+    const rail = getRail(root);
+    if (!rail) throw new Error('prepared rail missing');
+    rail.style.height = '14px';
+    const spacer = rail.firstElementChild;
+    const id = root.id;
+    const top = root.getBoundingClientRect().top;
+    expect(rail.inert).toBe(true);
+    expect(rail.getAttribute('aria-hidden')).toBe('true');
+    expect(rail.tabIndex).toBe(-1);
+    expect(rail.style.pointerEvents).toBe('none');
+    expect(root.inert).toBe(false);
+    expect(table?.hasAttribute('inert')).toBe(false);
+    expect(root.tabIndex).toBe(0);
+    expect(root.scrollLeft).toBe(0);
+    rail.scrollLeft = 60;
+    rail.dispatchEvent(new Event('scroll'));
+    expect(root.scrollLeft).toBe(0);
+    enhanceTableScroll(root, controller.signal);
+    await nextFrame();
+    expect(getRail(root)).toBe(rail);
+    expect(rail.firstElementChild).toBe(spacer);
+    expect(root.id).toBe(id);
+    expect(root.getBoundingClientRect().top).toBe(top);
+    expect(rail.inert).toBe(false);
+    expect(rail.hasAttribute('aria-hidden')).toBe(false);
+    expect(rail.tabIndex).toBe(0);
+    expect(rail.style.pointerEvents).toBe('');
+    expect(root.firstElementChild).toBe(table);
+  });
+
+  it('旧ownerのabortは再準備した同じrailと新activationを破棄しない', async () => {
+    const root = createEligibleTableFixture();
+    const first = owner();
+    const second = owner();
+    expect(prepareTableGeometry(root, { isCurrent: () => true, signal: first.signal })).toBe(true);
+    const rail = getRail(root);
+    const id = root.id;
+    enhanceTableScroll(root, first.signal);
+    expect(prepareTableGeometry(root, { isCurrent: () => true, signal: second.signal })).toBe(true);
+    expect(getRail(root)).toBe(rail);
+    enhanceTableScroll(root, second.signal);
+    first.abort();
+    await nextFrame();
+    expect(getRail(root)).toBe(rail);
+    expect(root.id).toBe(id);
+    expect(rail?.inert).toBe(false);
+    const scrollable = makeRailScrollableInFixture(root);
+    if (!scrollable) throw new Error('rail');
+    scrollable.scrollLeft = 80;
+    scrollable.dispatchEvent(new Event('scroll'));
+    expect(root.scrollLeft).toBe(80);
+  });
+
+  it('準備後に失効した明示ownerをhydration側が無条件ownerへ置換しない', () => {
+    const root = createEligibleTableFixture();
+    const controller = owner();
+    let current = true;
+    expect(
+      prepareTableGeometry(root, { isCurrent: () => current, signal: controller.signal }),
+    ).toBe(true);
+    const rail = getRail(root);
+    current = false;
+    enhanceTableScroll(root);
+    expect(getRail(root)).toBe(rail);
+    expect(rail?.inert).toBe(true);
+    controller.abort();
+    expect(getRail(root)).toBeNull();
+  });
+
+  it('準備途中のowner失効ではrail購読を開始せずfalseを返す', () => {
+    const root = createEligibleTableFixture();
+    const controller = owner();
+    let current = true;
+    Object.defineProperty(root, 'clientWidth', {
+      configurable: true,
+      get() {
+        current = false;
+        return 120;
+      },
+    });
+    expect(
+      prepareTableGeometry(root, { isCurrent: () => current, signal: controller.signal }),
+    ).toBe(false);
+    expect(getRail(root)).toBeNull();
+  });
+
+  it('準備許可なし・abort済み・測定例外は通常enhancerの失敗に拡大しない', () => {
+    const root = createEligibleTableFixture();
+    const controller = owner();
+    expect(
+      prepareTableGeometry(root, {
+        isCurrent: () => true,
+        canPrepare: () => false,
+        signal: controller.signal,
+      }),
+    ).toBe(false);
+    expect(getRail(root)).toBeNull();
+    controller.abort();
+    expect(prepareTableGeometry(root, { isCurrent: () => true, signal: controller.signal })).toBe(
+      false,
+    );
+    Object.defineProperty(root, 'clientWidth', {
+      configurable: true,
+      get() {
+        throw new Error('metrics unavailable');
+      },
+    });
+    expect(prepareTableGeometry(root, { isCurrent: () => true })).toBe(false);
+    expect(getRail(root)).toBeNull();
   });
 });

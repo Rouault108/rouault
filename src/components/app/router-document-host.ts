@@ -343,7 +343,8 @@ export class RouterDocumentHost extends HTMLElement {
         const nextContent = createRouterContentHtml(html);
 
         return {
-          commit: () => {
+          commitTiming: 'synchronous',
+          commit: (): undefined => {
             this._currentContent = nextContent;
             this._replaceContent(nextContent, { dispatchContentDomReplacedEvent: true });
           },

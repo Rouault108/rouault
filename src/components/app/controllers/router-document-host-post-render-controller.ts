@@ -4,6 +4,12 @@ import { FocusManager } from '../../../router/focus-manager.js';
 import type { PostCommitController } from '../../../router/router.js';
 import type { RouterDiagnosticPayload } from '../../../router/router-diagnostics.js';
 import { MAIN_CONTENT_SELECTOR } from '../../../../shared/navigation/main-landmark-contract.js';
+import { prepareTableGeometry } from '../../../client/post-hydrate/table-scroll-enhancer.js';
+import {
+  readContentContext,
+  subscribeContentContext,
+} from '../../../navigation/content-navigation-context.js';
+import { ownsAcceptedHistoryCommit } from './accepted-history-commit.js';
 import {
   dispatchPrimaryTabUrlStateChange,
   readDecodedHash,
@@ -14,6 +20,11 @@ export class RouterDocumentHostPostRenderController {
   private clearTimer: number | null = null;
   private readonly reading = new ReadingPositionController((error) => {
     this.reportBackgroundError(error);
+  });
+  private tablePreparation: AbortController | null = null;
+  private readonly stopTablePreparation = subscribeContentContext((reason) => {
+    // before-mutationの離脱座標保存より後に、旧本文の準備と操作購読を解放する。
+    if (reason === 'mutation' || reason === 'recovery') this.clearTablePreparation();
   });
 
   constructor(
@@ -29,6 +40,13 @@ export class RouterDocumentHostPostRenderController {
       this.clearTimer = null;
     }
     this.reading.dispose();
+    this.stopTablePreparation();
+    this.clearTablePreparation();
+  }
+
+  private clearTablePreparation(): void {
+    this.tablePreparation?.abort();
+    this.tablePreparation = null;
   }
 
   terminal(committed: boolean, intentId: number): void {
@@ -44,6 +62,42 @@ export class RouterDocumentHostPostRenderController {
   createPostCommitController(hostElement: HTMLElement): PostCommitController {
     return {
       run: (context) => {
+        const root = hostElement.querySelector(MAIN_CONTENT_SELECTOR);
+        let prepaintGeometryReady = false;
+        const receipt = context.receipt;
+        if (
+          root instanceof HTMLElement &&
+          receipt?.commitTiming === 'synchronous' &&
+          context.intent.cause === 'traverse' &&
+          !context.stateOnly &&
+          context.renderedKind === 'page' &&
+          !receipt.url.includes('#') &&
+          ownsAcceptedHistoryCommit(root, context.intent, receipt)
+        ) {
+          this.clearTablePreparation();
+          const preparation = new AbortController();
+          this.tablePreparation = preparation;
+          const isCurrent = (): boolean => {
+            const current = readContentContext();
+            return (
+              !preparation.signal.aborted &&
+              root.isConnected &&
+              root.ownerDocument === document &&
+              document.getElementById('main-content') === root &&
+              current?.root === root &&
+              current.contentEpoch === receipt.contentEpoch &&
+              !current.mutation &&
+              !current.recoveryRequired &&
+              readCurrentShellCommitId() === receipt.shellCommitId
+            );
+          };
+          // 操作有効化を待たず、位置に影響する既知railだけをfocus/scrollより先に準備する。
+          prepaintGeometryReady = prepareTableGeometry(root, {
+            isCurrent,
+            canPrepare: () => ownsAcceptedHistoryCommit(root, context.intent, receipt),
+            signal: preparation.signal,
+          });
+        }
         if (context.stateOnly) dispatchPrimaryTabUrlStateChange(context.previousUrl, context.url);
         else {
           this.setAnnouncement('ページが読み込まれました');
@@ -60,7 +114,6 @@ export class RouterDocumentHostPostRenderController {
           )
             this.focusManager.focusMainContent(main);
         }
-        const root = hostElement.querySelector(MAIN_CONTENT_SELECTOR);
         if (root instanceof HTMLElement)
           this.reading.schedule({
             intent: context.intent,
@@ -70,6 +123,7 @@ export class RouterDocumentHostPostRenderController {
             error: context.renderedKind === 'error' || context.renderedKind === 'not-found',
             shellCommitId: readCurrentShellCommitId(),
             previousUrl: context.previousUrl,
+            prepaintGeometryReady,
             ...(context.receipt ? { receipt: context.receipt } : {}),
           });
       },

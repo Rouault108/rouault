@@ -144,4 +144,6 @@ row全体のbackground hover、shadow、transform、elevationは禁止する。`
 
 履歴移動は[共通の履歴表示判定](../contracts/reading-position.md#履歴表示の共通判定)として全ページのBack/Forwardを候補にする。復元後のlive mainだけに同じopacityを適用し、snapshotをcaptureしない。DOM差替え後の最初の可視フレームから保存位置が合う経路だけを対象とし、本文を非表示・inertにしたり入力遮蔽を追加したりしない。通常移動のnative演出は引き続き別の所有者で維持する。演出可否はページ名ではなく、復帰先entryの保存時と現在の本文・字体・配置・アンカーの証明で決める。未確定の動的内容は演出なしで正確な復元を優先する。
 
+保存XYの先行適用は演出とは独立させる。productionの同期commitと既知rail準備を確認したhashなし履歴移動では、focusとXY適用を描画前に連携し、実座標の一致とclampを確認する。表の全内容・全字体・全geometryの比較をその前提にしない。raw XY一致、同じ行の画面位置、後発レイアウト変化は別々に検証する。対象外や未成立では同じReading jobの通常復元を継続し、本文を隠して待つ演出や履歴用native snapshotを追加しない。
+
 この共通判定でもTOC幅は`--note-toc-width`の可変幅を維持する。幾何検証は宣言された実track幅へ追従し、狭いdesktopでの240pxをwide viewportへ固定条件として持ち込まない。位置や幅を補間する演出は追加しない。

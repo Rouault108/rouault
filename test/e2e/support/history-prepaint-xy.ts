@@ -1,0 +1,507 @@
+import { expect, test, type Page, type TestInfo } from '@playwright/test';
+import { resolveRouterArtifactPathname } from '../../../shared/navigation/router-artifact-path.js';
+
+const notes = {
+  iwanami: `/notes/library/collection/${encodeURIComponent('岩波文庫')}/`,
+  chikuma: `/notes/library/collection/${encodeURIComponent('ちくま学芸文庫')}/`,
+};
+interface Point {
+  x: number;
+  y: number;
+  row: number;
+  rowTop: number;
+  rowText: string;
+  entry: string;
+  title: string;
+}
+interface Frame {
+  at: number;
+  phase: string;
+  generation: number;
+  x: number;
+  y: number;
+  rangeY: number;
+  rowTop: number | null;
+  rowText: string | null;
+  title: string;
+  entry: string | null;
+  status: string | null;
+  prepaint: string | null;
+}
+interface Probe {
+  active: boolean;
+  generation: number;
+  startGeneration: number;
+  row: number;
+  phase: string;
+  frames: Frame[];
+  replacements: number;
+  commits: number;
+  focus: number;
+  announcements: number;
+  nativeStarts: number;
+  historyEffects: number;
+  scrolls: { at: number; requestedY: number; appliedY: number }[];
+}
+declare global {
+  interface Window {
+    __prepaintXY: Probe;
+  }
+}
+const ready = async (page: Page): Promise<void> => {
+  await page.evaluate(async () => {
+    await customElements.whenDefined('router-document-host');
+    const host = document.querySelector('router-document-host');
+    if (!host) throw new Error('router-document-host');
+    await host.whenReady();
+  });
+  await expect(page.locator('main#main-content')).toHaveAttribute(
+    'data-reading-position-status',
+    'settled',
+  );
+};
+const navigate = async (page: Page, url: string): Promise<void> => {
+  await page.evaluate(async (target) => {
+    const host = document.querySelector('router-document-host');
+    if (!host) throw new Error('router-document-host');
+    const result = await host.navigate(target);
+    if (!result.committed) throw new Error(result.outcome);
+  }, url);
+  await ready(page);
+};
+const install = async (page: Page, unsupported = false): Promise<void> => {
+  await page.addInitScript((unsupported) => {
+    if (unsupported) Reflect.deleteProperty(Document.prototype, 'startViewTransition');
+    const probe: Probe = (window.__prepaintXY = {
+      active: false,
+      generation: 0,
+      startGeneration: 0,
+      row: 0,
+      phase: 'initial',
+      frames: [],
+      replacements: 0,
+      commits: 0,
+      focus: 0,
+      announcements: 0,
+      nativeStarts: 0,
+      historyEffects: 0,
+      scrolls: [],
+    });
+    const sample = (phase: string): void => {
+      if (!probe.active) return;
+      const main = document.querySelector<HTMLElement>('main#main-content');
+      const row = main?.querySelector('table')?.rows[probe.row];
+      const scrolling = document.scrollingElement;
+      probe.frames.push({
+        at: performance.now(),
+        phase: `${probe.phase}:${phase}`,
+        generation: probe.generation,
+        x: scrollX,
+        y: scrollY,
+        rangeY: scrolling ? Math.max(0, scrolling.scrollHeight - scrolling.clientHeight) : 0,
+        rowTop: row?.getBoundingClientRect().top ?? null,
+        rowText: row?.textContent ?? null,
+        title: main?.querySelector('h1')?.textContent?.trim() ?? '',
+        entry: history.state?.__rouaultHistoryEntry?.id ?? null,
+        status: main?.dataset['readingPositionStatus'] ?? null,
+        prepaint: main?.dataset['readingPositionPrepaint'] ?? null,
+      });
+    };
+    const channel = new MessageChannel();
+    channel.port1.onmessage = () => sample('posttask');
+    const frame = (): void => {
+      sample('raf');
+      if (probe.active) channel.port2.postMessage(null);
+      requestAnimationFrame(frame);
+    };
+    requestAnimationFrame(frame);
+    document.addEventListener('router-document-host:content-dom-replaced', () => {
+      probe.generation++;
+      if (probe.active) probe.replacements++;
+      // このイベント自身はpaint機会でない。初回可視判定にはrAF/posttaskを使う。
+    });
+    document.addEventListener('router-document-host:navigation-committed', () => {
+      if (probe.active) probe.commits++;
+    });
+    const scroll = window.scrollTo.bind(window);
+    window.scrollTo = (options?: ScrollToOptions | number, y?: number): void => {
+      const requestedY = typeof options === 'number' ? (y ?? 0) : (options?.top ?? scrollY);
+      if (typeof options === 'number') scroll(options, y ?? 0);
+      else scroll(options);
+      if (probe.active)
+        probe.scrolls.push({ at: performance.now(), requestedY, appliedY: scrollY });
+    };
+    const focus = HTMLElement.prototype.focus;
+    HTMLElement.prototype.focus = function (options?: FocusOptions): void {
+      if (probe.active && this.id === 'main-content') probe.focus++;
+      focus.call(this, options);
+    };
+    const start = document.startViewTransition?.bind(document);
+    if (start)
+      document.startViewTransition = (...args) => {
+        if (probe.active) probe.nativeStarts++;
+        return start(...args);
+      };
+    const animate = Element.prototype.animate;
+    Element.prototype.animate = function (frames, options): Animation {
+      const result = animate.call(this, frames, options);
+      if (probe.active && result.id === 'rouault-history-content') probe.historyEffects++;
+      return result;
+    };
+    new MutationObserver((records) => {
+      for (const record of records) {
+        if (
+          probe.active &&
+          record.target instanceof HTMLElement &&
+          record.target.matches('[data-router-document-host-announcement]') &&
+          record.target.textContent
+        )
+          probe.announcements++;
+      }
+    }).observe(document, { subtree: true, childList: true });
+  }, unsupported);
+};
+const save = async (page: Page, y: number): Promise<Point> => {
+  await ready(page);
+  await page.evaluate(async (y) => {
+    window.scrollTo({ left: 0, top: y, behavior: 'instant' });
+    await document.fonts.ready;
+    await new Promise<void>((resolve) =>
+      requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
+    );
+  }, y);
+  const point = await page.evaluate(() => {
+    const main = document.querySelector('main#main-content');
+    const rows = Array.from(main?.querySelector('table')?.rows ?? []);
+    const row = rows.findIndex(
+      (row) =>
+        row.getBoundingClientRect().top >= 96 && row.getBoundingClientRect().bottom < innerHeight,
+    );
+    const element = rows[row];
+    const entry: unknown = history.state?.__rouaultHistoryEntry?.id;
+    if (!element || typeof entry !== 'string') throw new Error('可視行と管理entryが必要');
+    return {
+      x: scrollX,
+      y: scrollY,
+      row,
+      rowTop: element.getBoundingClientRect().top,
+      rowText: element.textContent ?? '',
+      entry,
+      title: main?.querySelector('h1')?.textContent?.trim() ?? '',
+    };
+  });
+  expect(point.y).toBe(y);
+  expect(point.x).toBe(0);
+  expect(point.rowTop).toBeGreaterThanOrEqual(96);
+  return point;
+};
+const pair = async (page: Page) => {
+  await page.goto(notes.iwanami);
+  const first = await save(page, 2667);
+  await navigate(page, notes.chikuma);
+  const second = await save(page, 3607);
+  return { first, second };
+};
+const begin = async (page: Page, saved: Point, phase: string): Promise<void> => {
+  await page.evaluate(
+    ({ row, phase }) => {
+      const p = window.__prepaintXY;
+      Object.assign(p, {
+        active: true,
+        startGeneration: p.generation,
+        row,
+        phase,
+        frames: [],
+        replacements: 0,
+        commits: 0,
+        focus: 0,
+        announcements: 0,
+        nativeStarts: 0,
+        historyEffects: 0,
+        scrolls: [],
+      });
+    },
+    { row: saved.row, phase },
+  );
+};
+const finish = async (page: Page, saved: Point, info: TestInfo, name: string): Promise<void> => {
+  await ready(page);
+  await page.waitForTimeout(80);
+  const result = await page.evaluate(() => {
+    window.__prepaintXY.active = false;
+    return window.__prepaintXY;
+  });
+  const frames = result.frames.filter((frame) => frame.generation > result.startGeneration);
+  await info.attach(name, {
+    body: JSON.stringify(
+      { kind: 'intrusive-raf-posttask-not-OS-presented-frame', saved, firstNew: frames[0], result },
+      null,
+      2,
+    ),
+    contentType: 'application/json',
+  });
+  expect(frames.some((frame) => frame.phase.endsWith(':raf'))).toBe(true);
+  expect(frames.some((frame) => frame.phase.endsWith(':posttask'))).toBe(true);
+  for (const frame of frames) {
+    expect(frame.generation).toBe(result.startGeneration + 1);
+    expect(frame.title).toBe(saved.title);
+    expect(frame.entry).toBe(saved.entry);
+    const expectedY = saved.y;
+    expect(
+      Math.abs(frame.y - expectedY),
+      `${frame.phase} first-new Y at ${frame.at}`,
+    ).toBeLessThanOrEqual(2);
+    expect(Math.abs(frame.x - saved.x)).toBeLessThanOrEqual(2);
+    expect(frame.rowText).toBe(saved.rowText);
+    expect(Math.abs((frame.rowTop ?? Infinity) - saved.rowTop)).toBeLessThanOrEqual(2);
+  }
+  expect(result.replacements).toBe(1);
+  expect(result.commits).toBe(1);
+  expect(result.focus).toBe(1);
+  expect(result.announcements).toBe(1);
+  expect(result.nativeStarts).toBe(0);
+  expect(result.historyEffects).toBe(0);
+  expect(
+    await page.locator('main#main-content').evaluate((main) => document.activeElement === main),
+  ).toBe(true);
+};
+
+export const registerHistoryPrepaintXYTests = (): void => {
+  test.describe('履歴entryのprepaint rawXY（案A）', () => {
+    for (const mode of ['normal', 'unsupported', 'reduced-motion'] as const)
+      test(`実岩波↔ちくまのBack/Forwardは最初の新本文から保存XYと同じ可視行: ${mode}`, async ({
+        page,
+      }, info) => {
+        await install(page, mode === 'unsupported');
+        await page.emulateMedia({
+          reducedMotion: mode === 'reduced-motion' ? 'reduce' : 'no-preference',
+        });
+        const { first, second } = await pair(page);
+        if (mode === 'unsupported')
+          expect(await page.evaluate(() => typeof document.startViewTransition)).toBe('undefined');
+        expect(
+          await page.evaluate(() => matchMedia('(prefers-reduced-motion: reduce)').matches),
+        ).toBe(mode === 'reduced-motion');
+        await begin(page, first, 'back');
+        await page.evaluate(() => history.back());
+        await finish(page, first, info, `first-new-${mode}-back`);
+        await begin(page, second, 'forward');
+        await page.evaluate(() => history.forward());
+        await finish(page, second, info, `first-new-${mode}-forward`);
+      });
+
+    test('短文化した実entryは先行成功とせず候補を通常jobのclamp終端へ渡す', async ({
+      page,
+    }, info) => {
+      await install(page);
+      const { first } = await pair(page);
+      await page.route(`**${resolveRouterArtifactPathname(notes.iwanami)}`, async (route) => {
+        const response = await route.fetch();
+        const envelope = (await response.json()) as { document: { html: string } };
+        envelope.document.html =
+          '<article><h1>岩波文庫</h1><p style="height:1600px">短文化した実entry</p></article>';
+        await route.fulfill({ response, json: envelope });
+      });
+      await begin(page, first, 'clamp');
+      await page.evaluate(() => history.back());
+      await ready(page);
+      await page.waitForTimeout(80);
+      const outcome = await page.evaluate(() => {
+        const main = document.querySelector<HTMLElement>('main#main-content');
+        const root = document.scrollingElement;
+        window.__prepaintXY.active = false;
+        return {
+          prepaint: main?.dataset['readingPositionPrepaint'],
+          y: scrollY,
+          max: root ? Math.max(0, root.scrollHeight - root.clientHeight) : 0,
+          entry: history.state?.__rouaultHistoryEntry?.id,
+          probe: window.__prepaintXY,
+        };
+      });
+      await info.attach('clamp-fallback-not-prepaint-success', {
+        body: JSON.stringify(
+          { kind: 'candidate-retained-final-clamp-not-first-frame-success', saved: first, outcome },
+          null,
+          2,
+        ),
+        contentType: 'application/json',
+      });
+      expect(outcome.prepaint).toBe('unavailable');
+      expect(outcome.max).toBeGreaterThan(0);
+      expect(outcome.max).toBeLessThan(first.y);
+      // 候補が消えて通常topへ変わっていれば、この正のrange末尾には到達しない。
+      expect(Math.abs(outcome.y - outcome.max)).toBeLessThanOrEqual(2);
+      expect(outcome.entry).toBe(first.entry);
+      expect(outcome.probe.commits).toBe(1);
+      expect(outcome.probe.focus).toBe(1);
+      expect(outcome.probe.announcements).toBe(1);
+      expect(outcome.probe.nativeStarts).toBe(0);
+      expect(outcome.probe.historyEffects).toBe(0);
+    });
+
+    test('取得中BackをForwardで取り消し、旧応答は最新entryを移動しない', async ({ page }, info) => {
+      await install(page);
+      const { second } = await pair(page);
+      let release!: () => void;
+      let requested!: () => void;
+      const gate = new Promise<void>((resolve) => {
+        release = resolve;
+      });
+      const seen = new Promise<void>((resolve) => {
+        requested = resolve;
+      });
+      await page.route(`**${resolveRouterArtifactPathname(notes.iwanami)}`, async (route) => {
+        requested();
+        await gate;
+        await route.continue().catch(() => {
+          /* 取消済みrequestを再実行しない。 */
+        });
+      });
+      try {
+        await begin(page, second, 'cancelled-back-forward');
+        await page.evaluate(() => history.back());
+        await seen;
+        await page.evaluate(() => history.forward());
+        await expect
+          .poll(() => page.evaluate(() => history.state?.__rouaultHistoryEntry?.id))
+          .toBe(second.entry);
+        await ready(page);
+        release();
+        await page.waitForTimeout(120);
+        const p = await page.evaluate(() => {
+          window.__prepaintXY.active = false;
+          return window.__prepaintXY;
+        });
+        await info.attach('cancelled-back-forward', {
+          body: JSON.stringify(p, null, 2),
+          contentType: 'application/json',
+        });
+        expect(
+          p.frames
+            .filter((frame) => frame.generation > p.startGeneration)
+            .every((frame) => frame.title === second.title),
+        ).toBe(true);
+        expect(Math.abs((await page.evaluate(() => scrollY)) - second.y)).toBeLessThanOrEqual(2);
+        expect(p.nativeStarts).toBe(0);
+        expect(p.historyEffects).toBe(0);
+        expect(p.announcements).toBeLessThanOrEqual(1);
+      } finally {
+        release();
+      }
+    });
+
+    for (const change of ['font', 'image', 'rail'] as const)
+      test(`初回復元とsettled後の${change}によるlayout shiftを別々に観測する`, async ({
+        page,
+      }, info) => {
+        await install(page);
+        const { first } = await pair(page);
+        await begin(page, first, 'initial-before-late-change');
+        await page.evaluate(() => history.back());
+        await finish(page, first, info, `${change}-initial-first-new`);
+        const evidence = await page.evaluate(
+          async ({ change, row }) => {
+            const main = document.querySelector<HTMLElement>('main#main-content');
+            const table = main?.querySelector('table');
+            const element = table?.rows[row];
+            if (!main || !table || !element) throw new Error('遅延変更の実tableが必要');
+            const probe = window.__prepaintXY;
+            probe.frames = [];
+            probe.phase = `late-${change}`;
+            probe.active = true;
+            if (change === 'font') {
+              // 固定line-heightによる無変化と混同せず、字体metricで高さが変わる対照を作る。
+              table.style.lineHeight = 'normal';
+              await new Promise<void>((resolve) =>
+                requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
+              );
+            }
+            const before = {
+              at: performance.now(),
+              x: scrollX,
+              y: scrollY,
+              rowTop: element.getBoundingClientRect().top,
+              rowText: element.textContent,
+            };
+            if (change === 'font') {
+              const resources = performance.getEntriesByType('resource');
+              const font =
+                resources.find((entry) => /latin[^/]*\.woff2(?:\?|$)/u.test(entry.name)) ??
+                resources.find((entry) => /\.woff2(?:\?|$)/u.test(entry.name));
+              if (!font) throw new Error('配信済み実woff2が必要');
+              const face = new FontFace('PrepaintLateFont', `url("${font.name}")`);
+              if (!Reflect.has(face, 'sizeAdjust') || !Reflect.set(face, 'sizeAdjust', '180%'))
+                throw new Error('遅延font fixtureには実sizeAdjust対応が必要');
+              await face.load();
+              document.fonts.add(face);
+              table.style.fontFamily = 'PrepaintLateFont, serif';
+              await document.fonts.ready;
+            } else if (change === 'image') {
+              const image = document.createElement('img');
+              image.alt = '初回復元後に寸法が確定する画像';
+              image.src =
+                'data:image/svg+xml,' +
+                encodeURIComponent(
+                  '<svg xmlns="http://www.w3.org/2000/svg" width="100" height="120"/>',
+                );
+              main.prepend(image);
+              await image.decode();
+            } else {
+              const rail = main.querySelector<HTMLElement>('[data-table-scroll-rail]');
+              if (!rail) throw new Error('enhancerが作った実railが必要');
+              rail.style.blockSize = '64px';
+            }
+            await new Promise<void>((resolve) =>
+              requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
+            );
+            await new Promise<void>((resolve) => setTimeout(resolve, 30));
+            probe.active = false;
+            return {
+              before,
+              after: {
+                at: performance.now(),
+                x: scrollX,
+                y: scrollY,
+                rowTop: element.getBoundingClientRect().top,
+                rowText: element.textContent,
+              },
+              frames: probe.frames,
+            };
+          },
+          { change, row: first.row },
+        );
+        await info.attach(`${change}-later-shift-separate-from-first-new`, {
+          body: JSON.stringify(
+            { kind: 'controlled-post-settle-layout-change-not-first-frame-acceptance', evidence },
+            null,
+            2,
+          ),
+          contentType: 'application/json',
+        });
+        expect(evidence.after.rowText).toBe(first.rowText);
+        expect(evidence.frames.some((frame) => frame.phase.endsWith(':raf'))).toBe(true);
+        expect(evidence.frames.some((frame) => frame.phase.endsWith(':posttask'))).toBe(true);
+        // UAのscroll anchoringが行位置を保つ場合もrawY変化として区別する。
+        expect(
+          Math.max(
+            Math.abs(evidence.after.rowTop - evidence.before.rowTop),
+            Math.abs(evidence.after.y - evidence.before.y),
+          ),
+        ).toBeGreaterThan(2);
+      });
+
+    test.describe('mobile', () => {
+      test.use({ viewport: { width: 390, height: 844 }, hasTouch: true });
+      test('狭い画面でも実表のBack/Forward初回rawXYと可視行を保持する', async ({ page }, info) => {
+        await install(page);
+        const { first, second } = await pair(page);
+        await begin(page, first, 'mobile-back');
+        await page.evaluate(() => history.back());
+        await finish(page, first, info, 'mobile-first-new-back');
+        await begin(page, second, 'mobile-forward');
+        await page.evaluate(() => history.forward());
+        await finish(page, second, info, 'mobile-first-new-forward');
+      });
+    });
+  });
+};

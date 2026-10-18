@@ -2,6 +2,7 @@ import { expect, test, type Page } from '@playwright/test';
 import { e2eNoteFixtures } from './support/note-fixtures.js';
 import { resolveRouterArtifactPathname } from '../../shared/navigation/router-artifact-path.js';
 import { registerHistoryLivePresentationTests } from './support/history-live-presentation.js';
+import { registerHistoryPrepaintXYTests } from './support/history-prepaint-xy.js';
 
 interface ReloadProbe {
   modeAtLoad: ScrollRestoration | null;
@@ -1317,3 +1318,5 @@ for (const variant of [
   });
 
 registerHistoryLivePresentationTests();
+
+registerHistoryPrepaintXYTests();

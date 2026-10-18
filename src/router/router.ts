@@ -69,6 +69,7 @@ export type {
   NavigationOutcome,
   PreparedContentUpdate,
   PreparedShellUpdate,
+  SynchronousPreparedUpdate,
   RoutePattern,
   RouterEventMap,
   RouterOptions,

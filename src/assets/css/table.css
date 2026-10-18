@@ -74,6 +74,12 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  /* 全称0.01ms規則でrail追加時のmargin補間を始めず、準備時点の最終boxを保つ。 */
+  :is(.prose, .about-prose) > [data-table-root],
+  :is(.prose, .about-prose) > [data-tabs-root] > [data-tab-panel] > [data-table-root] {
+    transition-duration: 0ms !important;
+  }
+
   :is(.prose, .about-prose) > [data-table-root]:focus-visible,
   :is(.prose, .about-prose) > [data-tabs-root] > [data-tab-panel] > [data-table-root]:focus-visible,
   :is(.prose, .about-prose) > [data-table-scroll-rail]:focus-visible,

@@ -901,6 +901,7 @@ describe('検証済み履歴経路の表示状態', () => {
         root: content,
         shellCommitId: 0,
         stateOnly: false,
+        commitTiming: 'synchronous',
       });
       reader.schedule({
         intent,
@@ -910,9 +911,11 @@ describe('検証済み履歴経路の表示状態', () => {
         stateOnly: false,
         error: false,
         shellCommitId: 0,
+        prepaintGeometryReady: true,
         ...(condition === 'missing-receipt' ? {} : { receipt }),
       });
 
+      expect(content.dataset['readingPositionPrepaint']).toBe(early ? 'applied' : 'unavailable');
       expect(scroll).toHaveBeenCalledTimes(early ? 1 : 0);
       expect(animate).toHaveBeenCalledTimes(early ? 1 : 0);
       expect(Math.abs(scrollY - (early ? 650 : 200))).toBeLessThanOrEqual(2);
@@ -1869,4 +1872,164 @@ it('native clickと後続address採用は同じintentを使い二度取消さな
   expect(adoption.signal).toBe(clickIntent.signal);
   expect(clickIntent.signal.aborted).toBe(false);
   expect(adoption.target.entryId).toBe(readHistoryEntry()?.id);
+});
+
+describe('同期受理した履歴本文のraw XY先行適用', () => {
+  const quotaBoundary = (): Promise<void> =>
+    new Promise((resolve) => window.setTimeout(resolve, 10_000));
+  beforeAll(quotaBoundary, 15_000);
+  afterAll(quotaBoundary, 15_000);
+
+  it.each([
+    'table',
+    'unknown-surface',
+    'missing-receipt',
+    'mutable-receipt',
+    'async-commit',
+    'wrong-entry',
+    'wrong-url',
+    'wrong-epoch',
+    'wrong-shell',
+    'wrong-intent',
+    'wrong-root',
+    'geometry-not-prepared',
+    'hidden',
+    'clamp',
+    'hash',
+    'state-only',
+    'error',
+    'interrupted',
+    'aborted',
+    'recovery',
+    'mutation',
+    'wrong-binding',
+  ] as const)('%sはraw XYとfade・候補の所有権を分離する', async (condition) => {
+    await setup();
+    if (!root) throw new Error('root');
+    const content = root;
+    content.id = 'main-content';
+    content.style.width = '2000px';
+    const rows = condition === 'table' ? 733 : 20;
+    const savedHtml =
+      condition === 'unknown-surface'
+        ? '<section data-hydration-key="unknown"><p>字体・幾何の演出証明を持たない本文</p></section>'
+        : `<div data-table-root><table><tbody>${Array.from({ length: rows }, (_, row) => `<tr><td>行${row}</td><td>全文を維持</td></tr>`).join('')}</tbody></table></div>`;
+    content.innerHTML = savedHtml;
+    if (condition === 'hash') {
+      history.replaceState(history.state, '', readAddress() + '#saved-heading');
+      initializeContentContext(content);
+      adoptContentBinding(readAddress());
+    }
+    const savedUrl = readAddress();
+    const errors = vi.fn();
+    reader = new ReadingPositionController(errors);
+    reader.start(content);
+    await expect.poll(() => content.dataset['readingPositionStatus']).toBe('settled');
+    window.scrollTo({ left: 80, top: 650, behavior: 'instant' });
+    await frame();
+    window.dispatchEvent(new Event('scroll'));
+    const savedState: unknown = history.state;
+    const savedEntryId = readHistoryEntry()?.id;
+    if (!savedEntryId) throw new Error('managed saved entry missing');
+    const previous = '/notes/history-raw-previous';
+    const leaving = beginNavigationIntent('navigation', previous);
+    beginContentMutation(content);
+    writeHistoryEntry({ mode: 'push', owner: 'router', url: previous });
+    content.innerHTML = '<p>移動先の本文</p>';
+    adoptContentBinding(previous);
+    reader.schedule({
+      intent: leaving,
+      root: content,
+      url: previous,
+      stateOnly: false,
+      error: false,
+      shellCommitId: 0,
+    });
+    await expect.poll(() => content.dataset['readingPositionStatus']).toBe('settled');
+    history.replaceState(savedState, '', savedUrl);
+    const intent = beginNavigationIntent('traverse', savedUrl);
+    const epoch = beginContentMutation(content);
+    content.innerHTML = savedHtml;
+    adoptContentBinding(savedUrl);
+    setContentReadiness({
+      contentEpoch: epoch,
+      root: content,
+      shellCommitId: 0,
+      status: 'pending',
+      started: true,
+    });
+    window.scrollTo({ left: 20, top: 200, behavior: 'instant' });
+    await frame();
+    if (condition === 'clamp') {
+      content.innerHTML = '<p>短い本文</p>';
+      content.style.height = '10px';
+    }
+    if (condition === 'hidden')
+      vi.spyOn(document, 'visibilityState', 'get').mockReturnValue('hidden');
+    if (condition === 'interrupted') window.dispatchEvent(new PointerEvent('pointerdown'));
+    if (condition === 'aborted') beginNavigationIntent('navigation', savedUrl);
+    if (condition === 'recovery') markContentRecoveryRequired(content, epoch);
+    if (condition === 'mutation') beginContentMutation(content);
+    if (condition === 'wrong-binding') adoptContentBinding('/wrong-binding', 'wrong-binding');
+    const receiptValue = {
+      commitId: 1,
+      intentId: condition === 'wrong-intent' ? intent.intentId + 1 : intent.intentId,
+      entryId: condition === 'wrong-entry' ? 'other-entry' : savedEntryId,
+      url: condition === 'wrong-url' ? '/wrong-url' : savedUrl,
+      contentEpoch: condition === 'wrong-epoch' ? epoch + 1 : epoch,
+      root: condition === 'wrong-root' ? document.createElement('main') : content,
+      shellCommitId: condition === 'wrong-shell' ? 1 : 0,
+      stateOnly: false,
+      ...(condition === 'async-commit' ? {} : { commitTiming: 'synchronous' as const }),
+    };
+    const receipt = condition === 'mutable-receipt' ? receiptValue : Object.freeze(receiptValue);
+    const scroll = vi.spyOn(window, 'scrollTo');
+    const focus = vi.spyOn(HTMLElement.prototype, 'focus');
+    const animate = vi.spyOn(content, 'animate');
+    const writes = vi.spyOn(ReadingPositionStore.prototype, 'write');
+    reader.schedule({
+      intent,
+      root: content,
+      url: savedUrl,
+      stateOnly: condition === 'state-only',
+      error: condition === 'error',
+      shellCommitId: 0,
+      prepaintGeometryReady: condition !== 'geometry-not-prepared',
+      ...(condition === 'missing-receipt' ? {} : { receipt }),
+    });
+    const early = condition === 'table' || condition === 'unknown-surface';
+    expect(scroll).toHaveBeenCalledTimes(early ? 1 : 0);
+    expect(content.dataset['readingPositionPrepaint'] === 'applied').toBe(early);
+    expect(animate).not.toHaveBeenCalled();
+    expect(focus).not.toHaveBeenCalled();
+    if (early) {
+      expect(Math.abs(scrollX - 80)).toBeLessThanOrEqual(2);
+      expect(Math.abs(scrollY - 650)).toBeLessThanOrEqual(2);
+      expect(content.dataset['historyPresentationEligibility']).toBe('unavailable');
+    }
+    if (early || condition === 'missing-receipt' || condition === 'async-commit') {
+      expect(reader).toMatchObject({
+        candidate: { url: savedUrl, x: 80, y: 650 },
+        restoring: true,
+      });
+      expect(writes).not.toHaveBeenCalled();
+      await frame();
+      await frame();
+      expect(content.dataset['readingPositionStatus']).toBe('pending');
+      expect(writes).not.toHaveBeenCalled();
+      setContentReadiness({
+        contentEpoch: epoch,
+        root: content,
+        shellCommitId: 0,
+        status: 'settled',
+        started: true,
+      });
+      await expect.poll(() => content.dataset['readingPositionStatus']).toBe('settled');
+      expect(Math.abs(scrollX - 80)).toBeLessThanOrEqual(2);
+      expect(Math.abs(scrollY - 650)).toBeLessThanOrEqual(2);
+      expect(reader).toMatchObject({ candidate: null, restoring: false });
+      expect(scroll).toHaveBeenCalledTimes(1);
+    }
+    expect(errors).not.toHaveBeenCalled();
+  });
 });
