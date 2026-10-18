@@ -9,6 +9,7 @@ import {
   adoptHistoryEntry,
   observeHistoryEntries,
   readAddress,
+  readHistoryEntry,
 } from '../../src/navigation/history-entry.js';
 import { userEvent } from 'vitest/browser';
 import { renderSearchPageHtml } from '../../src/layouts/search-page-html.js';
@@ -142,7 +143,8 @@ describe('Searchのfeature token再照合', () => {
         beginNavigationIntent('navigation', '/notes/next/');
         focus.focus({ preventScroll: true });
       };
-      const length = history.length;
+      const entryId = readHistoryEntry()?.id;
+      expect(entryId).toBeTypeOf('string');
       const url = readAddress();
       stopHistory = observeHistoryEntries(
         () => {
@@ -156,11 +158,21 @@ describe('Searchのfeature token再照合', () => {
         '[data-search-choice-menu="sort"] [data-static-choice-item][data-value="date-desc"]',
       );
       if (!item) throw new Error('sort item');
-      item.click();
-      expect(history.length).toBe(length + (phase === 'after' ? 1 : 0));
-      expect(readAddress()).toBe(phase === 'before' ? url : '/search/?tag=A&sort=date-desc');
-      expect(search).not.toHaveBeenCalled();
-      expect(document.activeElement).toBe(focus);
+      const push = vi.spyOn(history, 'pushState');
+      try {
+        item.click();
+        // 履歴件数の上限でもpushは成立するため、実書込回数とentryの交代を確認する。
+        expect(push).toHaveBeenCalledTimes(phase === 'after' ? 1 : 0);
+        const nextEntryId = readHistoryEntry()?.id;
+        expect(nextEntryId).toBeTypeOf('string');
+        if (phase === 'before') expect(nextEntryId).toBe(entryId);
+        else expect(nextEntryId).not.toBe(entryId);
+        expect(readAddress()).toBe(phase === 'before' ? url : '/search/?tag=A&sort=date-desc');
+        expect(search).not.toHaveBeenCalled();
+        expect(document.activeElement).toBe(focus);
+      } finally {
+        push.mockRestore();
+      }
     },
   );
   it('同epoch/同addressでも新intent後の旧Search結果を採用しない', async () => {
