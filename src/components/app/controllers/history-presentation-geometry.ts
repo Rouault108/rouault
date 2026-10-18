@@ -1,5 +1,20 @@
 import { readContentContext } from '../../../navigation/content-navigation-context.js';
 import {
+  prepareHistoryTableProof,
+  readHistoryTableProof,
+  recordHistoryTableCapture,
+  readHistoryTableDiagnosticOwner,
+  type HistoryTableCertificate,
+  historyAnimationInEffect,
+  historyTocColorTransition,
+} from './history-table-proof.js';
+export {
+  invalidateHistoryTableProof,
+  readHistoryTableProofDiagnostics,
+  adoptIncomingHistoryTableProof,
+  type HistoryTableCertificate,
+} from './history-table-proof.js';
+import {
   validateReadingPosition,
   type ReadingPosition,
 } from '../navigation/reading-position-store.js';
@@ -23,6 +38,8 @@ export interface HistoryGeometryCheckpoint {
   readonly viewport: string;
   readonly geometry: readonly number[];
   readonly headingIds: readonly string[];
+  readonly tableEnvironment?: string;
+  readonly tableCertificate?: HistoryTableCertificate;
 }
 
 const visible = (element: HTMLElement): boolean => {
@@ -41,14 +58,33 @@ const visible = (element: HTMLElement): boolean => {
 };
 
 // triggerの位置ではなくroot全体を調べ、広域mutationを持つ未知enhancerは許可しない。
-const staticSurface = (root: HTMLElement): boolean => {
+const surfaceElements = (root: HTMLElement, tables?: ReadonlySet<HTMLTableElement>): Element[] => {
+  if (!tables) return [root, ...root.querySelectorAll('*')];
+  const elements: Element[] = [root];
+  const walker = root.ownerDocument.createTreeWalker(root, NodeFilter.SHOW_ELEMENT, {
+    acceptNode: (node) =>
+      node instanceof HTMLTableElement && tables.has(node)
+        ? NodeFilter.FILTER_REJECT
+        : NodeFilter.FILTER_ACCEPT,
+  });
+  for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+    if (!(node instanceof Element)) return [];
+    elements.push(node);
+    if (elements.length > 2000) return [];
+  }
+  return elements;
+};
+
+const staticSurface = (root: HTMLElement, tables?: ReadonlySet<HTMLTableElement>): boolean => {
   if (
     root.querySelector(
-      'table, pre, code, details, iframe, video, audio, canvas, object, embed, style, link, picture, [data-copy-button], [data-copy-control]',
+      `${tables ? '' : 'table, '}pre, code, details, iframe, video, audio, canvas, object, embed, style, link, picture, [data-copy-button], [data-copy-control]`,
     )
   )
     return false;
-  for (const element of [root, ...root.querySelectorAll('*')]) {
+  const elements = surfaceElements(root, tables);
+  if (!elements.length) return false;
+  for (const element of elements) {
     const toc = element.localName === 'layout-toc-controller';
     if (element.localName.includes('-') && !toc) return false;
     if (toc) {
@@ -144,6 +180,11 @@ export const prepareHistoryFonts = async (
     /* 待機開始前には解放対象がない。 */
   };
   try {
+    if (root.querySelector('table')) {
+      if (signal.aborted) return false;
+      if (readHistoryTableProof(root)) return true;
+      return await prepareHistoryTableProof(root, signal, (tables) => staticSurface(root, tables));
+    }
     if (
       signal.aborted ||
       root.querySelectorAll('*').length > 2000 ||
@@ -361,6 +402,7 @@ export const captureHistoryGeometry = (
   shellLayoutKey: string,
   source?: HistoryGeometrySource,
 ): HistoryGeometryCheckpoint | null => {
+  const started = performance.now();
   try {
     const context = source ? readContentContext() : null;
     const displayedSource =
@@ -371,8 +413,17 @@ export const captureHistoryGeometry = (
       !context.recoveryRequired &&
       context.displayedBinding.entryId === source.entryId &&
       context.displayedBinding.url === position.url;
-    // 証跡作成の仕事量を制限し、巨大surfaceは座標復元だけへ返す。
-    if (root.querySelectorAll('*').length > 2000 || root.textContent.length > 128_000) return null;
+    const hasTable = root.querySelector('table') !== null;
+    const tableDiagnosticOwner = hasTable ? readHistoryTableDiagnosticOwner(root) : null;
+    if (hasTable) recordHistoryTableCapture(root, 'unavailable', 0, tableDiagnosticOwner);
+    const tableProof = hasTable ? readHistoryTableProof(root) : null;
+    // 大表は同じ実rootで完了した事前証跡が必須。新DOMや未準備cacheへ推測で橋渡ししない。
+    if (hasTable && !tableProof) return null;
+    if (
+      !tableProof &&
+      (root.querySelectorAll('*').length > 2000 || root.textContent.length > 128_000)
+    )
+      return null;
     if (
       !root.matches('main#main-content') ||
       !root.isConnected ||
@@ -388,24 +439,12 @@ export const captureHistoryGeometry = (
       const style = getComputedStyle(ancestor);
       if (style.opacity !== '1' || style.contentVisibility === 'hidden') return null;
     }
-    if (!staticSurface(root)) return null;
+    if (!tableProof && !staticSurface(root)) return null;
     const toc = root.querySelector('[data-layout-toc-root]');
     if (toc && !independentTocTrack(root)) return null;
     // 検証済み独立TOCの既存color transitionは本文幾何を変えない。未知animationへ広げない。
-    const tocColorOnly = (animation: Animation): boolean => {
-      const target = animation.effect instanceof KeyframeEffect ? animation.effect.target : null;
-      return (
-        typeof CSSTransition !== 'undefined' &&
-        animation instanceof CSSTransition &&
-        animation.transitionProperty === 'color' &&
-        target instanceof HTMLElement &&
-        target.matches('.layout-toc__link') &&
-        toc?.contains(target) === true
-      );
-    };
     const unverifiedAnimation = (animation: Animation): boolean =>
-      (animation.pending || !['finished', 'idle'].includes(animation.playState)) &&
-      !tocColorOnly(animation);
+      historyAnimationInEffect(animation) && !historyTocColorTransition(animation, toc);
     // 後続の幾何変更を分類できないanimationは、たまたま座標が一致しても許可しない。
     const moving = (element: Element): boolean => element.getAnimations().some(unverifiedAnimation);
     if (
@@ -420,18 +459,26 @@ export const captureHistoryGeometry = (
     const rangeX = Math.max(0, scrolling.scrollWidth - scrolling.clientWidth);
     const rangeY = Math.max(0, scrolling.scrollHeight - scrolling.clientHeight);
     if (position.x > rangeX || position.y > rangeY) return null;
-    const fontFingerprint = fonts(root);
+    const fontFingerprint = tableProof?.fontFingerprint ?? fonts(root);
     if (!fontFingerprint) return null;
-    const elements = [root, ...root.querySelectorAll<HTMLElement>('*')].filter(
-      (element) =>
-        element instanceof HTMLElement &&
-        element.localName !== 'script' &&
-        element.closest('[data-layout-toc-root]') === null &&
-        visible(element),
-    );
+    const elements = tableProof
+      ? [...tableProof.elements]
+      : [root, ...root.querySelectorAll<HTMLElement>('*')].filter(
+          (element) =>
+            element instanceof HTMLElement &&
+            element.localName !== 'script' &&
+            element.closest('[data-layout-toc-root]') === null &&
+            visible(element),
+        );
     const headings = elements.filter((element) => /^h[1-6]$/u.test(element.localName));
-    const anchors =
-      headings.length > 0
+    const rectangles = tableProof
+      ? new Map(elements.map((element) => [element, rectangle(element)]))
+      : null;
+    const documentTop = (element: HTMLElement): number =>
+      rectangles?.get(element)?.[1] ?? element.getBoundingClientRect().top + window.scrollY;
+    const anchors = tableProof
+      ? [...headings, ...elements.filter((element) => element instanceof HTMLTableRowElement)]
+      : headings.length > 0
         ? headings
         : elements.filter((element) =>
             ['p', 'li', 'dt', 'dd', 'section', 'article', 'header', 'main'].includes(
@@ -439,12 +486,11 @@ export const captureHistoryGeometry = (
             ),
           );
     const anchor = (anchors.length > 0 ? anchors : [root]).reduce((nearest, element) =>
-      Math.abs(element.getBoundingClientRect().top + window.scrollY - position.y) <
-      Math.abs(nearest.getBoundingClientRect().top + window.scrollY - position.y)
+      Math.abs(documentTop(element) - position.y) < Math.abs(documentTop(nearest) - position.y)
         ? element
         : nearest,
     );
-    const anchorY = anchor.getBoundingClientRect().top + window.scrollY;
+    const anchorY = documentTop(anchor);
     const viewport = JSON.stringify([
       window.innerWidth,
       window.innerHeight,
@@ -455,32 +501,71 @@ export const captureHistoryGeometry = (
         ? [window.visualViewport.width, window.visualViewport.height, window.visualViewport.scale]
         : [window.innerWidth, window.innerHeight, 1]),
     ]);
-    const geometry = [rangeX, rangeY, ...elements.flatMap(rectangle)];
+    const geometry = [
+      rangeX,
+      rangeY,
+      ...elements.flatMap((element) => rectangles?.get(element) ?? rectangle(element)),
+      ...(tableProof?.tables.flatMap((table) => [
+        table.root.scrollLeft,
+        table.root.scrollTop,
+        table.root.clientWidth,
+        table.root.clientHeight,
+        table.root.scrollWidth,
+        table.root.scrollHeight,
+        ...(table.rail
+          ? [
+              ...rectangle(table.rail),
+              table.rail.scrollLeft,
+              table.rail.clientWidth,
+              table.rail.scrollWidth,
+            ]
+          : []),
+        ...(table.spacer ? rectangle(table.spacer) : []),
+      ]) ?? []),
+    ];
     if (geometry.some((value) => !Number.isFinite(value))) return null;
-    const structure = JSON.stringify(
-      elements.map((element) => [
-        element.localName,
-        element.id,
-        element.className,
-        element.getAttribute('href'),
-        element.getAttribute('src'),
-        element instanceof HTMLImageElement
-          ? [element.currentSrc, element.naturalWidth, element.naturalHeight]
-          : null,
-      ]),
-    );
+    const structure =
+      tableProof?.structure ??
+      JSON.stringify(
+        elements.map((element) => [
+          element.localName,
+          element.id,
+          element.className,
+          element.getAttribute('href'),
+          element.getAttribute('src'),
+          element instanceof HTMLImageElement
+            ? [element.currentSrc, element.naturalWidth, element.naturalHeight]
+            : null,
+        ]),
+      );
+    // 単一layout読取の過去の費用は取り消せない。超過を検出したら証跡として採用しない。
+    if (tableProof) {
+      if (readHistoryTableProof(root) !== tableProof) return null;
+      const elapsed = performance.now() - started;
+      if (elapsed > 8) {
+        recordHistoryTableCapture(root, 'budget-exceeded', elapsed, tableDiagnosticOwner);
+        return null;
+      }
+      recordHistoryTableCapture(root, 'ready', elapsed, tableDiagnosticOwner);
+    }
     return {
       position: { ...position },
       shellLayoutKey,
       anchorId: anchor.id,
       anchorPath: pathTo(root, anchor),
       anchorY,
-      text: root.textContent,
+      text: tableProof?.text ?? root.textContent,
       structure,
       fontFingerprint,
       viewport,
       geometry,
       headingIds: headings.map((element) => element.id).filter(Boolean),
+      ...(tableProof
+        ? {
+            tableEnvironment: tableProof.environment,
+            ...(tableProof.certificate ? { tableCertificate: tableProof.certificate } : {}),
+          }
+        : {}),
     };
   } catch {
     // 測定失敗は表示の不適格であり、保存座標と通常復元を失敗にしない。
@@ -504,6 +589,7 @@ export const matchesHistoryGeometry = (
     current.text === checkpoint.text &&
     current.structure === checkpoint.structure &&
     current.fontFingerprint === checkpoint.fontFingerprint &&
+    current.tableEnvironment === checkpoint.tableEnvironment &&
     current.headingIds.join('\n') === checkpoint.headingIds.join('\n') &&
     current.geometry.length === checkpoint.geometry.length &&
     current.geometry.every(

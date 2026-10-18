@@ -212,8 +212,27 @@ export interface PreparedContentUpdate {
   rollback(): void | Promise<void>;
 }
 
+export interface IncomingContentPreparationContext {
+  readonly signal: AbortSignal;
+  readonly isCurrent: () => boolean;
+  readonly intent?: NavigationIntent;
+}
+
+// ticketの内容とDOM所有権はadapterだけが解釈する。
+export interface PreparedIncomingContent {
+  dispose(): void;
+  accepted?(receipt: NavigationCommitReceipt): void;
+}
+
 export interface ContentUpdateAdapter {
-  prepare(update: ContentUpdatePayload): PreparedContentUpdate | Promise<PreparedContentUpdate>;
+  prepareIncoming?(
+    update: ContentUpdatePayload,
+    context: IncomingContentPreparationContext,
+  ): PreparedIncomingContent | null | Promise<PreparedIncomingContent | null>;
+  prepare(
+    update: ContentUpdatePayload,
+    options?: { readonly incoming?: PreparedIncomingContent },
+  ): PreparedContentUpdate | Promise<PreparedContentUpdate>;
 }
 
 export type PayloadDocumentShellSnapshot = NavigationShellSnapshot;

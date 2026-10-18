@@ -114,3 +114,11 @@ Phase1の`data-overflow`、`data-fade-left`、`data-fade-right`は引き続きru
 G-TABLE-TOP-RAIL-ELIGIBLE-ONLY-001は通過可とする。Markdown authoring API、`column-widths`構文、SSR table出力構造、routing、URL契約は変更しない。
 
 ただし、eligibilityを満たさない横溢れ表ではruntime DOM、Tab順序、`role="region"`露出、rail用`aria-controls`生成条件が変わるため、単なるnon-breaking additive changeとして扱わない。eligible overflow表では既存のARIA、Tab順序、scroll同期、runtime idを削除しない契約を維持する。
+
+## Amendment: Prepared Geometry and Activation Leases
+
+2026-10-18。履歴復元の前に既知railのフローを同期準備し、hydration schedulerの既存activationが同じstate/railを採用する。prepared中のrailは寸法を保つ非操作状態（inert/aria-hidden/tabindex=-1）であり、操作可能なactive railのaccessible region契約を変更するものではない。main/table本体は隠さない。初期SSRも同じ準備部品を使い、preparedをhydration-readyとは扱わない。
+
+state identity/content世代とactivation leaseを使い、古いobserver/scroll/abort/cleanupが新しいrail/属性/WeakMapを消さない。未知の隣接railを一括削除する旧清掃規則を廃止し、所有を証明した生成物だけを清掃する。生成root IDは同じrootの再採用で安定させ、author IDは保持する。rollbackでは実際のroot/tableと新epochに対して新leaseを採用し、旧signalへ再接続しない。
+
+後続のアプリ所有geometry変更前に対応する履歴演出を失効させる。native font/layoutによる変更が検出前に見えない保証は追加しない。完全証跡・予算不足の表でも、既存native horizontal scrollと通常の位置復元は維持する。詳細は[Reading Position Contract](../contracts/reading-position.md#静的表の準備と証跡)に従う。

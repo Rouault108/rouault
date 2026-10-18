@@ -224,6 +224,20 @@ export class HistoryPresentationCoordinator {
     }
   }
 
+  cancelForGeometry(root: HTMLElement, contentEpoch: number, shellCommitId: number): boolean {
+    const owner = this.active?.owner;
+    if (
+      owner?.root !== root ||
+      owner.contentEpoch !== contentEpoch ||
+      owner.shellCommitId !== shellCommitId ||
+      !this.owns(owner)
+    )
+      return false;
+    // 位置jobのsettled後にもAnimationは残り得る。同じ表示ownerだけを書込み前に止める。
+    this.cancel('table-geometry-change');
+    return true;
+  }
+
   dispose(): void {
     if (this.disposed) return;
     this.disposed = true;

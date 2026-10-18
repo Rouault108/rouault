@@ -549,6 +549,27 @@ export class Router {
       !signal?.aborted &&
       (!request.intent || isNavigationIntentCurrent(request.intent));
     if (!canCommit()) return this.createCommitSupersededResult(request);
+    let incoming: import('./router-types.js').PreparedIncomingContent | null = null;
+    const disposeIncoming = (): void => {
+      try {
+        incoming?.dispose();
+      } catch {
+        // 任意証跡の解放失敗を文書transactionへ伝播させない。
+      }
+    };
+    try {
+      incoming = await this.committer.prepareIncoming(envelope, request.normalizedUrl, {
+        signal: signal ?? request.intent?.signal ?? new AbortController().signal,
+        isCurrent: canCommit,
+        ...(request.intent ? { intent: request.intent } : {}),
+      });
+    } catch {
+      // 事前証跡の失敗は文書transactionの失敗にせず、通常commitへ縮退する。
+    }
+    if (!canCommit()) {
+      disposeIncoming();
+      return this.createCommitSupersededResult(request);
+    }
     const eligible =
       request.intent?.cause === 'navigation' &&
       request.routePresence === 'known-route' &&
@@ -559,112 +580,104 @@ export class Router {
       this.previousRenderedKind !== 'error' &&
       this.previousRenderedKind !== 'not-found' &&
       !this.outlet.querySelector('[data-not-found-page], [data-not-found-fallback], .error-page');
-    return this.transitions.run(envelope.shell, request.intent, eligible, async () => {
-      if (!canCommit()) return this.createCommitSupersededResult(request);
-      let lifetime: import('./content-committer.js').CommittedContentLifetime;
-      try {
-        lifetime = await this.committer.commit({
-          envelope,
-          normalizedUrl: request.normalizedUrl,
-          historyMode: request.historyMode,
-          state: request.state,
-          ...(signal ? { signal } : {}),
-          ...(request.intent ? { intent: request.intent } : {}),
-        });
-      } catch (error) {
-        // prepare失敗はrollback通知を出さないため、更新前の失敗でも演出を止める。
-        this.transitions.skip();
+    try {
+      return await this.transitions.run(envelope.shell, request.intent, eligible, async () => {
         if (!canCommit()) return this.createCommitSupersededResult(request);
-        const normalizedError = error instanceof Error ? error : new Error(String(error));
-        this.eventBus.emit('error', {
-          error: normalizedError,
-          stage: 'commit',
-          diagnostic: this.createRouterDiagnostic('route-state-mismatch', request.normalizedUrl),
-        });
+        let lifetime: import('./content-committer.js').CommittedContentLifetime;
+        try {
+          lifetime = await this.committer.commit({
+            envelope,
+            normalizedUrl: request.normalizedUrl,
+            historyMode: request.historyMode,
+            state: request.state,
+            ...(signal ? { signal } : {}),
+            ...(request.intent ? { intent: request.intent } : {}),
+            ...(incoming ? { incoming } : {}),
+          });
+        } catch (error) {
+          // prepare失敗はrollback通知を出さないため、更新前の失敗でも演出を止める。
+          this.transitions.skip();
+          if (!canCommit()) return this.createCommitSupersededResult(request);
+          const normalizedError = error instanceof Error ? error : new Error(String(error));
+          this.eventBus.emit('error', {
+            error: normalizedError,
+            stage: 'commit',
+            diagnostic: this.createRouterDiagnostic('route-state-mismatch', request.normalizedUrl),
+          });
 
-        return {
-          kind: 'load-failure',
-          outcome: 'failed',
-          reason: 'unexpected',
+          return {
+            kind: 'load-failure',
+            outcome: 'failed',
+            reason: 'unexpected',
+            normalizedUrl: request.normalizedUrl,
+            historyMode: request.historyMode,
+            stateOnly: false,
+            committed: false,
+            degraded: false,
+            issues: [],
+            source: 'none',
+            renderedKind: null,
+            error: normalizedError,
+            errorReason: 'unexpected',
+          };
+        }
+
+        const receipt = lifetime.receipt;
+        const result: NavigationCompletedResult = {
+          kind: 'completed',
+          outcome: 'completed',
           normalizedUrl: request.normalizedUrl,
           historyMode: request.historyMode,
           stateOnly: false,
-          committed: false,
+          committed: true,
           degraded: false,
           issues: [],
           source: 'none',
-          renderedKind: null,
-          error: normalizedError,
-          errorReason: 'unexpected',
+          renderedKind: envelope.document.renderedKind,
+          contentEpoch: lifetime.contentEpoch,
+          shellCommitId: lifetime.shellCommitId,
+          receipt,
+          error: envelope.document.renderedKind === 'error' ? baseError : undefined,
+          errorReason: envelope.document.renderedKind === 'error' ? baseErrorReason : undefined,
         };
-      }
-
-      const receipt = lifetime.receipt;
-      const result: NavigationCompletedResult = {
-        kind: 'completed',
-        outcome: 'completed',
-        normalizedUrl: request.normalizedUrl,
-        historyMode: request.historyMode,
-        stateOnly: false,
-        committed: true,
-        degraded: false,
-        issues: [],
-        source: 'none',
-        renderedKind: envelope.document.renderedKind,
-        contentEpoch: lifetime.contentEpoch,
-        shellCommitId: lifetime.shellCommitId,
-        receipt,
-        error: envelope.document.renderedKind === 'error' ? baseError : undefined,
-        errorReason: envelope.document.renderedKind === 'error' ? baseErrorReason : undefined,
-      };
-      // 受理したentryを固定し、observerによって進んだ現在addressで旧本文を採用しない。
-      try {
-        this.adoptAcceptedBinding(receipt);
-      } catch (error) {
-        this.transitions.skip();
-        this.requireBindingRecovery(receipt);
-        return {
-          ...result,
-          recoveryRequired: true,
-          degraded: true,
-          issues: [{ code: 'binding-adoption-failed', error: this.normalizeAcceptedError(error) }],
-        };
-      }
-      this.currentUrl = request.normalizedUrl;
-      this.previousRenderedKind = envelope.document.renderedKind;
-      const isInitial = !this.hasCommittedNavigation;
-      this.hasCommittedNavigation = true;
-      if (lifetime.postAcceptanceError) {
-        this.transitions.skip();
-        result.degraded = true;
-        result.issues.push({ code: 'accepted-commit-failed', error: lifetime.postAcceptanceError });
-      }
-      try {
-        this.eventBus.emit('content:load', {
-          previousUrl,
-          url: request.normalizedUrl,
-          isInitial,
-        });
-      } catch (error) {
-        result.degraded = true;
-        result.issues.push({
-          code: 'post-commit-failed',
-          error: this.normalizeAcceptedError(error),
-        });
-        this.transitions.skip();
-      }
-      // 通知observerの故障で、受理済み本文の位置jobや保存再開まで失わない。
-      if (canCommit()) {
+        // 受理したentryを固定し、observerによって進んだ現在addressで旧本文を採用しない。
         try {
-          await this.runPostCommit(
+          this.adoptAcceptedBinding(receipt);
+        } catch (error) {
+          this.transitions.skip();
+          this.requireBindingRecovery(receipt);
+          return {
+            ...result,
+            recoveryRequired: true,
+            degraded: true,
+            issues: [
+              { code: 'binding-adoption-failed', error: this.normalizeAcceptedError(error) },
+            ],
+          };
+        }
+        try {
+          incoming?.accepted?.(receipt);
+        } catch {
+          // 任意の証跡採用は受理済み文書を再commit・rollbackさせない。
+        }
+        this.currentUrl = request.normalizedUrl;
+        this.previousRenderedKind = envelope.document.renderedKind;
+        const isInitial = !this.hasCommittedNavigation;
+        this.hasCommittedNavigation = true;
+        if (lifetime.postAcceptanceError) {
+          this.transitions.skip();
+          result.degraded = true;
+          result.issues.push({
+            code: 'accepted-commit-failed',
+            error: lifetime.postAcceptanceError,
+          });
+        }
+        try {
+          this.eventBus.emit('content:load', {
             previousUrl,
-            request.normalizedUrl,
+            url: request.normalizedUrl,
             isInitial,
-            envelope.document.renderedKind,
-            false,
-            result,
-            request.intent,
-          );
+          });
         } catch (error) {
           result.degraded = true;
           result.issues.push({
@@ -673,9 +686,32 @@ export class Router {
           });
           this.transitions.skip();
         }
-      }
-      return result;
-    });
+        // 通知observerの故障で、受理済み本文の位置jobや保存再開まで失わない。
+        if (canCommit()) {
+          try {
+            await this.runPostCommit(
+              previousUrl,
+              request.normalizedUrl,
+              isInitial,
+              envelope.document.renderedKind,
+              false,
+              result,
+              request.intent,
+            );
+          } catch (error) {
+            result.degraded = true;
+            result.issues.push({
+              code: 'post-commit-failed',
+              error: this.normalizeAcceptedError(error),
+            });
+            this.transitions.skip();
+          }
+        }
+        return result;
+      });
+    } finally {
+      disposeIncoming();
+    }
   }
 
   private async runPostCommit(

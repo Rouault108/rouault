@@ -72,7 +72,7 @@ A1通常/hash移動、A2entry座標復元、A3同URLの別entry、A4state/native
 | 静的本文・既知のnote-static-surface（tableなし）                              | 本文/使用font/全幾何が一致した場合に先行復元候補                                                                                   |
 | 画像                                                                          | 読込完了、natural寸法、正のwidth/height属性と実used boxがあり、未知enhancerがないものだけ候補。pending/broken/寸法未確定は演出なし |
 | font                                                                          | 使用するfontと実文字列のloadを確認。loading/未知の切替は演出なし。後発loadingはactive演出を取消                                    |
-| table/code/tabs/search結果/preview/video/広域enhancer                         | 実mutation scopeを安全と証明していないため演出なし。triggerが画面下でもroot全体を検査し、既存の準備・位置安定化を継続              |
+| code/tabs/search結果/preview/video/広域enhancer                               | 実mutation scopeを安全と証明していないため演出なし。triggerが画面下でもroot全体を検査し、既存の準備・位置安定化を継続              |
 | 進行中・pending/paused animation、SMIL、未知custom element/初期化             | 幾何の安全未証明として演出なし。検証済み独立TOCのlinkにあるcolor単独のCSS transitionだけは本文幾何を変えないため許可               |
 | sourceとdestinationの配置変更                                                 | destination entryの保存profileと実DOMの一致で判定。幅や位置は補間しない                                                            |
 | viewport/font/内容版の変化、range不足、証跡欠落                               | 演出なしで既存復元へ。仮clampをreadyとは扱わない                                                                                   |
@@ -81,13 +81,31 @@ A1通常/hash移動、A2entry座標復元、A3同URLの別entry、A4state/native
 
 演出なしの縮退では復元途中の可視ジャンプがないことまでは保証しない。本文の非表示、inert、入力遮蔽、無期限待機でそれを隠さない。未知の動的ページを後からfadeするだけで成功とは判定しない。
 
-passive scrollは座標保存だけを行い、幾何証跡は120msの集約と離脱境界で採る。popstateではaddressが先に変わるため、まだ表示中のroot・contentEpoch・displayed entry/URLとmutation/recovery状態を明示的に検証して旧DOMを採る。manual復元を所有中であれば、scroll event未配信の同task離脱も実座標を同期採取する。この座標保存はshell幾何証跡の有無と独立し、autoではUAの先行復元を旧entryへ混ぜないよう最後のsampleを維持する。未知ownerや旧epochでは採取せず、保存candidateを別entryに転用しない。証跡は最大32 entry、1本文2,000要素/128,000文字までとし、超過・evictionは座標台帳を消さず演出なしへ縮退する。
+passive scrollは座標保存だけを行い、幾何証跡は120msの集約と離脱境界で採る。popstateではaddressが先に変わるため、まだ表示中のroot・contentEpoch・displayed entry/URLとmutation/recovery状態を明示的に検証して旧DOMを採る。manual復元を所有中であれば、scroll event未配信の同task離脱も実座標を同期採取する。この座標保存はshell幾何証跡の有無と独立し、autoではUAの先行復元を旧entryへ混ぜないよう最後のsampleを維持する。未知ownerや旧epochでは採取せず、保存candidateを別entryに転用しない。証跡は最大32 entry。表を含まない既存経路は1本文2,000要素/128,000文字まで。表の別admissionと準備条件は次節に従う。超過・evictionは座標台帳を消さず演出なしへ縮退する。
 
 静的本文が表示されている間、contentEpochごとに一度だけ、実際の文字列とcomputed fontを使って未読込字体を非同期に準備する。待機はabortまたは1秒で打ち切り、完了後も同じroot/epochと通常の保存条件を再確認する。commitや位置復元はこれをawaitせず、DOMや座標も変更しない。フォントの準備が間に合わない離脱は通常の演出なし復元へ戻す。
 
 本文の破壊的更新は、旧root/epochの`before-mutation`で離脱座標のcheckpointと位置job/演出の取消、保存抑止を先に確立する。その後、新epochと`mutation: true`を設定して`mutation`を通知し、hydrationの取消・enhancerの後始末へ進む。後始末で検索form等が隠れてrangeが縮んでも、その座標を旧entryへ再保存しない。state-onlyではこのphaseを発生させず、rollback中の半更新DOMも保存しない。
 
 HistoryPresentationCoordinatorは位置を書かず、mainと読書アンカー、固定owner、Animationだけを所有する。opacity 0.82→1、180msで表示し、finishedをnavigationや位置jobの完了条件にしない。新intent、Back/Forward、本人入力、root/anchor破棄、幾何変化、font loading、pagehide、dispose等で取消す。後続位置補正は取消→通常表示→job再照合→scrollの順序を守り、旧finished/旧jobは新sessionを取消さない。フォントの`loading`通知は現在の`document.fonts.status`が`loading`の場合だけ取消理由にし、完了後に遅配された通知で現在のsessionを取消さない。幾何不変のTOC投影だけで一律に取消さない。任意の外部DOM/CSS変更が検出前に一度も見えないという保証は追加しない。
+
+### 静的表の準備と証跡
+
+受理済みfull commitのpost-renderでは、固定receiptと採用済みbindingのroot/epoch/shell/entry/exact URL/intentを前後で照合し、既存`ReadingPositionController.schedule`の直前に表のrail/overflow/spacerを同期準備する。準備側は座標・focus・announcement・historyを書かず、hydration完了やfont downloadを待たない。準備失敗でも現在のownerの通常scheduleを一度実行し、受理済み本文をrollbackしない。途中で失効したownerはscheduleを再開しない。初期SSRはreceiptを捏造せず初期document/epochのownerとして同じ準備を使う。
+
+表のprepared stateはhydration-readyではない。schedulerの既存triggerが同じgeometry/stateをactivationし、初回ResizeObserverは実差分がなければ書き直さない。操作listenerが揃う前のrailだけを非操作・支援技術への非露出状態とし、main/table本体は隠さない。activation時に同じboxを保ったままnative auxiliary regionへ戻す。後続のアプリ所有geometry書込みは、該当ownerの証跡・fadeを失効してから行う。native font/layout変化が検出前に一度も見えない保証は追加しない。
+
+持続する表stateの所有権はcontent epoch/root/shellとactivation leaseに結ぶ。準備中のintent許可とは分離し、同epochのstate-onlyや失敗navigationで表UIを破棄しない。旧abort/queued RO/scroll/resize/echoは新stateのrail/属性/WeakMapを変更しない。清掃は実際に所有するrailだけに限定し、未知の隣接rail一括削除をしない。author IDを保持し、生成IDは同じrootで安定させる。新DOM間の比較では、永続的な生成provenanceと実railの所有を確認したID/aria-controls対だけを論理table序数へ正規化できる。他のIDREF/fragment参照、CSSによるID依存、衝突がある候補は拒否する。author IDや他の参照属性を比較から落とさない。railの既知prepared/active属性差だけを正規化する。
+
+表の証跡は全内容・全構造・実使用fontを実DOM/epochへ結び付けて事前準備する。単純gridと証明した表だけ、全行boxと必要な全列境界、root/table/rail/spacer/range/scrollLeftの幾何へ圧縮できる。画面近傍行だけの照合、URLだけのcache利用、保存元font証跡の未検証な新DOMへの転用は禁止する。未配送mutationも確認し、font/style/viewport/内容変更、未知の表やenhancer、未完了の準備は通常復元へ縮退する。
+
+暫定admissionはmain子孫8,192要素、表の合計1,024行/8,192cell、128,000 UTF-16文字、16font/style group、512KiB構造記録。規模以内でも証明成立を意味しない。事前作業4ms/chunkと追加同期準備/判定8msは目標であり、単一layout呼出しを途中停止できるhard capではない。超過判明時に同期保証/fadeを許可しない。通常の座標復元と表UIは維持する。
+
+新DOMへの証跡採用は、監査済み固定CSSのdigest・実CSSOM・順序を照合できる限定profileだけで行う。sourceで全内容・全構造・全使用字体/glyphを非同期に確認し、DOMやobserverを含まない証明を最大32 entryのcheckpointへ保持する。incomingの全構造は更新callback外で準備し、その一回用fragmentを実rootへ移す。固定receipt/bindingへ結合した後、未配送mutationを含めて既知rail/ID準備差だけを許可し、新epochの証跡と監視寿命を発行する。URL/buildIdだけの一致や古いDOMの証跡の丸ごと移植では採用しない。
+
+限定profileは通常の静的表の文字と改行、既知colgroup/col、配置属性を分類する。未知class/style/属性、特殊な継承、span、feature祖先等は対象外。全セルが同じ字体条件に従うことを監査CSSと全構造分類で証明した場合だけ、接続後の少数role照合を使用できる。表外本文の全字体確認は省略しない。祖先のcomputed値・依存token、viewport/media、FontFaceSet/loaded状態を照合し、未知stylesheet、CSSOM変更、未知mutationでは拒否する。監査済みCSS変更は固定inventoryとdigestの明示更新を要し、既存SSR/build検査で差を検出する。未監査のbasePathやdevelopment CSSは通常復元へ縮退する。
+
+証明未完了、内容/字体/geometry不一致、同期予算超過では、表準備後も`unavailable`で通常復元へ進む。このfallbackで最初の可視位置やジャンプなしを保証しない。最終座標の正確さ、準備/activationの幾何安定と、最初の可視位置の改善を分けて検証・報告する。
 
 ### 受理と回復の境界
 

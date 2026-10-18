@@ -1,3 +1,4 @@
+import { createStaticHeaderMenuController } from '../../src/client/post-hydrate/static-header-menu-controller.js';
 import { afterEach, describe, expect, it } from 'vitest';
 import {
   parseAndValidateStaticHeaderHtml,
@@ -20,6 +21,34 @@ const headerHtml = (label = 'current'): string =>
   );
 
 describe('static-header-shell-mutation', () => {
+  it('閉じたmenuのscroll同期は同値のARIA mutationを発生させない', async () => {
+    document.body.innerHTML = STATIC_HEADER_CONTRACT_ACCEPTED_TOC_ABSENT_HTML;
+    document.querySelector('header')?.insertAdjacentHTML(
+      'beforeend',
+      '<details data-header-menu><summary id="test-menu-trigger" data-header-menu-trigger aria-expanded="false" aria-controls="test-menu-panel">Menu</summary><nav id="test-menu-panel" data-header-menu-panel aria-labelledby="test-menu-trigger"></nav></details>',
+    );
+    const controller = createStaticHeaderMenuController();
+    const records: MutationRecord[] = [];
+    const observer = new MutationObserver((mutations) => records.push(...mutations));
+    observer.observe(document.body, { attributes: true, childList: true, subtree: true });
+    try {
+      window.dispatchEvent(new Event('scroll'));
+      document.dispatchEvent(new Event('scroll'));
+      await Promise.resolve();
+      records.push(...observer.takeRecords());
+      expect(records).toEqual([]);
+      const menu = document.querySelector('details[data-header-menu]');
+      if (!(menu instanceof HTMLDetailsElement)) throw new Error('menu');
+      menu.open = true;
+      window.dispatchEvent(new Event('scroll'));
+      expect(menu.open).toBe(false);
+      expect(menu.querySelector('summary')?.getAttribute('aria-expanded')).toBe('false');
+    } finally {
+      observer.disconnect();
+      controller.dispose();
+    }
+  });
+
   afterEach(() => {
     document.body.replaceChildren();
   });

@@ -44,6 +44,11 @@ import { RouterDocumentHostPostRenderController } from './controllers/router-doc
 import { PrimaryTabNavigationPolicy } from './navigation/primary-tab-navigation-policy.js';
 import { primaryTabTabsUrlSyncStrategy } from './navigation/primary-tab-url-state.js';
 import { createAppShellAdapter } from './shell/app-shell-adapter.js';
+import {
+  commitHistoryTableIncoming,
+  prepareHistoryTableIncoming,
+} from './controllers/history-table-incoming.js';
+import type { ContentUpdatePayload, PreparedIncomingContent } from '../../router/router-types.js';
 
 export interface RouterDocumentHostContentDomReplacedDetail {
   contentRoot: HTMLElement;
@@ -338,14 +343,20 @@ export class RouterDocumentHost extends HTMLElement {
     }
 
     return {
-      prepare: ({ html }) => {
+      prepareIncoming: (update, context) =>
+        prepareHistoryTableIncoming(update, context, this.ownerDocument),
+      prepare: (update, options) => {
+        const { html } = update;
         const previousContent = this._currentContent;
         const nextContent = createRouterContentHtml(html);
 
         return {
           commit: () => {
             this._currentContent = nextContent;
-            this._replaceContent(nextContent, { dispatchContentDomReplacedEvent: true });
+            this._replaceContent(nextContent, {
+              dispatchContentDomReplacedEvent: true,
+              ...(options?.incoming ? { incoming: options.incoming, update } : {}),
+            });
           },
           rollback: () => {
             this._currentContent = previousContent;
@@ -392,9 +403,15 @@ export class RouterDocumentHost extends HTMLElement {
       ROUTER_DOCUMENT_HOST_ANNOUNCEMENT_SELECTOR,
     );
     if (existingRegion instanceof HTMLElement) {
-      existingRegion.setAttribute('aria-live', ROUTER_DOCUMENT_HOST_ANNOUNCEMENT_ARIA_LIVE);
-      existingRegion.setAttribute('aria-atomic', ROUTER_DOCUMENT_HOST_ANNOUNCEMENT_ARIA_ATOMIC);
-      existingRegion.classList.add(ROUTER_DOCUMENT_HOST_ANNOUNCEMENT_CLASS_NAME);
+      // 同値の再設定もmutationになるため、通知消去だけで本文証跡を失効させない。
+      if (existingRegion.getAttribute('aria-live') !== ROUTER_DOCUMENT_HOST_ANNOUNCEMENT_ARIA_LIVE)
+        existingRegion.setAttribute('aria-live', ROUTER_DOCUMENT_HOST_ANNOUNCEMENT_ARIA_LIVE);
+      if (
+        existingRegion.getAttribute('aria-atomic') !== ROUTER_DOCUMENT_HOST_ANNOUNCEMENT_ARIA_ATOMIC
+      )
+        existingRegion.setAttribute('aria-atomic', ROUTER_DOCUMENT_HOST_ANNOUNCEMENT_ARIA_ATOMIC);
+      if (!existingRegion.classList.contains(ROUTER_DOCUMENT_HOST_ANNOUNCEMENT_CLASS_NAME))
+        existingRegion.classList.add(ROUTER_DOCUMENT_HOST_ANNOUNCEMENT_CLASS_NAME);
       return existingRegion;
     }
 
@@ -409,7 +426,11 @@ export class RouterDocumentHost extends HTMLElement {
 
   private _replaceContent(
     content: RouterContentHtml,
-    options: { dispatchContentDomReplacedEvent: boolean },
+    options: {
+      dispatchContentDomReplacedEvent: boolean;
+      incoming?: PreparedIncomingContent;
+      update?: ContentUpdatePayload;
+    },
   ): void {
     const contentRoot = this._ensureContentRoot(this._findExistingContentRoot());
     invalidateContentReadiness();
@@ -421,11 +442,16 @@ export class RouterDocumentHost extends HTMLElement {
       status: 'pending',
       started: false,
     });
-    replaceElementChildrenFromHtml(
-      contentRoot,
-      unwrapRouterContentHtml(content),
-      contentRoot.ownerDocument,
-    );
+    if (
+      !options.update ||
+      !commitHistoryTableIncoming(options.incoming, options.update, contentRoot)
+    ) {
+      replaceElementChildrenFromHtml(
+        contentRoot,
+        unwrapRouterContentHtml(content),
+        contentRoot.ownerDocument,
+      );
+    }
 
     if (options.dispatchContentDomReplacedEvent) {
       this._dispatchContentDomReplaced(contentRoot);

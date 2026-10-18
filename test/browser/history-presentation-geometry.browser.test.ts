@@ -1,11 +1,14 @@
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { page } from 'vitest/browser';
+import tableProfileCss from '../../src/assets/css/table.css?raw';
 
 import {
   captureHistoryGeometry,
   matchesHistoryGeometry,
   prepareHistoryFonts,
   readHistoryGeometryAnchor,
+  invalidateHistoryTableProof,
+  readHistoryTableProofDiagnostics,
   type HistoryGeometryCheckpoint,
 } from '../../src/components/app/controllers/history-presentation-geometry.js';
 import type { ReadingPosition } from '../../src/components/app/navigation/reading-position-store.js';
@@ -18,7 +21,13 @@ import {
   readContentContext,
   releaseContentContext,
 } from '../../src/navigation/content-navigation-context.js';
-import { fixture } from './harness/browser-fixture.js';
+import { fixture, fixtureAbortController } from './harness/browser-fixture.js';
+import {
+  prepareTableGeometry,
+  enhanceTableScroll,
+  readPreparedTableGeometry,
+} from '../../src/client/post-hydrate/table-scroll-enhancer.js';
+import { readHistoryTableProof } from '../../src/components/app/controllers/history-table-proof.js';
 
 const source = '/notes/testing/reader-basic';
 const target = '/notes/testing/toc-readable-long-heading';
@@ -27,6 +36,8 @@ const originalUrl = location.pathname + location.search + location.hash;
 const originalState: unknown = history.state;
 const originalRootFontSize = document.documentElement.style.fontSize;
 let viewportChanged = false;
+const detachedProfileHarnessStyles: { node: HTMLStyleElement; parent: Node; next: Node | null }[] =
+  [];
 
 const readAddress = (): string => location.pathname + location.search + location.hash;
 const settleHistoryQuota = (): Promise<void> =>
@@ -40,7 +51,12 @@ beforeAll(async () => {
 }, 15_000);
 
 afterEach(async () => {
+  for (const { node, parent, next } of detachedProfileHarnessStyles.splice(0))
+    parent.insertBefore(node, next?.parentNode === parent ? next : null);
+  const activeRoot = readContentContext()?.root;
+  if (activeRoot) invalidateHistoryTableProof(activeRoot);
   releaseContentContext(readContentContext()?.root ?? null);
+  document.querySelectorAll('[data-history-table-test-style]').forEach((style) => style.remove());
   vi.restoreAllMocks();
   document.documentElement.style.fontSize = originalRootFontSize;
   if (viewportChanged) {
@@ -93,6 +109,791 @@ const checkpoint = (root: HTMLElement, position: ReadingPosition): HistoryGeomet
   if (!captured) throw new Error('checkpoint missing');
   return captured;
 };
+
+describe('大きな静的表の完了証跡と予算', () => {
+  const setupTable = async (rows = 733, columns = 8) => {
+    const style = document.createElement('style');
+    style.setAttribute('data-history-table-test-style', '');
+    style.textContent = `[data-history-table-fixture] [data-table-root]{width:720px;overflow-x:auto}
+      [data-history-table-fixture] table{border-collapse:collapse;table-layout:auto;width:1200px}
+      [data-history-table-fixture] th,[data-history-table-fixture] td{padding:4px 8px}
+      [data-history-table-fixture] [data-table-scroll-rail]{height:14px;overflow-x:auto;overflow-y:hidden}
+      [data-history-table-fixture] [data-table-scroll-rail-spacer]{height:1px}`;
+    document.head.append(style);
+    const main =
+      await fixture<HTMLElement>(`<main id="main-content" data-history-table-fixture style="display:flow-root;width:720px;font-family:serif">
+      <h1>全内容と行の幾何を分離する表</h1><div class="prose" data-note-static-surface="true"
+      data-hydration-key="note-static-surface-enhancer" data-hydration-capability="progressive" data-hydration-trigger="post-commit">
+      <div data-table-root="true" role="region" tabindex="0" aria-label="Data table"><table>
+      <thead><tr>${Array.from({ length: columns }, (_, column) => `<th>列${column.toString()}</th>`).join('')}</tr></thead>
+      <tbody>${Array.from({ length: rows }, (_, row) => `<tr>${Array.from({ length: columns }, (_, column) => `<td>${row === rows - 1 && column === columns - 1 ? '遠方最終行の独自字体Ω' : `行${row.toString()}列${column.toString()}`}</td>`).join('')}</tr>`).join('')}</tbody></table></div></div></main>`);
+    const epoch = initializeContentContext(main);
+    const controller = fixtureAbortController(main);
+    const current = (): boolean =>
+      readContentContext()?.root === main && readContentContext()?.contentEpoch === epoch;
+    expect(
+      prepareTableGeometry(main, {
+        isCurrent: current,
+        beforeGeometryChange: () => invalidateHistoryTableProof(main),
+        signal: controller.signal,
+      }),
+    ).toBe(true);
+    await document.fonts.ready;
+    const tableRoot = main.querySelector<HTMLElement>('[data-table-root]');
+    const table = tableRoot?.querySelector('table');
+    if (!tableRoot || !table) throw new Error('table fixture missing');
+    const position: ReadingPosition = { version: 1, url: target, x: 0, y: 0 };
+    return { main, tableRoot, table, position, controller, style };
+  };
+
+  const setupPortableTable = async () => {
+    const result = await setupTable(24);
+    // runnerの画面用CSSをfixtureのCSS集合から外し、監査済みstylesheetだけで契約を検査する。
+    for (const sheet of Array.from(document.styleSheets)) {
+      const node = sheet.ownerNode;
+      if (
+        node instanceof HTMLStyleElement &&
+        sheet.cssRules.length === 2 &&
+        node.textContent.trim().startsWith('html {') &&
+        node.parentNode
+      ) {
+        detachedProfileHarnessStyles.push({
+          node,
+          parent: node.parentNode,
+          next: node.nextSibling,
+        });
+        node.remove();
+      }
+    }
+    result.style.textContent = tableProfileCss;
+    return result;
+  };
+
+  it('監査済みCSSと単純cellから純粋dataの移植証跡を発行する', async () => {
+    const { main, controller } = await setupPortableTable();
+    expect(await prepareHistoryFonts(main, controller.signal)).toBe(true);
+    const certificate = readHistoryTableProof(main)?.certificate;
+
+    expect(certificate).toBeDefined();
+    expect(certificate?.roles.map(([key]) => key).sort()).toEqual(['0:td:', '0:th:']);
+    expect(certificate?.authoredSerialization).not.toContain('data-table-scroll-rail');
+    expect(certificate?.authoredSerialization).not.toContain('table-scroll-root-');
+    const pureData = (value: unknown): boolean =>
+      value === null ||
+      typeof value !== 'object' ||
+      (Object.isFrozen(value) && Object.values(value).every(pureData));
+    expect(pureData(certificate)).toBe(true);
+    const captured = checkpoint(main, { version: 1, url: target, x: 0, y: 0 });
+    expect(captured.tableCertificate).toBe(certificate);
+  });
+
+  it('有限col幅・align役割・明示brの実表構造も全量証明する', async () => {
+    const { main, controller, table } = await setupPortableTable();
+    const columns = document.createElement('colgroup');
+    for (let i = 0; i < 8; i++) {
+      const col = document.createElement('col');
+      col.dataset['tableColWidth'] = i % 2 ? 'numeric' : 'wide';
+      columns.append(col);
+    }
+    table.prepend(columns);
+    for (const row of table.rows) {
+      row.cells.item(1)?.setAttribute('align', 'center');
+      row.cells.item(2)?.setAttribute('align', 'right');
+    }
+    const cell = table.rows.item(1)?.cells.item(0);
+    if (!cell) throw new Error('missing cell');
+    const br = document.createElement('br');
+    br.dataset['tableCellBreak'] = 'true';
+    cell.append(br, document.createTextNode('追加の全文glyph'));
+    expect(await prepareHistoryFonts(main, controller.signal)).toBe(true);
+    expect(
+      readHistoryTableProof(main)
+        ?.certificate?.roles.map(([key]) => key)
+        .sort(),
+    ).toEqual(['0:td:', '0:td:center', '0:td:right', '0:th:', '0:th:center', '0:th:right']);
+  });
+
+  it('CSS監査await中の同epoch rowspan変更を事前走査から除外する', async () => {
+    const { main, controller, table } = await setupPortableTable();
+    const digest = crypto.subtle.digest.bind(crypto.subtle);
+    vi.spyOn(crypto.subtle, 'digest').mockImplementationOnce(async (algorithm, data) => {
+      table.rows.item(1)?.cells.item(0)?.setAttribute('rowspan', '2');
+      return digest(algorithm, data);
+    });
+    expect(await prepareHistoryFonts(main, controller.signal)).toBe(false);
+    expect(readHistoryTableProof(main)).toBeNull();
+  });
+
+  it.each(['aria-details', 'aria-errormessage', 'aria-flowto', 'xlink:href'])(
+    'main外の%sも生成ID参照として拒否する',
+    async (attribute) => {
+      const { main, controller, tableRoot } = await setupPortableTable();
+      const reference = document.createElementNS('http://www.w3.org/2000/svg', 'a');
+      if (attribute === 'xlink:href')
+        reference.setAttributeNS('http://www.w3.org/1999/xlink', 'xlink:href', `#${tableRoot.id}`);
+      else reference.setAttribute(attribute, tableRoot.id);
+      document.body.append(reference);
+      try {
+        await prepareHistoryFonts(main, controller.signal);
+        expect(readHistoryTableProof(main)?.certificate).toBeUndefined();
+      } finally {
+        reference.remove();
+      }
+    },
+  );
+
+  it('移植profileは全cellに先行する未知nth overrideを許可しない', async () => {
+    const { main, controller, style } = await setupPortableTable();
+    style.textContent += ' table td:nth-child(7){font-family:monospace}';
+    await prepareHistoryFonts(main, controller.signal);
+    expect(readHistoryTableProof(main)?.certificate).toBeUndefined();
+  });
+
+  it('移植profileはcompact密度とcell言語上書きを通常証跡から区別する', async () => {
+    const { main, controller, tableRoot, table } = await setupPortableTable();
+    tableRoot.setAttribute('data-density', 'compact');
+    await prepareHistoryFonts(main, controller.signal);
+    expect(readHistoryTableProof(main)?.certificate).toBeUndefined();
+    tableRoot.removeAttribute('data-density');
+    table.rows.item(1)?.cells.item(0)?.setAttribute('lang', 'tr');
+    await prepareHistoryFonts(main, controller.signal);
+    expect(readHistoryTableProof(main)?.certificate).toBeUndefined();
+  });
+
+  it('main外のpercent encoded fragment参照があれば生成IDを正規化しない', async () => {
+    const { main, controller, tableRoot } = await setupPortableTable();
+    const link = document.createElement('a');
+    link.href = `${location.origin}${target}#${encodeURIComponent(tableRoot.id)}`;
+    document.body.append(link);
+    try {
+      await prepareHistoryFonts(main, controller.signal);
+      expect(readHistoryTableProof(main)?.certificate).toBeUndefined();
+    } finally {
+      link.remove();
+    }
+  });
+
+  it('profileが依存しないreading診断属性だけはsource証跡を失効させない', async () => {
+    const { main, controller } = await setupPortableTable();
+    expect(await prepareHistoryFonts(main, controller.signal)).toBe(true);
+    const proof = readHistoryTableProof(main);
+    expect(proof?.certificate).toBeDefined();
+    main.dataset['readingPositionStatus'] = 'pending';
+    main.dataset['historyPresentationEligibility'] = 'unavailable';
+    expect(readHistoryTableProof(main)).toBe(proof);
+  });
+
+  it('既知html paint markerの空値切替だけは完成font証跡を取消さない', async () => {
+    const { main, controller } = await setupPortableTable();
+    expect(await prepareHistoryFonts(main, controller.signal)).toBe(true);
+    const proof = readHistoryTableProof(main);
+    expect(proof?.certificate).toBeDefined();
+    try {
+      document.documentElement.setAttribute('data-content-transition', '');
+      expect(readHistoryTableProof(main)).toBe(proof);
+      document.documentElement.removeAttribute('data-content-transition');
+      expect(readHistoryTableProof(main)).toBe(proof);
+      document.documentElement.setAttribute('data-content-transition', 'unknown');
+      expect(readHistoryTableProof(main)).toBeNull();
+    } finally {
+      document.documentElement.removeAttribute('data-content-transition');
+    }
+  });
+
+  it.each(['url(#rouault-table-root-unknown)', 'url(#rouault\\2d table-root-unknown)'])(
+    '文書外側の未知CSS参照%sはportable正規化を拒否する',
+    async (value) => {
+      const { main, controller } = await setupPortableTable();
+      const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+      svg.setAttribute('filter', value);
+      document.body.append(svg);
+      try {
+        await prepareHistoryFonts(main, controller.signal);
+        expect(readHistoryTableProof(main)?.certificate).toBeUndefined();
+      } finally {
+        svg.remove();
+      }
+    },
+  );
+
+  it('文書外側のSMIL参照はportable正規化を拒否する', async () => {
+    const { main, controller } = await setupPortableTable();
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    const animation = document.createElementNS(svg.namespaceURI, 'animate');
+    animation.setAttribute('begin', 'unknown.click');
+    svg.append(animation);
+    document.body.append(svg);
+    try {
+      await prepareHistoryFonts(main, controller.signal);
+      expect(readHistoryTableProof(main)?.certificate).toBeUndefined();
+    } finally {
+      svg.remove();
+    }
+  });
+
+  it('同ownerの完了proofを再準備で破棄せず字体検査も繰り返さない', async () => {
+    const { main, controller } = await setupPortableTable();
+    expect(await prepareHistoryFonts(main, controller.signal)).toBe(true);
+    const proof = readHistoryTableProof(main);
+    expect(proof?.certificate).toBeDefined();
+    const check = vi.spyOn(document.fonts, 'check');
+    expect(await prepareHistoryFonts(main, controller.signal)).toBe(true);
+    expect(readHistoryTableProof(main)).toBe(proof);
+    expect(check).not.toHaveBeenCalled();
+  });
+
+  it('未完了proofの照会は同ownerの字体準備を取消さない', async () => {
+    const { main, controller } = await setupTable(24);
+    let waiting = true;
+    let finishLoad: ((faces: FontFace[]) => void) | undefined;
+    vi.spyOn(document.fonts, 'check').mockImplementation(() => !waiting);
+    const load = vi.spyOn(document.fonts, 'load').mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          finishLoad = resolve;
+        }),
+    );
+    const pending = prepareHistoryFonts(main, controller.signal);
+    await vi.waitFor(() => expect(load).toHaveBeenCalled());
+    expect(readHistoryTableProof(main)).toBeNull();
+    expect(readHistoryTableProof(main)).toBeNull();
+    waiting = false;
+    finishLoad?.([]);
+    expect(await pending).toBe(true);
+    expect(readHistoryTableProof(main)).not.toBeNull();
+  });
+
+  it('完成cache後の遠方cellのfinished filled字体効果を静的証跡へ転用しない', async () => {
+    const { main, controller, table, position } = await setupPortableTable();
+    main.style.lineHeight = '24px';
+    expect(await prepareHistoryFonts(main, controller.signal)).toBe(true);
+    expect(readHistoryTableProof(main)?.certificate).toBeDefined();
+    const cell = table.rows.item(24)?.cells.item(7);
+    if (!cell) throw new Error('missing far cell');
+    const rowHeight = cell.parentElement?.getBoundingClientRect().height;
+    const animation = cell.animate([{ fontFamily: 'serif' }, { fontFamily: 'monospace' }], {
+      duration: 10000,
+      fill: 'forwards',
+    });
+    try {
+      animation.finish();
+      await animation.finished;
+      expect(animation.playState).toBe('finished');
+      expect(animation.effect?.getComputedTiming().progress).toBe(1);
+      expect(getComputedStyle(cell).fontFamily).toBe('monospace');
+      expect(cell.parentElement?.getBoundingClientRect().height).toBe(rowHeight);
+      expect(readHistoryTableProof(main)).toBeNull();
+      expect(captureHistoryGeometry(main, position, 'verified-layout')).toBeNull();
+      expect(readHistoryTableProofDiagnostics(main)?.invalidation).toBe('current:filled-animation');
+    } finally {
+      animation.cancel();
+    }
+  });
+
+  it('733行8列の全構造・全字体・全行検査と実際の予算fallbackを区別する', async () => {
+    const { main, table, position, controller } = await setupTable();
+    expect(main.querySelectorAll('*').length).toBeGreaterThan(6000);
+    expect(captureHistoryGeometry(main, position, 'verified-layout')).toBeNull();
+    const scroll = vi.spyOn(window, 'scrollTo');
+    const focus = vi.spyOn(HTMLElement.prototype, 'focus');
+    const load = vi.spyOn(document.fonts, 'load');
+    const prepared = await prepareHistoryFonts(main, controller.signal);
+    const readOnly = (): void => {
+      expect(load).not.toHaveBeenCalled();
+      expect(scroll).not.toHaveBeenCalled();
+      expect(focus).not.toHaveBeenCalled();
+    };
+    if (!prepared) {
+      const diagnostic = readHistoryTableProofDiagnostics(main);
+      expect(diagnostic?.preparation?.outcome).toBe('budget-exceeded');
+      expect(diagnostic?.preparation?.elapsedMilliseconds).toBeGreaterThanOrEqual(1000);
+      expect(captureHistoryGeometry(main, position, 'verified-layout')).toBeNull();
+      readOnly();
+      console.log(
+        'history-table-proof-budget',
+        JSON.stringify({ classification: 'preparation-budget-fallback', diagnostic }),
+      );
+      return;
+    }
+    const proof = readHistoryTableProof(main);
+    expect(proof).not.toBeNull();
+    expect(proof?.structure).toContain('遠方最終行の独自字体Ω');
+    expect(proof?.structure).toContain('thead');
+    expect(proof?.fontFingerprint).toContain('serif');
+    expect(
+      proof?.elements.filter((element) => element instanceof HTMLTableRowElement),
+    ).toHaveLength(734);
+    expect(
+      proof?.elements.filter((element) => element instanceof HTMLTableCellElement),
+    ).toHaveLength(8);
+    const row = table.rows.item(48);
+    if (!row) throw new Error('source row missing');
+    const saved = { ...position, y: row.getBoundingClientRect().top + scrollY };
+    const captureStarted = performance.now();
+    const captured = captureHistoryGeometry(main, saved, 'verified-layout');
+    console.log(
+      'history-table-capture-budget',
+      JSON.stringify({
+        milliseconds: performance.now() - captureStarted,
+        accepted: captured !== null,
+      }),
+    );
+    if (!captured) {
+      const diagnostic = readHistoryTableProofDiagnostics(main);
+      expect(diagnostic?.capture?.outcome).toBe('budget-exceeded');
+      expect(diagnostic?.capture?.elapsedMilliseconds).toBeGreaterThan(8);
+      readOnly();
+      console.log(
+        'history-table-proof-budget',
+        JSON.stringify({ classification: 'capture-budget-fallback', diagnostic }),
+      );
+      return;
+    }
+    expect(readHistoryGeometryAnchor(main, captured)).toBe(row);
+    const matched = matchesHistoryGeometry(main, captured, 'verified-layout');
+    if (!matched) {
+      const diagnostic = readHistoryTableProofDiagnostics(main);
+      expect(diagnostic?.capture?.outcome).toBe('budget-exceeded');
+      expect(diagnostic?.capture?.elapsedMilliseconds).toBeGreaterThan(8);
+    }
+    readOnly();
+    console.log(
+      'history-table-proof-budget',
+      JSON.stringify({
+        classification: matched ? 'complete-and-matched' : 'match-budget-fallback',
+        rows: table.rows.length,
+        elements: main.querySelectorAll('*').length,
+        geometryNumbers: captured.geometry.length,
+        structureBytes: new TextEncoder().encode(captured.structure).byteLength,
+        fontBytes: new TextEncoder().encode(captured.fontFingerprint).byteLength,
+        preparedMilliseconds: proof?.preparedMilliseconds,
+        maximumChunkMilliseconds: proof?.maximumChunkMilliseconds,
+      }),
+    );
+  });
+
+  it.each([
+    'last-text',
+    'row-order',
+    'colgroup',
+    'column-width',
+    'font',
+    'rowspan',
+    'colspan',
+    'individual-style',
+  ] as const)('近傍が同じでも%sを変えた未配送mutationは証跡を拒否する', async (change) => {
+    const { main, table, position, controller, style } = await setupTable(40);
+    expect(await prepareHistoryFonts(main, controller.signal)).toBe(true);
+    const captured = checkpoint(main, position);
+    const lastRow = table.rows.item(40);
+    const last = lastRow?.cells[7];
+    if (!last || !lastRow) throw new Error('last cell missing');
+    if (change === 'last-text') last.textContent = '遠方だけを変更';
+    else if (change === 'row-order') table.tBodies[0]?.prepend(lastRow);
+    else if (change === 'colgroup') table.prepend(document.createElement('colgroup'));
+    else if (change === 'column-width')
+      style.sheet?.insertRule(
+        '[data-history-table-fixture] table{width:1300px}',
+        style.sheet.cssRules.length,
+      );
+    else if (change === 'font')
+      style.sheet?.insertRule(
+        '[data-history-table-fixture] td:last-child{font-family:monospace}',
+        style.sheet.cssRules.length,
+      );
+    else if (change === 'rowspan') last.rowSpan = 2;
+    else if (change === 'colspan') last.colSpan = 2;
+    else last.style.paddingLeft = '40px';
+    expect(matchesHistoryGeometry(main, captured, 'verified-layout')).toBe(false);
+    expect(readHistoryTableProof(main)).toBeNull();
+  });
+
+  it.each([
+    'rowspan',
+    'colspan',
+    'individual-style',
+    'transform',
+    'pseudo',
+    'table-layout',
+    'col-span',
+    'svg',
+    'mathml',
+  ] as const)('%sの未知複雑表は規模内でも準備を許可しない', async (condition) => {
+    const { main, table, controller, style, position } = await setupTable(24);
+    const cell = table.rows[1]?.cells[0];
+    if (!cell) throw new Error('cell');
+    if (condition === 'svg' || condition === 'mathml') {
+      const namespace =
+        condition === 'svg' ? 'http://www.w3.org/2000/svg' : 'http://www.w3.org/1998/Math/MathML';
+      const element = document.createElementNS(namespace, condition === 'svg' ? 'svg' : 'math');
+      const text = document.createElementNS(namespace, condition === 'svg' ? 'text' : 'mi');
+      text.textContent = '未知字体';
+      element.append(text);
+      cell.append(element);
+    } else if (condition === 'rowspan') cell.rowSpan = 2;
+    else if (condition === 'colspan') cell.colSpan = 2;
+    else if (condition === 'individual-style') cell.style.color = 'red';
+    else if (condition === 'col-span') {
+      const group = document.createElement('colgroup');
+      const col = document.createElement('col');
+      col.span = 8;
+      group.append(col);
+      table.prepend(group);
+    } else
+      style.sheet?.insertRule(
+        condition === 'transform'
+          ? '[data-history-table-fixture] tr{transform:translateX(1px)}'
+          : condition === 'pseudo'
+            ? '[data-history-table-fixture] td::before{content:"追加文字"}'
+            : '[data-history-table-fixture] table{table-layout:fixed}',
+        style.sheet.cssRules.length,
+      );
+    expect(await prepareHistoryFonts(main, controller.signal)).toBe(false);
+    expect(captureHistoryGeometry(main, position, 'verified-layout')).toBeNull();
+  });
+
+  it('同じ内容の別DOMへURLだけで完了証跡を流用せず、準備し直した実rootだけを認める', async () => {
+    const { main, position, controller } = await setupTable(24);
+    expect(await prepareHistoryFonts(main, controller.signal)).toBe(true);
+    const clone = main.cloneNode(true);
+    if (!(clone instanceof HTMLElement)) throw new Error('clone');
+    main.replaceWith(clone);
+    initializeContentContext(clone);
+    expect(captureHistoryGeometry(clone, position, 'verified-layout')).toBeNull();
+    expect(readHistoryTableProof(clone)).toBeNull();
+  });
+
+  it.each([
+    'table-transform',
+    'outside-transform',
+    'generated-text',
+    'outside-svg',
+    'outside-mathml',
+    'list-marker',
+  ] as const)('%sの未確認glyphをrawtextの字体確認だけで準備完了にしない', async (condition) => {
+    const { main, controller, style } = await setupTable(24);
+    if (condition === 'outside-svg' || condition === 'outside-mathml') {
+      const svg = condition === 'outside-svg';
+      const namespace = svg ? 'http://www.w3.org/2000/svg' : 'http://www.w3.org/1998/Math/MathML';
+      const element = document.createElementNS(namespace, svg ? 'svg' : 'math');
+      const text = document.createElementNS(namespace, svg ? 'text' : 'mi');
+      if (svg) {
+        element.setAttribute('width', '100');
+        element.setAttribute('height', '30');
+        text.setAttribute('y', '20');
+      }
+      text.textContent = '未確認glyph';
+      element.append(text);
+      main.append(element);
+    } else if (condition === 'list-marker') {
+      const list = document.createElement('ul');
+      const item = document.createElement('li');
+      item.textContent = 'marker glyph';
+      list.append(item);
+      main.append(list);
+    } else
+      style.sheet?.insertRule(
+        condition === 'table-transform'
+          ? '[data-history-table-fixture] td{text-transform:uppercase}'
+          : condition === 'outside-transform'
+            ? '[data-history-table-fixture] h1{text-transform:uppercase}'
+            : '[data-history-table-fixture] h1::before{content:"未知glyph"}',
+        style.sheet.cssRules.length,
+      );
+    expect(await prepareHistoryFonts(main, controller.signal)).toBe(false);
+    expect(readHistoryTableProof(main)).toBeNull();
+  });
+
+  it('生成IDが別の実rootで変われば旧IDへのhrefが残る内容を同じ証跡と認めない', async () => {
+    const { main, tableRoot, controller, position } = await setupTable(24);
+    const sourceId = tableRoot.id;
+    expect(sourceId).not.toBe('');
+    const link = document.createElement('a');
+    link.href = `#${sourceId}`;
+    link.textContent = '表への参照';
+    main.append(link);
+    expect(await prepareHistoryFonts(main, controller.signal)).toBe(true);
+    const captured = checkpoint(main, position);
+    const clone = main.cloneNode(true);
+    if (!(clone instanceof HTMLElement)) throw new Error('clone');
+    clone.querySelectorAll('[data-table-scroll-rail]').forEach((rail) => rail.remove());
+    const nextRoot = clone.querySelector<HTMLElement>('[data-table-root]');
+    if (!nextRoot) throw new Error('next table');
+    nextRoot.removeAttribute('id');
+    main.replaceWith(clone);
+    const epoch = initializeContentContext(clone);
+    const nextController = fixtureAbortController(clone);
+    expect(
+      prepareTableGeometry(clone, {
+        isCurrent: () =>
+          readContentContext()?.root === clone && readContentContext()?.contentEpoch === epoch,
+        beforeGeometryChange: () => invalidateHistoryTableProof(clone),
+        signal: nextController.signal,
+      }),
+    ).toBe(true);
+    expect(nextRoot.id).not.toBe(sourceId);
+    expect(clone.querySelector('a')?.getAttribute('href')).toBe(`#${sourceId}`);
+    expect(await prepareHistoryFonts(clone, nextController.signal)).toBe(true);
+    const current = checkpoint(clone, position);
+    expect(current.geometry).toEqual(captured.geometry);
+    expect(current.structure).not.toBe(captured.structure);
+    expect(matchesHistoryGeometry(clone, captured, 'verified-layout')).toBe(false);
+  });
+
+  it.each(['root-focus', 'checked-property'] as const)(
+    '%sだけで字体が変わる場合もDOM mutation無しのcacheを拒否する',
+    async (condition) => {
+      const { main, table, position, controller, style } = await setupTable(24);
+      main.tabIndex = -1;
+      const control = await fixture<HTMLInputElement>(
+        '<input type="checkbox" data-history-table-switch>',
+      );
+      style.sheet?.insertRule(
+        condition === 'root-focus'
+          ? 'main:focus td{font-family:monospace}'
+          : 'body:has(input[data-history-table-switch]:checked) td{font-family:monospace}',
+        style.sheet.cssRules.length,
+      );
+      expect(await prepareHistoryFonts(main, controller.signal)).toBe(true);
+      const cell = table.rows.item(1)?.cells.item(0);
+      if (!cell) throw new Error('cell');
+      const before = getComputedStyle(cell).fontFamily;
+      if (condition === 'root-focus') main.focus({ preventScroll: true });
+      else control.checked = true;
+      expect(getComputedStyle(cell).fontFamily).not.toBe(before);
+      expect(captureHistoryGeometry(main, position, 'verified-layout')).toBeNull();
+      expect(readHistoryTableProof(main)).toBeNull();
+    },
+  );
+
+  it('import先のCSSOMを固定できないstylesheetがある場合は準備を拒否する', async () => {
+    const { main, controller, style } = await setupTable(24);
+    style.sheet?.insertRule('@import url("data:text/css,td%7Bcolor:red%7D");', 0);
+    expect(style.sheet?.cssRules.item(0)).toBeInstanceOf(CSSImportRule);
+    expect(await prepareHistoryFonts(main, controller.signal)).toBe(false);
+    expect(readHistoryTableProof(main)).toBeNull();
+  });
+
+  it('DOM mutation無しで変わる未追跡のdefined selectorがある場合も準備を拒否する', async () => {
+    const { main, controller, style } = await setupTable(24);
+    style.sheet?.insertRule(
+      '.history-external:defined ~ main td{font-family:monospace}',
+      style.sheet.cssRules.length,
+    );
+    expect(await prepareHistoryFonts(main, controller.signal)).toBe(false);
+    expect(readHistoryTableProof(main)).toBeNull();
+  });
+
+  it('viewportと独立して変化するcontainer queryのあるstylesheetは拒否する', async () => {
+    const { main, controller, style } = await setupTable(24);
+    style.sheet?.insertRule(
+      '@container (min-width:1px){td{font-family:monospace}}',
+      style.sheet.cssRules.length,
+    );
+    expect(await prepareHistoryFonts(main, controller.signal)).toBe(false);
+    expect(readHistoryTableProof(main)).toBeNull();
+  });
+
+  it('FontFaceSetのface追加はloaded状態でもcacheを失効する', async () => {
+    const { main, controller } = await setupTable(24);
+    expect(await prepareHistoryFonts(main, controller.signal)).toBe(true);
+    const face = new FontFace('history-table-added', 'local(serif)');
+    document.fonts.add(face);
+    try {
+      expect(readHistoryTableProof(main)).toBeNull();
+    } finally {
+      document.fonts.delete(face);
+    }
+  });
+
+  it('再準備後のrowboxと字体文字列が同じでもCSS環境の異なる旧証跡は一致しない', async () => {
+    const { main, controller, position, style } = await setupTable(24);
+    expect(await prepareHistoryFonts(main, controller.signal)).toBe(true);
+    const captured = checkpoint(main, position);
+    style.sheet?.insertRule(
+      '[data-history-table-fixture] td{text-align:center}',
+      style.sheet.cssRules.length,
+    );
+    expect(await prepareHistoryFonts(main, controller.signal)).toBe(true);
+    const current = checkpoint(main, position);
+    expect(current.geometry).toEqual(captured.geometry);
+    expect(current.tableEnvironment).not.toBe(captured.tableEnvironment);
+    expect(matchesHistoryGeometry(main, captured, 'verified-layout')).toBe(false);
+  });
+
+  it('同期全行測定中にownerが変われば帰る直前の再照合で証跡を返さない', async () => {
+    const { main, table, controller, position } = await setupTable(24);
+    expect(await prepareHistoryFonts(main, controller.signal)).toBe(true);
+    const row = table.rows.item(24);
+    if (!row) throw new Error('row');
+    const read = row.getBoundingClientRect.bind(row);
+    let changed = false;
+    vi.spyOn(row, 'getBoundingClientRect').mockImplementation(() => {
+      if (!changed) {
+        changed = true;
+        beginContentMutation(main);
+      }
+      return read();
+    });
+    expect(captureHistoryGeometry(main, position, 'verified-layout')).toBeNull();
+    expect(changed).toBe(true);
+    expect(readContentContext()?.mutation).toBe(true);
+  });
+
+  it.each(['nodes', 'rows', 'columns', 'text', 'serialized', 'font-groups'] as const)(
+    '%s予算超過は準備完了を作らず通常fallbackにする',
+    async (condition) => {
+      const { main, table, controller, style } = await setupTable(
+        condition === 'nodes' ? 910 : condition === 'rows' ? 1025 : 24,
+        condition === 'columns' ? 33 : 8,
+      );
+      const cell = table.rows.item(1)?.cells.item(0);
+      if (!cell) throw new Error('cell');
+      if (condition === 'text') cell.textContent = '字'.repeat(128_001);
+      else if (condition === 'serialized')
+        cell.setAttribute('data-full-fingerprint', 'x'.repeat(524_289));
+      else if (condition === 'font-groups')
+        for (let i = 1; i <= 20; i++)
+          style.sheet?.insertRule(
+            `[data-history-table-fixture] tbody tr:nth-child(${i.toString()}) td{font-size:${(10 + i).toString()}px}`,
+            style.sheet.cssRules.length,
+          );
+      expect(await prepareHistoryFonts(main, controller.signal)).toBe(false);
+      expect(readHistoryTableProof(main)).toBeNull();
+    },
+  );
+
+  it('同期予算8msを超えた測定結果は採用せず保存位置を書き換えない', async () => {
+    const { main, controller, position } = await setupTable(24);
+    expect(await prepareHistoryFonts(main, controller.signal)).toBe(true);
+    const scroll = vi.spyOn(window, 'scrollTo');
+    let time = 0;
+    vi.spyOn(performance, 'now').mockImplementation(() => (time += 9));
+    expect(captureHistoryGeometry(main, position, 'verified-layout')).toBeNull();
+    expect(scroll).not.toHaveBeenCalled();
+    expect(position.y).toBe(0);
+  });
+
+  it('巨大font待機も実1000msの期限で終了して完了証跡を残さない', async () => {
+    const { main, controller } = await setupTable(24);
+    vi.spyOn(document.fonts, 'check').mockReturnValue(false);
+    vi.spyOn(document.fonts, 'load').mockImplementation(
+      () =>
+        new Promise<FontFace[]>(() => {
+          /* 期限を検証する未完了load。 */
+        }),
+    );
+    const started = performance.now();
+    expect(await prepareHistoryFonts(main, controller.signal)).toBe(false);
+    expect(performance.now() - started).toBeGreaterThanOrEqual(950);
+    expect(readHistoryTableProof(main)).toBeNull();
+  });
+
+  it('旧font待機のfinallyが同mainの新epoch準備の診断を上書きしない', async () => {
+    const { main, controller } = await setupTable(24);
+    const check = document.fonts.check.bind(document.fonts);
+    let first = true;
+    vi.spyOn(document.fonts, 'check').mockImplementation((font, text) => {
+      if (first) {
+        first = false;
+        return false;
+      }
+      return check(font, text);
+    });
+    let release: () => void = () => {
+      throw new Error('load not started');
+    };
+    const load = vi.spyOn(document.fonts, 'load').mockImplementation(
+      () =>
+        new Promise<FontFace[]>((resolve) => {
+          release = () => resolve([]);
+        }),
+    );
+    const previous = prepareHistoryFonts(main, controller.signal);
+    await expect.poll(() => load.mock.calls.length).toBe(1);
+    const epoch = beginContentMutation(main);
+    adoptContentBinding(target);
+    const nextController = fixtureAbortController(main);
+    expect(
+      prepareTableGeometry(main, {
+        isCurrent: () =>
+          readContentContext()?.root === main && readContentContext()?.contentEpoch === epoch,
+        beforeGeometryChange: () => invalidateHistoryTableProof(main),
+        signal: nextController.signal,
+      }),
+    ).toBe(true);
+    expect(await prepareHistoryFonts(main, nextController.signal)).toBe(true);
+    const latest = readHistoryTableProofDiagnostics(main);
+    expect(latest).toMatchObject({
+      contentEpoch: epoch,
+      url: target,
+      preparation: { outcome: 'ready' },
+    });
+    release();
+    expect(await previous).toBe(false);
+    expect(readHistoryTableProofDiagnostics(main)).toBe(latest);
+    expect(readHistoryTableProof(main)).not.toBeNull();
+  });
+
+  it.each(['abort', 'mutation', 'recovery', 'viewport', 'font-loading', 'ancestor-style'] as const)(
+    '準備中の%sは全走査を続けず通常fallbackへ戻す',
+    async (condition) => {
+      const { main, controller } = await setupTable();
+      const pending = prepareHistoryFonts(main, controller.signal);
+      if (condition === 'abort') controller.abort();
+      else if (condition === 'mutation') beginContentMutation(main);
+      else if (condition === 'recovery')
+        markContentRecoveryRequired(main, readContentContext()?.contentEpoch ?? -1);
+      else if (condition === 'viewport') window.dispatchEvent(new Event('resize'));
+      else if (condition === 'font-loading') {
+        vi.spyOn(document.fonts, 'status', 'get').mockReturnValue('loading');
+        document.fonts.dispatchEvent(new Event('loading'));
+      } else document.body.style.setProperty('--history-table-test', 'changed');
+      try {
+        expect(await pending).toBe(false);
+        expect(readHistoryTableProof(main)).toBeNull();
+      } finally {
+        document.body.style.removeProperty('--history-table-test');
+      }
+    },
+  );
+
+  it('未読込glyphは遠方セルを含む実text/fontの小分けで準備し、deadlineとabortを守る', async () => {
+    const { main, controller } = await setupTable(24);
+    const original = document.fonts.check.bind(document.fonts);
+    let requested = false;
+    vi.spyOn(document.fonts, 'check').mockImplementation((font, text) =>
+      text?.includes('Ω') && !requested ? false : original(font, text),
+    );
+    const load = vi.spyOn(document.fonts, 'load').mockImplementation(async () => {
+      requested = true;
+      return [];
+    });
+    expect(await prepareHistoryFonts(main, controller.signal)).toBe(true);
+    expect(
+      load.mock.calls.some(
+        ([font, text]) => font.includes('serif') && text?.includes('遠方最終行の独自字体Ω'),
+      ),
+    ).toBe(true);
+    expect(load.mock.calls.every(([, text]) => Array.from(text ?? '').length <= 128)).toBe(true);
+  });
+
+  it('preparedからactivationへの属性解除は同じ全行boxとowned rail証跡を保つ', async () => {
+    const { main, tableRoot, position, controller } = await setupTable(24);
+    expect(await prepareHistoryFonts(main, controller.signal)).toBe(true);
+    const captured = checkpoint(main, position);
+    const before = readPreparedTableGeometry(tableRoot);
+    enhanceTableScroll(main, controller.signal);
+    await Promise.resolve();
+    const after = readPreparedTableGeometry(tableRoot);
+    expect(after?.rail).toBe(before?.rail);
+    expect(after?.geometryVersion).toBe(before?.geometryVersion);
+    expect(matchesHistoryGeometry(main, captured, 'verified-layout')).toBe(true);
+    invalidateHistoryTableProof(main);
+    expect(await prepareHistoryFonts(main, controller.signal)).toBe(true);
+    expect(matchesHistoryGeometry(main, captured, 'verified-layout')).toBe(true);
+  });
+});
 
 const staticPage = async (content: string) => {
   const main = await fixture<HTMLElement>(
@@ -458,6 +1259,34 @@ describe('履歴本文の幾何checkpoint', () => {
       animation.cancel();
     }
   });
+
+  it.each(['root', 'descendant', 'ancestor'])(
+    '%sのfinished fill効果は残存中だけcaptureを拒否する',
+    async (scope) => {
+      const { main, position } = await staticPage(paragraphs());
+      const element =
+        scope === 'root'
+          ? main
+          : scope === 'ancestor'
+            ? main.parentElement
+            : main.querySelector('p');
+      if (!element) throw new Error('missing effect target');
+      const animation = element.animate([{ opacity: 1 }, { opacity: 1 }], {
+        duration: 10000,
+        fill: 'forwards',
+      });
+      try {
+        animation.finish();
+        await animation.finished;
+        expect(animation.effect?.getComputedTiming().progress).toBe(1);
+        expect(captureHistoryGeometry(main, position, 'verified-layout')).toBeNull();
+        animation.cancel();
+        expect(captureHistoryGeometry(main, position, 'verified-layout')).not.toBeNull();
+      } finally {
+        animation.cancel();
+      }
+    },
+  );
 
   it.each(['animate', 'animateMotion', 'animateTransform', 'set'])(
     'SMIL %s要素があればWAAPI一覧が空でも拒否し除去後だけ許可する',

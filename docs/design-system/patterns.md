@@ -145,3 +145,5 @@ row全体のbackground hover、shadow、transform、elevationは禁止する。`
 履歴移動は[共通の履歴表示判定](../contracts/reading-position.md#履歴表示の共通判定)として全ページのBack/Forwardを候補にする。復元後のlive mainだけに同じopacityを適用し、snapshotをcaptureしない。DOM差替え後の最初の可視フレームから保存位置が合う経路だけを対象とし、本文を非表示・inertにしたり入力遮蔽を追加したりしない。通常移動のnative演出は引き続き別の所有者で維持する。演出可否はページ名ではなく、復帰先entryの保存時と現在の本文・字体・配置・アンカーの証明で決める。未確定の動的内容は演出なしで正確な復元を優先する。
 
 この共通判定でもTOC幅は`--note-toc-width`の可変幅を維持する。幾何検証は宣言された実track幅へ追従し、狭いdesktopでの240pxをwide viewportへ固定条件として持ち込まない。位置や幅を補間する演出は追加しない。
+
+静的表の履歴復元では、受理済みcommitの位置job直前にrailのフローを準備し、後続activationが同じboxを採用する。準備中のrailだけを非操作状態にし、main/tableは常に通常表示・操作可能に保つ。監査済み静的CSSと単純表の限定契約で、保存元の全文/字体証明、incoming全構造、受理した実DOMと必要geometryを結合できる場合だけ先行復元候補にする。証跡不足や同期予算を満たさない経路ではfadeを有効化しない。通常復元で最終位置が一致しても、最初の可視位置が正しかったとは扱わない。詳細は[静的表の準備と証跡](../contracts/reading-position.md#静的表の準備と証跡)を参照。

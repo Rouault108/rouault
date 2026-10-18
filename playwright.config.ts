@@ -6,6 +6,7 @@ import process from 'node:process';
 const crossBrowserFinalCheck = [
   '**/navigation-transition.spec.ts',
   '**/history-scroll-restoration.spec.ts',
+  '**/table-history-restoration.spec.ts',
   '**/memos.spec.ts',
   '**/search-cutover.spec.ts',
   '**/app-shell.spec.ts',
@@ -31,6 +32,7 @@ const webkitFinalCheck = [
 
 const mobileWebkitFinalCheck = [
   '**/history-scroll-restoration-mobile.spec.ts',
+  '**/table-history-restoration-mobile.spec.ts',
   '**/mobile-header-dropdown-position.spec.ts',
   articleHeaderStaticLayoutCheck,
   '**/toc-readable-long-heading.spec.ts',

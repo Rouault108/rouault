@@ -1,6 +1,10 @@
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { enhanceTableScroll } from '../../src/client/post-hydrate/table-scroll-enhancer.js';
+import {
+  enhanceTableScroll,
+  prepareTableGeometry,
+  readPreparedTableGeometry,
+} from '../../src/client/post-hydrate/table-scroll-enhancer.js';
 import { waitForCondition } from './harness/browser-test-utilities.js';
 
 const nextFrame = async (): Promise<void> => {
@@ -492,7 +496,7 @@ describe('table-scroll-enhancer Phase3B accessible top scroll rail', () => {
     expect(root.id).to.equal('');
   });
 
-  it('short overflow / non-overflow / AbortSignal 解除時に root 直前の stale rail を削除すること', async () => {
+  it('short overflow / non-overflow / AbortSignal 解除でも所有不明の隣接 rail を削除しないこと', async () => {
     const shortRoot = createTableFixture();
     const shortStaleA = createStaleRail();
     const shortStaleB = createStaleRail();
@@ -501,9 +505,9 @@ describe('table-scroll-enhancer Phase3B accessible top scroll rail', () => {
     enhanceTableScroll(shortRoot);
     await nextFrame();
 
-    expect(shortStaleA.isConnected).to.equal(false);
-    expect(shortStaleB.isConnected).to.equal(false);
-    expect(getRail(shortRoot)).to.equal(null);
+    expect(shortStaleA.isConnected).to.equal(true);
+    expect(shortStaleB.isConnected).to.equal(true);
+    expect(readPreparedTableGeometry(shortRoot)).to.equal(null);
 
     const nonOverflowRoot = createTableFixture({ rootWidth: 360, tableWidth: 120 });
     const nonOverflowStale = createStaleRail();
@@ -512,8 +516,8 @@ describe('table-scroll-enhancer Phase3B accessible top scroll rail', () => {
     enhanceTableScroll(nonOverflowRoot);
     await nextFrame();
 
-    expect(nonOverflowStale.isConnected).to.equal(false);
-    expect(getRail(nonOverflowRoot)).to.equal(null);
+    expect(nonOverflowStale.isConnected).to.equal(true);
+    expect(readPreparedTableGeometry(nonOverflowRoot)).to.equal(null);
 
     const eligibleRoot = createEligibleTableFixture();
     const controller = new AbortController();
@@ -527,11 +531,11 @@ describe('table-scroll-enhancer Phase3B accessible top scroll rail', () => {
     await nextFrame();
 
     expect(activeRail?.isConnected).to.equal(false);
-    expect(abortStale.isConnected).to.equal(false);
-    expect(getRail(eligibleRoot)).to.equal(null);
+    expect(abortStale.isConnected).to.equal(true);
+    expect(readPreparedTableGeometry(eligibleRoot)).to.equal(null);
   });
 
-  it('eligible overflow 更新時に root 直前の連続 stale rail を 1 つの active rail へ正規化すること', async () => {
+  it('eligible overflow 更新時も未知 rail を保持し、自分の rail だけを root 直前へ置くこと', async () => {
     const root = createEligibleTableFixture();
     const staleA = createStaleRail();
     const staleB = createStaleRail();
@@ -542,9 +546,12 @@ describe('table-scroll-enhancer Phase3B accessible top scroll rail', () => {
 
     const rail = getRail(root);
     expect(rail).to.not.equal(null);
-    expect(staleA.isConnected).to.equal(false);
-    expect(staleB.isConnected).to.equal(false);
-    expect(document.body.querySelectorAll('[data-table-scroll-rail]').length).to.equal(1);
+    expect(staleA.isConnected).to.equal(true);
+    expect(staleB.isConnected).to.equal(true);
+    expect(rail).to.not.equal(staleA);
+    expect(rail).to.not.equal(staleB);
+    expect(document.body.querySelectorAll('[data-table-scroll-rail]').length).to.equal(3);
+    expect(readPreparedTableGeometry(root)).to.equal(null);
   });
 
   it('state.rail が接続済みで root 直前から外れている場合は eligible 更新で戻すこと', async () => {
@@ -584,7 +591,7 @@ describe('table-scroll-enhancer Phase3B accessible top scroll rail', () => {
     expect(newRail).to.not.equal(null);
     expect(newRail).to.not.equal(originalRail);
     expect(newRail).to.not.equal(unknownRail);
-    expect(unknownRail.isConnected).to.equal(false);
+    expect(unknownRail.isConnected).to.equal(true);
 
     if (newRail) {
       newRail.scrollLeft = 150;
@@ -959,5 +966,497 @@ describe('table-scroll-enhancer Phase3B accessible top scroll rail', () => {
 
     expect(root.dataset['fadeLeft']).to.equal('true');
     expect(root.dataset['fadeRight']).to.equal('true');
+  });
+});
+
+describe('table-scroll-enhancer synchronous geometry preparation and ownership', () => {
+  const controllers: AbortController[] = [];
+
+  afterEach(() => {
+    for (const controller of controllers) controller.abort();
+    controllers.length = 0;
+    vi.restoreAllMocks();
+    vi.unstubAllGlobals();
+    document.body.replaceChildren();
+  });
+
+  const controller = (): AbortController => {
+    const value = new AbortController();
+    controllers.push(value);
+    return value;
+  };
+
+  const options = (signal?: AbortSignal) => ({
+    isCurrent: () => true,
+    beforeGeometryChange: vi.fn(),
+    ...(signal ? { signal } : {}),
+  });
+
+  const controlResizeObservers = (): (() => void)[] => {
+    const queued: (() => void)[] = [];
+    class ControlledResizeObserver implements ResizeObserver {
+      constructor(callback: ResizeObserverCallback) {
+        queued.push(() => callback([], this));
+      }
+      observe(): void {
+        /* 配信済み callback を明示的に再生して旧世代を検証する。 */
+      }
+      unobserve(): void {
+        /* native observer の購読状態は今回の検証対象外。 */
+      }
+      disconnect(): void {
+        /* 切断後も queued callback を再生できるよう保持する。 */
+      }
+    }
+    vi.stubGlobal('ResizeObserver', ControlledResizeObserver);
+    return queued;
+  };
+
+  it('同期 prepare は非操作 rail を作り、activation と初回 RO は同じ geometry を採用すること', () => {
+    const queued = controlResizeObservers();
+    const root = createEligibleTableFixture();
+    const style = document.createElement('style');
+    style.textContent =
+      '[data-table-scroll-rail]{overflow-x:auto;block-size:14px;inline-size:120px;margin-block:4px -4px}[data-table-scroll-rail-spacer]{block-size:1px}';
+    document.body.prepend(style);
+    const owner = options(controller().signal);
+    const focus = document.createElement('button');
+    document.body.prepend(focus);
+    focus.focus();
+    const scroll = vi.spyOn(window, 'scrollTo');
+    const historyPush = vi.spyOn(history, 'pushState');
+    const historyReplace = vi.spyOn(history, 'replaceState');
+
+    expect(prepareTableGeometry(root, owner)).toBe(true);
+    const prepared = readPreparedTableGeometry(root);
+    if (!prepared?.rail || !prepared.spacer) throw new Error('Missing prepared rail');
+    expect(prepared.phase).toBe('prepared');
+    expect(prepared.rail.inert).toBe(true);
+    expect(prepared.rail.getAttribute('aria-hidden')).toBe('true');
+    expect(prepared.rail.tabIndex).toBe(-1);
+    prepared.rail.focus();
+    expect(document.activeElement).toBe(focus);
+    expect(root.inert).toBe(false);
+    expect(root.hasAttribute('aria-hidden')).toBe(false);
+    const before = [root, prepared.table, prepared.rail, prepared.spacer].map((element) =>
+      element.getBoundingClientRect().toJSON(),
+    );
+    const version = prepared.geometryVersion;
+    owner.beforeGeometryChange.mockClear();
+    const mutation = new MutationObserver(() => undefined);
+    mutation.observe(prepared.spacer, { attributes: true, childList: true });
+
+    enhanceTableScroll(root, controller().signal);
+    queued[0]?.();
+    const active = readPreparedTableGeometry(root);
+    expect(active?.phase).toBe('active');
+    expect(active?.rail).toBe(prepared.rail);
+    expect(active?.spacer).toBe(prepared.spacer);
+    expect(active?.generation).toBe(prepared.generation);
+    expect(active?.geometryVersion).toBe(version);
+    expect(
+      [root, prepared.table, prepared.rail, prepared.spacer].map((element) =>
+        element.getBoundingClientRect().toJSON(),
+      ),
+    ).toEqual(before);
+    expect(owner.beforeGeometryChange).not.toHaveBeenCalled();
+    expect(mutation.takeRecords()).toEqual([]);
+    mutation.disconnect();
+    expect(prepared.rail.inert).toBe(false);
+    expect(prepared.rail.hasAttribute('aria-hidden')).toBe(false);
+    expect(prepared.rail.tabIndex).toBe(0);
+    prepared.rail.focus();
+    expect(document.activeElement).toBe(prepared.rail);
+    expect(scroll).not.toHaveBeenCalled();
+    expect(historyPush).not.toHaveBeenCalled();
+    expect(historyReplace).not.toHaveBeenCalled();
+  });
+
+  it('初期 SSR 相当の document 準備を複数表の activation が二重生成せず採用すること', () => {
+    const first = createEligibleTableFixture();
+    const second = createEligibleTableFixture({ rootId: 'author-table-id' });
+    expect(prepareTableGeometry(document, options(controller().signal))).toBe(true);
+    const a = readPreparedTableGeometry(first);
+    const b = readPreparedTableGeometry(second);
+    enhanceTableScroll(document.body, controller().signal);
+    expect(getRail(first)).toBe(a?.rail);
+    expect(getRail(second)).toBe(b?.rail);
+    expect(document.querySelectorAll('[data-table-scroll-rail]')).toHaveLength(2);
+    expect(a?.generatedRootId).toBe(first.id);
+    expect(b?.generatedRootId).toBe(null);
+    expect(getRail(first)?.getAttribute('aria-controls')).toBe(first.id);
+    expect(getRail(second)?.getAttribute('aria-controls')).toBe('author-table-id');
+  });
+
+  it('prepare 専用の最新 intent 判定は終了後の content lifetime に持ち込まないこと', () => {
+    const root = createEligibleTableFixture();
+    let canPrepare = true;
+    expect(
+      prepareTableGeometry(root, { ...options(controller().signal), canPrepare: () => canPrepare }),
+    ).toBe(true);
+    canPrepare = false;
+    enhanceTableScroll(root, controller().signal);
+    expect(readPreparedTableGeometry(root)?.phase).toBe('active');
+    const rail = makeRailScrollableInFixture(root);
+    if (!rail) throw new Error('Missing active rail');
+    rail.scrollLeft = 100;
+    rail.dispatchEvent(new Event('scroll'));
+    expect(root.scrollLeft).toBeCloseTo(100, 0);
+  });
+
+  it('準備の最初の書込み前に intent が変われば部分 DOM を残さないこと', () => {
+    const root = createEligibleTableFixture();
+    let currentIntent = true;
+    expect(
+      prepareTableGeometry(root, {
+        isCurrent: () => true,
+        canPrepare: () => currentIntent,
+        beforeGeometryChange: () => {
+          currentIntent = false;
+        },
+        signal: controller().signal,
+      }),
+    ).toBe(false);
+    expect(getRail(root)).toBe(null);
+    expect(root.hasAttribute('data-overflow')).toBe(false);
+    expect(readPreparedTableGeometry(root)).toBe(null);
+  });
+
+  it('rail 挿入中の例外は自分の部分準備だけ清掃し未知隣接 rail を残すこと', () => {
+    const root = createEligibleTableFixture();
+    const unknown = createStaleRail();
+    root.before(unknown);
+    const original = root.before.bind(root);
+    vi.spyOn(root, 'before').mockImplementation((...nodes) => {
+      original(...nodes);
+      throw new Error('insertion failed');
+    });
+    expect(prepareTableGeometry(root, options(controller().signal))).toBe(false);
+    expect(unknown.isConnected).toBe(true);
+    expect(document.querySelectorAll('[data-table-scroll-rail]')).toHaveLength(1);
+    expect(readPreparedTableGeometry(root)).toBe(null);
+  });
+
+  it('既知 geometry の変化は spacer 書換えより前に証跡を失効すること', () => {
+    const queued = controlResizeObservers();
+    const root = createEligibleTableFixture();
+    const table = getOwnedTableInFixture(root);
+    const owner = options(controller().signal);
+    expect(prepareTableGeometry(root, owner)).toBe(true);
+    enhanceTableScroll(root, controller().signal);
+    const old = readPreparedTableGeometry(root);
+    const spacer = old?.spacer;
+    if (!table || !spacer || !old) throw new Error('Missing preparation');
+    const oldWidth = spacer.style.inlineSize;
+    const observed: string[] = [];
+    owner.beforeGeometryChange.mockImplementation(() => {
+      observed.push(spacer.style.inlineSize);
+    });
+    table.style.inlineSize = '480px';
+    table.style.minInlineSize = '480px';
+    queued[0]?.();
+    expect(observed).toEqual([oldWidth]);
+    expect(spacer.style.inlineSize).toBe(`${root.scrollWidth}px`);
+    expect(readPreparedTableGeometry(root)?.geometryVersion).toBeGreaterThan(old.geometryVersion);
+  });
+
+  it('失効 hook で新 owner へ再採用しても旧 callback は新 spacer を書き換えないこと', () => {
+    const queued = controlResizeObservers();
+    const root = createEligibleTableFixture();
+    const table = getOwnedTableInFixture(root);
+    const owner = options(controller().signal);
+    expect(prepareTableGeometry(root, owner)).toBe(true);
+    enhanceTableScroll(root, controller().signal);
+    const rail = getRail(root);
+    owner.beforeGeometryChange.mockImplementation(() => {
+      expect(prepareTableGeometry(root, options(controller().signal))).toBe(true);
+      enhanceTableScroll(root, controller().signal);
+    });
+    if (!table) throw new Error('Missing table');
+    table.style.inlineSize = '480px';
+    table.style.minInlineSize = '480px';
+    queued[0]?.();
+    expect(getRail(root)).toBe(rail);
+    expect(readPreparedTableGeometry(root)?.spacer?.style.inlineSize).toBe(`${root.scrollWidth}px`);
+    expect(readPreparedTableGeometry(root)?.phase).toBe('active');
+  });
+
+  it('旧 abort と queued RO/root/rail scroll は再採用 state の rail と WeakMap を消さないこと', () => {
+    const queued = controlResizeObservers();
+    const root = createEligibleTableFixture();
+    const rootAdd = vi.spyOn(root, 'addEventListener');
+    const first = controller();
+    const oldOwner = options(controller().signal);
+    expect(prepareTableGeometry(root, oldOwner)).toBe(true);
+    const rail = getRail(root);
+    if (!rail) throw new Error('Missing prepared rail');
+    const railAdd = vi.spyOn(rail, 'addEventListener');
+    enhanceTableScroll(root, first.signal);
+    const oldRootScroll = rootAdd.mock.calls.find(([type]) => type === 'scroll')?.[1];
+    const oldRailScroll = railAdd.mock.calls.find(([type]) => type === 'scroll')?.[1];
+    root.scrollLeft = 40;
+    root.dispatchEvent(new Event('scroll'));
+    const old = readPreparedTableGeometry(root);
+    expect(prepareTableGeometry(root, options(controller().signal))).toBe(true);
+    enhanceTableScroll(root, controller().signal);
+    const adopted = readPreparedTableGeometry(root);
+    expect(adopted?.generation).not.toBe(old?.generation);
+    expect(adopted?.rail).toBe(rail);
+    const unknown = createStaleRail();
+    rail.before(unknown);
+    first.abort();
+    queued[0]?.();
+    if (typeof oldRootScroll === 'function') oldRootScroll.call(root, new Event('scroll'));
+    if (typeof oldRailScroll === 'function') oldRailScroll.call(rail, new Event('scroll'));
+    expect(rail.isConnected).toBe(true);
+    expect(unknown.isConnected).toBe(true);
+    unknown.remove();
+    expect(readPreparedTableGeometry(root)?.generation).toBe(adopted?.generation);
+    const activeRail = makeRailScrollableInFixture(root);
+    if (!activeRail) throw new Error('Missing adopted rail');
+    activeRail.scrollLeft = 140;
+    activeRail.dispatchEvent(new Event('scroll'));
+    expect(root.scrollLeft).toBeCloseTo(140, 0);
+  });
+
+  it('rollback 相当の同 DOM 再採用は生成 ID と rail 実体を保ち旧 owner abort から独立すること', () => {
+    const root = createEligibleTableFixture();
+    const oldOwner = controller();
+    let epoch = 1;
+    expect(
+      prepareTableGeometry(root, { ...options(oldOwner.signal), isCurrent: () => epoch === 1 }),
+    ).toBe(true);
+    enhanceTableScroll(root, controller().signal);
+    const old = readPreparedTableGeometry(root);
+    epoch = 2;
+    expect(
+      prepareTableGeometry(root, { ...options(controller().signal), isCurrent: () => epoch === 2 }),
+    ).toBe(true);
+    enhanceTableScroll(root, controller().signal);
+    oldOwner.abort();
+    expect(readPreparedTableGeometry(root)?.rail).toBe(old?.rail);
+    expect(root.id).toBe(old?.generatedRootId);
+    expect(readPreparedTableGeometry(root)?.generatedRootId).toBe(root.id);
+    expect(getRail(root)?.getAttribute('aria-controls')).toBe(root.id);
+  });
+
+  it('同じ root の abort→再準備でも ID は安定し、生成接頭辞に似た author ID は正規化根拠にしないこと', () => {
+    const root = createEligibleTableFixture();
+    const owner = controller();
+    expect(prepareTableGeometry(root, options(owner.signal))).toBe(true);
+    const id = root.id;
+    owner.abort();
+    expect(prepareTableGeometry(root, options(controller().signal))).toBe(true);
+    expect(root.id).toBe(id);
+    expect(readPreparedTableGeometry(root)?.generatedRootId).toBe(id);
+    const author = createEligibleTableFixture({ rootId: 'rouault-table-root-999999' });
+    expect(prepareTableGeometry(author, options(controller().signal))).toBe(true);
+    expect(readPreparedTableGeometry(author)?.generatedRootId).toBe(null);
+  });
+
+  it('重複する author ID を書換えず rail の ARIA 参照と証跡を拒否すること', () => {
+    const root = createEligibleTableFixture({ rootId: 'duplicate-table-id' });
+    const other = document.createElement('div');
+    other.id = root.id;
+    document.body.append(other);
+    expect(prepareTableGeometry(root, options(controller().signal))).toBe(false);
+    expect(root.id).toBe('duplicate-table-id');
+    expect(getRail(root)).toBe(null);
+    expect(readPreparedTableGeometry(root)).toBe(null);
+  });
+
+  it('新 DOM へ複製された ID を旧 root の生成 provenance として採用しないこと', () => {
+    const root = createEligibleTableFixture();
+    expect(prepareTableGeometry(root, options(controller().signal))).toBe(true);
+    const replacement = root.cloneNode(true);
+    if (!(replacement instanceof HTMLElement)) throw new Error('Missing cloned table');
+    root.replaceWith(replacement);
+    getRail(replacement)?.remove();
+    expect(prepareTableGeometry(replacement, options(controller().signal))).toBe(true);
+    expect(readPreparedTableGeometry(replacement)?.generatedRootId).toBe(null);
+    expect(readPreparedTableGeometry(root)).toBe(null);
+  });
+
+  it('content owner 失効後の queued callback は root の新しい本文世代へ書き込まないこと', () => {
+    const queued = controlResizeObservers();
+    const root = createEligibleTableFixture();
+    let current = true;
+    const owner = options(controller().signal);
+    expect(prepareTableGeometry(root, { ...owner, isCurrent: () => current })).toBe(true);
+    enhanceTableScroll(root, controller().signal);
+    const rail = getRail(root);
+    const version = readPreparedTableGeometry(root)?.geometryVersion;
+    current = false;
+    root.removeAttribute('data-overflow');
+    queued[0]?.();
+    root.dispatchEvent(new Event('scroll'));
+    rail?.dispatchEvent(new Event('scroll'));
+    enhanceTableScroll(root, controller().signal);
+    expect(root.hasAttribute('data-overflow')).toBe(false);
+    expect(owner.beforeGeometryChange).toHaveBeenCalled();
+    expect(readPreparedTableGeometry(root)).toBe(null);
+    expect(version).toBeGreaterThan(0);
+  });
+});
+
+describe('table-scroll-enhancer preparation provenance validation', () => {
+  const controllers: AbortController[] = [];
+  afterEach(() => {
+    for (const controller of controllers) controller.abort();
+    controllers.length = 0;
+    document.body.replaceChildren();
+  });
+  const prepare = (root: HTMLElement): AbortController => {
+    const owner = new AbortController();
+    controllers.push(owner);
+    expect(
+      prepareTableGeometry(root, {
+        isCurrent: () => true,
+        beforeGeometryChange: () => undefined,
+        signal: owner.signal,
+      }),
+    ).toBe(true);
+    return owner;
+  };
+
+  for (const phase of ['prepared', 'active'] as const) {
+    for (const attribute of [
+      'inert',
+      'aria-hidden',
+      'tabindex',
+      'role',
+      'aria-label',
+      'aria-controls',
+      'pointer-events',
+    ] as const) {
+      it(`${phase} の ${attribute} が既知の値と異なれば provenance を返さないこと`, () => {
+        const root = createEligibleTableFixture({ caption: '正規 caption' });
+        prepare(root);
+        if (phase === 'active') {
+          const activation = new AbortController();
+          controllers.push(activation);
+          enhanceTableScroll(root, activation.signal);
+        }
+        const rail = getRail(root);
+        if (!rail) throw new Error('Missing owned rail');
+        expect(readPreparedTableGeometry(root)?.phase).toBe(phase);
+        if (attribute === 'inert') rail.toggleAttribute('inert', phase === 'active');
+        else if (attribute === 'pointer-events') rail.style.pointerEvents = 'auto';
+        else rail.setAttribute(attribute, 'unknown-value');
+        expect(readPreparedTableGeometry(root)).toBe(null);
+      });
+    }
+  }
+
+  it('caption が変わっても古い accessible name の rail を証跡として採用しないこと', () => {
+    const root = createEligibleTableFixture({ caption: '旧 caption' });
+    prepare(root);
+    const table = getOwnedTableInFixture(root);
+    if (!table?.caption) throw new Error('Missing caption');
+    table.caption.textContent = '新 caption';
+    expect(readPreparedTableGeometry(root)).toBe(null);
+  });
+
+  it('準備と activation は 0 以外の root 横位置を reset せず rail へ採用すること', () => {
+    const style = document.createElement('style');
+    style.textContent =
+      '[data-table-scroll-rail]{overflow-x:auto;block-size:14px;inline-size:120px}[data-table-scroll-rail-spacer]{block-size:1px}';
+    document.body.append(style);
+    const root = createEligibleTableFixture();
+    root.scrollLeft = 83.5;
+    const reached = root.scrollLeft;
+    prepare(root);
+    const rail = getRail(root);
+    expect(root.scrollLeft).toBe(reached);
+    expect(rail?.scrollLeft).toBeCloseTo(reached, 0);
+    const activation = new AbortController();
+    controllers.push(activation);
+    enhanceTableScroll(root, activation.signal);
+    expect(root.scrollLeft).toBe(reached);
+    expect(rail?.scrollLeft).toBeCloseTo(reached, 0);
+  });
+});
+
+describe('table-scroll-enhancer legacy activation proof boundary', () => {
+  afterEach(() => {
+    document.body.replaceChildren();
+  });
+
+  it('従来 activation は UI を維持するが明示 geometry owner の採用までは証跡にしないこと', () => {
+    const root = createEligibleTableFixture();
+    const legacy = new AbortController();
+    const owner = new AbortController();
+    const activation = new AbortController();
+    enhanceTableScroll(root, legacy.signal);
+    const rail = makeRailScrollableInFixture(root);
+    if (!rail) throw new Error('Missing legacy rail');
+    rail.scrollLeft = 60;
+    rail.dispatchEvent(new Event('scroll'));
+    expect(root.scrollLeft).toBeCloseTo(60, 0);
+    expect(readPreparedTableGeometry(root)).toBe(null);
+    const invalidated = vi.fn();
+    expect(
+      prepareTableGeometry(root, {
+        isCurrent: () => true,
+        beforeGeometryChange: invalidated,
+        signal: owner.signal,
+      }),
+    ).toBe(true);
+    enhanceTableScroll(root, activation.signal);
+    legacy.abort();
+    expect(readPreparedTableGeometry(root)?.rail).toBe(rail);
+    expect(readPreparedTableGeometry(root)?.phase).toBe('active');
+    owner.abort();
+    activation.abort();
+  });
+});
+
+describe('table-scroll-enhancer activation subscription reentry', () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+    vi.unstubAllGlobals();
+    document.body.replaceChildren();
+  });
+
+  it('RO 初回 observe 中の owner abort 後は追加 observe をせず購読と queued callback を無効にすること', () => {
+    const root = createEligibleTableFixture();
+    const owner = new AbortController();
+    const activation = new AbortController();
+    const observed: Element[] = [];
+    let disconnected = 0;
+    let queued: (() => void) | undefined;
+    class ReentrantResizeObserver implements ResizeObserver {
+      constructor(callback: ResizeObserverCallback) {
+        queued = () => callback([], this);
+      }
+      observe(target: Element): void {
+        observed.push(target);
+        owner.abort();
+      }
+      unobserve(): void {
+        /* 明示的な owner abort でまとめて解放する。 */
+      }
+      disconnect(): void {
+        disconnected += 1;
+      }
+    }
+    vi.stubGlobal('ResizeObserver', ReentrantResizeObserver);
+    expect(
+      prepareTableGeometry(root, {
+        isCurrent: () => true,
+        beforeGeometryChange: () => undefined,
+        signal: owner.signal,
+      }),
+    ).toBe(true);
+    enhanceTableScroll(root, activation.signal);
+    expect(observed).toEqual([root]);
+    expect(disconnected).toBeGreaterThan(0);
+    expect(getRail(root)).toBe(null);
+    root.removeAttribute('data-overflow');
+    queued?.();
+    root.dispatchEvent(new Event('scroll'));
+    expect(root.hasAttribute('data-overflow')).toBe(false);
+    expect(readPreparedTableGeometry(root)).toBe(null);
+    activation.abort();
   });
 });

@@ -282,11 +282,19 @@ export class StaticHeaderMenuController {
       panel.id = panelId;
     }
 
-    trigger.setAttribute('aria-expanded', menu.open ? 'true' : 'false');
-    if (panelId !== null) {
+    // scroll時の閉状態の同期で、同値mutationによる本文証跡の失効を起こさない。
+    const expanded = menu.open ? 'true' : 'false';
+    if (trigger.getAttribute('aria-expanded') !== expanded) {
+      trigger.setAttribute('aria-expanded', expanded);
+    }
+    if (panelId !== null && trigger.getAttribute('aria-controls') !== panelId) {
       trigger.setAttribute('aria-controls', panelId);
     }
-    if (panel !== null && triggerId !== null) {
+    if (
+      panel !== null &&
+      triggerId !== null &&
+      panel.getAttribute('aria-labelledby') !== triggerId
+    ) {
       panel.setAttribute('aria-labelledby', triggerId);
     }
   }

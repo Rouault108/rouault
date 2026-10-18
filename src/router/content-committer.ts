@@ -27,6 +27,8 @@ import type {
   ContentUpdateAdapter,
   HistoryMode,
   NavigationCommitReceipt,
+  IncomingContentPreparationContext,
+  PreparedIncomingContent,
   PreparedShellUpdate,
   RouterRuntimeUrlDependencies,
   ShellAdapter,
@@ -39,6 +41,7 @@ interface CommitRequest {
   state: Record<string, unknown> | undefined;
   intent?: NavigationIntent;
   signal?: AbortSignal;
+  incoming?: PreparedIncomingContent;
 }
 
 interface PreparedMutation {
@@ -98,6 +101,23 @@ export class ContentCommitter {
     private shellAdapter?: ShellAdapter,
   ) {}
 
+  async prepareIncoming(
+    envelope: NavigationEnvelope,
+    normalizedUrl: string,
+    context: IncomingContentPreparationContext,
+  ): Promise<PreparedIncomingContent | null> {
+    return (
+      (await this.contentAdapter?.prepareIncoming?.(
+        {
+          html: envelope.document.html,
+          renderedKind: envelope.document.renderedKind,
+          navigationUrl: normalizedUrl,
+        },
+        context,
+      )) ?? null
+    );
+  }
+
   async commit(request: CommitRequest): Promise<CommittedContentLifetime> {
     const previousTitle = document.title;
     const previousMetaDescription =
@@ -113,6 +133,7 @@ export class ContentCommitter {
     const preparedContentMutation = await this.prepareContentMutation(
       request.envelope,
       request.normalizedUrl,
+      request.incoming,
     );
     const preparedShellMutation = await this.prepareShellMutation(
       request.envelope,
@@ -252,13 +273,17 @@ export class ContentCommitter {
   private async prepareContentMutation(
     envelope: NavigationEnvelope,
     normalizedUrl: string,
+    incoming?: PreparedIncomingContent,
   ): Promise<PreparedMutation> {
     if (this.contentAdapter) {
-      return this.contentAdapter.prepare({
-        html: envelope.document.html,
-        renderedKind: envelope.document.renderedKind,
-        navigationUrl: normalizedUrl,
-      });
+      return this.contentAdapter.prepare(
+        {
+          html: envelope.document.html,
+          renderedKind: envelope.document.renderedKind,
+          navigationUrl: normalizedUrl,
+        },
+        incoming ? { incoming } : undefined,
+      );
     }
 
     const previousHtml = this.outlet.innerHTML;

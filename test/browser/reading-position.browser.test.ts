@@ -54,6 +54,7 @@ import { STATIC_HEADER_CONTRACT_ACCEPTED_TOC_ABSENT_HTML } from '../fixtures/sta
 import { NAVIGATION_ENVELOPE_SCHEMA_VERSION } from '../../shared/navigation/navigation-envelope.js';
 import { ReadingPositionStore } from '../../src/components/app/navigation/reading-position-store.js';
 import type { AppShellValidatedDetail } from '../../src/components/app/shell/app-shell-events.js';
+import { prepareTableGeometry } from '../../src/client/post-hydrate/table-scroll-enhancer.js';
 
 const originalUrl = readAddress();
 const originalState: unknown = history.state;
@@ -200,6 +201,67 @@ const setupNavigation = async (): Promise<RouterDocumentHost> => {
 };
 
 describe('通常 full navigation の初回適用と安定化', () => {
+  it('通知の更新と消去は既存live regionの属性を同値で書き直さない', async () => {
+    const currentHost = await setupNavigation();
+    const region = currentHost.querySelector('[data-router-document-host-announcement]');
+    if (!(region instanceof HTMLElement)) throw new Error('announcement region');
+    const mutations: MutationRecord[] = [];
+    const observer = new MutationObserver((records) => mutations.push(...records));
+    observer.observe(region, { attributes: true, childList: true, subtree: true });
+    try {
+      await currentHost.navigate('/notes/reading-b');
+      await expect.poll(() => region.textContent).not.toBe('');
+      await expect.poll(() => region.textContent, { timeout: 2500 }).toBe('');
+      mutations.push(...observer.takeRecords());
+      expect(mutations.some((record) => record.type === 'childList')).toBe(true);
+      expect(mutations.filter((record) => record.type === 'attributes')).toEqual([]);
+      expect(region.getAttribute('aria-live')).toBe('polite');
+      expect(region.getAttribute('aria-atomic')).toBe('true');
+      expect(region.classList.contains('sr-only')).toBe(true);
+    } finally {
+      observer.disconnect();
+    }
+  });
+
+  it('初期表の字体準備はpending hydrationで消費せず、既存位置jobの安定後に開始する', async () => {
+    const epoch = await setup();
+    if (!root) throw new Error('root');
+    root.id = 'main-content';
+    root.innerHTML =
+      '<div data-table-root><table><tbody><tr><td>準備後の本文</td></tr></tbody></table></div>';
+    const currentRoot = root;
+    expect(
+      prepareTableGeometry(root, {
+        isCurrent: () => readContentContext()?.root === currentRoot,
+        beforeGeometryChange: () => undefined,
+      }),
+    ).toBe(true);
+    setContentReadiness({
+      contentEpoch: epoch,
+      root,
+      shellCommitId: 0,
+      status: 'pending',
+      started: true,
+    });
+    reader = new ReadingPositionController((error) => {
+      throw error;
+    });
+    reader.start(root);
+    await frame();
+    expect(reader.readTableDiagnostics()).toBeNull();
+    setContentReadiness({
+      contentEpoch: epoch,
+      root,
+      shellCommitId: 0,
+      status: 'settled',
+      started: true,
+    });
+    await expect.poll(() => currentRoot.dataset['readingPositionStatus']).toBe('settled');
+    // このfixtureは承認CSSを持たない。採用成功とは分け、遅延した一回の開始を検査する。
+    await expect.poll(() => reader?.readTableDiagnostics()?.contentEpoch).toBe(epoch);
+    expect(reader.readTableDiagnostics()?.preparation).not.toBeNull();
+  });
+
   it.each(['readiness', 'font', 'image'] as const)(
     '%s 遅延中も最初の B frame から settled 後 2rAF まで先頭を保つ（H/V1/V2）',
     async (delay) => {

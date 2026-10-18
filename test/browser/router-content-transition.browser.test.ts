@@ -37,6 +37,10 @@ import {
   type RouterRuntimeUrlDependencies,
 } from '../../src/router/router.js';
 import { STATIC_HEADER_CONTRACT_ACCEPTED_TOC_ABSENT_HTML } from '../fixtures/static-header-contract-cases.js';
+import type {
+  ContentUpdateAdapter,
+  PreparedIncomingContent,
+} from '../../src/router/router-types.js';
 import { fixture, requireFixtureValue } from './harness/browser-fixture.js';
 
 const deferred = () => {
@@ -160,6 +164,7 @@ const setup = async (
     unknownPath?: string;
     stateOnly?: boolean;
     allowNextCommit?: boolean;
+    prepareIncoming?: ContentUpdateAdapter['prepareIncoming'];
   } = {},
 ) => {
   writeHistoryEntry({ mode: 'replace', owner: 'router', url: '/notes/a', state: {} });
@@ -197,6 +202,7 @@ const setup = async (
   postRender.initialize(host);
   const postCommit = vi.fn(postRender.createPostCommitController(host).run);
   const contentCommit = vi.fn();
+  const contentPrepare = vi.fn<(incoming?: PreparedIncomingContent) => void>();
   const contentRollback = vi.fn();
   const shellRollback = vi.fn();
   const restored: AppShellRestoredDetail[] = [];
@@ -230,7 +236,9 @@ const setup = async (
       ? { urlStateNavigationPolicy: { evaluate: () => ({ kind: 'state-only' as const }) } }
       : {}),
     contentAdapter: {
-      prepare({ html }) {
+      ...(options.prepareIncoming ? { prepareIncoming: options.prepareIncoming } : {}),
+      prepare({ html }, prepared) {
+        contentPrepare(prepared?.incoming);
         if (options.contentPrepareFailure) throw options.contentPrepareFailure;
         const previousHtml = content.innerHTML;
         return {
@@ -318,6 +326,7 @@ const setup = async (
     transitions,
     begin,
     contentCommit,
+    contentPrepare,
     contentRollback,
     shellRollback,
     restored,
@@ -329,6 +338,110 @@ const setup = async (
 };
 
 describe('Router content transition transaction integration', () => {
+  it('incoming準備完了まで通常prepareとtransitionを開始せず一つのticketを受理・解放する', async () => {
+    const gate = deferred();
+    const ticket = { dispose: vi.fn(), accepted: vi.fn() };
+    const prepareIncoming = vi.fn(async () => {
+      await gate.promise;
+      return ticket;
+    });
+    const state = await setup({ prepareIncoming });
+    const navigation = state.router.navigate({ url: '/notes/b' });
+    await expect.poll(() => prepareIncoming.mock.calls.length).toBe(1);
+    expect(state.start).not.toHaveBeenCalled();
+    expect(state.contentPrepare).not.toHaveBeenCalled();
+    expect(state.content.textContent).toContain('本文 A');
+    gate.resolve();
+    await expect.poll(() => state.transitions.length).toBe(1);
+    await state.transitions[0]?.update();
+    const result = await navigation;
+    expect(result.committed).toBe(true);
+    expect(state.contentPrepare).toHaveBeenCalledExactlyOnceWith(ticket);
+    expect(ticket.accepted).toHaveBeenCalledExactlyOnceWith(
+      'receipt' in result ? result.receipt : undefined,
+    );
+    expect(ticket.dispose).toHaveBeenCalledTimes(1);
+    expect(state.contentCommit).toHaveBeenCalledTimes(1);
+  });
+
+  it('incoming準備中の新intentは遅いticketを破棄しcallbackも履歴commitも開始しない', async () => {
+    const gate = deferred();
+    const ticket = { dispose: vi.fn(), accepted: vi.fn() };
+    const prepareIncoming = vi.fn(async () => {
+      await gate.promise;
+      return ticket;
+    });
+    const state = await setup({ prepareIncoming });
+    const binding = readContentContext()?.displayedBinding;
+    const navigation = state.router.navigate({ url: '/notes/b' });
+    await expect.poll(() => prepareIncoming.mock.calls.length).toBe(1);
+    const next = state.router.navigate({ url: '/notes/c' });
+    gate.resolve();
+    expect((await navigation).kind).toBe('superseded');
+    expect((await next).kind).toBe('cancelled');
+    expect(state.start).not.toHaveBeenCalled();
+    expect(state.contentPrepare).not.toHaveBeenCalled();
+    expect(state.contentCommit).not.toHaveBeenCalled();
+    expect(ticket.dispose).toHaveBeenCalledTimes(1);
+    expect(ticket.accepted).not.toHaveBeenCalled();
+    expect(readContentContext()?.displayedBinding).toEqual(binding);
+    expect(readAddress()).toBe('/notes/a');
+  });
+
+  it('incoming準備の例外は通常commitへ縮退しcallbackを一回だけ実行する', async () => {
+    const state = await setup({
+      prepareIncoming: () => {
+        throw new Error('incoming unavailable');
+      },
+    });
+    const { result, transition } = await state.begin();
+    await transition.update();
+    expect((await result).committed).toBe(true);
+    expect(state.contentPrepare).toHaveBeenCalledExactlyOnceWith(undefined);
+    expect(state.contentCommit).toHaveBeenCalledTimes(1);
+    expect(state.contentRollback).not.toHaveBeenCalled();
+  });
+
+  it('incoming解放・採用例外を受理済みtransactionへ戻さず再commitしない', async () => {
+    const ticket = {
+      dispose: vi.fn(() => {
+        throw new Error('dispose failed');
+      }),
+      accepted: vi.fn(() => {
+        throw new Error('artifact acceptance failed');
+      }),
+    };
+    const state = await setup({ prepareIncoming: () => ticket });
+    const { result, transition } = await state.begin();
+    await transition.update();
+    expect((await result).committed).toBe(true);
+    expect(state.contentCommit).toHaveBeenCalledTimes(1);
+    expect(state.contentRollback).not.toHaveBeenCalled();
+    expect(state.contentLoad).toHaveBeenCalledTimes(1);
+    expect(ticket.accepted).toHaveBeenCalledTimes(1);
+    expect(ticket.dispose).toHaveBeenCalledTimes(1);
+  });
+
+  it('incomingを伴うcallbackの失敗でも既存rollbackを一回だけ行いticketを受理しない', async () => {
+    const ticket = { dispose: vi.fn(), accepted: vi.fn() };
+    const failure = new Error('shell failed after incoming');
+    const state = await setup({ prepareIncoming: () => ticket, shellFailure: failure });
+    const binding = readContentContext()?.displayedBinding;
+    const { result, transition } = await state.begin();
+    await transition.update();
+    const failed = await result;
+    expect(failed.committed).toBe(false);
+    expect('error' in failed && failed.error).toBe(failure);
+    expect(state.contentPrepare).toHaveBeenCalledExactlyOnceWith(ticket);
+    expect(state.contentCommit).toHaveBeenCalledTimes(1);
+    expect(state.contentRollback).toHaveBeenCalledTimes(1);
+    expect(ticket.accepted).not.toHaveBeenCalled();
+    expect(ticket.dispose).toHaveBeenCalledTimes(1);
+    expect(state.content.textContent).toContain('本文 A');
+    expect(readAddress()).toBe('/notes/a');
+    expect(readContentContext()?.displayedBinding).toEqual(binding);
+  });
+
   it.each(['/notes/a', '/notes/b'])(
     'manifest未掲載の%sを含む正常結果は通常commitへ縮退する',
     async (unknownPath) => {

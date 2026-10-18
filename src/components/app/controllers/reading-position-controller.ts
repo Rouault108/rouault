@@ -13,7 +13,10 @@ import {
   subscribeContentContext,
   type NavigationIntent,
 } from '../../../navigation/content-navigation-context.js';
-import { waitForContentReadiness } from '../../../client/hydration/content-readiness.js';
+import {
+  readContentReadiness,
+  waitForContentReadiness,
+} from '../../../client/hydration/content-readiness.js';
 import {
   clampReadingPosition,
   ReadingPositionStore,
@@ -25,13 +28,17 @@ import { readContentTransitionShell } from '../../../router/content-transition-s
 import type { AppShellValidatedDetail } from '../shell/app-shell-events.js';
 import type { NavigationCommitReceipt } from '../../../router/router-types.js';
 import { HistoryPresentationCoordinator } from './history-presentation-coordinator.js';
+import { TABLE_PREPARATION_TARGET_MS } from './accepted-table-geometry.js';
 import {
   captureHistoryGeometry,
   readHistoryGeometryAnchor,
   prepareHistoryFonts,
+  readHistoryTableProofDiagnostics,
   matchesHistoryGeometry,
+  adoptIncomingHistoryTableProof,
   type HistoryGeometryCheckpoint,
 } from './history-presentation-geometry.js';
+import type { AcceptedIncomingTableArtifact } from './history-table-incoming.js';
 
 type PresentationEligibility =
   | 'pending'
@@ -52,6 +59,9 @@ interface ScrollJob {
   readonly error: boolean;
   readonly entryId: string | null;
   readonly receipt?: NavigationCommitReceipt;
+  readonly tablePreparationWithinBudget?: boolean;
+  readonly tablePreparationStartedAt?: number;
+  readonly incomingTableArtifact?: AcceptedIncomingTableArtifact;
   presentation: PresentationEligibility;
   candidate: ReadingPosition | null;
   url: string;
@@ -341,6 +351,11 @@ export class ReadingPositionController {
     return this.interruptedIntent !== intent.intentId;
   }
 
+  readTableDiagnostics(): ReturnType<typeof readHistoryTableProofDiagnostics> | null {
+    const root = readContentContext()?.root;
+    return !this.disposed && root ? readHistoryTableProofDiagnostics(root) : null;
+  }
+
   schedule(options: {
     intent: NavigationIntent;
     root: HTMLElement;
@@ -350,6 +365,9 @@ export class ReadingPositionController {
     shellCommitId: number;
     previousUrl?: string;
     receipt?: NavigationCommitReceipt;
+    tablePreparationWithinBudget?: boolean;
+    tablePreparationStartedAt?: number;
+    incomingTableArtifact?: AcceptedIncomingTableArtifact;
   }): void {
     if (this.disposed || options.intent.signal.aborted) return;
     this.cancel();
@@ -587,11 +605,28 @@ export class ReadingPositionController {
       return;
     }
     outcome('unavailable');
+    if (job.tablePreparationWithinBudget === false && job.root.querySelector('table')) return;
+    const tableWithinBudget = (): boolean =>
+      job.tablePreparationStartedAt === undefined ||
+      !job.root.querySelector('table') ||
+      performance.now() - job.tablePreparationStartedAt <= TABLE_PREPARATION_TARGET_MS;
     if (!job.candidate || !job.entryId) return;
     try {
       if (document.visibilityState !== 'visible') return;
       const checkpoint = this.geometry.get(job.entryId);
       const receipt = job.receipt;
+      if (
+        checkpoint?.tableCertificate &&
+        receipt &&
+        job.incomingTableArtifact &&
+        this.presentationCurrent(job)
+      )
+        adoptIncomingHistoryTableProof(
+          job.root,
+          receipt,
+          checkpoint.tableCertificate,
+          job.incomingTableArtifact,
+        );
       // 受理証明は後からcurrentを読んで組み直さず、commit時の固定世代を使う。
       if (
         !receipt ||
@@ -608,7 +643,8 @@ export class ReadingPositionController {
         checkpoint.position.x !== job.candidate.x ||
         checkpoint.position.y !== job.candidate.y ||
         !this.presentationCurrent(job) ||
-        !matchesHistoryGeometry(job.root, checkpoint, this.verifiedLayout)
+        !matchesHistoryGeometry(job.root, checkpoint, this.verifiedLayout) ||
+        !tableWithinBudget()
       )
         return;
       this.cancelJobPresentation(job, 'verified-position-apply');
@@ -617,6 +653,7 @@ export class ReadingPositionController {
       const anchor = readHistoryGeometryAnchor(job.root, checkpoint);
       if (
         !this.presentationCurrent(job) ||
+        !tableWithinBudget() ||
         !anchor ||
         !job.root.contains(anchor) ||
         Math.abs(scrollX - job.candidate.x) > 2 ||
@@ -624,6 +661,7 @@ export class ReadingPositionController {
         Math.abs(anchor.getBoundingClientRect().top - (checkpoint.anchorY - job.candidate.y)) > 2
       )
         return;
+      if (!this.presentationCurrent(job) || !tableWithinBudget()) return;
       outcome('ready');
       // UA効果とapp効果は重ねない。情報未提供でも座標の先行適用は妨げない。
       const visual = this.traverseVisual;
@@ -655,6 +693,21 @@ export class ReadingPositionController {
       context.addressBinding.url === job.url &&
       readHistoryEntry()?.id === job.entryId
     );
+  }
+  invalidateTableGeometry(root: HTMLElement, epoch: number, shellCommitId: number): void {
+    if (this.presentation.cancelForGeometry(root, epoch, shellCommitId))
+      root.dataset['historyPresentationEligibility'] = 'unavailable';
+    const job = this.job;
+    if (
+      job?.root !== root ||
+      job.epoch !== epoch ||
+      job.shellCommitId !== shellCommitId ||
+      !this.presentationCurrent(job)
+    )
+      return;
+    job.presentation = 'unavailable';
+    root.dataset['historyPresentationEligibility'] = 'unavailable';
+    this.cancelJobPresentation(job, 'table-geometry-change');
   }
   private cancelPresentation(reason: string): void {
     try {
@@ -691,7 +744,14 @@ export class ReadingPositionController {
       y: Math.max(0, window.scrollY),
     };
     this.store.write(this.renderedId, this.sample);
-    if (context?.root && context.contentEpoch !== this.fontPreparationEpoch) {
+    if (
+      context?.root &&
+      context.contentEpoch !== this.fontPreparationEpoch &&
+      // 初期SSRの既知activation前には一度限りのsource準備を消費しない。
+      // 待機を追加せず、既存位置jobのreadiness後のsampleから開始する。
+      (!context.root.querySelector('table') ||
+        readContentReadiness(context.contentEpoch)?.status !== 'pending')
+    ) {
       this.fontPreparationEpoch = context.contentEpoch;
       const root = context.root;
       const epoch = context.contentEpoch;

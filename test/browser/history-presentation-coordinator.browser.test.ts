@@ -135,6 +135,40 @@ describe('HistoryPresentationCoordinator', () => {
     vi.restoreAllMocks();
   });
 
+  it('位置jobに依存せず現表示ownerを幾何書込み前に取消すこと', () => {
+    expect(coordinator.start(owner)).toBe(true);
+    const current = animation();
+    current.pause();
+    const scroll = vi.spyOn(window, 'scrollTo');
+    const focus = vi.spyOn(root, 'focus');
+    expect(coordinator.cancelForGeometry(root, owner.contentEpoch, owner.shellCommitId)).toBe(true);
+    expect(current.playState).toBe('idle');
+    expect(owned()).toHaveLength(0);
+    root.style.paddingTop = '12px';
+    expect(scroll).not.toHaveBeenCalled();
+    expect(focus).not.toHaveBeenCalled();
+  });
+
+  it('古いepochの幾何cleanupは新しい表示sessionを取消さないこと', () => {
+    expect(coordinator.start(owner)).toBe(true);
+    animation().pause();
+    initializeContentContext(root);
+    beginNavigationIntent('traverse', readAddress());
+    adoptContentBinding(readAddress());
+    const nextOwner = snapshotOwner();
+    expect(coordinator.start(nextOwner)).toBe(true);
+    const current = animation();
+    current.pause();
+    expect(coordinator.cancelForGeometry(root, owner.contentEpoch, owner.shellCommitId)).toBe(
+      false,
+    );
+    expect(current.playState).toBe('paused');
+    expect(
+      coordinator.cancelForGeometry(root, nextOwner.contentEpoch, nextOwner.shellCommitId),
+    ).toBe(true);
+    expect(current.playState).toBe('idle');
+  });
+
   it('実native WAAPIでmainだけを0.82→1/180ms演出し、自然終了後は効果を残さないこと', async () => {
     const scroll = vi.spyOn(window, 'scrollTo');
     const focus = vi.spyOn(root, 'focus');

@@ -1,4 +1,5 @@
 import { readFileSync } from 'node:fs';
+import { createHash } from 'node:crypto';
 import { readdir } from 'node:fs/promises';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
@@ -7,6 +8,7 @@ import { stripBasePathFromPathname } from '../shared/url/normalize-rouault-url.j
 
 import postcss, { type Rule } from 'postcss';
 import selectorParser from 'postcss-selector-parser';
+import { HISTORY_TABLE_APPROVED_STYLESHEET_SHA256 } from '../src/components/app/controllers/history-table-font-profile.js';
 
 import {
   TOC_MOBILE_PANEL_CSS_ARTIFACT_PATH,
@@ -143,7 +145,8 @@ const expectMediaRuleHasDeclarations = (css: string, contract: ExpectedMediaRule
   });
 
   const found = rules.some(
-    (rule) => ruleHasSelector(rule, contract.selector) && ruleHasDeclarations(rule, contract.declarations),
+    (rule) =>
+      ruleHasSelector(rule, contract.selector) && ruleHasDeclarations(rule, contract.declarations),
   );
   if (!found) {
     throw new Error(
@@ -288,6 +291,17 @@ export const assertProductionCssArtifacts = async (
   }
 
   const cssByAsset = readReachableCss(repoRoot, reachableManifestAssets);
+  // 別basePathは未監査profileとしてruntime fallbackを保ち、既存build契約を狭めない。
+  if (resolveDevelopmentSiteUrlContext().basePath === '') {
+    for (const [asset, css] of cssByAsset) {
+      const digest = createHash('sha256').update(css).digest('hex');
+      if (!HISTORY_TABLE_APPROVED_STYLESHEET_SHA256.includes(digest)) {
+        throw new Error(
+          `table history font profile requires a CSS audit and explicit digest update: ${asset} (${digest})`,
+        );
+      }
+    }
+  }
   const reachableCss = [...cssByAsset.values()].join('\n');
   // 必要なmedia契約は到達可能な集合で検証し、同一assetへの同居を要求しない。
   for (const contract of REQUIRED_MEDIA_RULES) {
