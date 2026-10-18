@@ -226,7 +226,19 @@ const begin = async (page: Page, saved: Point, phase: string): Promise<void> => 
 };
 const finish = async (page: Page, saved: Point, info: TestInfo, name: string): Promise<void> => {
   await ready(page);
+  // 従来の観測窓を維持し、最初のrAF→MessageChannelの採取も打ち切らない。
+  // 先頭から全frameを保持し、同じ新世代のsettled後の両機会まで追加観測する。
   await page.waitForTimeout(80);
+  await page.waitForFunction(() => {
+    const probe = window.__prepaintXY;
+    const frames = probe.frames.filter(
+      (frame) => frame.generation === probe.startGeneration + 1 && frame.status === 'settled',
+    );
+    return (
+      frames.some((frame) => frame.phase.endsWith(':raf')) &&
+      frames.some((frame) => frame.phase.endsWith(':posttask'))
+    );
+  });
   const result = await page.evaluate(() => {
     window.__prepaintXY.active = false;
     return window.__prepaintXY;
