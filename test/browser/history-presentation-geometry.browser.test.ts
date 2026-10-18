@@ -1,4 +1,5 @@
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
+import { page } from 'vitest/browser';
 
 import {
   captureHistoryGeometry,
@@ -14,6 +15,8 @@ const target = '/notes/testing/toc-readable-long-heading';
 const proseId = 'note-content-testing-toc-readable-long-heading';
 const originalUrl = location.pathname + location.search + location.hash;
 const originalState: unknown = history.state;
+const originalRootFontSize = document.documentElement.style.fontSize;
+let viewportChanged = false;
 
 const readAddress = (): string => location.pathname + location.search + location.hash;
 const settleHistoryQuota = (): Promise<void> =>
@@ -26,8 +29,13 @@ beforeAll(async () => {
   history.replaceState(originalState, '', target);
 }, 15_000);
 
-afterEach(() => {
+afterEach(async () => {
   vi.restoreAllMocks();
+  document.documentElement.style.fontSize = originalRootFontSize;
+  if (viewportChanged) {
+    await page.viewport(1280, 720);
+    viewportChanged = false;
+  }
   if (readAddress() !== target) history.replaceState(originalState, '', target);
 });
 
@@ -37,10 +45,10 @@ afterAll(async () => {
   await settleHistoryQuota();
 }, 15_000);
 
-const setup = async () => {
+const setup = async (tocTrack = '240px') => {
   const main =
     await fixture<HTMLElement>(`<main id="main-content" style="display:flow-root;width:720px;font-family:serif">
-    <section class="note-shell" data-hydration-scope="note-shell" style="display:grid;grid-template-columns:minmax(0,1fr) 240px;gap:32px;align-items:start"><article data-hydration-scope="note-content" style="grid-column:1;min-width:0">
+    <section class="note-shell" data-hydration-scope="note-shell" style="--note-toc-track:${tocTrack};display:grid;grid-template-columns:minmax(0,1fr) var(--note-toc-track);gap:32px;align-items:start"><article data-hydration-scope="note-content" style="grid-column:1;min-width:0">
       <header data-article-header><h1>TOC Readable Long Heading</h1></header>
       <div class="prose" id="${proseId}" data-note-static-surface="true"
         data-hydration-key="note-static-surface-enhancer" data-hydration-capability="progressive"
@@ -75,6 +83,88 @@ const checkpoint = (root: HTMLElement, position: ReadingPosition): HistoryGeomet
 };
 
 describe('限定履歴経路の幾何checkpoint', () => {
+  it.each(['272px', '252.5px'])(
+    '宣言された%sの独立TOC trackと実trackが一致すればcaptureと照合を許可する',
+    async (track) => {
+      const { main, position } = await setup(track);
+      const shell = main.querySelector<HTMLElement>('.note-shell');
+      if (!shell) throw new Error('shell missing');
+      const actual = getComputedStyle(shell).gridTemplateColumns.split(' ')[1];
+      expect(parseFloat(actual ?? '')).toBeCloseTo(parseFloat(track), 1);
+      const captured = checkpoint(main, position);
+      expect(matchesHistoryGeometry(main, captured, 'verified-layout')).toBe(true);
+    },
+  );
+
+  it('実viewportのclampとroot font変更後のrem解決を許可し以前のcheckpointは適用しない', async () => {
+    viewportChanged = true;
+    await page.viewport(1645, 720);
+    document.documentElement.style.fontSize = '16px';
+    const { main, position } = await setup('clamp(15rem, 18vw, 17rem)');
+    const shell = main.querySelector<HTMLElement>('.note-shell');
+    if (!shell) throw new Error('shell missing');
+    const trackWidth = (): number =>
+      parseFloat(getComputedStyle(shell).gridTemplateColumns.split(' ')[1] ?? '');
+    expect(window.innerWidth).toBe(1645);
+    expect(trackWidth()).toBeCloseTo(272, 1);
+    const captured = checkpoint(main, position);
+    expect(matchesHistoryGeometry(main, captured, 'verified-layout')).toBe(true);
+    document.documentElement.style.fontSize = '20px';
+    expect(trackWidth()).toBeCloseTo(300, 1);
+    expect(matchesHistoryGeometry(main, captured, 'verified-layout')).toBe(false);
+    const resizedFont = checkpoint(main, position);
+    expect(matchesHistoryGeometry(main, resizedFont, 'verified-layout')).toBe(true);
+  });
+
+  it('clampの実trackがviewport変更で変わった場合は古いcheckpointを拒否する', async () => {
+    viewportChanged = true;
+    await page.viewport(1645, 720);
+    document.documentElement.style.fontSize = '16px';
+    const { main, position } = await setup('clamp(15rem, 18vw, 17rem)');
+    const captured = checkpoint(main, position);
+    await page.viewport(1440, 720);
+    const shell = main.querySelector<HTMLElement>('.note-shell');
+    if (!shell) throw new Error('shell missing');
+    expect(parseFloat(getComputedStyle(shell).gridTemplateColumns.split(' ')[1] ?? '')).toBeCloseTo(
+      259.2,
+      1,
+    );
+    expect(matchesHistoryGeometry(main, captured, 'verified-layout')).toBe(false);
+    expect(captureHistoryGeometry(main, position, 'verified-layout')).not.toBeNull();
+  });
+
+  it.each([
+    '',
+    'auto',
+    '1fr',
+    'minmax(200px, 240px)',
+    '25%',
+    'var(--missing-toc-track)',
+    'calc(240px)',
+    '0px',
+    '-240px',
+    'clamp(0rem, 18vw, 17rem)',
+    'clamp(17rem, 18vw, 15rem)',
+    `${'9'.repeat(400)}px`,
+  ])('未知または非正のTOC宣言%sは見かけの幅が240pxでも許可しない', async (track) => {
+    const { main, position } = await setup();
+    const shell = main.querySelector<HTMLElement>('.note-shell');
+    if (!shell) throw new Error('shell missing');
+    // 見かけの幅だけでは、宣言の解決が証明されたことにならない。
+    shell.style.gridTemplateColumns = 'minmax(0,1fr) 240px';
+    shell.style.setProperty('--note-toc-track', track);
+    expect(captureHistoryGeometry(main, position, 'verified-layout')).toBeNull();
+  });
+
+  it('正のtoken宣言と実track幅が不一致ならcaptureを拒否する', async () => {
+    const { main, position } = await setup();
+    const shell = main.querySelector<HTMLElement>('.note-shell');
+    if (!shell) throw new Error('shell missing');
+    shell.style.setProperty('--note-toc-track', '272px');
+    shell.style.gridTemplateColumns = 'minmax(0,1fr) 240px';
+    expect(captureHistoryGeometry(main, position, 'verified-layout')).toBeNull();
+  });
+
   it('directed pairのexact URLだけを認める', () => {
     expect(isHistoryPresentationVerificationPair(source, target)).toBe(true);
     expect(isHistoryPresentationVerificationPair(`${source}/`, `${target}/`)).toBe(true);
@@ -221,23 +311,27 @@ describe('限定履歴経路の幾何checkpoint', () => {
     expect(matchesHistoryGeometry(main, captured, 'verified-layout')).toBe(false);
   });
 
-  it('独立TOCのactive font差分は許可し実使用textと400/500のloadは確認する', async () => {
-    const { main, position } = await setup();
-    const captured = checkpoint(main, position);
-    const links = main.querySelectorAll<HTMLElement>('[data-layout-toc-root] a');
-    for (const link of links) {
-      link.style.fontWeight = '500';
-      expect(matchesHistoryGeometry(main, captured, 'verified-layout')).toBe(true);
-      link.style.fontWeight = '400';
-    }
-    const check = vi
-      .spyOn(document.fonts, 'check')
-      .mockImplementation((font, text) => !(font.includes(' 500 ') && text?.includes('目次')));
-    expect(matchesHistoryGeometry(main, captured, 'verified-layout')).toBe(false);
-    expect(
-      check.mock.calls.some(([font, text]) => font.includes(' 500 ') && text?.includes('目次')),
-    ).toBe(true);
-  });
+  it.each(['240px', '272px', '252.5px', 'clamp(15rem, 20vw, 17rem)'])(
+    '独立TOCの%sでは全12項目の400/500切替を許可し実使用fontのloadは確認する',
+    async (track) => {
+      const { main, position } = await setup(track);
+      const captured = checkpoint(main, position);
+      const links = main.querySelectorAll<HTMLElement>('[data-layout-toc-root] a');
+      expect(links).toHaveLength(12);
+      for (const link of links) {
+        link.style.fontWeight = '500';
+        expect(matchesHistoryGeometry(main, captured, 'verified-layout')).toBe(true);
+        link.style.fontWeight = '400';
+      }
+      const check = vi
+        .spyOn(document.fonts, 'check')
+        .mockImplementation((font, text) => !(font.includes(' 500 ') && text?.includes('目次')));
+      expect(matchesHistoryGeometry(main, captured, 'verified-layout')).toBe(false);
+      expect(
+        check.mock.calls.some(([font, text]) => font.includes(' 500 ') && text?.includes('目次')),
+      ).toBe(true);
+    },
+  );
 
   it.each(['track', 'position', 'height', 'overflow'])(
     'TOCの%s制約が崩れた場合はfont差分を安全扱いしない',

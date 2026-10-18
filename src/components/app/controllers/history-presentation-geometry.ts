@@ -162,7 +162,41 @@ const fonts = (root: HTMLElement): string | null => {
   return fingerprint.length > 0 ? JSON.stringify(fingerprint) : null;
 };
 
-// 検証したdesktopの独立trackと高さ予約が崩れた場合、TOCのfont差分を除外しない。
+const resolveTocTrackPixels = (root: HTMLElement, token: string): number | null => {
+  const fixed = /^(\d+(?:\.\d+)?)px$/u.exec(token.trim());
+  if (fixed) {
+    const pixels = Number(fixed[1]);
+    return Number.isFinite(pixels) && pixels > 0 ? pixels : null;
+  }
+  // 現行tokenのviewport可変幅を解決し、intrinsic幅や未知の式へ独立性の証明を広げない。
+  const clamp =
+    /^clamp\(\s*(\d+(?:\.\d+)?)rem\s*,\s*(\d+(?:\.\d+)?)vw\s*,\s*(\d+(?:\.\d+)?)rem\s*\)$/u.exec(
+      token.trim(),
+    );
+  if (!clamp) return null;
+  const font = /^(\d+(?:\.\d+)?)px$/u.exec(
+    getComputedStyle(root.ownerDocument.documentElement).fontSize.trim(),
+  );
+  const minimum = Number(clamp[1]);
+  const preferred = Number(clamp[2]);
+  const maximum = Number(clamp[3]);
+  const fontSize = font ? Number(font[1]) : NaN;
+  const viewportWidth = root.ownerDocument.defaultView?.innerWidth ?? NaN;
+  if (
+    ![minimum, preferred, maximum, fontSize, viewportWidth].every(
+      (value) => Number.isFinite(value) && value > 0,
+    ) ||
+    minimum > maximum
+  )
+    return null;
+  const pixels = Math.max(
+    minimum * fontSize,
+    Math.min((preferred * viewportWidth) / 100, maximum * fontSize),
+  );
+  return Number.isFinite(pixels) && pixels > 0 ? pixels : null;
+};
+
+// 宣言済みの独立trackと高さ予約が崩れた場合、TOCのfont差分を除外しない。
 const independentTocTrack = (root: HTMLElement): boolean => {
   const shell = root.querySelector<HTMLElement>('.note-shell');
   const toc = shell?.querySelector<HTMLElement>('[data-layout-toc-root]');
@@ -170,12 +204,17 @@ const independentTocTrack = (root: HTMLElement): boolean => {
   const shellStyle = getComputedStyle(shell);
   const tocStyle = getComputedStyle(toc);
   const tracks = shellStyle.gridTemplateColumns.split(' ');
+  const declaredTrack = resolveTocTrackPixels(
+    root,
+    shellStyle.getPropertyValue('--note-toc-track'),
+  );
   const blockSize = parseFloat(tocStyle.blockSize);
   return (
     shellStyle.display === 'grid' &&
     tracks.length === 2 &&
     tracks.every((track) => track.endsWith('px') && parseFloat(track) > 0) &&
-    Math.abs(parseFloat(tracks[1] ?? '') - 240) < 0.1 &&
+    declaredTrack !== null &&
+    Math.abs(parseFloat(tracks[1] ?? '') - declaredTrack) < 0.1 &&
     tocStyle.position === 'sticky' &&
     tocStyle.gridColumnStart === '2' &&
     tocStyle.alignSelf === 'start' &&

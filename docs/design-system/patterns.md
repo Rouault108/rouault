@@ -143,3 +143,5 @@ row全体のbackground hover、shadow、transform、elevationは禁止する。`
 設計背景として、ユーザーはWindows ChromeでHookdeckの履歴移動が正確な位置復元とfadeを両立していると報告している。最終的な目標はその読書体験の連続性である。この観察はユーザーの実測報告であり、本実装によるHookdeckの仕様・時間・方式の測定結果ではない。通常移動の拡張と、次段落の限定した履歴表示検証は、適用条件と所有者を分けて扱う。
 
 履歴移動は[限定した履歴表示の検証](../contracts/reading-position.md#限定した履歴表示の検証)として一方向の静的本文で試す。復元後のlive mainだけに同じopacityを適用し、snapshotをcaptureしない。DOM差替え後の最初の可視フレームから保存位置が合う経路だけを対象とし、本文を非表示・inertにしたり入力遮蔽を追加したりしない。通常移動のnative演出は引き続き別の所有者で維持する。正式採用・他routeへの拡張はこの最小検証に含めない。
+
+この限定検証でもTOC幅は`--note-toc-width`の可変幅を維持する。幾何検証は宣言された実track幅へ追従し、狭いdesktopでの240pxをwide viewportへ固定条件として持ち込まない。位置や幅を補間する演出は追加しない。

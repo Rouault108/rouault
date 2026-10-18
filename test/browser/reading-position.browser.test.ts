@@ -548,7 +548,7 @@ describe('検証済み履歴経路の表示状態', () => {
       history.replaceState(baselineState, '', target);
       root =
         await fixture(`<main id="main-content" style="display:flow-root;width:720px;font-family:serif">
-        <section class="note-shell" data-hydration-scope="note-shell" style="display:grid;grid-template-columns:minmax(0,1fr) 240px;gap:32px;align-items:start">
+        <section class="note-shell" data-hydration-scope="note-shell" style="--note-toc-track:240px;display:grid;grid-template-columns:minmax(0,1fr) var(--note-toc-track);gap:32px;align-items:start">
           <article data-hydration-scope="note-content" style="grid-column:1;min-width:0">
             <header data-article-header><h1>履歴復元の本文</h1></header>
             <div class="prose" id="note-content-testing-toc-readable-long-heading">

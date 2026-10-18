@@ -65,6 +65,8 @@ A1通常/hash移動、A2entry座標復元、A3同URLの別entry、A4state/native
 
 保存時の同entryに本文text、実使用fontと文字列のload確認、viewport、main/prose/全見出し/range、読書アンカーの幾何checkpointを保持する。戻ったDOMの実測と一致し、未知hydrator・画像・table等がなくclamp不要でdocumentがvisibleの場合に限り、同じReadingPositionJobが最初のawaitより前に保存位置を適用する。binding/root/entry/URL/epoch/shell/intent、実座標とアンカーを再照合して、独立した表示適格性をreadyにする。最初の可視フレームが保存位置と一致することを実描画で検証する。未証明は演出なしの既存復元へ戻し、その経路の無ジャンプを保証しない。
 
+独立TOC列の幅は240pxへ固定せず、computed `--note-toc-track`の正のpx値、または現行tokenの`clamp(rem, vw, rem)`をrootのcomputed font-sizeとviewportのCSS pxで解決し、実際の第2trackと照合する。DPRは幅へ掛けない。未解決・intrinsic幅・未知の式・非正/非有限値・上下限が逆転したclampは許可しない。2列のgrid、stickyな第2列、固定の高さ予約とoverflow制約、本文・font・viewport・全幾何の照合は維持する。これは同じ限定pairの可変幅への追従であり、他routeや未証明の配置を許可しない。
+
 HistoryPresentationCoordinatorは位置を書かず、当該mainのAnimationと固定ownerだけを所有する。opacity 0.82→1、180msで表示し、finishedをnavigationや位置jobの完了条件にしない。新intent、Back/Forward、本人入力、pagehide、破棄等で取消し、後続位置補正は取消→通常表示→job再照合→scrollの順序を守る。旧finished／旧位置jobの終端は新sessionを取消さない。表示の成否でcandidate/restoring/settledやhydrationの寿命を短縮しない。
 
 同じ代表traverseのsidebarで、押下中のリンクをnav全交換によって失わないための選択属性更新は[Sidebar State Contract](sidebar-state.md#6-transactionとfailure)が所有する。位置jobや演出coordinatorへ入力待機・click再送を加えず、他surfaceの実体保持を保証しない。

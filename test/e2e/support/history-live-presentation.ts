@@ -37,7 +37,15 @@ interface HistoryLiveProbe {
   mutations: HistoryLiveFrame[];
   starts: { at: number; y: number; entryId: string | null; duration: number | null }[];
   cancels: { at: number; y: number; index: number }[];
-  scrolls: { at: number; y: number; liveActive: boolean }[];
+  scrolls: {
+    at: number;
+    y: number;
+    requestedX: number;
+    requestedY: number;
+    appliedX: number;
+    appliedY: number;
+    liveActive: boolean;
+  }[];
   inputs: {
     at: number;
     type: string;
@@ -204,16 +212,25 @@ const installProbe = async (
         });
       const scroll = window.scrollTo.bind(window);
       window.scrollTo = (options?: ScrollToOptions | number, top?: number): void => {
-        if (probe.active)
-          probe.scrolls.push({
-            at: performance.now(),
-            y: scrollY,
-            liveActive: document
-              .getAnimations()
-              .some((animation) => animation.id === 'rouault-history-content'),
-          });
+        const at = performance.now();
+        const y = scrollY;
+        const requestedX = typeof options === 'number' ? options : (options?.left ?? scrollX);
+        const requestedY = typeof options === 'number' ? (top ?? 0) : (options?.top ?? scrollY);
+        const liveActive = document
+          .getAnimations()
+          .some((animation) => animation.id === 'rouault-history-content');
         if (typeof options === 'number') scroll(options, top ?? 0);
         else scroll(options);
+        if (probe.active)
+          probe.scrolls.push({
+            at,
+            y,
+            requestedX,
+            requestedY,
+            appliedX: scrollX,
+            appliedY: scrollY,
+            liveActive,
+          });
       };
       const focus = HTMLElement.prototype.focus;
       HTMLElement.prototype.focus = function (options?: FocusOptions): void {
@@ -309,20 +326,24 @@ const installProbe = async (
   );
 };
 
-const prepare = async (page: Page): Promise<SavedReading> => {
+const prepare = async (
+  page: Page,
+  reading: { headingIndex: number; y: number } | null = null,
+): Promise<SavedReading> => {
   await page.goto(longNote);
   await ready(page);
-  const saved = await page.evaluate(async () => {
+  const saved = await page.evaluate(async (reading) => {
     const main = document.querySelector('#main-content');
     if (!main) throw new Error('main');
-    const anchor = main.querySelectorAll<HTMLElement>('.prose h2[id]')[7];
-    if (!anchor) throw new Error('heading 8');
+    const headingIndex = reading?.headingIndex ?? 7;
+    const anchor = main.querySelectorAll<HTMLElement>('.prose h2[id]')[headingIndex];
+    if (!anchor) throw new Error(`heading ${headingIndex + 1}`);
     const forbidden =
       'img, table, pre, code, details, iframe, video, button, input, [data-footnote-ref], [data-copy-button]';
     if (main.querySelector(forbidden)) throw new Error('plain fixture changed');
     window.__rouaultHistoryLiveProbe.anchorId = anchor.id;
     scrollTo({
-      top: Math.round(anchor.getBoundingClientRect().top + scrollY - 100),
+      top: reading?.y ?? Math.round(anchor.getBoundingClientRect().top + scrollY - 100),
       left: 0,
       behavior: 'instant',
     });
@@ -352,8 +373,12 @@ const prepare = async (page: Page): Promise<SavedReading> => {
       },
       sidebarOpen: sidebar?.closest('details')?.open ?? false,
     };
-  });
-  expect(saved.y).toBeGreaterThan(700);
+  }, reading);
+  if (reading) {
+    expect(Math.abs(saved.y - reading.y)).toBeLessThanOrEqual(2);
+    expect(saved.anchorTop).toBeGreaterThanOrEqual(0);
+    expect(saved.anchorTop).toBeLessThan(await page.evaluate(() => innerHeight));
+  } else expect(saved.y).toBeGreaterThan(700);
   await navigate(page, shortNote);
   const state = await page.evaluate(() => {
     const probe = window.__rouaultHistoryLiveProbe;
@@ -477,12 +502,17 @@ const evidence = async (page: Page, info: TestInfo, classification: string): Pro
   );
   await info.attach('history-live-trace', { path: filename, contentType: 'application/json' });
 };
-const assertFirstFrames = async (page: Page, saved: SavedReading): Promise<void> => {
+const assertFirstFrames = async (
+  page: Page,
+  saved: SavedReading,
+  phases: readonly string[] = ['after-raf-task'],
+): Promise<void> => {
   const probe = await snapshot(page);
   const frames = probe.frames.filter(
-    (frame) => frame.phase === 'after-raf-task' && frame.title === title,
+    (frame) => phases.includes(frame.phase) && frame.title === title,
   );
-  expect(frames.length).toBeGreaterThanOrEqual(2);
+  for (const phase of phases)
+    expect(frames.filter((frame) => frame.phase === phase).length).toBeGreaterThanOrEqual(2);
   for (const frame of frames) {
     expect(Math.abs(frame.y - saved.y)).toBeLessThanOrEqual(2);
     expect(frame.anchorTop).not.toBeNull();
@@ -798,4 +828,80 @@ export const registerHistoryLivePresentationTests = (): void => {
         await evidence(page, info, `${mismatch}: unavailable成立、代表pairからの拡張なし`);
       });
   });
+
+  for (const { width, tocTrack } of [
+    { width: 1645, tocTrack: 272 },
+    { width: 1400, tocTrack: 252 },
+  ])
+    test.describe(`history live presentation responsive ${width}px DPR1.5`, () => {
+      test.use({
+        viewport: { width, height: 855 },
+        deviceScaleFactor: 1.5,
+        reducedMotion: 'no-preference',
+      });
+      test.afterEach(async ({ page }, info) => {
+        if (info.status !== 'passed') {
+          const available = await Promise.resolve()
+            .then(() => page.evaluate(() => Boolean(window.__rouaultHistoryLiveProbe)))
+            .catch(() => false);
+          if (available)
+            await evidence(page, info, 'responsive第4章: 未成立。first-frame成功に数えない');
+        }
+      });
+
+      test('自然Backの第4章はresponsive trackでも最初のrAFとpaint機会後から保存位置を保つ', async ({
+        page,
+      }, info) => {
+        await installProbe(page);
+        const saved = await prepare(page, { headingIndex: 3, y: 520 });
+        expect(await page.evaluate(() => ({ width: innerWidth, dpr: devicePixelRatio }))).toEqual({
+          width,
+          dpr: 1.5,
+        });
+        const eligible = await back(page);
+        await finishFrames(page);
+        const track = await page.locator('#main-content .note-shell').evaluate((shell) => {
+          const tracks = getComputedStyle(shell).gridTemplateColumns.split(' ');
+          return Number.parseFloat(tracks[1] ?? '');
+        });
+        expect(Math.abs(track - tocTrack)).toBeLessThan(0.1);
+        if (!eligible) {
+          await assertUnavailable(page);
+          await evidence(
+            page,
+            info,
+            'responsive第4章: UA情報なし/true。live/first-frame成功には数えない',
+          );
+          test.skip(true, 'UA情報なし/true: first-frame未検証');
+          return;
+        }
+
+        await assertFirstFrames(page, saved, ['raf-entry', 'after-raf-task']);
+        const probe = await snapshot(page);
+        expect(probe.starts).toHaveLength(1);
+        expect(probe.starts[0]?.duration).toBe(180);
+        expect(
+          probe.frames.some((frame) => frame.title === title && frame.eligibility === 'ready'),
+        ).toBe(true);
+        expect(probe.replaced).toBe(1);
+        expect(probe.committed).toBe(1);
+        expect(probe.focus).toBe(1);
+        expect(probe.announcements).toHaveLength(1);
+        expect(probe.scrolls).toHaveLength(1);
+        const scroll = probe.scrolls[0];
+        expect(scroll?.requestedX).toBe(0);
+        expect(scroll?.appliedX).toBe(0);
+        expect(Math.abs((scroll?.requestedY ?? Infinity) - saved.y)).toBeLessThanOrEqual(2);
+        expect(Math.abs((scroll?.appliedY ?? Infinity) - saved.y)).toBeLessThanOrEqual(2);
+        expect(scroll?.liveActive).toBe(false);
+        expect(scroll?.at).toBeLessThanOrEqual(probe.starts[0]?.at ?? -1);
+        expect(probe.nativeStarts).toBe(saved.nativeStartsBeforeBack);
+        expect(await page.evaluate(() => history.length)).toBe(saved.historyLength);
+        await evidence(
+          page,
+          info,
+          `native UA=false: ${width}px/DPR1.5/track${tocTrack}px第4章のrAF・post-task検証。実paint捕捉とは区別`,
+        );
+      });
+    });
 };
