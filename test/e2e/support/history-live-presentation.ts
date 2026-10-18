@@ -720,6 +720,16 @@ const assertGenericTraverse = async (
     expect(starts[0]?.entryId).toBe(saved.entryId);
     expect(Math.abs((starts[0]?.y ?? Infinity) - saved.y)).toBeLessThanOrEqual(2);
     expect(scrolls[0]?.at).toBeLessThanOrEqual(starts[0]?.at ?? -1);
+    if (!probe.pause)
+      expect(
+        frames.some(
+          (frame) =>
+            frame.phase === 'after-raf-task' &&
+            frame.eligibility === 'ready' &&
+            Number(frame.opacity) >= 0.82 &&
+            Number(frame.opacity) < 1,
+        ),
+      ).toBe(true);
   }
   if (presentation === 'live' && !nativeEligible)
     test.skip(true, '位置ready確認済、UA情報なし/true: generic fade未検証');

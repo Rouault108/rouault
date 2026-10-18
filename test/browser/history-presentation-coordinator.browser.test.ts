@@ -395,6 +395,7 @@ describe('HistoryPresentationCoordinator', () => {
   });
 
   it('late font loading通知では演出だけを取消し位置とbindingを変更しないこと', () => {
+    vi.spyOn(document.fonts, 'status', 'get').mockReturnValue('loading');
     const scroll = vi.spyOn(window, 'scrollTo');
     const focus = vi.spyOn(root, 'focus');
     const entryId = readHistoryEntry()?.id;
@@ -407,6 +408,30 @@ describe('HistoryPresentationCoordinator', () => {
     expect(scroll).not.toHaveBeenCalled();
     expect(focus).not.toHaveBeenCalled();
     expect(readHistoryEntry()?.id).toBe(entryId);
+    expect(readContentContext()?.displayedBinding).toBe(binding);
+  });
+
+  it('読込完了後の遅配loading通知は現在の効果を消さず実際の再読込だけを取消すこと', async () => {
+    const status = vi.spyOn(document.fonts, 'status', 'get').mockReturnValue('loaded');
+    const scroll = vi.spyOn(window, 'scrollTo');
+    const focus = vi.spyOn(root, 'focus');
+    const binding = readContentContext()?.displayedBinding;
+    expect(coordinator.start(owner)).toBe(true);
+    const current = animation();
+    current.pause();
+    current.currentTime = 90;
+    await current.ready;
+    for (let index = 0; index < 20; index++) document.fonts.dispatchEvent(new Event('loading'));
+    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+    expect(current.playState).toBe('paused');
+    expect(current.currentTime).toBe(90);
+    expect(Number(getComputedStyle(root).opacity)).toBeGreaterThanOrEqual(0.82);
+    expect(Number(getComputedStyle(root).opacity)).toBeLessThan(1);
+    status.mockReturnValue('loading');
+    document.fonts.dispatchEvent(new Event('loading'));
+    expect(current.playState).toBe('idle');
+    expect(scroll).not.toHaveBeenCalled();
+    expect(focus).not.toHaveBeenCalled();
     expect(readContentContext()?.displayedBinding).toBe(binding);
   });
 

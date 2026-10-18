@@ -87,7 +87,7 @@ passive scrollは座標保存だけを行い、幾何証跡は120msの集約と�
 
 本文の破壊的更新は、旧root/epochの`before-mutation`で離脱座標のcheckpointと位置job/演出の取消、保存抑止を先に確立する。その後、新epochと`mutation: true`を設定して`mutation`を通知し、hydrationの取消・enhancerの後始末へ進む。後始末で検索form等が隠れてrangeが縮んでも、その座標を旧entryへ再保存しない。state-onlyではこのphaseを発生させず、rollback中の半更新DOMも保存しない。
 
-HistoryPresentationCoordinatorは位置を書かず、mainと読書アンカー、固定owner、Animationだけを所有する。opacity 0.82→1、180msで表示し、finishedをnavigationや位置jobの完了条件にしない。新intent、Back/Forward、本人入力、root/anchor破棄、幾何変化、font loading、pagehide、dispose等で取消す。後続位置補正は取消→通常表示→job再照合→scrollの順序を守り、旧finished/旧jobは新sessionを取消さない。幾何不変のTOC投影だけで一律に取消さない。任意の外部DOM/CSS変更が検出前に一度も見えないという保証は追加しない。
+HistoryPresentationCoordinatorは位置を書かず、mainと読書アンカー、固定owner、Animationだけを所有する。opacity 0.82→1、180msで表示し、finishedをnavigationや位置jobの完了条件にしない。新intent、Back/Forward、本人入力、root/anchor破棄、幾何変化、font loading、pagehide、dispose等で取消す。後続位置補正は取消→通常表示→job再照合→scrollの順序を守り、旧finished/旧jobは新sessionを取消さない。フォントの`loading`通知は現在の`document.fonts.status`が`loading`の場合だけ取消理由にし、完了後に遅配された通知で現在のsessionを取消さない。幾何不変のTOC投影だけで一律に取消さない。任意の外部DOM/CSS変更が検出前に一度も見えないという保証は追加しない。
 
 ### 受理と回復の境界
 

@@ -80,7 +80,14 @@ export class HistoryPresentationCoordinator {
       },
       { signal },
     );
-    document.fonts.addEventListener('loading', cancel, { signal });
+    document.fonts.addEventListener(
+      'loading',
+      () => {
+        // loading通知は完了後に遅配されることがある。現在の読込状態で判定する。
+        if (document.fonts.status === 'loading') cancel();
+      },
+      { signal },
+    );
     for (const name of ['app-shell:rollback-start', 'app-shell:restored'] as const)
       document.addEventListener(name, cancel, { signal });
     document.addEventListener(
