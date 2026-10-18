@@ -1,30 +1,29 @@
+import { readContentContext } from '../../../navigation/content-navigation-context.js';
 import {
   validateReadingPosition,
   type ReadingPosition,
 } from '../navigation/reading-position-store.js';
 
-const SOURCE_URL = '/notes/testing/reader-basic';
-const TARGET_URL = '/notes/testing/toc-readable-long-heading';
-const PROSE_ID = 'note-content-testing-toc-readable-long-heading';
-const TOC_ID = 'toc-source-testing-toc-readable-long-heading';
-const TOC_OWNER = 'toc-owner-testing-toc-readable-long-heading';
 const TOLERANCE = 2;
+
+export interface HistoryGeometrySource {
+  readonly entryId: string;
+  readonly contentEpoch: number;
+}
 
 export interface HistoryGeometryCheckpoint {
   readonly position: ReadingPosition;
   readonly shellLayoutKey: string;
   readonly anchorId: string;
+  readonly anchorPath: readonly number[];
   readonly anchorY: number;
   readonly text: string;
+  readonly structure: string;
   readonly fontFingerprint: string;
   readonly viewport: string;
   readonly geometry: readonly number[];
   readonly headingIds: readonly string[];
 }
-
-export const isHistoryPresentationVerificationPair = (previousUrl: string, url: string): boolean =>
-  [SOURCE_URL, `${SOURCE_URL}/`].includes(previousUrl) &&
-  [TARGET_URL, `${TARGET_URL}/`].includes(url);
 
 const visible = (element: HTMLElement): boolean => {
   const style = getComputedStyle(element);
@@ -41,76 +40,154 @@ const visible = (element: HTMLElement): boolean => {
   );
 };
 
-const plainProse = (root: HTMLElement): HTMLElement | null => {
-  const prose = root.querySelector<HTMLElement>(`.prose#${PROSE_ID}`);
-  if (!prose || root.querySelectorAll('.prose').length !== 1 || !visible(prose)) return null;
+// triggerの位置ではなくroot全体を調べ、広域mutationを持つ未知enhancerは許可しない。
+const staticSurface = (root: HTMLElement): boolean => {
   if (
     root.querySelector(
-      'table, img, picture, pre, code, details, iframe, video, audio, canvas, object, embed, style, link, button, input, select, textarea, [data-copy-button], [data-copy-control]',
+      'table, pre, code, details, iframe, video, audio, canvas, object, embed, style, link, picture, [data-copy-button], [data-copy-control]',
     )
   )
-    return null;
+    return false;
   for (const element of [root, ...root.querySelectorAll('*')]) {
-    const trigger = root.ownerDocument.querySelector(
-      `[data-layout-header] [data-toc-trigger="true"][data-toc-runtime-id="${TOC_ID}"]`,
-    );
-    const activatedReservedToc =
-      !element.hasAttribute('data-toc-trigger-reserved') &&
-      element.matches(':defined') &&
-      trigger?.getAttribute('data-toc-hydration-state') === 'hydrated' &&
-      trigger.getAttribute('data-toc-trigger-interactive') === 'true';
-    const reservedToc =
-      element.localName === 'layout-toc-controller' &&
-      (element.getAttribute('data-toc-trigger-reserved') === 'true' || activatedReservedToc) &&
-      element.getAttribute('source-id') === TOC_ID &&
-      element.getAttribute('toc-runtime-id') === TOC_ID &&
-      element.getAttribute('toc-owner-id') === TOC_OWNER &&
-      element.getAttribute('capabilities-json') ===
-        '{"activeTracking":true,"dynamicScopes":false,"mobilePanel":true}' &&
-      element.getAttribute('data-hydration-deferred') === 'toc-trigger' &&
-      element.getAttribute('content-root-id') === PROSE_ID &&
-      !element.hasAttribute('data-hydration-key') &&
-      element.getAttribute('data-hydration-trigger') === 'initial' &&
-      element.getAttribute('data-hydration-capability') === 'interactive';
-    if (element.localName.includes('-') && !reservedToc) return null;
+    const toc = element.localName === 'layout-toc-controller';
+    if (element.localName.includes('-') && !toc) return false;
+    if (toc) {
+      const sourceId = element.getAttribute('source-id');
+      const contentId = element.getAttribute('content-root-id');
+      const source = sourceId ? root.ownerDocument.getElementById(sourceId) : null;
+      const content = contentId ? root.ownerDocument.getElementById(contentId) : null;
+      const trigger = Array.from(
+        root.ownerDocument.querySelectorAll('[data-layout-header] [data-toc-trigger="true"]'),
+      ).find((item) => item.getAttribute('data-toc-runtime-id') === sourceId);
+      const reserved = element.getAttribute('data-toc-trigger-reserved') === 'true';
+      const activated =
+        element.matches(':defined') &&
+        trigger?.getAttribute('data-toc-hydration-state') === 'hydrated' &&
+        trigger.getAttribute('data-toc-trigger-interactive') === 'true';
+      let capabilities: unknown;
+      try {
+        capabilities = JSON.parse(element.getAttribute('capabilities-json') ?? 'null');
+      } catch {
+        return false;
+      }
+      if (
+        !sourceId ||
+        !contentId ||
+        !source ||
+        !root.contains(source) ||
+        !source.matches('script[type="application/json"][data-hydration-marker="toc-source"]') ||
+        !content ||
+        !root.contains(content) ||
+        element.getAttribute('toc-runtime-id') !== sourceId ||
+        !element.getAttribute('toc-owner-id') ||
+        (!reserved && !activated) ||
+        !capabilities ||
+        typeof capabilities !== 'object' ||
+        !('dynamicScopes' in capabilities) ||
+        capabilities.dynamicScopes !== false ||
+        !('activeTracking' in capabilities) ||
+        typeof capabilities.activeTracking !== 'boolean' ||
+        !('mobilePanel' in capabilities) ||
+        typeof capabilities.mobilePanel !== 'boolean' ||
+        element.getAttribute('data-hydration-deferred') !== 'toc-trigger' ||
+        element.getAttribute('data-hydration-trigger') !== 'initial' ||
+        element.getAttribute('data-hydration-capability') !== 'interactive' ||
+        element.hasAttribute('data-hydration-key')
+      )
+        return false;
+    }
     if (
       element.localName === 'script' &&
       (element.getAttribute('type') !== 'application/json' ||
         element.getAttribute('data-hydration-marker') !== 'toc-source')
     )
-      return null;
+      return false;
     const scope = element.getAttribute('data-hydration-scope');
-    if (scope !== null && !['note-shell', 'note-content', 'note-toc'].includes(scope)) return null;
+    if (scope !== null && !['note-shell', 'note-content', 'note-toc'].includes(scope)) return false;
     const hasDirective = [
       'data-hydration-key',
       'data-hydration-trigger',
       'data-hydration-capability',
     ].some((attribute) => element.hasAttribute(attribute));
-    if (!hasDirective || reservedToc) continue;
+    if (!hasDirective || toc) continue;
+    // このenhancerはtableなしの場合、copy listenerの登録だけで本文を組み替えない。
     if (
-      element !== prose ||
+      !element.matches('.prose[data-note-static-surface="true"]') ||
       element.getAttribute('data-hydration-key') !== 'note-static-surface-enhancer' ||
       element.getAttribute('data-hydration-trigger') !== 'post-commit' ||
       element.getAttribute('data-hydration-capability') !== 'progressive'
     )
-      return null;
+      return false;
   }
-  // このfixtureの段落・見出し・静的permalinkだけを認め、未知の本文surfaceへ広げない。
-  const tags = new Set(['p', 'h2', 'span', 'a', 'svg', 'g', 'path']);
-  for (const element of prose.querySelectorAll('*')) {
-    if (!tags.has(element.localName)) return null;
+  // 読込完了し寸法属性と実used boxを持つ画像だけ。後発enhancerは上のroot検査で拒否する。
+  return Array.from(root.querySelectorAll('img')).every(
+    (image) =>
+      image.complete &&
+      image.naturalWidth > 0 &&
+      image.naturalHeight > 0 &&
+      image.width > 0 &&
+      image.height > 0 &&
+      Number(image.getAttribute('width')) > 0 &&
+      Number(image.getAttribute('height')) > 0 &&
+      visible(image),
+  );
+};
+
+// 旧本文が表示中に使う字体を準備する。位置job/commitからはawaitせず、DOMは変更しない。
+export const prepareHistoryFonts = async (
+  root: HTMLElement,
+  signal: AbortSignal,
+): Promise<boolean> => {
+  const owner = root.ownerDocument;
+  let timer: number | undefined;
+  let abort = (): void => {
+    /* 待機開始前には解放対象がない。 */
+  };
+  try {
     if (
-      element instanceof HTMLElement &&
-      ['p', 'h2', 'span'].includes(element.localName) &&
-      !visible(element)
+      signal.aborted ||
+      root.querySelectorAll('*').length > 2000 ||
+      root.textContent.length > 128_000 ||
+      !staticSurface(root)
     )
-      return null;
-    if (element.localName === 'a' && !element.matches('h2 > a[data-heading-permalink="true"]'))
-      return null;
+      return false;
+    const samples = new Map<string, Set<string>>();
+    for (const element of [root, ...root.querySelectorAll<HTMLElement>('*')]) {
+      if (!(element instanceof HTMLElement) || element.localName === 'script' || !visible(element))
+        continue;
+      const text = Array.from(element.childNodes)
+        .filter((node) => node.nodeType === Node.TEXT_NODE)
+        .map((node) => node.textContent ?? '')
+        .join('')
+        .trim();
+      if (!text) continue;
+      const style = getComputedStyle(element);
+      const font = `${style.fontStyle} ${style.fontWeight} ${style.fontSize} ${style.fontFamily}`;
+      const texts = samples.get(font) ?? new Set<string>();
+      texts.add(text);
+      samples.set(font, texts);
+    }
+    const loads = Array.from(samples, ([font, texts]) => {
+      const text = Array.from(texts).join('');
+      return owner.fonts.check(font, text) ? Promise.resolve([]) : owner.fonts.load(font, text);
+    });
+    const prepared = Promise.all(loads)
+      .then(() => owner.fonts.ready)
+      .then(() => true);
+    const stopped = new Promise<false>((resolve) => {
+      abort = () => {
+        resolve(false);
+      };
+      signal.addEventListener('abort', abort, { once: true });
+      timer = window.setTimeout(abort, 1000);
+    });
+    return await Promise.race([prepared, stopped]);
+  } catch {
+    return false;
+  } finally {
+    if (timer !== undefined) clearTimeout(timer);
+    signal.removeEventListener('abort', abort);
   }
-  if (Array.from(prose.children).some((child) => !['p', 'h2'].includes(child.localName)))
-    return null;
-  return prose;
 };
 
 const fonts = (root: HTMLElement): string | null => {
@@ -130,8 +207,7 @@ const fonts = (root: HTMLElement): string | null => {
     const font = `${style.fontStyle} ${style.fontWeight} ${style.fontSize} ${style.fontFamily}`;
     if (!owner.fonts.check(font, text)) return null;
     if (element.closest('[data-layout-toc-root]')) {
-      // 実target全12項目の400/500切替で本文・全見出し・range不変を別途実測した。
-      // 初期active項目は比較から外すが、将来使う両weightの未loadは許可しない。
+      // 独立track内のactive表示だけを比較から外し、使用し得る両weightを確認する。
       if (
         !['400', '500'].every((weight) =>
           owner.fonts.check(
@@ -143,7 +219,6 @@ const fonts = (root: HTMLElement): string | null => {
         return null;
       continue;
     }
-    if (!element.closest('[data-article-header], .prose')) return null;
     fingerprint.push([
       text,
       font,
@@ -200,10 +275,35 @@ const resolveTocTrackPixels = (root: HTMLElement, token: string): number | null 
 const independentTocTrack = (root: HTMLElement): boolean => {
   const shell = root.querySelector<HTMLElement>('.note-shell');
   const toc = shell?.querySelector<HTMLElement>('[data-layout-toc-root]');
-  if (!shell || toc?.parentElement !== shell || window.innerWidth < 1024) return false;
+  if (!shell || toc?.parentElement !== shell) return false;
   const shellStyle = getComputedStyle(shell);
   const tocStyle = getComputedStyle(toc);
   const tracks = shellStyle.gridTemplateColumns.split(' ');
+  if (window.innerWidth < 640) {
+    // mobile panelはbody配下の別ownerなので、非占有の本文側TOCだけで閉状態を推測しない。
+    const panelsClosed = Array.from(
+      root.ownerDocument.querySelectorAll('[data-layout-toc-mobile-panel]'),
+    ).every(
+      (panel) =>
+        panel.matches('[hidden][inert][aria-hidden="true"]') &&
+        panel.getBoundingClientRect().width === 0 &&
+        panel.getBoundingClientRect().height === 0,
+    );
+    return (
+      panelsClosed &&
+      shellStyle.display === 'grid' &&
+      tracks.length === 1 &&
+      tracks.every((track) => /^\d+(?:\.\d+)?px$/u.test(track) && parseFloat(track) > 0) &&
+      tocStyle.position === 'static' &&
+      toc.getBoundingClientRect().height === 0 &&
+      Array.from(toc.querySelectorAll('*')).every(
+        (element) =>
+          element.getBoundingClientRect().height === 0 &&
+          element.getBoundingClientRect().width === 0,
+      )
+    );
+  }
+  if (window.innerWidth < 1024) return false;
   const declaredTrack = resolveTocTrackPixels(
     root,
     shellStyle.getPropertyValue('--note-toc-track'),
@@ -231,20 +331,56 @@ const rectangle = (element: Element): number[] => {
   const rect = element.getBoundingClientRect();
   return [rect.left + window.scrollX, rect.top + window.scrollY, rect.width, rect.height];
 };
+const pathTo = (root: HTMLElement, element: HTMLElement): number[] => {
+  const path: number[] = [];
+  let current: Element = element;
+  while (current !== root) {
+    const parent = current.parentElement;
+    if (!parent) return [];
+    path.unshift(Array.from(parent.children).indexOf(current));
+    current = parent;
+  }
+  return path;
+};
+export const readHistoryGeometryAnchor = (
+  root: HTMLElement,
+  checkpoint: HistoryGeometryCheckpoint,
+): HTMLElement | null => {
+  let element: Element = root;
+  for (const index of checkpoint.anchorPath) {
+    const child = element.children.item(index);
+    if (!child) return null;
+    element = child;
+  }
+  return element instanceof HTMLElement && element.id === checkpoint.anchorId ? element : null;
+};
 
 export const captureHistoryGeometry = (
   root: HTMLElement,
   position: ReadingPosition,
   shellLayoutKey: string,
+  source?: HistoryGeometrySource,
 ): HistoryGeometryCheckpoint | null => {
   try {
+    const context = source ? readContentContext() : null;
+    const displayedSource =
+      source &&
+      context?.root === root &&
+      context.contentEpoch === source.contentEpoch &&
+      !context.mutation &&
+      !context.recoveryRequired &&
+      context.displayedBinding.entryId === source.entryId &&
+      context.displayedBinding.url === position.url;
+    // 証跡作成の仕事量を制限し、巨大surfaceは座標復元だけへ返す。
+    if (root.querySelectorAll('*').length > 2000 || root.textContent.length > 128_000) return null;
     if (
       !root.matches('main#main-content') ||
       !root.isConnected ||
       !visible(root) ||
       !shellLayoutKey ||
-      ![TARGET_URL, `${TARGET_URL}/`].includes(position.url) ||
-      `${location.pathname}${location.search}${location.hash}` !== position.url ||
+      (source
+        ? !displayedSource
+        : `${location.pathname}${location.search}${location.hash}` !== position.url) ||
       !validateReadingPosition(position, position.url)
     )
       return null;
@@ -252,28 +388,63 @@ export const captureHistoryGeometry = (
       const style = getComputedStyle(ancestor);
       if (style.opacity !== '1' || style.contentVisibility === 'hidden') return null;
     }
-    const prose = plainProse(root);
-    if (!prose || !independentTocTrack(root)) return null;
-    const headings = Array.from(prose.querySelectorAll<HTMLHeadingElement>('h2[id]'));
-    const headingIds = headings.map((heading) => heading.id);
-    if (headings.length !== 12 || new Set(headingIds).size !== 12 || headingIds.some((id) => !id))
+    if (!staticSurface(root)) return null;
+    const toc = root.querySelector('[data-layout-toc-root]');
+    if (toc && !independentTocTrack(root)) return null;
+    // 検証済み独立TOCの既存color transitionは本文幾何を変えない。未知animationへ広げない。
+    const tocColorOnly = (animation: Animation): boolean => {
+      const target = animation.effect instanceof KeyframeEffect ? animation.effect.target : null;
+      return (
+        typeof CSSTransition !== 'undefined' &&
+        animation instanceof CSSTransition &&
+        animation.transitionProperty === 'color' &&
+        target instanceof HTMLElement &&
+        target.matches('.layout-toc__link') &&
+        toc?.contains(target) === true
+      );
+    };
+    const unverifiedAnimation = (animation: Animation): boolean =>
+      (animation.pending || !['finished', 'idle'].includes(animation.playState)) &&
+      !tocColorOnly(animation);
+    // 後続の幾何変更を分類できないanimationは、たまたま座標が一致しても許可しない。
+    const moving = (element: Element): boolean => element.getAnimations().some(unverifiedAnimation);
+    if (
+      root.querySelector('animate, animateMotion, animateTransform, set') ||
+      root.getAnimations({ subtree: true }).some(unverifiedAnimation)
+    )
       return null;
+    for (let ancestor = root.parentElement; ancestor; ancestor = ancestor.parentElement)
+      if (moving(ancestor)) return null;
     const scrolling = root.ownerDocument.scrollingElement;
     if (!scrolling) return null;
     const rangeX = Math.max(0, scrolling.scrollWidth - scrolling.clientWidth);
     const rangeY = Math.max(0, scrolling.scrollHeight - scrolling.clientHeight);
-    // 一時的な高さ不足へのclampを、保存位置の適用成功として扱わない。
     if (position.x > rangeX || position.y > rangeY) return null;
     const fontFingerprint = fonts(root);
     if (!fontFingerprint) return null;
-    const anchor = headings.reduce((nearest, heading) =>
-      Math.abs(heading.getBoundingClientRect().top + window.scrollY - position.y) <
+    const elements = [root, ...root.querySelectorAll<HTMLElement>('*')].filter(
+      (element) =>
+        element instanceof HTMLElement &&
+        element.localName !== 'script' &&
+        element.closest('[data-layout-toc-root]') === null &&
+        visible(element),
+    );
+    const headings = elements.filter((element) => /^h[1-6]$/u.test(element.localName));
+    const anchors =
+      headings.length > 0
+        ? headings
+        : elements.filter((element) =>
+            ['p', 'li', 'dt', 'dd', 'section', 'article', 'header', 'main'].includes(
+              element.localName,
+            ),
+          );
+    const anchor = (anchors.length > 0 ? anchors : [root]).reduce((nearest, element) =>
+      Math.abs(element.getBoundingClientRect().top + window.scrollY - position.y) <
       Math.abs(nearest.getBoundingClientRect().top + window.scrollY - position.y)
-        ? heading
+        ? element
         : nearest,
     );
     const anchorY = anchor.getBoundingClientRect().top + window.scrollY;
-    if (Math.abs(anchorY - position.y) > window.innerHeight) return null;
     const viewport = JSON.stringify([
       window.innerWidth,
       window.innerHeight,
@@ -284,27 +455,35 @@ export const captureHistoryGeometry = (
         ? [window.visualViewport.width, window.visualViewport.height, window.visualViewport.scale]
         : [window.innerWidth, window.innerHeight, 1]),
     ]);
-    const geometry = [
-      rangeX,
-      rangeY,
-      ...rectangle(root),
-      ...rectangle(prose),
-      ...headings.flatMap(rectangle),
-    ];
+    const geometry = [rangeX, rangeY, ...elements.flatMap(rectangle)];
     if (geometry.some((value) => !Number.isFinite(value))) return null;
+    const structure = JSON.stringify(
+      elements.map((element) => [
+        element.localName,
+        element.id,
+        element.className,
+        element.getAttribute('href'),
+        element.getAttribute('src'),
+        element instanceof HTMLImageElement
+          ? [element.currentSrc, element.naturalWidth, element.naturalHeight]
+          : null,
+      ]),
+    );
     return {
       position: { ...position },
       shellLayoutKey,
       anchorId: anchor.id,
+      anchorPath: pathTo(root, anchor),
       anchorY,
-      text: prose.textContent,
+      text: root.textContent,
+      structure,
       fontFingerprint,
       viewport,
       geometry,
-      headingIds,
+      headingIds: headings.map((element) => element.id).filter(Boolean),
     };
   } catch {
-    // font APIや測定に失敗した経路は、既存の復元へ演出なしで返す。
+    // 測定失敗は表示の不適格であり、保存座標と通常復元を失敗にしない。
     return null;
   }
 };
@@ -319,9 +498,11 @@ export const matchesHistoryGeometry = (
     current !== null &&
     current.shellLayoutKey === checkpoint.shellLayoutKey &&
     current.anchorId === checkpoint.anchorId &&
+    current.anchorPath.join(':') === checkpoint.anchorPath.join(':') &&
     Math.abs(current.anchorY - checkpoint.anchorY) <= TOLERANCE &&
     current.viewport === checkpoint.viewport &&
     current.text === checkpoint.text &&
+    current.structure === checkpoint.structure &&
     current.fontFingerprint === checkpoint.fontFingerprint &&
     current.headingIds.join('\n') === checkpoint.headingIds.join('\n') &&
     current.geometry.length === checkpoint.geometry.length &&

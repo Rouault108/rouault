@@ -21,9 +21,11 @@ import {
   beginNavigationIntent,
   captureFeatureSource,
   initializeContentContext,
+  markContentRecoveryRequired,
   isFeatureSourceCurrent,
   releaseContentContext,
   readContentContext,
+  subscribeContentContext,
 } from '../../src/navigation/content-navigation-context.js';
 import {
   readContentReadiness,
@@ -535,14 +537,247 @@ describe('検証済み履歴経路の表示状態', () => {
   const historyQuotaBoundary = (): Promise<void> =>
     new Promise((resolve) => window.setTimeout(resolve, 10_000));
 
-  // この2ケースの実履歴書込みを、前後の既存52ケースのquota期間から分離する。
+  // この統合試験の実履歴書込みを、前後の既存52ケースのquota期間から分離する。
   // 履歴APIをmockせず、既存geometry suiteと同じ実時間の境界待機を使う。
   beforeAll(historyQuotaBoundary, 15_000);
   afterAll(historyQuotaBoundary, 15_000);
 
-  it.each(['visible', 'hidden'] as const)(
-    '%s完了時の先行復元を区別し、hidden中も候補を保全して通常settledへ渡す',
-    async (visibility) => {
+  it.each(['before-reader', 'after-reader'] as const)(
+    '%sのenhancer後始末でrangeが縮んでも離脱前の114pxを保存する',
+    async (order) => {
+      const epoch = await setup();
+      if (!root) throw new Error('root');
+      const content = root;
+      content.id = 'main-content';
+      const oldUrl = readAddress();
+      const oldEntryId = readHistoryEntry()?.id;
+      if (!oldEntryId) throw new Error('managed source entry missing');
+      const writes = vi.spyOn(ReadingPositionStore.prototype, 'write');
+      const phases: {
+        reason: string;
+        epoch: number | undefined;
+        mutation: boolean | undefined;
+        restoring: unknown;
+        y: number;
+        writes: number;
+      }[] = [];
+      // clientの先登録順と逆順の両方で、実際のDOM縮小によるUA clampから旧座標を保護する。
+      const subscribeCleanup = (): (() => void) =>
+        subscribeContentContext((reason) => {
+          if (reason !== 'before-mutation' && reason !== 'mutation') return;
+          const context = readContentContext();
+          phases.push({
+            reason,
+            epoch: context?.contentEpoch,
+            mutation: context?.mutation,
+            restoring: Reflect.get(reader ?? {}, 'restoring'),
+            y: scrollY,
+            writes: writes.mock.calls.length,
+          });
+          if (reason === 'mutation') {
+            content.replaceChildren(document.createTextNode('後始末後の短い本文'));
+            content.style.height = 'calc(100vh + 20px)';
+            content.getBoundingClientRect();
+          }
+        });
+      if (order === 'before-reader') stop = subscribeCleanup();
+      const errors = vi.fn();
+      reader = new ReadingPositionController(errors);
+      reader.start(content);
+      if (order === 'after-reader') stop = subscribeCleanup();
+      await expect.poll(() => content.dataset['readingPositionStatus']).toBe('settled');
+      window.scrollTo({ top: 114, behavior: 'instant' });
+      await frame();
+      window.dispatchEvent(new Event('scroll'));
+      const store: unknown = writes.mock.contexts[0];
+      if (!(store instanceof ReadingPositionStore)) throw new Error('reader store missing');
+      expect(store.read(oldEntryId, oldUrl)?.y).toBe(114);
+      beginNavigationIntent('navigation', '/notes/history-after-cleanup');
+      writes.mockClear();
+      const scroll = vi.spyOn(window, 'scrollTo');
+      const focus = vi.spyOn(HTMLElement.prototype, 'focus');
+      const nextEpoch = beginContentMutation(content);
+      expect(phases).toEqual([
+        {
+          reason: 'before-mutation',
+          epoch,
+          mutation: false,
+          restoring: order === 'after-reader',
+          y: 114,
+          writes: expect.any(Number),
+        },
+        {
+          reason: 'mutation',
+          epoch: nextEpoch,
+          mutation: true,
+          restoring: true,
+          y: 114,
+          writes: expect.any(Number),
+        },
+      ]);
+      if (order === 'before-reader') expect(phases[0]?.writes).toBe(0);
+      else expect(phases[0]?.writes).toBeGreaterThan(0);
+      expect(nextEpoch).toBeGreaterThan(epoch);
+      expect(phases[1]?.writes).toBeGreaterThan(0);
+      expect(scrollY).toBeLessThan(114);
+      expect(readContentContext()).toMatchObject({
+        contentEpoch: nextEpoch,
+        mutation: true,
+        displayedBinding: { entryId: oldEntryId, url: oldUrl },
+      });
+      const nextEntryId = 'cleanup-next-entry';
+      const nextUrl = '/notes/history-after-cleanup';
+      history.replaceState({ __rouaultHistoryEntry: { version: 1, id: nextEntryId } }, '', nextUrl);
+      window.dispatchEvent(new Event('scroll'));
+      await frame();
+      expect(writes.mock.calls.length).toBe(phases[1]?.writes);
+      expect(
+        writes.mock.calls.every(
+          ([entryId, position]) =>
+            entryId === oldEntryId && position.url === oldUrl && position.y === 114,
+        ),
+      ).toBe(true);
+      expect(store.read(oldEntryId, oldUrl)?.y).toBe(114);
+      expect(store.read(nextEntryId, nextUrl)).toBeNull();
+      expect(scroll).not.toHaveBeenCalled();
+      expect(focus).not.toHaveBeenCalled();
+      expect(errors).not.toHaveBeenCalled();
+    },
+  );
+
+  it.each([
+    ['manual', 'verified', 'different-url'],
+    ['manual', 'unknown', 'different-url'],
+    ['auto', 'verified', 'different-url'],
+    ['manual', 'verified', 'same-url'],
+    ['manual', 'unknown', 'same-url'],
+    ['manual', 'wrong-binding', 'different-url'],
+    ['manual', 'mutation', 'different-url'],
+    ['manual', 'recovery', 'different-url'],
+    ['manual', 'detached', 'different-url'],
+    ['manual', 'replaced', 'different-url'],
+  ] as const)(
+    'scroll通知前のaddress先行でも%s/%s/%sの旧entry座標を混在させない',
+    async (mode, proof, addressKind) => {
+      const epoch = await setup();
+      if (!root) throw new Error('root');
+      const content = root;
+      content.id = 'main-content';
+      const writes = vi.spyOn(ReadingPositionStore.prototype, 'write');
+      const errors = vi.fn();
+      reader = new ReadingPositionController(errors);
+      reader.start(content);
+      await expect.poll(() => content.dataset['readingPositionStatus']).toBe('settled');
+      const oldUrl = readAddress();
+      const oldEntryId = readHistoryEntry()?.id;
+      if (!oldEntryId) throw new Error('managed old entry missing');
+      if (proof === 'verified') {
+        const routes = [location.pathname];
+        document.dispatchEvent(
+          new CustomEvent<AppShellValidatedDetail>('app-shell:validated', {
+            detail: {
+              header: document.createElement('header'),
+              navigationUrl: oldUrl,
+              shellCommitId: 0,
+              shell: {
+                headerHtml: STATIC_HEADER_CONTRACT_ACCEPTED_TOC_ABSENT_HTML,
+                sidebarProjection: null,
+              },
+              linkValidationContext: {
+                siteUrlContext: { siteOrigin: location.origin, basePath: '' },
+                currentAbsoluteUrl: location.href,
+                normalizedNavigationUrl: oldUrl,
+                routeManifestState: {
+                  status: 'loaded',
+                  manifest: {
+                    version: 1,
+                    buildId: 'fast-scroll',
+                    buildLabel: 'fast-scroll',
+                    generatedAt: '2026-10-18T00:00:00.000Z',
+                    siteOrigin: location.origin,
+                    basePath: '',
+                    routes,
+                  },
+                  routeSet: { routes, has: (pathname) => routes.includes(pathname) },
+                },
+              },
+            },
+          }),
+        );
+        expect(reader).toMatchObject({ verifiedLayout: expect.any(String) });
+      } else expect(reader).toMatchObject({ verifiedLayout: null });
+      window.scrollTo({ top: 228, behavior: 'instant' });
+      await frame();
+      window.dispatchEvent(new Event('scroll'));
+      const store: unknown = writes.mock.contexts[0];
+      if (!(store instanceof ReadingPositionStore)) throw new Error('reader store missing');
+      expect(store.read(oldEntryId, oldUrl)?.y).toBe(228);
+
+      if (proof === 'wrong-binding') adoptContentBinding('/wrong-rendered', 'wrong-entry');
+      else if (proof === 'mutation') beginContentMutation(content);
+      else if (proof === 'recovery') markContentRecoveryRequired(content, epoch);
+      else if (proof === 'detached') {
+        await fixture('<div style="height:6000px">範囲を維持する別surface</div>');
+        content.remove();
+      } else if (proof === 'replaced') {
+        const replacement = await fixture(
+          '<main id="main-content" style="height:6000px">別世代の本文</main>',
+        );
+        const container = content.parentElement;
+        const replacementContainer = replacement.parentElement;
+        if (!container || !replacementContainer) throw new Error('replacement container missing');
+        container.before(replacementContainer);
+        expect(document.getElementById('main-content')).toBe(replacement);
+        expect(content.isConnected).toBe(true);
+      }
+      history.scrollRestoration = mode;
+      writes.mockClear();
+      let scrollEvents = 0;
+      const observeScroll = (): void => {
+        scrollEvents++;
+      };
+      window.addEventListener('scroll', observeScroll);
+      const nextEntryId = 'fast-scroll-next-entry';
+      const nextUrl = addressKind === 'same-url' ? oldUrl : '/notes/history-fast-destination';
+      try {
+        // awaitや共通writerのbefore observerを挟まず、browser addressが先行する時点を再現する。
+        window.scrollTo({ top: 567, behavior: 'instant' });
+        history.replaceState(
+          { __rouaultHistoryEntry: { version: 1, id: nextEntryId } },
+          '',
+          nextUrl,
+        );
+        beginNavigationIntent('traverse', readAddress());
+        expect(scrollEvents).toBe(0);
+        expect(Math.abs(scrollY - 567)).toBeLessThanOrEqual(2);
+        const actualSourceOwned = proof === 'verified' || proof === 'unknown';
+        const expected = mode === 'manual' && actualSourceOwned ? 567 : 228;
+        expect(store.read(oldEntryId, oldUrl)).toEqual({
+          version: 1,
+          url: oldUrl,
+          x: 0,
+          y: expected,
+        });
+        expect(store.read(nextEntryId, readAddress())).toBeNull();
+        expect(
+          writes.mock.calls.every(
+            ([entryId, position]) =>
+              entryId === oldEntryId && position.url === oldUrl && position.y === expected,
+          ),
+        ).toBe(true);
+        if (proof === 'recovery') expect(writes).not.toHaveBeenCalled();
+        expect(errors).not.toHaveBeenCalled();
+      } finally {
+        window.removeEventListener('scroll', observeScroll);
+      }
+    },
+  );
+
+  it.each(['visible', 'hidden', 'missing-receipt', 'wrong-receipt'] as const)(
+    '%s完了時の先行復元を区別し、不適格でも候補を保全して通常settledへ渡す',
+    async (condition) => {
+      const visibility = condition === 'hidden' ? 'hidden' : 'visible';
+      const early = condition === 'visible';
       const target = '/notes/testing/toc-readable-long-heading';
       const previous = '/notes/testing/reader-basic';
       history.replaceState(baselineState, '', target);
@@ -657,6 +892,16 @@ describe('検証済み履歴経路の表示状態', () => {
       const scroll = vi.spyOn(window, 'scrollTo');
       const animate = vi.spyOn(content, 'animate');
       const writes = vi.spyOn(ReadingPositionStore.prototype, 'write');
+      const receipt = Object.freeze({
+        commitId: 1,
+        intentId: intent.intentId,
+        entryId: condition === 'wrong-receipt' ? 'different-receipt-entry' : (savedEntryId ?? null),
+        url: target,
+        contentEpoch: restoredEpoch,
+        root: content,
+        shellCommitId: 0,
+        stateOnly: false,
+      });
       reader.schedule({
         intent,
         root: content,
@@ -665,18 +910,20 @@ describe('検証済み履歴経路の表示状態', () => {
         stateOnly: false,
         error: false,
         shellCommitId: 0,
+        ...(condition === 'missing-receipt' ? {} : { receipt }),
       });
 
-      expect(scroll).toHaveBeenCalledTimes(visibility === 'visible' ? 1 : 0);
-      expect(animate).toHaveBeenCalledTimes(visibility === 'visible' ? 1 : 0);
-      expect(Math.abs(scrollY - (visibility === 'visible' ? 650 : 200))).toBeLessThanOrEqual(2);
+      expect(scroll).toHaveBeenCalledTimes(early ? 1 : 0);
+      expect(animate).toHaveBeenCalledTimes(early ? 1 : 0);
+      expect(Math.abs(scrollY - (early ? 650 : 200))).toBeLessThanOrEqual(2);
+      expect(reader).toMatchObject({ candidate: { url: target, x: 0, y: 650 }, restoring: true });
       await frame();
       await frame();
       expect(content.dataset['readingPositionStatus']).toBe('pending');
       expect(writes).not.toHaveBeenCalled();
       expect(readHistoryEntry()?.id).toBe(savedEntryId);
       expect(intent.signal.aborted).toBe(false);
-      if (visibility === 'hidden') {
+      if (!early) {
         expect(scroll).not.toHaveBeenCalled();
         expect(animate).not.toHaveBeenCalled();
         expect(
@@ -689,6 +936,7 @@ describe('検証済み履歴経路の表示状態', () => {
       document.dispatchEvent(new Event('visibilitychange'));
       ready(restoredEpoch, 'settled');
       await expect.poll(() => content.dataset['readingPositionStatus']).toBe('settled');
+      expect(reader).toMatchObject({ candidate: null, restoring: false });
       expect(Math.abs(scrollY - 650)).toBeLessThanOrEqual(2);
       expect(
         writes.mock.calls.some(
@@ -699,6 +947,55 @@ describe('検証済み履歴経路の表示状態', () => {
       expect(errors).not.toHaveBeenCalled();
     },
   );
+
+  it('recovery中のpersisted pageshow/native-address/terminalは旧contextを採用せず候補を保全する', async () => {
+    await setup();
+    if (!root) throw new Error('root');
+    const content = root;
+    const errors = vi.fn();
+    reader = new ReadingPositionController(errors);
+    reader.start(content);
+    await expect.poll(() => content.dataset['readingPositionStatus']).toBe('settled');
+    window.scrollTo({ top: 650, behavior: 'instant' });
+    await frame();
+    window.dispatchEvent(new Event('scroll'));
+    const intent = beginNavigationIntent('traverse', readAddress());
+    expect(reader).toMatchObject({ candidate: { url: readAddress(), y: 650 }, restoring: true });
+    const epoch = beginContentMutation(content);
+    markContentRecoveryRequired(content, epoch);
+    const failedContext = readContentContext();
+    expect(failedContext).toMatchObject({
+      root: content,
+      contentEpoch: epoch,
+      mutation: true,
+      recoveryRequired: true,
+    });
+    const displayedBinding = failedContext?.displayedBinding;
+    const writes = vi.spyOn(ReadingPositionStore.prototype, 'write');
+    const scroll = vi.spyOn(window, 'scrollTo');
+    const animate = vi.spyOn(content, 'animate');
+    const entryId = readHistoryEntry()?.id;
+    for (const action of [
+      () => window.dispatchEvent(new PageTransitionEvent('pageshow', { persisted: true })),
+      () => document.dispatchEvent(new Event('reading-position:native-address')),
+      () => reader?.terminal(false, intent.intentId),
+      () => reader?.terminal(true, intent.intentId),
+    ]) {
+      action();
+      window.dispatchEvent(new Event('scroll'));
+      await frame();
+      expect(readContentContext()).toBe(failedContext);
+      expect(readContentContext()?.displayedBinding).toBe(displayedBinding);
+      expect(readContentContext()?.mutation).toBe(true);
+      expect(readHistoryEntry()?.id).toBe(entryId);
+      expect(reader).toMatchObject({ candidate: { url: readAddress(), y: 650 }, restoring: true });
+      expect(writes).not.toHaveBeenCalled();
+      expect(scroll).not.toHaveBeenCalled();
+      expect(animate).not.toHaveBeenCalled();
+    }
+    expect(Math.abs(scrollY - 650)).toBeLessThanOrEqual(2);
+    expect(errors).not.toHaveBeenCalled();
+  });
 });
 
 describe('履歴entryと本文生存期間', () => {

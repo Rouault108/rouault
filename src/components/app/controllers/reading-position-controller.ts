@@ -23,13 +23,24 @@ import { readDecodedHash } from '../navigation/primary-tab-url-state.js';
 import { readCurrentShellCommitId } from '../shell/app-shell-lifecycle.js';
 import { readContentTransitionShell } from '../../../router/content-transition-shell.js';
 import type { AppShellValidatedDetail } from '../shell/app-shell-events.js';
+import type { NavigationCommitReceipt } from '../../../router/router-types.js';
 import { HistoryPresentationCoordinator } from './history-presentation-coordinator.js';
 import {
   captureHistoryGeometry,
-  isHistoryPresentationVerificationPair,
+  readHistoryGeometryAnchor,
+  prepareHistoryFonts,
   matchesHistoryGeometry,
   type HistoryGeometryCheckpoint,
 } from './history-presentation-geometry.js';
+
+type PresentationEligibility =
+  | 'pending'
+  | 'ready'
+  | 'unavailable'
+  | 'skipped'
+  | 'interrupted'
+  | 'superseded'
+  | 'failed';
 
 interface ScrollJob {
   readonly intent: NavigationIntent;
@@ -40,7 +51,8 @@ interface ScrollJob {
   readonly stateOnly: boolean;
   readonly error: boolean;
   readonly entryId: string | null;
-  readonly previousUrl: string | undefined;
+  readonly receipt?: NavigationCommitReceipt;
+  presentation: PresentationEligibility;
   candidate: ReadingPosition | null;
   url: string;
 }
@@ -77,7 +89,8 @@ export class ReadingPositionController {
   private readonly presentation = new HistoryPresentationCoordinator();
   private readonly geometry = new Map<string, HistoryGeometryCheckpoint>();
   private verifiedLayout: string | null = null;
-  private previousLayout: string | null = null;
+  private geometryTimer: number | null = null;
+  private fontPreparationEpoch = -1;
   private traverseVisual: { entryId: string | null; url: string; active: boolean | null } | null =
     null;
   constructor(private readonly reportError: (error: unknown) => void) {}
@@ -92,7 +105,6 @@ export class ReadingPositionController {
     document.addEventListener(
       'app-shell:validated',
       (event) => {
-        this.previousLayout = this.verifiedLayout;
         this.verifiedLayout =
           readContentTransitionShell(
             (event as CustomEvent<AppShellValidatedDetail>).detail.shell,
@@ -104,7 +116,6 @@ export class ReadingPositionController {
     document.addEventListener(
       'app-shell:rollback-start',
       () => {
-        this.previousLayout = null;
         this.verifiedLayout = null;
       },
       { signal },
@@ -112,7 +123,7 @@ export class ReadingPositionController {
     window.addEventListener(
       'popstate',
       (event) => {
-        // UA自身の演出が不明な環境も、この限定実験では対象にしない。
+        // UA自身の演出が不明な環境も、appの演出を重ねない。
         this.traverseVisual = {
           entryId: readHistoryEntry()?.id ?? null,
           url: readAddress(),
@@ -190,6 +201,12 @@ export class ReadingPositionController {
         if (!event.persisted) return;
         this.traverseVisual = null;
         const context = readContentContext();
+        if (context?.recoveryRequired) {
+          this.cancel();
+          this.restoring = true;
+          this.mode('auto');
+          return;
+        }
         const entry = adoptHistoryEntry();
         const url = readAddress();
         const matches =
@@ -241,8 +258,14 @@ export class ReadingPositionController {
     );
     this.stops.push(
       subscribeContentContext((reason, owner) => {
-        if (reason === 'mutation') {
-          this.checkpoint();
+        if (reason === 'recovery') {
+          this.cancel();
+          this.pendingIntent = null;
+          this.restoring = true;
+          return;
+        }
+        if (reason === 'before-mutation' || reason === 'mutation') {
+          if (reason === 'before-mutation') this.checkpoint();
           this.cancel();
           this.restoring = true;
           return;
@@ -326,11 +349,18 @@ export class ReadingPositionController {
     error: boolean;
     shellCommitId: number;
     previousUrl?: string;
+    receipt?: NavigationCommitReceipt;
   }): void {
     if (this.disposed || options.intent.signal.aborted) return;
     this.cancel();
     delete options.root.dataset['historyPresentationEligibility'];
     const context = readContentContext();
+    if (context?.recoveryRequired) {
+      this.pendingIntent = null;
+      this.restoring = true;
+      options.root.dataset['historyPresentationEligibility'] = 'unavailable';
+      return;
+    }
     if (!context || readHistoryEntry() === null) {
       this.pendingIntent = null;
       this.mode('auto');
@@ -353,7 +383,7 @@ export class ReadingPositionController {
     const job: ScrollJob = {
       ...options,
       entryId: this.renderedId,
-      previousUrl: options.previousUrl,
+      presentation: 'pending',
       error: options.error || this.renderedError,
       epoch: context.contentEpoch,
       controller,
@@ -392,6 +422,10 @@ export class ReadingPositionController {
       });
   }
   adoptNativeAddress(): void {
+    if (readContentContext()?.recoveryRequired) {
+      this.fallback();
+      return;
+    }
     this.pendingIntent = null;
     this.cancel();
     this.candidate = null;
@@ -416,7 +450,7 @@ export class ReadingPositionController {
   }
   terminal(committed: boolean, intentId: number): void {
     const context = readContentContext();
-    if (context?.intent?.intentId !== intentId) return;
+    if (context?.intent?.intentId !== intentId || context.recoveryRequired) return;
     if (!committed && !context.mutation && context.displayedBinding.url === readAddress()) {
       this.pendingIntent = null;
       this.restoring = false;
@@ -434,8 +468,11 @@ export class ReadingPositionController {
       readCurrentShellCommitId() === job.shellCommitId &&
       context.intent?.intentId === job.intent.intentId &&
       !context.mutation &&
+      !context.recoveryRequired &&
+      context.root === job.root &&
+      this.job === job &&
       job.root.isConnected &&
-      (readHistoryEntry()?.id ?? null) === this.renderedId &&
+      (readHistoryEntry()?.id ?? null) === job.entryId &&
       job.url === readAddress()
     );
   }
@@ -539,29 +576,34 @@ export class ReadingPositionController {
     }
   }
   private restoreVerifiedHistoryBeforePaint(job: ScrollJob): void {
-    // この同期経路は一つの検証済みpairだけ。settledや候補の寿命を短縮しない。
-    if (
-      job.intent.cause !== 'traverse' ||
-      job.stateOnly ||
-      job.error ||
-      !job.candidate ||
-      !job.entryId ||
-      !job.previousUrl ||
-      !isHistoryPresentationVerificationPair(job.previousUrl, job.url)
-    )
+    // URLや移動方向で選別せず、復帰先entry自身の保存時の証跡と新DOMを照合する。
+    if (job.intent.cause !== 'traverse') return;
+    const outcome = (status: PresentationEligibility): void => {
+      job.presentation = status;
+      job.root.dataset['historyPresentationEligibility'] = status;
+    };
+    if (job.stateOnly || job.error) {
+      outcome('skipped');
       return;
-    job.root.dataset['historyPresentationEligibility'] = 'unavailable';
+    }
+    outcome('unavailable');
+    if (!job.candidate || !job.entryId) return;
     try {
       if (document.visibilityState !== 'visible') return;
       const checkpoint = this.geometry.get(job.entryId);
-      const visual = this.traverseVisual;
+      const receipt = job.receipt;
+      // 受理証明は後からcurrentを読んで組み直さず、commit時の固定世代を使う。
       if (
+        !receipt ||
+        receipt.stateOnly ||
+        receipt.entryId !== job.entryId ||
+        receipt.url !== job.url ||
+        receipt.intentId !== job.intent.intentId ||
+        receipt.root !== job.root ||
+        receipt.contentEpoch !== job.epoch ||
+        receipt.shellCommitId !== job.shellCommitId ||
         !checkpoint ||
         !this.verifiedLayout ||
-        this.previousLayout !== this.verifiedLayout ||
-        visual?.entryId !== job.entryId ||
-        visual.url !== job.url ||
-        visual.active !== false ||
         checkpoint.position.url !== job.candidate.url ||
         checkpoint.position.x !== job.candidate.x ||
         checkpoint.position.y !== job.candidate.y ||
@@ -572,7 +614,7 @@ export class ReadingPositionController {
       this.cancelJobPresentation(job, 'verified-position-apply');
       if (!this.presentationCurrent(job)) return;
       window.scrollTo({ left: job.candidate.x, top: job.candidate.y, behavior: 'instant' });
-      const anchor = document.getElementById(checkpoint.anchorId);
+      const anchor = readHistoryGeometryAnchor(job.root, checkpoint);
       if (
         !this.presentationCurrent(job) ||
         !anchor ||
@@ -582,9 +624,14 @@ export class ReadingPositionController {
         Math.abs(anchor.getBoundingClientRect().top - (checkpoint.anchorY - job.candidate.y)) > 2
       )
         return;
-      job.root.dataset['historyPresentationEligibility'] = 'ready';
+      outcome('ready');
+      // UA効果とapp効果は重ねない。情報未提供でも座標の先行適用は妨げない。
+      const visual = this.traverseVisual;
+      if (visual?.entryId !== job.entryId || visual.url !== job.url || visual.active !== false)
+        return;
       this.presentation.start({
         root: job.root,
+        anchor,
         contentEpoch: job.epoch,
         shellCommitId: job.shellCommitId,
         intent: job.intent,
@@ -592,9 +639,8 @@ export class ReadingPositionController {
         url: job.url,
       });
     } catch {
-      // 表示試行の例外を受理済みtransactionや既存の安定化へ伝播させない。
       this.cancelJobPresentation(job, 'presentation-unavailable');
-      if (this.job === job) job.root.dataset['historyPresentationEligibility'] = 'unavailable';
+      if (this.job === job) outcome('unavailable');
     }
   }
   private presentationCurrent(job: ScrollJob): boolean {
@@ -627,12 +673,13 @@ export class ReadingPositionController {
       y: Math.max(0, root.scrollHeight - root.clientHeight),
     };
   }
-  private sampleCurrent(): void {
+  private sampleCurrent(capture = false): void {
     const context = readContentContext();
     if (
       this.restoring ||
       this.renderedError ||
       context?.mutation ||
+      context?.recoveryRequired ||
       this.renderedUrl !== readAddress() ||
       this.renderedId !== (readHistoryEntry()?.id ?? null)
     )
@@ -644,6 +691,24 @@ export class ReadingPositionController {
       y: Math.max(0, window.scrollY),
     };
     this.store.write(this.renderedId, this.sample);
+    if (context?.root && context.contentEpoch !== this.fontPreparationEpoch) {
+      this.fontPreparationEpoch = context.contentEpoch;
+      const root = context.root;
+      const epoch = context.contentEpoch;
+      void prepareHistoryFonts(root, this.lifetime.signal).then((prepared) => {
+        const current = readContentContext();
+        if (
+          prepared &&
+          !this.disposed &&
+          current?.root === root &&
+          current.contentEpoch === epoch &&
+          !current.mutation &&
+          !current.recoveryRequired &&
+          !this.restoring
+        )
+          this.sampleCurrent(true);
+      });
+    }
     if (
       this.renderedId &&
       this.verifiedLayout &&
@@ -651,17 +716,80 @@ export class ReadingPositionController {
       context.displayedBinding.entryId === this.renderedId &&
       context.displayedBinding.url === this.renderedUrl
     ) {
-      try {
-        const checkpoint = captureHistoryGeometry(context.root, this.sample, this.verifiedLayout);
-        if (checkpoint) this.geometry.set(this.renderedId, checkpoint);
-      } catch {
-        /* 未証明の幾何は通常復元だけへ渡す。保存candidateは変更しない。 */
+      if (
+        capture &&
+        context.root
+          .getAnimations()
+          .some(
+            (animation) =>
+              animation.id === 'rouault-history-content' && animation.playState !== 'finished',
+          )
+      )
+        capture = false;
+      if (capture) {
+        const checkpoint = captureHistoryGeometry(context.root, this.sample, this.verifiedLayout, {
+          entryId: this.renderedId,
+          contentEpoch: context.contentEpoch,
+        });
+        if (checkpoint) this.rememberGeometry(this.renderedId, checkpoint);
+        else this.geometry.delete(this.renderedId);
+      } else {
+        // passive scrollでは全DOM/fontを測らず、離脱直前か最後のscroll後に集約する。
+        if (this.geometryTimer !== null) clearTimeout(this.geometryTimer);
+        this.geometryTimer = window.setTimeout(() => {
+          this.geometryTimer = null;
+          this.sampleCurrent(true);
+        }, 120);
       }
     }
   }
+  private rememberGeometry(entryId: string, checkpoint: HistoryGeometryCheckpoint): void {
+    this.geometry.delete(entryId);
+    this.geometry.set(entryId, checkpoint);
+    // 座標台帳は保持し、大きな表示証跡だけを上限付きで保持する。
+    if (this.geometry.size > 32) {
+      const oldest = this.geometry.keys().next().value;
+      if (oldest !== undefined) this.geometry.delete(oldest);
+    }
+  }
   private checkpoint(): void {
-    if (this.restoring) return;
-    if (this.renderedUrl === readAddress()) this.sampleCurrent();
+    if (this.restoring || readContentContext()?.recoveryRequired) return;
+    if (this.renderedUrl === readAddress() && this.renderedId === (readHistoryEntry()?.id ?? null))
+      this.sampleCurrent(true);
+    else {
+      // popstateではaddressが先に進むため、まだ表示中のbinding/epochを証明して離脱元を採る。
+      const context = readContentContext();
+      if (
+        this.renderedId &&
+        this.sample &&
+        context?.root &&
+        context.root.isConnected &&
+        context.root.ownerDocument === document &&
+        context.root.matches('main#main-content') &&
+        document.getElementById('main-content') === context.root &&
+        !context.mutation &&
+        context.displayedBinding.entryId === this.renderedId &&
+        context.displayedBinding.url === this.renderedUrl
+      ) {
+        // manualで旧本文を所有中は、scroll event未配信でも離脱直前の実座標を保存する。
+        // autoではUAが既に移動した可能性があるため、最後の受理済みsampleを維持する。
+        if (history.scrollRestoration === 'manual')
+          this.sample = {
+            version: 1,
+            url: this.renderedUrl,
+            x: Math.max(0, window.scrollX),
+            y: Math.max(0, window.scrollY),
+          };
+        const checkpoint = this.verifiedLayout
+          ? captureHistoryGeometry(context.root, this.sample, this.verifiedLayout, {
+              entryId: this.renderedId,
+              contentEpoch: context.contentEpoch,
+            })
+          : null;
+        if (checkpoint) this.rememberGeometry(this.renderedId, checkpoint);
+        else this.geometry.delete(this.renderedId);
+      }
+    }
     if (!this.renderedError && this.sample?.url === this.renderedUrl)
       this.store.write(this.renderedId, this.sample);
   }
@@ -676,6 +804,8 @@ export class ReadingPositionController {
     this.sampleCurrent();
   }
   private cancel(): void {
+    if (this.geometryTimer !== null) clearTimeout(this.geometryTimer);
+    this.geometryTimer = null;
     this.cancelPresentation('position-job-cancelled');
     if (this.job) this.job.root.dataset['readingPositionStatus'] = 'cancelled';
     this.job?.controller.abort();
@@ -691,6 +821,7 @@ export class ReadingPositionController {
     this.cancel();
     this.lifetime.abort();
     this.presentation.dispose();
+    this.geometry.clear();
     for (const stop of this.stops) stop();
     this.stops = [];
     if (history.scrollRestoration === this.ownedMode) history.scrollRestoration = this.originalMode;

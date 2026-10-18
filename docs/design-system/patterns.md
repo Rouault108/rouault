@@ -140,8 +140,8 @@ row全体のbackground hover、shadow、transform、elevationは禁止する。`
 
 初期候補150〜200msから180ms（`--duration-content-transition`）を採用する。これは他サイトの測定値ではない。適用範囲・対象外・commit順序は[Router Contract](../contracts/router.md#content-transition-integration)を正本とし、両端が検証済みの既知shellなら、幅・列構成が変わる組にも同じ表示効果を適用する。shellのレイアウト変更自体は即時commitし、位置や寸法を補間しない。未知・不正profileは既存の通常commitへ縮退する。cross-documentの`navigation:auto`はopt-inしない。API非対応とreduced motionでは通常表示を保つ。
 
-設計背景として、ユーザーはWindows ChromeでHookdeckの履歴移動が正確な位置復元とfadeを両立していると報告している。最終的な目標はその読書体験の連続性である。この観察はユーザーの実測報告であり、本実装によるHookdeckの仕様・時間・方式の測定結果ではない。通常移動の拡張と、次段落の限定した履歴表示検証は、適用条件と所有者を分けて扱う。
+設計背景として、ユーザーはWindows ChromeでHookdeckの履歴移動が正確な位置復元とfadeを両立していると報告している。最終的な目標はその読書体験の連続性である。この観察はユーザーの実測報告であり、本実装によるHookdeckの仕様・時間・方式の測定結果ではない。通常移動の拡張と、次段落の履歴表示は、適用条件と所有者を分けて扱う。
 
-履歴移動は[限定した履歴表示の検証](../contracts/reading-position.md#限定した履歴表示の検証)として一方向の静的本文で試す。復元後のlive mainだけに同じopacityを適用し、snapshotをcaptureしない。DOM差替え後の最初の可視フレームから保存位置が合う経路だけを対象とし、本文を非表示・inertにしたり入力遮蔽を追加したりしない。通常移動のnative演出は引き続き別の所有者で維持する。正式採用・他routeへの拡張はこの最小検証に含めない。
+履歴移動は[共通の履歴表示判定](../contracts/reading-position.md#履歴表示の共通判定)として全ページのBack/Forwardを候補にする。復元後のlive mainだけに同じopacityを適用し、snapshotをcaptureしない。DOM差替え後の最初の可視フレームから保存位置が合う経路だけを対象とし、本文を非表示・inertにしたり入力遮蔽を追加したりしない。通常移動のnative演出は引き続き別の所有者で維持する。演出可否はページ名ではなく、復帰先entryの保存時と現在の本文・字体・配置・アンカーの証明で決める。未確定の動的内容は演出なしで正確な復元を優先する。
 
-この限定検証でもTOC幅は`--note-toc-width`の可変幅を維持する。幾何検証は宣言された実track幅へ追従し、狭いdesktopでの240pxをwide viewportへ固定条件として持ち込まない。位置や幅を補間する演出は追加しない。
+この共通判定でもTOC幅は`--note-toc-width`の可変幅を維持する。幾何検証は宣言された実track幅へ追従し、狭いdesktopでの240pxをwide viewportへ固定条件として持ち込まない。位置や幅を補間する演出は追加しない。

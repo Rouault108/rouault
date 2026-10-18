@@ -1,10 +1,11 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 
 import {
   NAVIGATION_ENVELOPE_SCHEMA_VERSION,
   type NavigationEnvelope,
 } from '../../shared/navigation/navigation-envelope.js';
 import { setContentReadiness } from '../../src/client/hydration/content-readiness.js';
+import { ReadingPositionStore } from '../../src/components/app/navigation/reading-position-store.js';
 import { RouterDocumentHostPostRenderController } from '../../src/components/app/controllers/router-document-host-post-render-controller.js';
 import type {
   AppShellRestoredDetail,
@@ -16,6 +17,9 @@ import {
 } from '../../src/components/app/shell/app-shell-lifecycle.js';
 import {
   beginContentMutation,
+  beginNavigationIntent,
+  adoptContentBinding,
+  subscribeContentContext,
   initializeContentContext,
   readContentContext,
   releaseContentContext,
@@ -28,11 +32,12 @@ import {
 } from '../../src/navigation/history-entry.js';
 import {
   Router,
+  type NavigationCommitReceipt,
   type NavigationResult,
   type RouterRuntimeUrlDependencies,
 } from '../../src/router/router.js';
 import { STATIC_HEADER_CONTRACT_ACCEPTED_TOC_ABSENT_HTML } from '../fixtures/static-header-contract-cases.js';
-import { fixture } from './harness/browser-fixture.js';
+import { fixture, requireFixtureValue } from './harness/browser-fixture.js';
 
 const deferred = () => {
   let resolve!: () => void;
@@ -118,6 +123,11 @@ let postRender: RouterDocumentHostPostRenderController | null = null;
 let stopHistory: (() => void) | null = null;
 let lifetime: AbortController | null = null;
 
+const settleHistoryQuota = (): Promise<void> =>
+  new Promise((resolve) => window.setTimeout(resolve, 10_000));
+beforeAll(settleHistoryQuota, 15_000);
+afterAll(settleHistoryQuota, 15_000);
+
 afterEach(() => {
   stopHistory?.();
   stopHistory = null;
@@ -148,6 +158,8 @@ const setup = async (
     navigationTimeoutMs?: number;
     beforeLoad?: () => void | Promise<void>;
     unknownPath?: string;
+    stateOnly?: boolean;
+    allowNextCommit?: boolean;
   } = {},
 ) => {
   writeHistoryEntry({ mode: 'replace', owner: 'router', url: '/notes/a', state: {} });
@@ -214,6 +226,9 @@ const setup = async (
       ? {}
       : { navigationTimeoutMs: options.navigationTimeoutMs }),
     postCommitController: { run: postCommit },
+    ...(options.stateOnly
+      ? { urlStateNavigationPolicy: { evaluate: () => ({ kind: 'state-only' as const }) } }
+      : {}),
     contentAdapter: {
       prepare({ html }) {
         if (options.contentPrepareFailure) throw options.contentPrepareFailure;
@@ -265,7 +280,9 @@ const setup = async (
     return envelope();
   });
   // 後続intentはpublic navigateから発行し、本文を変更する前に止めて旧transactionを観測する。
-  currentRouter.addBeforeNavigateHook((context) => context.normalizedUrl !== '/notes/c');
+  currentRouter.addBeforeNavigateHook(
+    (context) => options.allowNextCommit === true || context.normalizedUrl !== '/notes/c',
+  );
   const contentLoad = vi.fn();
   currentRouter.on('content:load', contentLoad);
   await currentRouter.start();
@@ -298,6 +315,7 @@ const setup = async (
     content,
     header,
     start,
+    transitions,
     begin,
     contentCommit,
     contentRollback,
@@ -382,6 +400,99 @@ describe('Router content transition transaction integration', () => {
     expect(state.contentLoad).not.toHaveBeenCalled();
     expect(state.postCommit).not.toHaveBeenCalled();
   });
+
+  it.each([false, true])(
+    'before-mutationで新navigateを開始しobserver throw=%sでも旧受理を止め一度rollbackする',
+    async (throwObserver) => {
+      const current = await setup({ allowNextCommit: true });
+      const before = requireFixtureValue(readContentContext());
+      const initialEntry = readHistoryEntry();
+      const historyLength = history.length;
+      const push = vi.spyOn(history, 'pushState');
+      const replace = vi.spyOn(history, 'replaceState');
+      const nextLoaded = deferred();
+      const releaseNext = deferred();
+      current.router.addDocumentRoute('/notes/c', async () => {
+        nextLoaded.resolve();
+        await releaseNext.promise;
+        const next = envelope();
+        return {
+          ...next,
+          document: {
+            ...next.document,
+            title: '本文 C',
+            html: '<article style="height:6000px"><h1>本文 C</h1></article>',
+          },
+        };
+      });
+      let newer: Promise<NavigationResult> | null = null;
+      let injected = false;
+      const phases: { reason: string; epoch: number; mutation: boolean; text: string }[] = [];
+      const stop = subscribeContentContext((reason) => {
+        const context = readContentContext();
+        if ((reason === 'before-mutation' || reason === 'mutation') && context)
+          phases.push({
+            reason,
+            epoch: context.contentEpoch,
+            mutation: context.mutation,
+            text: current.content.textContent,
+          });
+        if (reason !== 'before-mutation' || injected) return;
+        injected = true;
+        newer = current.router.navigate({ url: '/notes/c', historyMode: 'push' });
+        if (throwObserver) throw new Error('before-mutation observer failed');
+      });
+      try {
+        const { result, transition } = await current.begin();
+        await transition.update();
+        const old = await result;
+        await nextLoaded.promise;
+        expect(old).toMatchObject({ kind: 'superseded', committed: false });
+        expect('receipt' in old ? old.receipt : undefined).toBeUndefined();
+        expect(phases[0]).toMatchObject({
+          reason: 'before-mutation',
+          epoch: before.contentEpoch,
+          mutation: false,
+          text: expect.stringContaining('本文 A'),
+        });
+        const cleanup = requireFixtureValue(phases.find(({ reason }) => reason === 'mutation'));
+        expect(cleanup.mutation).toBe(true);
+        expect(cleanup.epoch).toBeGreaterThan(before.contentEpoch);
+        expect(current.contentCommit).toHaveBeenCalledOnce();
+        expect(current.contentRollback).toHaveBeenCalledOnce();
+        expect(current.shellRollback).toHaveBeenCalledOnce();
+        expect(current.restored).toHaveLength(1);
+        expect(current.contentLoad).not.toHaveBeenCalled();
+        expect(current.postCommit).not.toHaveBeenCalled();
+        expect(current.content.textContent).toContain('本文 A');
+        expect(readContentContext()?.displayedBinding).toEqual(before.displayedBinding);
+        expect(readAddress()).toBe('/notes/a');
+        expect(readHistoryEntry()).toEqual(initialEntry);
+        expect(history.length).toBe(historyLength);
+        expect(push).not.toHaveBeenCalled();
+        expect(replace).not.toHaveBeenCalled();
+        releaseNext.resolve();
+        const next = await requireFixtureValue(newer);
+        expect(next).toMatchObject({ committed: true, receipt: { url: '/notes/c' } });
+        expect(current.content.textContent).toContain('本文 C');
+        expect(push).toHaveBeenCalledOnce();
+        expect(replace).not.toHaveBeenCalled();
+        expect(current.contentCommit).toHaveBeenCalledTimes(2);
+        expect(current.contentRollback).toHaveBeenCalledOnce();
+        expect(current.shellRollback).toHaveBeenCalledOnce();
+        expect(current.contentLoad).toHaveBeenCalledOnce();
+        expect(current.postCommit).toHaveBeenCalledOnce();
+        const acceptedBinding = readContentContext()?.displayedBinding;
+        expect(acceptedBinding).toEqual({ url: '/notes/c', entryId: readHistoryEntry()?.id });
+        transition.finishedState.resolve();
+        await Promise.resolve();
+        expect(readContentContext()?.displayedBinding).toBe(acceptedBinding);
+      } finally {
+        releaseNext.resolve();
+        stop();
+      }
+    },
+  );
 
   it('取得中timeoutを無視して遅れて返る正常envelopeは演出もcommitも開始しない', async () => {
     const loading = deferred();
@@ -648,5 +759,457 @@ describe('Router content transition transaction integration', () => {
     await Promise.resolve();
     expect(state.start).toHaveBeenCalledTimes(1);
     expect(state.contentCommit).toHaveBeenCalledTimes(1);
+  });
+});
+
+// 公開navigateの結果と実History API/DOMを使い、受理後の例外で再commitしないことを検証する。
+describe('history noneとbinding採用の受理境界', () => {
+  const failAdoption = (currentRouter: Router, error: Error) =>
+    vi
+      .spyOn(
+        currentRouter as unknown as {
+          adoptAcceptedBinding(receipt: NavigationCommitReceipt): void;
+        },
+        'adoptAcceptedBinding',
+      )
+      .mockImplementationOnce(() => {
+        throw error;
+      });
+
+  it('noneの受理はHistory APIを書かずimmutableな対象entry・URL・epochを返す', async () => {
+    const current = await setup();
+    writeHistoryEntry({ mode: 'push', owner: 'router', url: '/notes/b' });
+    const expectedEntry = readHistoryEntry()?.id;
+    const push = vi.spyOn(history, 'pushState');
+    const replace = vi.spyOn(history, 'replaceState');
+    const result = await requireFixtureValue(router).navigate({
+      url: '/notes/b',
+      historyMode: 'none',
+      cause: 'traverse',
+    });
+    expect(result.committed).toBe(true);
+    expect('receipt' in result && result.receipt).toMatchObject({
+      entryId: expectedEntry,
+      url: '/notes/b',
+      root: main,
+      stateOnly: false,
+      contentEpoch: readContentContext()?.contentEpoch,
+      shellCommitId: readCurrentShellCommitId(),
+    });
+    const receipt = 'receipt' in result ? result.receipt : undefined;
+    expect(Object.isFrozen(receipt)).toBe(true);
+    expect(push).not.toHaveBeenCalled();
+    expect(replace).not.toHaveBeenCalled();
+    expect(current.contentCommit).toHaveBeenCalledOnce();
+    expect(current.contentRollback).not.toHaveBeenCalled();
+    expect(current.contentLoad).toHaveBeenCalledOnce();
+    expect(current.postCommit).toHaveBeenCalledOnce();
+    writeHistoryEntry({ mode: 'replace', owner: 'router', url: '/notes/c' });
+    expect(receipt?.url).toBe('/notes/b');
+    expect(receipt?.entryId).toBe(expectedEntry);
+  });
+
+  it('明示noneでもcanonical routeとentryのexact末尾slashを区別して受理する', async () => {
+    const current = await setup();
+    writeHistoryEntry({ mode: 'push', owner: 'router', url: '/notes/b/' });
+    const expectedEntry = readHistoryEntry()?.id;
+    const push = vi.spyOn(history, 'pushState');
+    const replace = vi.spyOn(history, 'replaceState');
+    const pending = current.router.navigate({ url: '/notes/b', historyMode: 'none' });
+    await expect.poll(() => current.start.mock.calls.length).toBe(1);
+    await requireFixtureValue(current.transitions[0]).update();
+    const result = await pending;
+    expect(result).toMatchObject({
+      committed: true,
+      normalizedUrl: '/notes/b',
+      receipt: { url: '/notes/b/', entryId: expectedEntry },
+    });
+    expect(readAddress()).toBe('/notes/b/');
+    expect(push).not.toHaveBeenCalled();
+    expect(replace).not.toHaveBeenCalled();
+    expect(current.contentCommit).toHaveBeenCalledOnce();
+    expect(current.contentRollback).not.toHaveBeenCalled();
+  });
+
+  it('none受理後のbinding失敗はdegradedと回復状態を返し、次の新entryへdocument委譲する', async () => {
+    const current = await setup();
+    writeHistoryEntry({ mode: 'push', owner: 'router', url: '/notes/b' });
+    const expectedEntry = readHistoryEntry()?.id;
+    const store = (postRender as unknown as { reading: { store: ReadingPositionStore } }).reading
+      .store;
+    const previousEntry = readContentContext()?.displayedBinding.entryId ?? null;
+    store.write(expectedEntry ?? null, { version: 1, url: '/notes/b', x: 0, y: 520 });
+    const previousCandidate = store.read(previousEntry, '/notes/a');
+    const targetCandidate = store.read(expectedEntry ?? null, '/notes/b');
+    const writes = vi.spyOn(ReadingPositionStore.prototype, 'write');
+    const failure = new Error('binding adoption failed');
+    failAdoption(requireFixtureValue(router), failure);
+    const push = vi.spyOn(history, 'pushState');
+    const replace = vi.spyOn(history, 'replaceState');
+    const result = await requireFixtureValue(router).navigate({
+      url: '/notes/b',
+      historyMode: 'none',
+      cause: 'traverse',
+    });
+    expect(result).toMatchObject({
+      committed: true,
+      degraded: true,
+      recoveryRequired: true,
+      receipt: { entryId: expectedEntry, url: '/notes/b', root: main },
+      issues: [{ code: 'binding-adoption-failed', error: failure }],
+    });
+    expect(readContentContext()).toMatchObject({
+      mutation: true,
+      recoveryRequired: true,
+      displayedBinding: { url: '/notes/a' },
+    });
+    expect(current.contentCommit).toHaveBeenCalledOnce();
+    expect(current.contentRollback).not.toHaveBeenCalled();
+    expect(current.shellRollback).not.toHaveBeenCalled();
+    expect(current.contentLoad).not.toHaveBeenCalled();
+    expect(current.postCommit).not.toHaveBeenCalled();
+    expect(push).not.toHaveBeenCalled();
+    expect(replace).not.toHaveBeenCalled();
+    writes.mockClear();
+    // 新entryは旧receiptで採用せず、新しいrequestの宛先だけを既存document fallbackへ渡す。
+    writeHistoryEntry({ mode: 'push', owner: 'router', url: '/notes/a' });
+    const locationAdapter = (
+      router as unknown as { location: { navigateDocument(url: string, mode: string): void } }
+    ).location;
+    const fallback = vi.spyOn(locationAdapter, 'navigateDocument').mockImplementation(() => {
+      /* document委譲だけを観測しtest documentを離れない。 */
+    });
+    push.mockClear();
+    replace.mockClear();
+    const next = await requireFixtureValue(router).navigate({
+      url: '/notes/a',
+      historyMode: 'none',
+      cause: 'traverse',
+    });
+    expect(next.kind).toBe('document-navigation-fallback');
+    expect(fallback).toHaveBeenCalledExactlyOnceWith('/notes/a', 'none');
+    expect(current.contentCommit).toHaveBeenCalledOnce();
+    expect(push).not.toHaveBeenCalled();
+    expect(replace).not.toHaveBeenCalled();
+    expect(readContentContext()?.recoveryRequired).toBe(true);
+    expect(writes).not.toHaveBeenCalled();
+    expect(store.read(previousEntry, '/notes/a')).toEqual(previousCandidate);
+    expect(store.read(expectedEntry ?? null, '/notes/b')).toEqual(targetCandidate);
+    expect('receipt' in result && result.receipt?.entryId).toBe(expectedEntry);
+  });
+
+  it.each(['new-root', 'new-epoch', 'new-entry'])(
+    'none受理直後の%sへ旧bindingを採用せず、新contextを変更しない',
+    async (change) => {
+      const current = await setup();
+      writeHistoryEntry({ mode: 'push', owner: 'router', url: '/notes/b' });
+      const acceptedEntryId = readHistoryEntry()?.id;
+      let changedContext: ReturnType<typeof readContentContext> = null;
+      let oldBindingAdoptions = 0;
+      const stop = subscribeContentContext((reason) => {
+        if (reason === 'adopt' && readContentContext()?.displayedBinding.url === '/notes/b')
+          oldBindingAdoptions += 1;
+      });
+      const mutateAfterAcceptance = (): void => {
+        if (change === 'new-root') {
+          const root = document.createElement('main');
+          root.id = 'main-content';
+          root.innerHTML = '<h1>新しい世代の本文</h1>';
+          current.content.replaceWith(root);
+          main = root;
+          initializeContentContext(root);
+        } else if (change === 'new-epoch') beginContentMutation(current.content);
+        else {
+          writeHistoryEntry({ mode: 'push', owner: 'router', url: '/notes/c' });
+          beginNavigationIntent('navigation', '/notes/c');
+          adoptContentBinding('/notes/c', readHistoryEntry()?.id ?? null);
+        }
+        changedContext = readContentContext();
+      };
+      document.addEventListener('app-shell:validated', mutateAfterAcceptance, { once: true });
+      try {
+        const result = await current.router.navigate({
+          url: '/notes/b',
+          historyMode: 'none',
+          cause: 'traverse',
+        });
+        expect(result).toMatchObject({
+          committed: true,
+          degraded: true,
+          recoveryRequired: true,
+          receipt: { url: '/notes/b', entryId: acceptedEntryId, root: current.content },
+        });
+        expect(readContentContext()).toBe(changedContext);
+        expect(oldBindingAdoptions).toBe(0);
+        expect(current.contentCommit).toHaveBeenCalledOnce();
+        expect(current.contentRollback).not.toHaveBeenCalled();
+        expect(current.shellRollback).not.toHaveBeenCalled();
+        expect(current.contentLoad).not.toHaveBeenCalled();
+        expect(current.postCommit).not.toHaveBeenCalled();
+      } finally {
+        stop();
+        document.removeEventListener('app-shell:validated', mutateAfterAcceptance);
+      }
+    },
+  );
+
+  it('content:load observer例外後も位置jobを一度進めて保存を再開し次navigationを受け付ける', async () => {
+    const current = await setup();
+    writeHistoryEntry({ mode: 'push', owner: 'router', url: '/notes/b' });
+    const targetEntry = readHistoryEntry()?.id ?? null;
+    const store = (postRender as unknown as { reading: { store: ReadingPositionStore } }).reading
+      .store;
+    store.write(targetEntry, { version: 1, url: '/notes/b', x: 0, y: 520 });
+    const failure = new Error('accepted notification failed');
+    requireFixtureValue(router).on('content:load', () => {
+      throw failure;
+    });
+    const result = await requireFixtureValue(router).navigate({
+      url: '/notes/b',
+      historyMode: 'none',
+      cause: 'traverse',
+    });
+    expect(result).toMatchObject({
+      committed: true,
+      degraded: true,
+      issues: [{ code: 'post-commit-failed', error: failure }],
+    });
+    expect(current.contentCommit).toHaveBeenCalledOnce();
+    expect(current.contentRollback).not.toHaveBeenCalled();
+    expect(current.postCommit).toHaveBeenCalledOnce();
+    setContentReadiness({
+      contentEpoch: readContentContext()?.contentEpoch ?? 0,
+      root: current.content,
+      shellCommitId: readCurrentShellCommitId(),
+      status: 'settled',
+      started: true,
+    });
+    await expect.poll(() => current.content.dataset['readingPositionStatus']).toBe('settled');
+    expect(Math.abs(window.scrollY - 520)).toBeLessThanOrEqual(2);
+    window.scrollTo({ top: 700, behavior: 'instant' });
+    window.dispatchEvent(new Event('scroll'));
+    expect(store.read(targetEntry, '/notes/b')?.y).toBe(window.scrollY);
+    current.router.addDocumentRoute('/notes/a', () => envelope());
+    writeHistoryEntry({ mode: 'push', owner: 'router', url: '/notes/a' });
+    const next = await current.router.navigate({
+      url: '/notes/a',
+      historyMode: 'none',
+      cause: 'traverse',
+    });
+    expect(next.committed).toBe(true);
+    expect(current.contentCommit).toHaveBeenCalledTimes(2);
+    expect(current.postCommit).toHaveBeenCalledTimes(2);
+    expect(main?.textContent).toContain('本文 B');
+  });
+
+  it.each(['after:navigate', 'navigation:terminal'] as const)(
+    '受理後の%s例外でも成功receiptを返し、queueを停止しない',
+    async (eventName) => {
+      const current = await setup();
+      writeHistoryEntry({ mode: 'push', owner: 'router', url: '/notes/b' });
+      const failure = new Error('terminal observer failed');
+      current.router.on(eventName, (event) => {
+        if ('committed' in event ? event.committed : event.result.committed) throw failure;
+      });
+      const result = await current.router.navigate({
+        url: '/notes/b',
+        historyMode: 'none',
+        cause: 'traverse',
+      });
+      expect(result).toMatchObject({
+        committed: true,
+        degraded: true,
+        receipt: { url: '/notes/b' },
+      });
+      expect(current.contentCommit).toHaveBeenCalledOnce();
+      expect(current.contentRollback).not.toHaveBeenCalled();
+      const cancelled = await current.router.navigate({ url: '/notes/c' });
+      expect(cancelled.kind).toBe('cancelled');
+    },
+  );
+
+  it('push耐久点のbinding失敗もentryを保ち、historyも本文も再適用しない', async () => {
+    const current = await setup();
+    const failure = new Error('push binding failed');
+    failAdoption(current.router, failure);
+    const push = vi.spyOn(history, 'pushState');
+    const replace = vi.spyOn(history, 'replaceState');
+    const { result: pending, transition } = await current.begin();
+    await transition.update();
+    const result = await pending;
+    expect(result).toMatchObject({
+      committed: true,
+      degraded: true,
+      recoveryRequired: true,
+      receipt: { url: '/notes/b', entryId: readHistoryEntry()?.id },
+    });
+    expect(readAddress()).toBe('/notes/b');
+    expect(push).toHaveBeenCalledOnce();
+    expect(replace).not.toHaveBeenCalled();
+    expect(current.contentCommit).toHaveBeenCalledOnce();
+    expect(current.contentRollback).not.toHaveBeenCalled();
+    expect(current.contentLoad).not.toHaveBeenCalled();
+    expect(current.postCommit).not.toHaveBeenCalled();
+  });
+
+  it.each([false, true])(
+    '同entryのdocument回復でも保存を再開せず、委譲throw=%sを局所化する',
+    async (failDocument) => {
+      const current = await setup();
+      writeHistoryEntry({ mode: 'push', owner: 'router', url: '/notes/b' });
+      failAdoption(current.router, new Error('binding failed'));
+      const accepted = await current.router.navigate({
+        url: '/notes/b',
+        historyMode: 'none',
+        cause: 'traverse',
+      });
+      let notifications = 0;
+      let terminals = 0;
+      current.router.on('after:navigate', () => {
+        notifications += 1;
+        throw new Error('fallback observer failed');
+      });
+      current.router.on('navigation:terminal', () => {
+        terminals += 1;
+        throw new Error('fallback terminal failed');
+      });
+      const locationAdapter = (
+        current.router as unknown as {
+          location: { navigateDocument(url: string, mode: string): void };
+        }
+      ).location;
+      const failure = new Error('document delegation failed');
+      const fallback = vi.spyOn(locationAdapter, 'navigateDocument').mockImplementation(() => {
+        if (failDocument) throw failure;
+      });
+      const push = vi.spyOn(history, 'pushState');
+      const replace = vi.spyOn(history, 'replaceState');
+      const result = await current.router.navigate({
+        url: '/notes/b',
+        historyMode: 'none',
+        cause: 'traverse',
+      });
+      expect(result.kind).toBe(failDocument ? 'load-failure' : 'document-navigation-fallback');
+      expect(fallback).toHaveBeenCalledExactlyOnceWith('/notes/b', 'none');
+      expect(readContentContext()?.recoveryRequired).toBe(true);
+      expect(current.contentCommit).toHaveBeenCalledOnce();
+      expect(current.contentRollback).not.toHaveBeenCalled();
+      expect(push).not.toHaveBeenCalled();
+      expect(replace).not.toHaveBeenCalled();
+      expect('receipt' in accepted && accepted.receipt?.url).toBe('/notes/b');
+      if (failDocument) expect(result.error).toBe(failure);
+      expect(result.degraded).toBe(true);
+      expect(notifications).toBe(1);
+      expect(terminals).toBe(1);
+      const next = await current.router.navigate({ url: '/notes/a', historyMode: 'push' });
+      expect(next.kind).toBe(failDocument ? 'load-failure' : 'document-navigation-fallback');
+      expect(next.degraded).toBe(true);
+      expect(fallback).toHaveBeenCalledTimes(2);
+      expect(notifications).toBe(2);
+      expect(terminals).toBe(2);
+      expect(current.contentCommit).toHaveBeenCalledOnce();
+    },
+  );
+
+  it('document回復委譲の通知中にintentが失効すれば旧targetへ移動しない', async () => {
+    const current = await setup();
+    writeHistoryEntry({ mode: 'push', owner: 'router', url: '/notes/b' });
+    failAdoption(current.router, new Error('binding failed'));
+    await current.router.navigate({ url: '/notes/b', historyMode: 'none', cause: 'traverse' });
+    const locationAdapter = (
+      current.router as unknown as {
+        location: { navigateDocument(url: string, mode: string): void };
+      }
+    ).location;
+    const fallback = vi.spyOn(locationAdapter, 'navigateDocument').mockImplementation(() => {
+      /* documentを離れない。 */
+    });
+    const supersede = (): void => {
+      void current.router.navigate({ url: '/notes/c' });
+    };
+    document.addEventListener('reading-position:document-fallback', supersede, { once: true });
+    const result = await current.router.navigate({
+      url: '/notes/b',
+      historyMode: 'none',
+      cause: 'traverse',
+    });
+    expect(result.kind).toBe('superseded');
+    expect(fallback).not.toHaveBeenCalled();
+    expect(current.contentCommit).toHaveBeenCalledOnce();
+    expect(readContentContext()?.recoveryRequired).toBe(true);
+  });
+
+  it('回復中のnative fragment通知はmutationと旧bindingを通常採用で解除しない', async () => {
+    const current = await setup();
+    writeHistoryEntry({ mode: 'push', owner: 'router', url: '/notes/b' });
+    failAdoption(current.router, new Error('binding failed'));
+    await current.router.navigate({ url: '/notes/b', historyMode: 'none', cause: 'traverse' });
+    // 旧displayed pathのunidentified fragmentを実address observerへ通す。
+    history.replaceState(null, '', '/notes/a#native');
+    const before = readContentContext();
+    const nativeAdopted = vi.fn();
+    document.addEventListener('reading-position:native-address', nativeAdopted);
+    try {
+      window.dispatchEvent(new HashChangeEvent('hashchange'));
+      expect(readContentContext()).toBe(before);
+      expect(readContentContext()).toMatchObject({
+        mutation: true,
+        recoveryRequired: true,
+        displayedBinding: { url: '/notes/a' },
+      });
+      expect(nativeAdopted).not.toHaveBeenCalled();
+      expect(current.contentCommit).toHaveBeenCalledOnce();
+    } finally {
+      document.removeEventListener('reading-position:native-address', nativeAdopted);
+    }
+  });
+
+  it('同一文書のURL通知observer例外後も既存位置jobを一回開始する', async () => {
+    const current = await setup({ stateOnly: true });
+    writeHistoryEntry({ mode: 'push', owner: 'router', url: '/notes/a#section' });
+    current.router.on('ui-url-state-change', () => {
+      throw new Error('state-only observer failed');
+    });
+    const result = await current.router.navigate({
+      url: '/notes/a#section',
+      historyMode: 'none',
+      cause: 'traverse',
+    });
+    expect(result).toMatchObject({ committed: true, degraded: true, stateOnly: true });
+    expect(current.postCommit).toHaveBeenCalledOnce();
+    await expect.poll(() => current.content.dataset['readingPositionStatus']).toBe('settled');
+    expect(current.contentCommit).not.toHaveBeenCalled();
+    expect(current.contentLoad).not.toHaveBeenCalled();
+  });
+
+  it('同一文書none受理はepoch/root/shellを進めずfull文書成功通知を出さない', async () => {
+    const current = await setup({ stateOnly: true });
+    const epoch = readContentContext()?.contentEpoch;
+    const shellCommitId = readCurrentShellCommitId();
+    writeHistoryEntry({ mode: 'push', owner: 'router', url: '/notes/a#section' });
+    const push = vi.spyOn(history, 'pushState');
+    const replace = vi.spyOn(history, 'replaceState');
+    const result = await requireFixtureValue(router).navigate({
+      url: '/notes/a#section',
+      historyMode: 'none',
+      cause: 'traverse',
+    });
+    expect(result).toMatchObject({
+      committed: true,
+      stateOnly: true,
+      receipt: {
+        stateOnly: true,
+        contentEpoch: epoch,
+        shellCommitId,
+        root: main,
+        url: '/notes/a#section',
+      },
+    });
+    expect(current.contentCommit).not.toHaveBeenCalled();
+    expect(current.contentLoad).not.toHaveBeenCalled();
+    expect(current.postCommit).toHaveBeenCalledOnce();
+    expect(push).not.toHaveBeenCalled();
+    expect(replace).not.toHaveBeenCalled();
+    expect(readContentContext()?.contentEpoch).toBe(epoch);
   });
 });

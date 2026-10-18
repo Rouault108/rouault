@@ -299,10 +299,14 @@ describe('Router stale fetch artifact fallback', () => {
         expect(result.source).to.equal('error-fallback');
         expect(result.renderedKind).to.equal('not-found');
         expect(result.committed).to.equal(true);
-        expect(result.normalizedUrl).to.equal('/__playwright_missing_route__?from=browser#section-x');
+        expect(result.normalizedUrl).to.equal(
+          '/__playwright_missing_route__?from=browser#section-x',
+        );
         expect(calls).to.deep.equal([]);
         expect(outlet.querySelector('[data-not-found-fallback]')).to.not.equal(null);
-        expect(outlet.textContent).to.contain('/__playwright_missing_route__?from=browser#section-x');
+        expect(outlet.textContent).to.contain(
+          '/__playwright_missing_route__?from=browser#section-x',
+        );
       });
     });
   });
@@ -321,7 +325,9 @@ describe('Router stale fetch artifact fallback', () => {
         });
 
         assertDocumentNavigationFallback(result, 'fetch-navigation-envelope-http-status');
-        expect(calls).to.deep.equal([{ url: '/__playwright_missing_route__', historyMode: 'push' }]);
+        expect(calls).to.deep.equal([
+          { url: '/__playwright_missing_route__', historyMode: 'push' },
+        ]);
       });
     });
   });
@@ -340,7 +346,9 @@ describe('Router stale fetch artifact fallback', () => {
         });
 
         assertDocumentNavigationFallback(result, 'fetch-schema-version-mismatch');
-        expect(calls).to.deep.equal([{ url: '/__playwright_missing_route__', historyMode: 'push' }]);
+        expect(calls).to.deep.equal([
+          { url: '/__playwright_missing_route__', historyMode: 'push' },
+        ]);
       });
     });
   });
@@ -359,7 +367,9 @@ describe('Router stale fetch artifact fallback', () => {
         });
 
         assertDocumentNavigationFallback(result, 'fetch-build-id-mismatch');
-        expect(calls).to.deep.equal([{ url: '/__playwright_missing_route__', historyMode: 'push' }]);
+        expect(calls).to.deep.equal([
+          { url: '/__playwright_missing_route__', historyMode: 'push' },
+        ]);
       });
     });
   });
@@ -528,7 +538,10 @@ describe('Router stale fetch artifact fallback', () => {
 
         const firstNavigation = router.navigate({ url: '/notes/next/', historyMode: 'push' });
         await firstFetchStarted;
-        const secondNavigation = router.navigate({ url: '/notes/current/', historyMode: 'replace' });
+        const secondNavigation = router.navigate({
+          url: '/notes/current/',
+          historyMode: 'replace',
+        });
         const [firstResult, secondResult] = await Promise.all([firstNavigation, secondNavigation]);
 
         expect(firstResult.kind).to.equal('superseded');
@@ -627,10 +640,14 @@ describe('Router stale fetch artifact fallback', () => {
     try {
       await withNavigateDocumentSpy(async (calls) => {
         router = new Router(outlet, createUrlDependencies(), { skipInitialNavigation: true });
-        router.addDocumentRoute('/notes/next', () => ({
-          ...createEnvelope(),
-          shell: null,
-        }) as unknown as NavigationEnvelope);
+        router.addDocumentRoute(
+          '/notes/next',
+          () =>
+            ({
+              ...createEnvelope(),
+              shell: null,
+            }) as unknown as NavigationEnvelope,
+        );
         await router.start();
 
         const result = await router.navigate({ url: '/notes/next/', historyMode: 'push' });
@@ -649,6 +666,8 @@ describe('Router stale fetch artifact fallback', () => {
     const outlet = setupCurrentDocument({ buildId: null });
     window.history.replaceState(null, '', '/notes/current/');
     const afterResults: NavigationResult[] = [];
+    const initialState: unknown = history.state;
+    const initialHistoryLength = history.length;
     let errorCount = 0;
 
     await withNavigateDocumentSpy(async (calls) => {
@@ -665,6 +684,15 @@ describe('Router stale fetch artifact fallback', () => {
       expect(result?.source).to.equal('error-fallback');
       expect(result?.kind).to.equal('completed');
       expect(result?.renderedKind).to.equal('error');
+      if (result?.kind !== 'completed') throw new Error('initial error document was not accepted');
+      // 初期entryのexact addressは正規化済みroute URLとは別に保持する。
+      expect(result.normalizedUrl).to.equal('/notes/current');
+      expect(result.receipt?.url).to.equal('/notes/current/');
+      expect(result.receipt?.entryId).to.equal(null);
+      expect(Object.isFrozen(result.receipt)).to.equal(true);
+      expect(window.location.pathname).to.equal('/notes/current/');
+      expect(history.state).to.deep.equal(initialState);
+      expect(history.length).to.equal(initialHistoryLength);
       expect(calls).to.deep.equal([]);
       expect(errorCount).to.equal(1);
       expect(afterResults).to.deep.equal([result]);

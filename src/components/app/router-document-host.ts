@@ -8,6 +8,7 @@ import {
   invalidateContentReadiness,
   setContentReadiness,
 } from '../../client/hydration/content-readiness.js';
+import { readAddress, readHistoryEntry } from '../../navigation/history-entry.js';
 import { readCurrentShellCommitId } from './shell/app-shell-lifecycle.js';
 import {
   Router,
@@ -154,6 +155,7 @@ export class RouterDocumentHost extends HTMLElement {
   private readonly _postRenderController: RouterDocumentHostPostRenderController;
   private _resolveReady: (() => void) | null = null;
   private _readyResolved = false;
+  private _lastNotifiedCommitId = 0;
 
   readonly ready: Promise<void>;
 
@@ -464,6 +466,7 @@ export class RouterDocumentHost extends HTMLElement {
       result.outcome !== 'completed' ||
       !result.committed ||
       result.stateOnly ||
+      result.recoveryRequired ||
       result.renderedKind === null
     ) {
       return;
@@ -474,12 +477,28 @@ export class RouterDocumentHost extends HTMLElement {
       return;
     }
 
+    const receipt = result.receipt;
+    const context = readContentContext();
     if (
-      result.contentEpoch === undefined ||
-      result.shellCommitId === undefined ||
+      !receipt ||
+      receipt.commitId <= this._lastNotifiedCommitId ||
+      receipt.root !== contentRoot ||
+      receipt.stateOnly ||
+      readCurrentShellCommitId() !== receipt.shellCommitId ||
+      result.contentEpoch !== receipt.contentEpoch ||
+      result.shellCommitId !== receipt.shellCommitId ||
+      context?.recoveryRequired ||
+      context?.mutation ||
+      context?.displayedBinding.entryId !== receipt.entryId ||
+      context.displayedBinding.url !== receipt.url ||
+      context.addressBinding.entryId !== receipt.entryId ||
+      context.addressBinding.url !== receipt.url ||
+      (readHistoryEntry()?.id ?? null) !== receipt.entryId ||
+      readAddress() !== receipt.url ||
       readContentContext()?.contentEpoch !== result.contentEpoch
     )
       return;
+    this._lastNotifiedCommitId = receipt.commitId;
     this.dispatchEvent(
       new CustomEvent<RouterDocumentHostNavigationCommittedDetail>(
         'router-document-host:navigation-committed',

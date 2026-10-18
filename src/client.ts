@@ -122,6 +122,8 @@ const hydrateCurrentContent = async (
   const isCurrent = (): boolean =>
     readContentContext()?.contentEpoch === epoch &&
     readContentContext()?.mutation === false &&
+    readContentContext()?.recoveryRequired !== true &&
+    readContentContext()?.root === ready.root &&
     ready.root.isConnected;
   if (!isCurrent()) return;
   setContentReadiness({ ...ready, shellCommitId: readCurrentShellCommitId(), started: true });
@@ -253,12 +255,18 @@ document.addEventListener('router-document-host:navigation-committed', (event: E
 });
 
 subscribeContentContext((reason) => {
-  if (reason === 'mutation') hydrationScheduler.cancelContent();
+  if (reason === 'mutation' || reason === 'recovery') hydrationScheduler.cancelContent();
 });
 document.addEventListener('app-shell:restored', (event: Event) => {
   const detail = (event as CustomEvent<AppShellRestoredDetail>).detail;
   const context = readContentContext();
-  if (!context || detail.contentEpoch !== context.contentEpoch || !detail.contentBinding) return;
+  if (
+    !context ||
+    context.recoveryRequired ||
+    detail.contentEpoch !== context.contentEpoch ||
+    !detail.contentBinding
+  )
+    return;
   adoptContentBinding(detail.contentBinding.url, detail.contentBinding.entryId);
   void hydrateCurrentContent(context.root ?? undefined, { contentEpoch: detail.contentEpoch });
 });

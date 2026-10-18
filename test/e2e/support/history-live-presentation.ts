@@ -1,6 +1,7 @@
 import { expect, test, type Page, type TestInfo } from '@playwright/test';
 import { writeFile } from 'node:fs/promises';
 import { resolveRouterArtifactPathname } from '../../../shared/navigation/router-artifact-path.js';
+import { e2eNoteFixtures } from './note-fixtures.js';
 
 const longNote = '/notes/testing/toc-readable-long-heading';
 const shortNote = '/notes/testing/reader-basic';
@@ -12,6 +13,7 @@ interface HistoryLiveFrame {
   frame: number;
   url: string;
   title: string;
+  x: number;
   y: number;
   anchorTop: number | null;
   entryId: string | null;
@@ -25,6 +27,7 @@ interface HistoryLiveProbe {
   active: boolean;
   pause: boolean;
   anchorId: string;
+  anchorSelector: string;
   epoch: number | null;
   nativeSupported: boolean;
   nativeStarts: number;
@@ -110,12 +113,14 @@ const navigate = async (page: Page, url: string): Promise<void> => {
 const installProbe = async (
   page: Page,
   pause = false,
-  visual: 'native' | 'true' | 'undefined' = 'native',
+  visual: 'native' | 'true' | 'undefined' | 'absent' = 'native',
   presentation: 'live' | 'none' = 'live',
 ): Promise<void> => {
   await page.addInitScript(
     ({ pause, visual, presentation }) => {
-      if (visual !== 'native')
+      if (visual === 'absent')
+        Reflect.deleteProperty(PopStateEvent.prototype, 'hasUAVisualTransition');
+      else if (visual !== 'native')
         Object.defineProperty(PopStateEvent.prototype, 'hasUAVisualTransition', {
           configurable: true,
           get: () => (visual === 'true' ? true : undefined),
@@ -124,6 +129,7 @@ const installProbe = async (
         active: false,
         pause,
         anchorId: '',
+        anchorSelector: '',
         epoch: null,
         nativeSupported: typeof document.startViewTransition === 'function',
         nativeStarts: 0,
@@ -154,8 +160,13 @@ const installProbe = async (
           frame,
           url: location.pathname + location.search + location.hash,
           title: main?.querySelector('h1')?.textContent?.trim() ?? '',
+          x: scrollX,
           y: scrollY,
-          anchorTop: document.getElementById(probe.anchorId)?.getBoundingClientRect().top ?? null,
+          anchorTop:
+            (probe.anchorSelector
+              ? main?.querySelector(probe.anchorSelector)
+              : document.getElementById(probe.anchorId)
+            )?.getBoundingClientRect().top ?? null,
           entryId: history.state?.__rouaultHistoryEntry?.id ?? null,
           epoch: probe.epoch,
           status: main?.dataset['readingPositionStatus'] ?? null,
@@ -436,6 +447,7 @@ const snapshot = async (page: Page) =>
       active,
       pause,
       anchorId,
+      anchorSelector,
       epoch,
       nativeSupported,
       nativeStarts,
@@ -458,6 +470,7 @@ const snapshot = async (page: Page) =>
       active,
       pause,
       anchorId,
+      anchorSelector,
       epoch,
       nativeSupported,
       nativeStarts,
@@ -491,7 +504,7 @@ const evidence = async (page: Page, info: TestInfo, classification: string): Pro
         classification,
         savedTolerance: 2,
         unavailableInputTarget:
-          '本文buttonはplain gateにより存在せず、本文controlの自然統合は未実施。実在するmain permalink/header summary/sidebar summaryだけを使用。',
+          '自然180ms入力は既存plain noteのmain permalink/header summary/sidebar summaryを使用。generic routeの本文controlへ入力結果を一般化しない。',
         limits:
           'rAF単独はpaintの証明にしない。after-rAF taskはpaint機会後の観測。Windows/実機touchの結果へ一般化しない。',
         data,
@@ -506,6 +519,7 @@ const assertFirstFrames = async (
   page: Page,
   saved: SavedReading,
   phases: readonly string[] = ['after-raf-task'],
+  motion = true,
 ): Promise<void> => {
   const probe = await snapshot(page);
   const frames = probe.frames.filter(
@@ -521,8 +535,10 @@ const assertFirstFrames = async (
     expect(frame.epoch).toBeGreaterThan(saved.epochBeforeBack);
     expect(frame.nativeMarker).toBe(false);
   }
-  expect(probe.starts[0]?.entryId).toBe(saved.entryId);
-  expect(probe.starts[0]?.y).toBe(saved.y);
+  if (motion) {
+    expect(probe.starts[0]?.entryId).toBe(saved.entryId);
+    expect(probe.starts[0]?.y).toBe(saved.y);
+  } else expect(probe.starts).toEqual([]);
 };
 const assertUnavailable = async (page: Page): Promise<void> => {
   await ready(page);
@@ -531,6 +547,182 @@ const assertUnavailable = async (page: Page): Promise<void> => {
     'data-history-presentation-eligibility',
     'unavailable',
   );
+};
+
+const assertPositionReadyWithoutMotion = async (page: Page, saved: SavedReading): Promise<void> => {
+  await finishFrames(page);
+  await expect(page.locator('#main-content')).toHaveAttribute(
+    'data-history-presentation-eligibility',
+    'ready',
+  );
+  await assertFirstFrames(page, saved, ['raf-entry', 'after-raf-task'], false);
+};
+
+interface GenericReading {
+  url: string;
+  title: string;
+  x: number;
+  y: number;
+  anchorSelector: string;
+  anchorTop: number | null;
+  entryId: string;
+}
+interface GenericTraverse {
+  at: number;
+  before: Awaited<ReturnType<typeof snapshot>>;
+}
+const saveGenericReading = async (page: Page, fraction = 0.45): Promise<GenericReading> => {
+  await ready(page);
+  await expect(page.locator('html')).not.toHaveAttribute('data-content-transition');
+  return page.evaluate(async (fraction) => {
+    const main = document.querySelector<HTMLElement>('#main-content');
+    const scrolling = document.scrollingElement;
+    if (!main || !scrolling) throw new Error('reading root');
+    scrollTo({
+      top: Math.floor(Math.max(0, scrolling.scrollHeight - scrolling.clientHeight) * fraction),
+      left: 0,
+      behavior: 'instant',
+    });
+    await new Promise<void>((resolve) =>
+      requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
+    );
+    // 読書停止後のcheckpoint集約を待つ。履歴操作後の初回frame観測には待機を加えない。
+    await new Promise<void>((resolve) => window.setTimeout(resolve, 160));
+    const heading = [...main.querySelectorAll<HTMLElement>('h2[id], h3[id]')].sort(
+      (a, b) => Math.abs(a.getBoundingClientRect().top) - Math.abs(b.getBoundingClientRect().top),
+    )[0];
+    const anchorSelector = heading
+      ? `#${CSS.escape(heading.id)}`
+      : main.querySelector('.prose > p')
+        ? '.prose > p'
+        : 'h1';
+    const entryId: unknown = history.state?.__rouaultHistoryEntry?.id;
+    if (typeof entryId !== 'string') throw new Error('managed reading entry');
+    return {
+      url: location.pathname + location.search + location.hash,
+      title: main.querySelector('h1')?.textContent?.trim() ?? '',
+      x: scrollX,
+      y: scrollY,
+      anchorSelector,
+      anchorTop: main.querySelector(anchorSelector)?.getBoundingClientRect().top ?? null,
+      entryId,
+    };
+  }, fraction);
+};
+const prepareGenericPair = async (page: Page, sourceUrl: string, targetUrl: string) => {
+  await page.goto(sourceUrl);
+  const source = await saveGenericReading(page, 0.58);
+  await navigate(page, targetUrl);
+  const target = await saveGenericReading(page, 0.31);
+  return { source, target };
+};
+const waitForGenericTraverse = async (
+  page: Page,
+  saved: GenericReading,
+  committed: number,
+): Promise<void> => {
+  await page.waitForFunction(
+    ({ url, entryId, committed }) => {
+      const probe = window.__rouaultHistoryLiveProbe;
+      return (
+        location.pathname + location.search + location.hash === url &&
+        history.state?.__rouaultHistoryEntry?.id === entryId &&
+        probe.committed > committed &&
+        probe.visual !== null
+      );
+    },
+    { url: saved.url, entryId: saved.entryId, committed },
+    { polling: 'raf' },
+  );
+};
+const beginGenericTraverse = async (
+  page: Page,
+  direction: 'back' | 'forward',
+  saved: GenericReading,
+): Promise<GenericTraverse> => {
+  const before = await snapshot(page);
+  const at = await page.evaluate(
+    ({ direction, selector }) => {
+      const probe = window.__rouaultHistoryLiveProbe;
+      probe.active = true;
+      probe.anchorSelector = selector;
+      probe.visual = null;
+      const at = performance.now();
+      if (direction === 'back') history.back();
+      else history.forward();
+      return at;
+    },
+    { direction, selector: saved.anchorSelector },
+  );
+  await waitForGenericTraverse(page, saved, before.committed);
+  return { at, before };
+};
+const assertGenericTraverse = async (
+  page: Page,
+  saved: GenericReading,
+  visit: GenericTraverse,
+  presentation: 'live' | 'fallback' | 'no-motion' = 'live',
+): Promise<void> => {
+  await finishFrames(page);
+  const probe = await snapshot(page);
+  expect(Math.abs((await page.evaluate(() => scrollY)) - saved.y)).toBeLessThanOrEqual(2);
+  expect(await page.evaluate(() => history.state?.__rouaultHistoryEntry?.id)).toBe(saved.entryId);
+  expect(probe.replaced - visit.before.replaced).toBe(1);
+  expect(probe.committed - visit.before.committed).toBe(1);
+  expect(probe.focus - visit.before.focus).toBe(1);
+  expect(probe.announcements.length - visit.before.announcements.length).toBe(1);
+  expect(probe.nativeStarts).toBe(visit.before.nativeStarts);
+  const starts = probe.starts.slice(visit.before.starts.length);
+  const nativeEligible = probe.visual?.provided === true && probe.visual.value === false;
+  if (presentation === 'fallback') {
+    expect(starts).toEqual([]);
+    await expect(page.locator('#main-content')).toHaveAttribute(
+      'data-history-presentation-eligibility',
+      'unavailable',
+    );
+    return;
+  }
+  await expect(page.locator('#main-content')).toHaveAttribute(
+    'data-history-presentation-eligibility',
+    'ready',
+  );
+  const frames = probe.frames.filter(
+    (frame) =>
+      frame.at >= visit.at &&
+      frame.title === saved.title &&
+      frame.url === saved.url &&
+      frame.entryId === saved.entryId,
+  );
+  for (const phase of ['raf-entry', 'after-raf-task']) {
+    const phaseFrames = frames.filter((frame) => frame.phase === phase);
+    expect(phaseFrames.length).toBeGreaterThanOrEqual(2);
+    for (const frame of phaseFrames) {
+      expect(frame.title).toBe(saved.title);
+      expect(Math.abs(frame.x - saved.x)).toBeLessThanOrEqual(2);
+      expect(Math.abs(frame.y - saved.y)).toBeLessThanOrEqual(2);
+      if (saved.anchorTop !== null)
+        expect(Math.abs((frame.anchorTop ?? Infinity) - saved.anchorTop)).toBeLessThanOrEqual(2);
+      expect(frame.epoch).toBeGreaterThan(visit.before.epoch ?? -1);
+      expect(frame.nativeMarker).toBe(false);
+    }
+  }
+  const scrolls = probe.scrolls.slice(visit.before.scrolls.length);
+  expect(scrolls).toHaveLength(1);
+  expect(Math.abs((scrolls[0]?.requestedX ?? Infinity) - saved.x)).toBeLessThanOrEqual(2);
+  expect(Math.abs((scrolls[0]?.appliedX ?? Infinity) - saved.x)).toBeLessThanOrEqual(2);
+  expect(Math.abs((scrolls[0]?.requestedY ?? Infinity) - saved.y)).toBeLessThanOrEqual(2);
+  expect(Math.abs((scrolls[0]?.appliedY ?? Infinity) - saved.y)).toBeLessThanOrEqual(2);
+  expect(scrolls[0]?.liveActive).toBe(false);
+  if (presentation === 'no-motion' || !nativeEligible) expect(starts).toEqual([]);
+  else {
+    expect(starts).toHaveLength(1);
+    expect(starts[0]?.duration).toBe(180);
+    expect(starts[0]?.entryId).toBe(saved.entryId);
+    expect(Math.abs((starts[0]?.y ?? Infinity) - saved.y)).toBeLessThanOrEqual(2);
+    expect(scrolls[0]?.at).toBeLessThanOrEqual(starts[0]?.at ?? -1);
+  }
+  if (presentation === 'live' && !nativeEligible)
+    test.skip(true, '位置ready確認済、UA情報なし/true: generic fade未検証');
 };
 
 export const registerHistoryLivePresentationTests = (): void => {
@@ -582,9 +774,9 @@ export const registerHistoryLivePresentationTests = (): void => {
         expect(await page.evaluate(() => history.length)).toBe(saved.historyLength);
         await evidence(page, info, 'native UA=false: first-frame/live演出検証');
       } else {
-        await assertUnavailable(page);
+        await assertPositionReadyWithoutMotion(page, saved);
         expect(Math.abs((await page.evaluate(() => scrollY)) - saved.y)).toBeLessThanOrEqual(2);
-        await evidence(page, info, 'UA情報なし/true: 通常復元のみ検証。live演出成功には数えない');
+        await evidence(page, info, 'UA情報なし/true: 同期位置ready検証。live演出成功には数えない');
       }
     });
 
@@ -597,7 +789,7 @@ export const registerHistoryLivePresentationTests = (): void => {
           const saved = await prepare(page);
           const eligible = await back(page);
           if (!eligible) {
-            await assertUnavailable(page);
+            await assertPositionReadyWithoutMotion(page, saved);
             await evidence(
               page,
               info,
@@ -741,7 +933,7 @@ export const registerHistoryLivePresentationTests = (): void => {
       await installProbe(page, true);
       const saved = await prepare(page);
       if (!(await back(page))) {
-        await assertUnavailable(page);
+        await assertPositionReadyWithoutMotion(page, saved);
         await evidence(page, info, 'UA情報なし/true: pause演出未実施、通常履歴のみ');
         return;
       }
@@ -756,10 +948,11 @@ export const registerHistoryLivePresentationTests = (): void => {
       expect(
         await page.evaluate(() => window.__rouaultHistoryLiveProbe.animations[0]?.playState),
       ).toBe('idle');
-      await expect(page.locator('#main-content')).not.toHaveAttribute(
+      await expect(page.locator('#main-content')).toHaveAttribute(
         'data-history-presentation-eligibility',
+        'ready',
       );
-      expect((await snapshot(page)).starts).toHaveLength(1);
+      expect((await snapshot(page)).starts).toHaveLength(2);
       await back(page);
       await ready(page);
       await page.evaluate(
@@ -768,12 +961,12 @@ export const registerHistoryLivePresentationTests = (): void => {
             requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
           ),
       );
-      expect((await snapshot(page)).starts).toHaveLength(2);
+      expect((await snapshot(page)).starts).toHaveLength(3);
       expect(
-        await page.evaluate(() => window.__rouaultHistoryLiveProbe.animations[1]?.playState),
+        await page.evaluate(() => window.__rouaultHistoryLiveProbe.animations[2]?.playState),
       ).toBe('paused');
       expect(
-        await page.evaluate(() => window.__rouaultHistoryLiveProbe.animations[1]?.currentTime),
+        await page.evaluate(() => window.__rouaultHistoryLiveProbe.animations[2]?.currentTime),
       ).toBe(90);
       await navigate(page, shortNote);
       expect(
@@ -787,19 +980,21 @@ export const registerHistoryLivePresentationTests = (): void => {
       expect(probe.nativeStarts).toBe(
         saved.nativeStartsBeforeBack + (probe.nativeSupported ? 1 : 0),
       );
-      expect(probe.starts).toHaveLength(2);
+      expect(probe.starts).toHaveLength(3);
       await expect(page.locator('#main-content')).toHaveCSS('opacity', '1');
       await evidence(page, info, 'native UA=false: pause取消・新session維持・通常native復帰');
     });
 
     for (const visual of ['true', 'undefined'] as const)
-      test(`UA visual情報${visual}はlive対象外で既存復元へ返す`, async ({ page }, info) => {
+      test(`UA visual情報${visual}でも同期位置readyを保ちliveは生成しない`, async ({
+        page,
+      }, info) => {
         await installProbe(page, false, visual);
         const saved = await prepare(page);
         expect(await back(page)).toBe(false);
-        await assertUnavailable(page);
+        await assertPositionReadyWithoutMotion(page, saved);
         expect(Math.abs((await page.evaluate(() => scrollY)) - saved.y)).toBeLessThanOrEqual(2);
-        await evidence(page, info, `UA ${visual}: unavailable成立（演出成功ではない）`);
+        await evidence(page, info, `UA ${visual}: 位置ready・演出なし（演出成功ではない）`);
       });
 
     for (const mismatch of ['viewport', 'unknown-hydrator'] as const)
@@ -866,13 +1061,13 @@ export const registerHistoryLivePresentationTests = (): void => {
         });
         expect(Math.abs(track - tocTrack)).toBeLessThan(0.1);
         if (!eligible) {
-          await assertUnavailable(page);
+          await assertPositionReadyWithoutMotion(page, saved);
           await evidence(
             page,
             info,
             'responsive第4章: UA情報なし/true。live/first-frame成功には数えない',
           );
-          test.skip(true, 'UA情報なし/true: first-frame未検証');
+          test.skip(true, '同期位置ready確認済、UA情報なし/true: fade未検証');
           return;
         }
 
@@ -904,4 +1099,379 @@ export const registerHistoryLivePresentationTests = (): void => {
         );
       });
     });
+
+  test.describe('generalized history presentation', () => {
+    test.use({ viewport: { width: 1280, height: 720 }, reducedMotion: 'no-preference' });
+    test.afterEach(async ({ page }, info) => {
+      const available = await Promise.resolve()
+        .then(() => page.evaluate(() => Boolean(window.__rouaultHistoryLiveProbe)))
+        .catch(() => false);
+      if (available)
+        await evidence(
+          page,
+          info,
+          info.status === 'passed'
+            ? 'generic履歴のDOM/rAF/post-task検証。OS presented-frameの証明とは区別'
+            : `generic履歴 ${info.status ?? 'unknown'}。live成功に数えない`,
+        );
+    });
+
+    for (const pair of [
+      { name: '任意heading数と短いReader Basic', source: longNote, target: shortNote },
+      { name: 'noteから異なる配置のabout', source: longNote, target: '/about/' },
+      { name: '非note discoveryとabout', source: '/corpora/', target: '/about/' },
+    ])
+      test(`${pair.name}はBackとForwardの最初のframeから各entryを保つ`, async ({ page }) => {
+        await installProbe(page);
+        const saved = await prepareGenericPair(page, pair.source, pair.target);
+        const backVisit = await beginGenericTraverse(page, 'back', saved.source);
+        await assertGenericTraverse(page, saved.source, backVisit);
+        const forwardVisit = await beginGenericTraverse(page, 'forward', saved.target);
+        await assertGenericTraverse(page, saved.target, forwardVisit);
+      });
+
+    test('scroll直後120ms未満のBackでも旧entryを同期採取してForwardの新Yを保つ', async ({
+      page,
+    }) => {
+      await installProbe(page);
+      const saved = await prepareGenericPair(page, longNote, '/about/');
+      const before = await snapshot(page);
+      const immediate = await page.evaluate(({ source, target }) => {
+        const main = document.querySelector('#main-content');
+        const scrolling = document.scrollingElement;
+        if (!main || !scrolling) throw new Error('source owner');
+        const scrolledAt = performance.now();
+        scrollTo({
+          top: Math.floor(Math.max(0, scrolling.scrollHeight - scrolling.clientHeight) * 0.77),
+          left: 0,
+          behavior: 'instant',
+        });
+        const nextTarget = {
+          ...target,
+          x: scrollX,
+          y: scrollY,
+          anchorTop: main.querySelector(target.anchorSelector)?.getBoundingClientRect().top ?? null,
+        };
+        const probe = window.__rouaultHistoryLiveProbe;
+        probe.active = true;
+        probe.anchorSelector = source.anchorSelector;
+        probe.visual = null;
+        const at = performance.now();
+        history.back();
+        return { target: nextTarget, scrolledAt, at };
+      }, saved);
+      expect(immediate.at - immediate.scrolledAt).toBeLessThan(120);
+      expect(Math.abs(immediate.target.y - saved.target.y)).toBeGreaterThan(20);
+      await waitForGenericTraverse(page, saved.source, before.committed);
+      await assertGenericTraverse(page, saved.source, { at: immediate.at, before });
+      const forwardVisit = await beginGenericTraverse(page, 'forward', immediate.target);
+      await assertGenericTraverse(page, immediate.target, forwardVisit);
+    });
+
+    test('見出し0の短い静的noteはY0とparagraph anchorで両方向を復元する', async ({ page }) => {
+      await installProbe(page);
+      await page.goto(e2eNoteFixtures.sidebarScrollSource.directPath);
+      const source = await saveGenericReading(page, 0);
+      expect(source.y).toBe(0);
+      const range = await page.evaluate(() => {
+        const scrolling = document.scrollingElement;
+        return Math.max(0, (scrolling?.scrollHeight ?? 0) - (scrolling?.clientHeight ?? 0));
+      });
+      expect(range).toBeLessThan(await page.evaluate(() => innerHeight));
+      await expect(page.locator('#main-content :is(h2, h3, h4, h5, h6)')).toHaveCount(0);
+      await navigate(page, shortNote);
+      const target = await saveGenericReading(page);
+      const backVisit = await beginGenericTraverse(page, 'back', source);
+      await assertGenericTraverse(page, source, backVisit);
+      const forwardVisit = await beginGenericTraverse(page, 'forward', target);
+      await assertGenericTraverse(page, target, forwardVisit);
+    });
+
+    for (const target of [
+      {
+        name: 'TOC absentのtable',
+        url: () => e2eNoteFixtures.tocAbsent.normalizedPath,
+        selector: 'table',
+      },
+      {
+        name: 'code初期projection',
+        url: () => e2eNoteFixtures.code.normalizedPath,
+        selector: 'pre',
+      },
+      {
+        name: 'search未知hydrator',
+        url: () => '/search/',
+        selector: '[data-hydration-key="search-page-enhancer"]',
+      },
+      {
+        name: 'tag内search未知hydrator',
+        url: () => '/tags/Programming/',
+        selector: '[data-hydration-key="search-page-enhancer"]',
+      },
+    ])
+      test(`${target.name}は実DOMの未証明surfaceにより演出せず通常復元する`, async ({ page }) => {
+        await installProbe(page);
+        const saved = await prepareGenericPair(page, target.url(), longNote);
+        const visit = await beginGenericTraverse(page, 'back', saved.source);
+        await expect(page.locator(`#main-content ${target.selector}`).first()).toBeAttached();
+        await assertGenericTraverse(page, saved.source, visit, 'fallback');
+        const forwardVisit = await beginGenericTraverse(page, 'forward', saved.target);
+        await assertGenericTraverse(page, saved.target, forwardVisit);
+      });
+
+    test('query/hashを含むfull traverseもexact URLと保存座標をhash targetより優先する', async ({
+      page,
+    }) => {
+      await installProbe(page);
+      await page.goto(longNote);
+      await ready(page);
+      const id = await page.locator('#main-content .prose h2[id]').nth(3).getAttribute('id');
+      if (!id) throw new Error('hash target');
+      const url = `${longNote}?historyProof=1#${encodeURIComponent(id)}`;
+      const saved = await prepareGenericPair(page, url, shortNote);
+      const backVisit = await beginGenericTraverse(page, 'back', saved.source);
+      await assertGenericTraverse(page, saved.source, backVisit);
+      expect(await page.evaluate(() => location.pathname + location.search + location.hash)).toBe(
+        url,
+      );
+      const forwardVisit = await beginGenericTraverse(page, 'forward', saved.target);
+      await assertGenericTraverse(page, saved.target, forwardVisit);
+    });
+
+    test('same-document hash操作とそのBackはepochと本文を交代せず演出しない', async ({ page }) => {
+      await installProbe(page);
+      await page.goto(longNote);
+      await ready(page);
+      await page.evaluate(() => {
+        window.__rouaultHistoryLiveProbe.active = true;
+      });
+      const before = await snapshot(page);
+      await page.locator('[data-layout-toc-nav] [data-toc-link]').nth(3).click();
+      await expect.poll(() => page.evaluate(() => location.hash)).not.toBe('');
+      await ready(page);
+      await page.evaluate(() => history.back());
+      await expect.poll(() => page.evaluate(() => location.hash)).toBe('');
+      await ready(page);
+      const after = await snapshot(page);
+      expect(after.starts).toEqual([]);
+      expect(after.replaced).toBe(before.replaced);
+      expect(after.focus).toBe(before.focus);
+      expect(after.epoch).toBe(before.epoch);
+      expect(after.nativeStarts).toBe(before.nativeStarts);
+    });
+
+    test('reduced motionでも保存位置は同期適用し履歴のfadeを生成しない', async ({ page }) => {
+      await page.emulateMedia({ reducedMotion: 'reduce' });
+      await installProbe(page);
+      const saved = await prepareGenericPair(page, '/about/', '/corpora/');
+      const visit = await beginGenericTraverse(page, 'back', saved.source);
+      await assertGenericTraverse(page, saved.source, visit, 'no-motion');
+      const next = await beginGenericTraverse(page, 'forward', saved.target);
+      await assertGenericTraverse(page, saved.target, next, 'no-motion');
+    });
+
+    test('reduced motionでも未知animationのあるReader Forwardは通常復元へ返す', async ({
+      page,
+    }) => {
+      await page.emulateMedia({ reducedMotion: 'reduce' });
+      await installProbe(page);
+      const saved = await prepareGenericPair(page, '/about/', shortNote);
+      const back = await beginGenericTraverse(page, 'back', saved.source);
+      await assertGenericTraverse(page, saved.source, back, 'no-motion');
+      await page.evaluate(() => {
+        document.addEventListener(
+          'router-document-host:content-dom-replaced',
+          () => {
+            // 未証明motionを決定的に作り、UAの短いCSS transitionの発生時機に依存しない。
+            document
+              .querySelector('#main-content')
+              ?.animate([{ transform: 'translateY(0px)' }, { transform: 'translateY(1px)' }], {
+                duration: 2000,
+                id: 'history-proof-unknown',
+              });
+          },
+          { once: true },
+        );
+      });
+      const next = await beginGenericTraverse(page, 'forward', saved.target);
+      expect(
+        await page.evaluate(() =>
+          document.getAnimations().some((animation) => animation.id === 'history-proof-unknown'),
+        ),
+      ).toBe(true);
+      await assertGenericTraverse(page, saved.target, next, 'fallback');
+      await page.evaluate(() => {
+        document
+          .getAnimations()
+          .find((animation) => animation.id === 'history-proof-unknown')
+          ?.cancel();
+      });
+    });
+
+    test('WAAPI未対応でも同期位置readyと一回のcommitを保つ', async ({ page }) => {
+      await installProbe(page);
+      await page.addInitScript(() => {
+        Object.defineProperty(Element.prototype, 'animate', {
+          configurable: true,
+          value: undefined,
+        });
+      });
+      const saved = await prepareGenericPair(page, '/about/', shortNote);
+      const visit = await beginGenericTraverse(page, 'back', saved.source);
+      await assertGenericTraverse(page, saved.source, visit, 'no-motion');
+    });
+
+    for (const visual of ['true', 'undefined', 'absent'] as const)
+      test(`generic履歴のUA ${visual}は演出せず既存位置復元へ返す`, async ({ page }) => {
+        await installProbe(page, false, visual);
+        const saved = await prepareGenericPair(page, '/about/', shortNote);
+        const visit = await beginGenericTraverse(page, 'back', saved.source);
+        await assertGenericTraverse(page, saved.source, visit, 'no-motion');
+        const probe = await snapshot(page);
+        if (visual === 'absent') expect(probe.visual?.provided).toBe(false);
+        else expect(probe.visual?.provided).toBe(true);
+        expect(probe.visual?.value).toBe(visual === 'true' ? true : null);
+      });
+
+    test('未予約画像が遅延するfull traverseはpending中も解放後もfadeを生成しない', async ({
+      page,
+    }) => {
+      await installProbe(page);
+      const saved = await prepareGenericPair(page, longNote, shortNote);
+      let release!: () => void;
+      const gate = new Promise<void>((resolve) => {
+        release = resolve;
+      });
+      await page.route('**/history-generic-image.svg', async (route) => {
+        await gate;
+        await route
+          .fulfill({
+            contentType: 'image/svg+xml',
+            body: '<svg xmlns="http://www.w3.org/2000/svg" width="300" height="300"/>',
+          })
+          .catch(() => {
+            /* 取消済みrequestの解放失敗は観測結果へ追加しない。 */
+          });
+      });
+      await page.route(`**${resolveRouterArtifactPathname(longNote)}`, async (route) => {
+        const response = await route.fetch();
+        const envelope = (await response.json()) as { document: { html: string } };
+        envelope.document.html =
+          '<img src="/history-generic-image.svg" alt="遅延画像">' + envelope.document.html;
+        await route.fulfill({ response, json: envelope });
+      });
+      try {
+        const visit = await beginGenericTraverse(page, 'back', saved.source);
+        await page.evaluate(
+          () =>
+            new Promise<void>((resolve) =>
+              requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
+            ),
+        );
+        await expect(page.locator('#main-content')).toHaveAttribute(
+          'data-reading-position-status',
+          'pending',
+        );
+        expect((await snapshot(page)).starts.length).toBe(visit.before.starts.length);
+        release();
+        await assertGenericTraverse(page, saved.source, visit, 'fallback');
+      } finally {
+        release();
+      }
+    });
+
+    test('実fontの待機中はfirst-frame成功を装わず通常復元へ返す', async ({ page }) => {
+      await installProbe(page);
+      const saved = await prepareGenericPair(page, '/about/', shortNote);
+      const fontUrl = await page.evaluate(() => {
+        const resource = performance
+          .getEntriesByType('resource')
+          .find((entry) => /\.woff2(?:\?|$)/u.test(entry.name));
+        if (!resource) throw new Error('existing bundled woff2');
+        const url = new URL(resource.name);
+        url.searchParams.set('history-font', 'pending');
+        return url.href;
+      });
+      let release!: () => void;
+      const gate = new Promise<void>((resolve) => {
+        release = resolve;
+      });
+      await page.route(fontUrl, async (route) => {
+        await gate;
+        await route.continue().catch(() => {
+          /* 取消済みrequestを再実行しない。 */
+        });
+      });
+      try {
+        await page.evaluate((url) => {
+          const face = new FontFace('HistoryPendingProof', `url("${url}")`);
+          document.fonts.add(face);
+          void face.load().catch(() => {
+            /* font失敗も既存復元へ返す条件として残す。 */
+          });
+        }, fontUrl);
+        await expect.poll(() => page.evaluate(() => document.fonts.status)).toBe('loading');
+        const visit = await beginGenericTraverse(page, 'back', saved.source);
+        await page.evaluate(
+          () =>
+            new Promise<void>((resolve) =>
+              requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
+            ),
+        );
+        await expect(page.locator('#main-content')).toHaveAttribute(
+          'data-reading-position-status',
+          'pending',
+        );
+        expect((await snapshot(page)).starts.length).toBe(visit.before.starts.length);
+        release();
+        await assertGenericTraverse(page, saved.source, visit, 'fallback');
+      } finally {
+        release();
+      }
+    });
+
+    test('Back→Forward→Backは旧finishedが最新entryの効果と座標を消さない', async ({ page }) => {
+      await installProbe(page, true);
+      await page.goto(longNote);
+      await saveGenericReading(page);
+      await navigate(page, '/about/');
+      const middle = await saveGenericReading(page, 0.7);
+      await navigate(page, shortNote);
+      const last = await saveGenericReading(page);
+      const firstVisit = await beginGenericTraverse(page, 'back', middle);
+      await ready(page);
+      const visual = (await snapshot(page)).visual;
+      if (visual?.provided !== true || visual.value !== false)
+        test.skip(true, 'UA情報なし/true: live競合未検証');
+      const firstCount = (await snapshot(page)).starts.length;
+      expect(firstCount - firstVisit.before.starts.length).toBe(1);
+      await beginGenericTraverse(page, 'forward', last);
+      await ready(page);
+      const finalVisit = await beginGenericTraverse(page, 'back', middle);
+      await ready(page);
+      const state = await page.evaluate(() =>
+        window.__rouaultHistoryLiveProbe.animations.map((animation) => ({
+          playState: animation.playState,
+          currentTime: animation.currentTime,
+        })),
+      );
+      expect(state.slice(0, -1).every((animation) => animation.playState === 'idle')).toBe(true);
+      expect(state.at(-1)).toMatchObject({ playState: 'paused', currentTime: 90 });
+      await page.evaluate(() => window.__rouaultHistoryLiveProbe.animations.at(-1)?.cancel());
+      await assertGenericTraverse(page, middle, finalVisit);
+      expect((await snapshot(page)).starts.length - firstVisit.before.starts.length).toBe(3);
+    });
+
+    test.describe('狭幅の履歴表示', () => {
+      test.use({ viewport: { width: 390, height: 844 } });
+      test('mobile配置でもBackとForwardの本文位置を最初のframeから保つ', async ({ page }) => {
+        await installProbe(page);
+        const saved = await prepareGenericPair(page, longNote, shortNote);
+        const visit = await beginGenericTraverse(page, 'back', saved.source);
+        await assertGenericTraverse(page, saved.source, visit);
+        const next = await beginGenericTraverse(page, 'forward', saved.target);
+        await assertGenericTraverse(page, saved.target, next);
+      });
+    });
+  });
 };

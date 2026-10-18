@@ -30,6 +30,7 @@ export interface ContentContext {
   readonly mutation: boolean;
   readonly intent: NavigationIntent | null;
   readonly coordinatePriority: boolean;
+  readonly recoveryRequired?: boolean;
 }
 let initialIntervention = false;
 export const recordInitialIntervention = (): void => {
@@ -41,7 +42,10 @@ let intentCounter = 0;
 let controller = new AbortController();
 let context: ContentContext | null = null;
 const listeners = new Set<
-  (reason: 'intent' | 'mutation' | 'adopt' | 'feature', owner: string) => void
+  (
+    reason: 'intent' | 'before-mutation' | 'mutation' | 'adopt' | 'feature' | 'recovery',
+    owner: string,
+  ) => void
 >();
 const emit = (reason: Parameters<Parameters<typeof listeners.add>[0]>[0], owner: string): void => {
   for (const listener of listeners) {
@@ -71,6 +75,7 @@ export const initializeContentContext = (root: HTMLElement): number => {
     mutation: false,
     intent: null,
     coordinatePriority: false,
+    recoveryRequired: false,
   };
   return context.contentEpoch;
 };
@@ -105,8 +110,10 @@ export const isNavigationIntentCurrent = (intent: NavigationIntent): boolean =>
 export const beginContentMutation = (root: HTMLElement): number => {
   if (!context) initializeContentContext(root);
   if (!context) throw new Error('content context unavailable');
-  emit('mutation', 'host');
+  // enhancerの後始末も本文を変更し得るため、旧表示の保存を先に凍結する。
+  emit('before-mutation', 'host');
   context = { ...context, contentEpoch: ++epochCounter, root, mutation: true };
+  emit('mutation', 'host');
   return context.contentEpoch;
 };
 export const adoptContentBinding = (
@@ -123,6 +130,11 @@ export const adoptContentBinding = (
   };
   emit('adopt', 'router');
 };
+export const markContentRecoveryRequired = (root: HTMLElement, contentEpoch: number): void => {
+  if (context?.root !== root || context.contentEpoch !== contentEpoch) return;
+  context = { ...context, recoveryRequired: true };
+  emit('recovery', 'router');
+};
 export const captureFeatureSource = (element: HTMLElement): FeatureSource => ({
   element,
   contentEpoch: context?.contentEpoch ?? 0,
@@ -133,6 +145,7 @@ export const isFeatureSourceCurrent = (source: FeatureSource): boolean => {
   return (
     source.contentEpoch === context.contentEpoch &&
     !context.mutation &&
+    !context.recoveryRequired &&
     context.displayedBinding.url === readAddress() &&
     context.displayedBinding.entryId === (readHistoryEntry()?.id ?? null)
   );

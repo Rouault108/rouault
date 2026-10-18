@@ -59,16 +59,40 @@ A1通常/hash移動、A2entry座標復元、A3同URLの別entry、A4state/native
 
 配置変更を伴う既知note/tag/discovery間でも、履歴成功・binding採用・preventScroll focus・通常先頭適用を同じ更新callback内に保つ。shell配置の変化を理由に別のscroll writerや復元待機を追加しない。HookdeckのWindows Chromeでの履歴fadeに関するユーザー観察と将来目標は[Content navigation motion](../design-system/patterns.md#content-navigation-motion)を参照。
 
-### 限定した履歴表示の検証
+### 履歴表示の共通判定
 
-第4版の最小検証は、Reader BasicからTOC Readable Long Headingへ戻る、hash/queryなしの別文書traverse一方向だけとする。逆方向や他route、同一文書、BFCache、UA演出あり／情報未提供は演出対象外。URLは対象範囲の制限に使い、安全性は検証済み同配置shellと実DOMから判断する。
+全ページのBack/Forwardを候補にし、ページ名・URL prefix・移動方向によるallowlistを持たない。候補になることと、演出が実際に適用されることは異なる。正常な別文書traverseの復帰先entry自身について、保存時の検証済みshell profileと現在のprofile、exact URL・entry ID・本文版・使用字体・viewport・main/本文要素/読書アンカー/rangeの実幾何を照合する。離脱元と復帰先でsidebar、TOC、本文幅が変わっても、復帰先の保存時配置が再現されていればよい。hash/queryを含むfull traverseも保存座標優先とし、URLからそれらを捨てない。
 
-保存時の同entryに本文text、実使用fontと文字列のload確認、viewport、main/prose/全見出し/range、読書アンカーの幾何checkpointを保持する。戻ったDOMの実測と一致し、未知hydrator・画像・table等がなくclamp不要でdocumentがvisibleの場合に限り、同じReadingPositionJobが最初のawaitより前に保存位置を適用する。binding/root/entry/URL/epoch/shell/intent、実座標とアンカーを再照合して、独立した表示適格性をreadyにする。最初の可視フレームが保存位置と一致することを実描画で検証する。未証明は演出なしの既存復元へ戻し、その経路の無ジャンプを保証しない。
+同じReadingPositionJobが、固定のNavigationCommitReceiptとbinding/root/entry/URL/epoch/shell/intentを再照合し、最初のawaitより前に保存座標を適用する。実座標と読書アンカーが±2 CSS pxで一致した場合だけ`historyPresentationEligibility=ready`とする。これは位置証明でありAnimationがactiveであることを意味しない。content readinessと最大5秒のsettledは同じjobが継続し、表示の成否でcandidate/restoring状態を早期解放しない。後から復元できただけの経路を、最初の表示位置まで証明済みとしてreadyにしない。
 
-独立TOC列の幅は240pxへ固定せず、computed `--note-toc-track`の正のpx値、または現行tokenの`clamp(rem, vw, rem)`をrootのcomputed font-sizeとviewportのCSS pxで解決し、実際の第2trackと照合する。DPRは幅へ掛けない。未解決・intrinsic幅・未知の式・非正/非有限値・上下限が逆転したclampは許可しない。2列のgrid、stickyな第2列、固定の高さ予約とoverflow制約、本文・font・viewport・全幾何の照合は維持する。これは同じ限定pairの可変幅への追従であり、他routeや未証明の配置を許可しない。
+本文はmain全体から判定し、見出し数、固定ID、単一proseを要求しない。見出しがなければparagraph等の近傍要素を、IDとrootからのelement pathで識別する。複数proseや静的discoveryページも同じ判定を使う。TOCのactive weight差を比較から外す場合、desktopでは独立2列grid、宣言された実track、sticky列、固定高さ予約とoverflow制約を要求する。computed `--note-toc-track`は正のpxまたは`clamp(rem, vw, rem)`をrootのcomputed font-sizeとviewportのCSS pxで解決して実第2trackと照合し、DPRは掛けない。未解決・未知の式・非正/非有限値・逆転clampは許可しない。640 CSS px未満では、既知TOCがstatic配置・高さ0・全子孫の実boxが0で、shellが正の単一grid trackを持つ場合だけ許可する。body配下のTOC panelもすべてhidden/inert/aria-hiddenかつ実boxが0であることを確認する。640〜1023 CSS pxのTOC配置は独立性を未証明として縮退する。TOCがないページへこれらの条件を課さない。
 
-HistoryPresentationCoordinatorは位置を書かず、当該mainのAnimationと固定ownerだけを所有する。opacity 0.82→1、180msで表示し、finishedをnavigationや位置jobの完了条件にしない。新intent、Back/Forward、本人入力、pagehide、破棄等で取消し、後続位置補正は取消→通常表示→job再照合→scrollの順序を守る。旧finished／旧位置jobの終端は新sessionを取消さない。表示の成否でcandidate/restoring/settledやhydrationの寿命を短縮しない。
+| 条件                                                                          | 共通判定と縮退                                                                                                                     |
+| ----------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| 静的本文・既知のnote-static-surface（tableなし）                              | 本文/使用font/全幾何が一致した場合に先行復元候補                                                                                   |
+| 画像                                                                          | 読込完了、natural寸法、正のwidth/height属性と実used boxがあり、未知enhancerがないものだけ候補。pending/broken/寸法未確定は演出なし |
+| font                                                                          | 使用するfontと実文字列のloadを確認。loading/未知の切替は演出なし。後発loadingはactive演出を取消                                    |
+| table/code/tabs/search結果/preview/video/広域enhancer                         | 実mutation scopeを安全と証明していないため演出なし。triggerが画面下でもroot全体を検査し、既存の準備・位置安定化を継続              |
+| 進行中・pending/paused animation、SMIL、未知custom element/初期化             | 幾何の安全未証明として演出なし。検証済み独立TOCのlinkにあるcolor単独のCSS transitionだけは本文幾何を変えないため許可               |
+| sourceとdestinationの配置変更                                                 | destination entryの保存profileと実DOMの一致で判定。幅や位置は補間しない                                                            |
+| viewport/font/内容版の変化、range不足、証跡欠落                               | 演出なしで既存復元へ。仮clampをreadyとは扱わない                                                                                   |
+| 同一文書/state-only、初期/reload、BFCache、error/not-found、document fallback | 新しい履歴演出なし。既存の座標/hash/native規則とfocus契約を維持                                                                    |
+| reduced motion、WAAPI未対応/失敗、hidden、UA演出true/情報未提供               | appの演出なし。証明済み座標の先行適用と通常settledは妨げない                                                                       |
 
-同じ代表traverseのsidebarで、押下中のリンクをnav全交換によって失わないための選択属性更新は[Sidebar State Contract](sidebar-state.md#6-transactionとfailure)が所有する。位置jobや演出coordinatorへ入力待機・click再送を加えず、他surfaceの実体保持を保証しない。
+演出なしの縮退では復元途中の可視ジャンプがないことまでは保証しない。本文の非表示、inert、入力遮蔽、無期限待機でそれを隠さない。未知の動的ページを後からfadeするだけで成功とは判定しない。
 
-この検証は第4版全体の採用判定ではない。noneの独立したimmutable受理記録・binding採用失敗後の回復管理は追加しておらず、その故障経路は表示readyにしない。既存transaction、通知、hydration起動、BFCacheの位置補償へ新しいawaitや再commit経路を加えない。
+passive scrollは座標保存だけを行い、幾何証跡は120msの集約と離脱境界で採る。popstateではaddressが先に変わるため、まだ表示中のroot・contentEpoch・displayed entry/URLとmutation/recovery状態を明示的に検証して旧DOMを採る。manual復元を所有中であれば、scroll event未配信の同task離脱も実座標を同期採取する。この座標保存はshell幾何証跡の有無と独立し、autoではUAの先行復元を旧entryへ混ぜないよう最後のsampleを維持する。未知ownerや旧epochでは採取せず、保存candidateを別entryに転用しない。証跡は最大32 entry、1本文2,000要素/128,000文字までとし、超過・evictionは座標台帳を消さず演出なしへ縮退する。
+
+静的本文が表示されている間、contentEpochごとに一度だけ、実際の文字列とcomputed fontを使って未読込字体を非同期に準備する。待機はabortまたは1秒で打ち切り、完了後も同じroot/epochと通常の保存条件を再確認する。commitや位置復元はこれをawaitせず、DOMや座標も変更しない。フォントの準備が間に合わない離脱は通常の演出なし復元へ戻す。
+
+本文の破壊的更新は、旧root/epochの`before-mutation`で離脱座標のcheckpointと位置job/演出の取消、保存抑止を先に確立する。その後、新epochと`mutation: true`を設定して`mutation`を通知し、hydrationの取消・enhancerの後始末へ進む。後始末で検索form等が隠れてrangeが縮んでも、その座標を旧entryへ再保存しない。state-onlyではこのphaseを発生させず、rollback中の半更新DOMも保存しない。
+
+HistoryPresentationCoordinatorは位置を書かず、mainと読書アンカー、固定owner、Animationだけを所有する。opacity 0.82→1、180msで表示し、finishedをnavigationや位置jobの完了条件にしない。新intent、Back/Forward、本人入力、root/anchor破棄、幾何変化、font loading、pagehide、dispose等で取消す。後続位置補正は取消→通常表示→job再照合→scrollの順序を守り、旧finished/旧jobは新sessionを取消さない。幾何不変のTOC投影だけで一律に取消さない。任意の外部DOM/CSS変更が検出前に一度も見えないという保証は追加しない。
+
+### 受理と回復の境界
+
+Router/ContentCommitterのimmutable受理記録は[Router Contract](router.md#commit-acceptance-and-recovery)が所有する。binding採用に失敗した内容はcommitted/degradedかつrecoveryRequiredとし、成功通知・新hydration・focus・位置書込を開始しない。ReadingPositionControllerは共有recovery状態を保存前・job実行前・native/BFCache採用前にも検査し、未消費candidateと保存抑止を維持する。回復前の旧bindingと新DOMの座標をどのentryにも保存しない。
+
+この実装の回復方針は、次のcurrent navigationを既存document navigation fallbackへ委譲すること。同entryへの自動binding再構築を試みず、失敗した旧receiptを新entryへ採用しない。fallback失敗やsupersedeでも保存を勝手に再開しない。新document初期化が整合状態を作る。第4版の自動再構築案全体の採用ではない。
+
+sidebarの実体保持は[Sidebar State Contract](sidebar-state.md#6-transactionとfailure)の独立条件で決まる。全ページ候補化は、全surfaceのDOM差替えをまたぐ押下保持や、未知のbranch差分の部分更新を保証しない。

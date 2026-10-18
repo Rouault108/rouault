@@ -1,13 +1,20 @@
 import {
   adoptContentBinding,
+  markContentRecoveryRequired,
+  readContentContext,
   beginNavigationIntent,
   adoptNativeNavigationIntent,
   isNavigationIntentCurrent,
   subscribeContentContext,
   type NavigationIntent,
 } from '../navigation/content-navigation-context.js';
-import { readAddress, type BrowserAddressChange } from '../navigation/history-entry.js';
-import { ContentCommitter } from './content-committer.js';
+import {
+  readAddress,
+  readHistoryEntry,
+  type BrowserAddressChange,
+} from '../navigation/history-entry.js';
+import { readCurrentShellCommitId } from '../components/app/shell/app-shell-lifecycle.js';
+import { ContentCommitter, createNavigationCommitReceipt } from './content-committer.js';
 import { ContentTransitionCoordinator } from './content-transition-coordinator.js';
 import { createRouterRuntime } from './create-router-runtime.js';
 import { DocumentLoader } from './document-loader.js';
@@ -23,6 +30,8 @@ import type {
   NavigateRequest,
   HistoryMode,
   NavigationResult,
+  NavigationCommitReceipt,
+  NavigationCompletedResult,
   RouterEventMap,
   RouterOptions,
   RouterRuntimeUrlDependencies,
@@ -55,6 +64,7 @@ export type {
   RouterHydrationPlan,
   NavigationErrorReason,
   NavigationIssue,
+  NavigationCommitReceipt,
   NavigationResult,
   NavigationOutcome,
   PreparedContentUpdate,
@@ -106,6 +116,7 @@ export class Router {
   private isBusy = false;
   private currentUrl = '';
   private hasCommittedNavigation = false;
+  private recoveryReceipt: NavigationCommitReceipt | null = null;
   private stopContextObserver: (() => void) | null = null;
 
   constructor(
@@ -280,8 +291,19 @@ export class Router {
       historyMode,
     );
     const result = await this.queue.enqueue(normalized);
-    if (normalized.intent)
-      this.eventBus.emit('navigation:terminal', { result, intentId: normalized.intent.intentId });
+    if (normalized.intent) {
+      try {
+        this.eventBus.emit('navigation:terminal', { result, intentId: normalized.intent.intentId });
+      } catch (error) {
+        if (!result.committed && !('recoveryRequired' in result && result.recoveryRequired))
+          throw error;
+        result.degraded = true;
+        result.issues.push({
+          code: 'post-commit-failed',
+          error: this.normalizeAcceptedError(error),
+        });
+      }
+    }
     return result;
   }
 
@@ -299,7 +321,7 @@ export class Router {
       state: request.state,
       intent: beginNavigationIntent(
         request.cause ?? 'navigation',
-        request.cause === 'traverse' ? readAddress() : normalizedUrl,
+        request.cause === 'traverse' || historyMode === 'none' ? readAddress() : normalizedUrl,
       ),
     };
   }
@@ -316,6 +338,8 @@ export class Router {
     if (request.intent && !isNavigationIntentCurrent(request.intent))
       return this.createSupersededResult(request);
     const currentUrl = this.currentUrl;
+    if (this.recoveryReceipt || readContentContext()?.recoveryRequired)
+      return this.delegateRecoveryNavigation(request, externalSignal);
     const statePolicy = this.options.urlStateNavigationPolicy;
     const stateDecision = statePolicy
       ? await statePolicy.evaluate({
@@ -335,7 +359,7 @@ export class Router {
       return this.createSupersededResult(request);
     if (stateDecision.kind === 'state-only') {
       const result = await this.runStateOnlyNavigation(request, currentUrl);
-      this.eventBus.emit('after:navigate', result);
+      this.notifyNavigationResult(result);
       return result;
     }
 
@@ -383,7 +407,7 @@ export class Router {
             loadResult.reason,
             loadResult.error,
           );
-          this.eventBus.emit('after:navigate', result);
+          this.notifyNavigationResult(result);
           return result;
         }
 
@@ -411,11 +435,8 @@ export class Router {
                 errorReason: loadErrorReason,
               };
 
-        this.eventBus.emit('error', {
-          error: finalResult.error ?? loadResult.error,
-          stage: 'load',
-        });
-        this.eventBus.emit('after:navigate', finalResult);
+        this.reportLoadError(finalResult, finalResult.error ?? loadResult.error);
+        this.notifyNavigationResult(finalResult);
         return finalResult;
       }
 
@@ -448,7 +469,7 @@ export class Router {
                   : durableCommitResult.errorReason,
             };
 
-      this.eventBus.emit('after:navigate', finalResult);
+      this.notifyNavigationResult(finalResult);
       return finalResult;
     } catch (error) {
       if (
@@ -457,7 +478,7 @@ export class Router {
         (executionController.signal.aborted && isAbortError(error))
       ) {
         const result = this.createSupersededResult(request);
-        this.eventBus.emit('after:navigate', result);
+        this.notifyNavigationResult(result);
         return result;
       }
 
@@ -487,11 +508,8 @@ export class Router {
               errorReason: loadErrorReason,
             };
 
-      this.eventBus.emit('error', {
-        error: finalResult.error ?? new Error('navigation failed'),
-        stage: 'load',
-      });
-      this.eventBus.emit('after:navigate', finalResult);
+      this.reportLoadError(finalResult, finalResult.error ?? new Error('navigation failed'));
+      this.notifyNavigationResult(finalResult);
       return finalResult;
     } finally {
       if (timeoutId !== null) {
@@ -581,13 +599,8 @@ export class Router {
         };
       }
 
-      this.currentUrl = request.normalizedUrl;
-      this.previousRenderedKind = envelope.document.renderedKind;
-      adoptContentBinding(readAddress());
-      const isInitial = !this.hasCommittedNavigation;
-      this.hasCommittedNavigation = true;
-
-      const result: NavigationResult = {
+      const receipt = lifetime.receipt;
+      const result: NavigationCompletedResult = {
         kind: 'completed',
         outcome: 'completed',
         normalizedUrl: request.normalizedUrl,
@@ -598,28 +611,69 @@ export class Router {
         issues: [],
         source: 'none',
         renderedKind: envelope.document.renderedKind,
-        ...lifetime,
+        contentEpoch: lifetime.contentEpoch,
+        shellCommitId: lifetime.shellCommitId,
+        receipt,
         error: envelope.document.renderedKind === 'error' ? baseError : undefined,
         errorReason: envelope.document.renderedKind === 'error' ? baseErrorReason : undefined,
       };
-
-      this.eventBus.emit('content:load', {
-        previousUrl,
-        url: request.normalizedUrl,
-        isInitial,
-      });
-
-      if (canCommit())
-        await this.runPostCommit(
+      // 受理したentryを固定し、observerによって進んだ現在addressで旧本文を採用しない。
+      try {
+        this.adoptAcceptedBinding(receipt);
+      } catch (error) {
+        this.transitions.skip();
+        this.requireBindingRecovery(receipt);
+        return {
+          ...result,
+          recoveryRequired: true,
+          degraded: true,
+          issues: [{ code: 'binding-adoption-failed', error: this.normalizeAcceptedError(error) }],
+        };
+      }
+      this.currentUrl = request.normalizedUrl;
+      this.previousRenderedKind = envelope.document.renderedKind;
+      const isInitial = !this.hasCommittedNavigation;
+      this.hasCommittedNavigation = true;
+      if (lifetime.postAcceptanceError) {
+        this.transitions.skip();
+        result.degraded = true;
+        result.issues.push({ code: 'accepted-commit-failed', error: lifetime.postAcceptanceError });
+      }
+      try {
+        this.eventBus.emit('content:load', {
           previousUrl,
-          request.normalizedUrl,
+          url: request.normalizedUrl,
           isInitial,
-          envelope.document.renderedKind,
-          false,
-          result,
-          request.intent,
-        );
-
+        });
+      } catch (error) {
+        result.degraded = true;
+        result.issues.push({
+          code: 'post-commit-failed',
+          error: this.normalizeAcceptedError(error),
+        });
+        this.transitions.skip();
+      }
+      // 通知observerの故障で、受理済み本文の位置jobや保存再開まで失わない。
+      if (canCommit()) {
+        try {
+          await this.runPostCommit(
+            previousUrl,
+            request.normalizedUrl,
+            isInitial,
+            envelope.document.renderedKind,
+            false,
+            result,
+            request.intent,
+          );
+        } catch (error) {
+          result.degraded = true;
+          result.issues.push({
+            code: 'post-commit-failed',
+            error: this.normalizeAcceptedError(error),
+          });
+          this.transitions.skip();
+        }
+      }
       return result;
     });
   }
@@ -647,6 +701,7 @@ export class Router {
         stateOnly,
         renderedKind,
         intent,
+        ...('receipt' in result ? { receipt: result.receipt } : {}),
       });
     } catch (error) {
       const normalizedError = error instanceof Error ? error : new Error(String(error));
@@ -672,52 +727,227 @@ export class Router {
       if (request.intent && !isNavigationIntentCurrent(request.intent))
         throw new DOMException('superseded', 'AbortError');
     };
+    const accepted: { receipt: NavigationCommitReceipt | null } = { receipt: null };
+    const accept = (): void => {
+      const context = readContentContext();
+      accepted.receipt = createNavigationCommitReceipt({
+        intentId: request.intent?.intentId ?? null,
+        entryId: readHistoryEntry()?.id ?? null,
+        url: readAddress(),
+        contentEpoch: context?.contentEpoch ?? 0,
+        root: context?.root ?? this.outlet,
+        shellCommitId: readCurrentShellCommitId(),
+        stateOnly: true,
+      });
+    };
+    let acceptedError: Error | undefined;
     try {
       checkCurrent();
-      if (request.historyMode === 'push') {
-        this.location.push(request.normalizedUrl, request.state, undefined, checkCurrent);
-      } else if (request.historyMode === 'replace') {
-        this.location.replace(request.normalizedUrl, request.state, undefined, checkCurrent);
+      if (request.historyMode === 'push')
+        this.location.push(request.normalizedUrl, request.state, accept, checkCurrent);
+      else if (request.historyMode === 'replace')
+        this.location.replace(request.normalizedUrl, request.state, accept, checkCurrent);
+      else {
+        if (
+          this.location.normalizeInternalDocumentUrl(readAddress()) !== request.normalizedUrl ||
+          (request.intent &&
+            (request.intent.target.url !== readAddress() ||
+              request.intent.target.entryId !== (readHistoryEntry()?.id ?? null)))
+        )
+          throw new DOMException('history target changed', 'AbortError');
+        accept();
       }
     } catch (error) {
-      if (request.intent && !isNavigationIntentCurrent(request.intent))
-        return this.createCommitSupersededResult(request);
-      throw error;
+      if (!accepted.receipt) {
+        if (request.intent && !isNavigationIntentCurrent(request.intent))
+          return this.createCommitSupersededResult(request);
+        throw error;
+      }
+      acceptedError = this.normalizeAcceptedError(error);
     }
-
-    this.currentUrl = request.normalizedUrl;
-    adoptContentBinding(readAddress());
-    const isInitial = !this.hasCommittedNavigation;
-    this.hasCommittedNavigation = true;
-    const detail = {
-      previousUrl,
-      url: request.normalizedUrl,
-    };
-    this.eventBus.emit('ui-url-state-change', detail);
-
-    const result: NavigationResult = {
+    const receipt = accepted.receipt;
+    if (!receipt) throw new Error('state-only navigation was not accepted');
+    const result: NavigationCompletedResult = {
       kind: 'completed',
       outcome: 'completed',
       normalizedUrl: request.normalizedUrl,
       historyMode: request.historyMode,
       stateOnly: true,
       committed: true,
-      degraded: false,
-      issues: [],
+      degraded: acceptedError !== undefined,
+      issues: acceptedError ? [{ code: 'accepted-commit-failed', error: acceptedError }] : [],
       source: 'state-only',
       renderedKind: null,
+      receipt,
     };
+    // 同epochの後続featureが既に新bindingを採用した場合、その成果を旧受理で上書きしない。
+    if (request.intent && !isNavigationIntentCurrent(request.intent)) return result;
+    try {
+      this.adoptAcceptedBinding(receipt);
+    } catch (error) {
+      this.requireBindingRecovery(receipt);
+      return {
+        ...result,
+        recoveryRequired: true,
+        degraded: true,
+        issues: [{ code: 'binding-adoption-failed', error: this.normalizeAcceptedError(error) }],
+      };
+    }
+    this.currentUrl = request.normalizedUrl;
+    const isInitial = !this.hasCommittedNavigation;
+    this.hasCommittedNavigation = true;
+    try {
+      if (request.intent && !isNavigationIntentCurrent(request.intent)) return result;
+      this.eventBus.emit('ui-url-state-change', { previousUrl, url: request.normalizedUrl });
+    } catch (error) {
+      result.degraded = true;
+      result.issues.push({ code: 'post-commit-failed', error: this.normalizeAcceptedError(error) });
+    }
+    try {
+      await this.runPostCommit(
+        previousUrl,
+        request.normalizedUrl,
+        isInitial,
+        null,
+        true,
+        result,
+        request.intent,
+      );
+    } catch (error) {
+      result.degraded = true;
+      result.issues.push({ code: 'post-commit-failed', error: this.normalizeAcceptedError(error) });
+    }
+    return result;
+  }
 
-    await this.runPostCommit(
-      previousUrl,
-      request.normalizedUrl,
-      isInitial,
-      null,
-      true,
-      result,
-      request.intent,
-    );
+  private adoptAcceptedBinding(receipt: NavigationCommitReceipt): void {
+    const addressIsCurrent = (): boolean =>
+      receipt.root.isConnected &&
+      readCurrentShellCommitId() === receipt.shellCommitId &&
+      readAddress() === receipt.url &&
+      (readHistoryEntry()?.id ?? null) === receipt.entryId;
+    // 旧受理の採用を試してから検査すると、新しい本文contextのbindingまで書き換えてしまう。
+    // intentだけの変化は本文寿命を変えないが、root/epoch/shell/entryの変化は採用前に拒否する。
+    if (!addressIsCurrent())
+      throw new Error('accepted content owner changed before binding adoption');
+    const previous = readContentContext();
+    // standalone Routerには共有本文contextがない。hostの成功通知条件は別に保持する。
+    if (previous === null && receipt.contentEpoch === 0 && receipt.root === this.outlet) return;
+    if (
+      previous?.root !== receipt.root ||
+      previous.contentEpoch !== receipt.contentEpoch ||
+      previous.recoveryRequired
+    )
+      throw new Error('accepted content context changed before binding adoption');
+    adoptContentBinding(receipt.url, receipt.entryId);
+    const context = readContentContext();
+    if (
+      !addressIsCurrent() ||
+      context?.root !== receipt.root ||
+      context.contentEpoch !== receipt.contentEpoch ||
+      context.mutation ||
+      context.recoveryRequired ||
+      context.displayedBinding.url !== receipt.url ||
+      context.displayedBinding.entryId !== receipt.entryId
+    )
+      throw new Error('accepted content binding could not be adopted');
+  }
 
+  private requireBindingRecovery(receipt: NavigationCommitReceipt): void {
+    this.recoveryReceipt = receipt;
+    const context = readContentContext();
+    // 新しい世代や同epochの別bindingへ、旧受理の保存抑止状態を移植しない。
+    if (
+      context?.root === receipt.root &&
+      context.contentEpoch === receipt.contentEpoch &&
+      readCurrentShellCommitId() === receipt.shellCommitId &&
+      (context.mutation ||
+        (context.displayedBinding.url === receipt.url &&
+          context.displayedBinding.entryId === receipt.entryId))
+    )
+      markContentRecoveryRequired(receipt.root, receipt.contentEpoch);
+  }
+
+  private normalizeAcceptedError(error: unknown): Error {
+    return error instanceof Error ? error : new Error(String(error));
+  }
+
+  private reportLoadError(result: NavigationResult, error: Error): void {
+    try {
+      this.eventBus.emit('error', { error, stage: 'load' });
+    } catch (notificationError) {
+      if (!result.committed) throw notificationError;
+      result.degraded = true;
+      result.issues.push({
+        code: 'post-commit-failed',
+        error: this.normalizeAcceptedError(notificationError),
+      });
+    }
+  }
+
+  private notifyNavigationResult(result: NavigationResult): void {
+    try {
+      this.eventBus.emit('after:navigate', result);
+    } catch (error) {
+      if (!result.committed) throw error;
+      result.degraded = true;
+      result.issues.push({ code: 'post-commit-failed', error: this.normalizeAcceptedError(error) });
+    }
+  }
+
+  private delegateRecoveryNavigation(
+    request: NormalizedNavigationRequest,
+    signal: AbortSignal,
+  ): NavigationResult {
+    const intent = request.intent;
+    const current = (): boolean =>
+      !this.destroyed &&
+      !signal.aborted &&
+      intent !== undefined &&
+      isNavigationIntentCurrent(intent) &&
+      (intent.cause !== 'traverse' ||
+        (readAddress() === intent.target.url &&
+          (readHistoryEntry()?.id ?? null) === intent.target.entryId));
+    if (!current()) return this.createCommitSupersededResult(request);
+    // 回復不能な旧DOM/entryの組を再採用せず、新しいcurrent requestをdocumentへ委譲する。
+    document.dispatchEvent(new Event('reading-position:document-fallback'));
+    if (!current()) return this.createCommitSupersededResult(request);
+    let result: NavigationResult;
+    try {
+      this.location.navigateDocument(request.normalizedUrl, request.historyMode);
+      result = {
+        ...this.createDocumentNavigationFallbackResult(
+          request,
+          'binding-recovery-required',
+          new Error('accepted binding requires document recovery'),
+        ),
+        recoveryRequired: true,
+      };
+    } catch (error) {
+      result = {
+        kind: 'load-failure',
+        outcome: 'failed',
+        reason: 'unexpected',
+        errorReason: 'unexpected',
+        normalizedUrl: request.normalizedUrl,
+        historyMode: request.historyMode,
+        stateOnly: false,
+        committed: false,
+        degraded: true,
+        recoveryRequired: true,
+        issues: [],
+        source: 'none',
+        renderedKind: null,
+        error: this.normalizeAcceptedError(error),
+      };
+    }
+    try {
+      // 回復委譲が失敗しても一度だけ通知し、observerの例外でqueueを未解放にしない。
+      this.eventBus.emit('after:navigate', result);
+    } catch (error) {
+      result.degraded = true;
+      result.issues.push({ code: 'post-commit-failed', error: this.normalizeAcceptedError(error) });
+    }
     return result;
   }
 
@@ -740,6 +970,8 @@ export class Router {
   }
 
   private adoptSameDocumentAddress(change: BrowserAddressChange): void {
+    // native hash/addressでも受理失敗の混在contextを通常bindingへ戻さない。
+    if (this.recoveryReceipt || readContentContext()?.recoveryRequired) return;
     const previousUrl = this.currentUrl;
     adoptNativeNavigationIntent(change.url);
     this.currentUrl = change.url;
@@ -819,7 +1051,7 @@ export class Router {
     request: NormalizedNavigationRequest,
     reason: import('./router-types.js').DocumentNavigationFallbackReason,
     error: Error,
-  ): NavigationResult {
+  ): import('./router-types.js').DocumentNavigationFallbackResult {
     return {
       kind: 'document-navigation-fallback',
       outcome: 'completed',

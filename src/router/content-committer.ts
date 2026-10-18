@@ -3,6 +3,7 @@ import {
   readContentContext,
   type NavigationIntent,
 } from '../navigation/content-navigation-context.js';
+import { readAddress, readHistoryEntry } from '../navigation/history-entry.js';
 import { HeadManager } from './head-manager.js';
 import { replaceElementChildrenFromHtml } from './html-fragment.js';
 import { LocationAdapter } from './location-adapter.js';
@@ -25,6 +26,7 @@ import { STATIC_HEADER_ROOT_SELECTOR } from '../../shared/navigation/static-head
 import type {
   ContentUpdateAdapter,
   HistoryMode,
+  NavigationCommitReceipt,
   PreparedShellUpdate,
   RouterRuntimeUrlDependencies,
   ShellAdapter,
@@ -72,7 +74,15 @@ const dispatchShellRollbackStart = (detail: AppShellRollbackStartDetail): void =
   );
 };
 
+let nextCommitId = 0;
+
+export const createNavigationCommitReceipt = (
+  lifetime: Omit<NavigationCommitReceipt, 'commitId'>,
+): NavigationCommitReceipt => Object.freeze({ ...lifetime, commitId: ++nextCommitId });
+
 export interface CommittedContentLifetime {
+  readonly receipt: NavigationCommitReceipt;
+  readonly postAcceptanceError?: Error;
   readonly contentEpoch: number;
   readonly shellCommitId: number;
 }
@@ -116,14 +126,29 @@ export class ContentCommitter {
     };
     checkCurrent();
     let historyApplied = false;
+    const acceptance: { receipt: NavigationCommitReceipt | null } = { receipt: null };
     const isHistoryApplied = (): boolean => historyApplied;
     let validatedDetail: AppShellValidatedDetail;
     let contentEpoch = 0;
+    let contentRoot = this.outlet;
 
+    const accept = (): void => {
+      historyApplied = true;
+      acceptance.receipt = createNavigationCommitReceipt({
+        intentId: request.intent?.intentId ?? null,
+        entryId: readHistoryEntry()?.id ?? null,
+        url: readAddress(),
+        contentEpoch,
+        root: contentRoot,
+        shellCommitId,
+        stateOnly: false,
+      });
+    };
     try {
       checkCurrent();
       await preparedContentMutation.commit();
       contentEpoch = readContentContext()?.contentEpoch ?? 0;
+      contentRoot = readContentContext()?.root ?? this.outlet;
       checkCurrent();
       await preparedShellMutation.commit();
       checkCurrent();
@@ -170,13 +195,28 @@ export class ContentCommitter {
         request.historyMode,
         request.normalizedUrl,
         request.state,
-        () => {
-          historyApplied = true;
-        },
+        accept,
         checkCurrent,
       );
+      if (request.historyMode === 'none') {
+        checkCurrent();
+        if (
+          this.location.normalizeInternalDocumentUrl(readAddress()) !== request.normalizedUrl ||
+          (request.intent &&
+            (readAddress() !== request.intent.target.url ||
+              (readHistoryEntry()?.id ?? null) !== request.intent.target.entryId))
+        )
+          throw new DOMException('history target changed', 'AbortError');
+        accept();
+      }
     } catch (error) {
-      if (isHistoryApplied()) throw error;
+      if (isHistoryApplied() && acceptance.receipt)
+        return {
+          contentEpoch,
+          shellCommitId,
+          receipt: acceptance.receipt,
+          postAcceptanceError: normalizeError(error),
+        };
       const rollbackError = await this.rollbackCommit({
         preparedContentMutation,
         preparedShellMutation,
@@ -199,8 +239,14 @@ export class ContentCommitter {
       throw error;
     }
     // 通知後のenhancement失敗で、成功済みの文書transactionを巻き戻さない。
-    dispatchShellValidated(validatedDetail);
-    return { contentEpoch, shellCommitId };
+    const receipt = acceptance.receipt;
+    if (!receipt) throw new Error('document commit was not accepted');
+    try {
+      dispatchShellValidated(validatedDetail);
+    } catch (error) {
+      return { contentEpoch, shellCommitId, receipt, postAcceptanceError: normalizeError(error) };
+    }
+    return { contentEpoch, shellCommitId, receipt };
   }
 
   private async prepareContentMutation(

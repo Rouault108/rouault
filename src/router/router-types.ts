@@ -35,7 +35,8 @@ export type DocumentNavigationFallbackReason =
   | 'fetch-schema-version-mismatch'
   | 'fetch-navigation-envelope-invalid'
   | 'fetch-navigation-envelope-http-status'
-  | 'current-build-id-invalid';
+  | 'current-build-id-invalid'
+  | 'binding-recovery-required';
 
 export interface RouterRuntimeUrlDependencies {
   readonly siteUrlContext: SiteUrlContext;
@@ -56,7 +57,7 @@ export type NavigationErrorReason =
   | NavigationLoadFailureReason;
 
 export interface NavigationIssue {
-  code: 'post-commit-failed';
+  code: 'post-commit-failed' | 'binding-adoption-failed' | 'accepted-commit-failed';
   error?: Error | undefined;
   diagnostic?: RouterDiagnosticPayload | undefined;
 }
@@ -68,7 +69,20 @@ export interface NavigateRequest {
   cause?: 'initial' | 'traverse';
 }
 
+export interface NavigationCommitReceipt {
+  readonly commitId: number;
+  readonly intentId: number | null;
+  readonly entryId: string | null;
+  readonly url: string;
+  readonly contentEpoch: number;
+  readonly root: HTMLElement;
+  readonly shellCommitId: number;
+  readonly stateOnly: boolean;
+}
+
 export interface NavigationResultMetadata {
+  readonly receipt?: NavigationCommitReceipt;
+  readonly recoveryRequired?: boolean;
   readonly stateOnly: boolean;
   readonly committed: boolean;
   degraded: boolean;
@@ -258,6 +272,7 @@ export interface PostCommitController {
     stateOnly: boolean;
     renderedKind: 'page' | 'not-found' | 'error' | null;
     intent: NavigationIntent;
+    receipt?: NavigationCommitReceipt;
   }): void | Promise<void>;
 }
 

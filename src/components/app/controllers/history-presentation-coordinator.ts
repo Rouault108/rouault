@@ -10,6 +10,7 @@ import { readCurrentShellCommitId } from '../shell/app-shell-lifecycle.js';
 
 export interface HistoryPresentationOwner {
   readonly root: HTMLElement;
+  readonly anchor?: HTMLElement;
   readonly contentEpoch: number;
   readonly shellCommitId: number;
   readonly intent: NavigationIntent;
@@ -36,7 +37,14 @@ export class HistoryPresentationCoordinator {
       this.cancel('interrupted');
     };
     this.unsubscribe = subscribeContentContext((reason) => {
-      if (reason === 'intent' || reason === 'feature' || reason === 'mutation') cancel();
+      if (
+        reason === 'intent' ||
+        reason === 'feature' ||
+        reason === 'before-mutation' ||
+        reason === 'mutation' ||
+        reason === 'recovery'
+      )
+        cancel();
       else if (this.active && !this.owns(this.active.owner)) cancel();
     });
     for (const name of [
@@ -72,6 +80,7 @@ export class HistoryPresentationCoordinator {
       },
       { signal },
     );
+    document.fonts.addEventListener('loading', cancel, { signal });
     for (const name of ['app-shell:rollback-start', 'app-shell:restored'] as const)
       document.addEventListener(name, cancel, { signal });
     document.addEventListener(
@@ -95,6 +104,7 @@ export class HistoryPresentationCoordinator {
       /* 作成前には解放対象がない。 */
     };
     try {
+      const geometry = this.geometry(fixedOwner);
       animation = fixedOwner.root.animate([{ opacity: 0.82 }, { opacity: 1 }], {
         id: 'rouault-history-content',
         duration: 180,
@@ -102,15 +112,36 @@ export class HistoryPresentationCoordinator {
         fill: 'none',
       });
       const ownedAnimation = animation;
+      const checkGeometry = (): void => {
+        if (this.active?.animation !== ownedAnimation) return;
+        try {
+          const measured = this.geometry(fixedOwner);
+          if (
+            !this.canStart(fixedOwner) ||
+            measured.some((value, index) => Math.abs(value - (geometry[index] ?? Infinity)) > 0.1)
+          )
+            this.cancel('geometry-invalidated');
+        } catch {
+          // 測定できない場合も演出だけを終了し、位置jobの通常補正へ戻す。
+          this.cancel('geometry-unavailable');
+        }
+      };
+      // 初回通知は必ず届くため、通知の有無でなく開始時の実幾何との差で取り消す。
+      const resizeObserver = new ResizeObserver(checkGeometry);
       const observer = new MutationObserver((records) => {
-        // 同task内の再接続でも、取り外されたrootの旧寿命は引き継がない。
+        // 同task内の再接続でも、取り外されたroot/anchorの旧寿命は引き継がない。
         const detached = records.some((record) =>
           [...record.removedNodes].some(
-            (node) => node === fixedOwner.root || node.contains(fixedOwner.root),
+            (node) =>
+              node === fixedOwner.root ||
+              node.contains(fixedOwner.root) ||
+              (fixedOwner.anchor !== undefined &&
+                (node === fixedOwner.anchor || node.contains(fixedOwner.anchor))),
           ),
         );
-        if (this.active?.animation === ownedAnimation && (detached || !this.owns(fixedOwner)))
-          this.cancel('root-invalidated');
+        if (this.active?.animation !== ownedAnimation) return;
+        if (detached || !this.owns(fixedOwner)) this.cancel('root-invalidated');
+        else checkGeometry();
       });
       const abort = (): void => {
         if (this.active?.animation === ownedAnimation) this.cancel('intent-aborted');
@@ -119,7 +150,11 @@ export class HistoryPresentationCoordinator {
         try {
           observer.disconnect();
         } finally {
-          fixedOwner.intent.signal.removeEventListener('abort', abort);
+          try {
+            resizeObserver.disconnect();
+          } finally {
+            fixedOwner.intent.signal.removeEventListener('abort', abort);
+          }
         }
       };
       fixedOwner.intent.signal.addEventListener('abort', abort, { once: true });
@@ -127,8 +162,11 @@ export class HistoryPresentationCoordinator {
         childList: true,
         subtree: true,
         attributes: true,
-        attributeFilter: ['id'],
+        characterData: true,
       });
+      resizeObserver.observe(fixedOwner.root, { box: 'border-box' });
+      if (fixedOwner.anchor && fixedOwner.anchor !== fixedOwner.root)
+        resizeObserver.observe(fixedOwner.anchor, { box: 'border-box' });
       const session: PresentationSession = { owner: fixedOwner, animation, release };
       this.active = session;
       // finishedは表示sessionの解放だけに使い、位置jobやnavigationの成功へ接続しない。
@@ -196,19 +234,60 @@ export class HistoryPresentationCoordinator {
   private canStart(owner: HistoryPresentationOwner): boolean {
     return (
       !this.disposed &&
+      owner.intent.cause === 'traverse' &&
       !this.motion.matches &&
       document.visibilityState === 'visible' &&
       typeof owner.root.animate === 'function' &&
+      this.visible(owner.root) &&
       this.owns(owner)
     );
+  }
+
+  private visible(root: HTMLElement): boolean {
+    const style = getComputedStyle(root);
+    const rect = root.getBoundingClientRect();
+    return (
+      root.closest('[hidden], [inert]') === null &&
+      root.getClientRects().length > 0 &&
+      rect.width > 0 &&
+      rect.height > 0 &&
+      style.display !== 'none' &&
+      style.visibility === 'visible' &&
+      style.contentVisibility !== 'hidden'
+    );
+  }
+
+  private geometry(owner: HistoryPresentationOwner): readonly number[] {
+    const { root, anchor } = owner;
+    const rect = root.getBoundingClientRect();
+    const anchorRect = anchor?.getBoundingClientRect();
+    return [
+      rect.left + window.scrollX,
+      rect.top + window.scrollY,
+      rect.width,
+      rect.height,
+      root.scrollWidth,
+      root.scrollHeight,
+      ...(anchorRect
+        ? [
+            anchorRect.left + window.scrollX,
+            anchorRect.top + window.scrollY,
+            anchorRect.width,
+            anchorRect.height,
+          ]
+        : []),
+    ];
   }
 
   private owns(owner: HistoryPresentationOwner): boolean {
     const context = readContentContext();
     return (
       owner.root.isConnected &&
+      (owner.anchor === undefined ||
+        (owner.anchor.isConnected && owner.root.contains(owner.anchor))) &&
       owner.root.matches(MAIN_CONTENT_SELECTOR) &&
       context?.root === owner.root &&
+      context.recoveryRequired !== true &&
       context.contentEpoch === owner.contentEpoch &&
       !context.mutation &&
       context.intent?.intentId === owner.intent.intentId &&

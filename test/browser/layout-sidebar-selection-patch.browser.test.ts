@@ -202,7 +202,7 @@ const currentLinks = () => ({
   target: requireFixtureValue(nav.querySelector<HTMLAnchorElement>(`a[href="${target}"]`)),
 });
 
-describe('限定traverseのsidebar選択属性patch', () => {
+describe('managed traverseのsidebar選択属性patch', () => {
   it('検証済みprojectionではnav/link/spanを切断せず選択だけ移し、runtimeと所有者を保つこと', async () => {
     const nodes = [nav, ...nav.querySelectorAll('*')];
     const links = currentLinks();
@@ -262,6 +262,78 @@ describe('限定traverseのsidebar選択属性patch', () => {
     } finally {
       observer.disconnect();
     }
+  });
+
+  it('逆方向のtraverseでもnav/linkを保持して同node上でrollbackする', async () => {
+    nav.innerHTML =
+      new DOMParser()
+        .parseFromString(projection(targetId).navHtml, 'text/html')
+        .querySelector('nav')?.innerHTML ?? '';
+    root.setAttribute('selected-id', targetId);
+    restoreHistory(sourceState, source);
+    adoptContentBinding(target, targetEntryId);
+    beginNavigationIntent('traverse', source);
+    const links = currentLinks();
+    const update = prepare(projection(sourceId), source);
+    mutateMain();
+    await update.commit();
+    expect(surface.firstElementChild).toBe(nav);
+    expect(links.source.getAttribute('aria-current')).toBe('page');
+    expect(links.target.hasAttribute('aria-current')).toBe(false);
+    await update.rollback();
+    expect(surface.firstElementChild).toBe(nav);
+    expect(links.target.getAttribute('aria-current')).toBe('page');
+    expect(root.getAttribute('selected-id')).toBe(targetId);
+  });
+
+  it('ページ名・note IDの対応に依存せず正規hrefのdocumentで選択を照合する', async () => {
+    const oldUrl = '/about/';
+    const nextUrl = '/corpora/guide/';
+    const retarget = (snapshot: PresentSidebarShellProjection): PresentSidebarShellProjection => {
+      snapshot.selectedId = snapshot.selectedId === sourceId ? 'opaque-old' : 'opaque-new';
+      editNav(snapshot, (element) => {
+        for (const [id, replacementId, url] of [
+          [sourceId, 'opaque-old', oldUrl],
+          [targetId, 'opaque-new', nextUrl],
+        ]) {
+          const row = [...element.querySelectorAll('li[data-node-id]')].find(
+            (node) => node.getAttribute('data-node-id') === id,
+          );
+          requireFixtureValue(row).setAttribute('data-node-id', replacementId ?? '');
+          requireFixtureValue(row?.querySelector('a')).setAttribute('href', url ?? '');
+        }
+      });
+      return snapshot;
+    };
+    const previous = retarget(projection());
+    const next = retarget(projection(targetId));
+    nav.innerHTML = requireFixtureValue(
+      new DOMParser().parseFromString(previous.navHtml, 'text/html').querySelector('nav'),
+    ).innerHTML;
+    root.setAttribute('selected-id', 'opaque-old');
+    restoreHistory(targetState, nextUrl);
+    adoptContentBinding(oldUrl, sourceEntryId);
+    beginNavigationIntent('traverse', nextUrl);
+    const nodes = [nav, ...nav.querySelectorAll('*')];
+    const update = prepare(next, nextUrl);
+    mutateMain();
+    await update.commit();
+    expect(surface.firstElementChild).toBe(nav);
+    expect(nodes.every((node) => node.isConnected)).toBe(true);
+    expect(nav.querySelector('[aria-current]')?.getAttribute('href')).toBe(nextUrl);
+    expect(root.getAttribute('selected-id')).toBe('opaque-new');
+  });
+
+  it('同documentのquery/hash付き宛先でもpayloadとexact browser ownerを別々に検証する', async () => {
+    const url = `${target}?view=reading#section`;
+    restoreHistory(targetState, url);
+    beginNavigationIntent('traverse', url);
+    const update = prepare(projection(targetId), url);
+    mutateMain();
+    await update.commit();
+    expect(surface.firstElementChild).toBe(nav);
+    expect(root.getAttribute('selected-id')).toBe(targetId);
+    expect(readAddress()).toBe(url);
   });
 
   it('browser ownerの末尾slashを保持し、正規payload URLで同nodeを更新すること', async () => {

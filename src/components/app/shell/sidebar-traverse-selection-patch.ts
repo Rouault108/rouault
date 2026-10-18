@@ -4,11 +4,23 @@ import {
   readContentContext,
 } from '../../../navigation/content-navigation-context.js';
 import { readAddress, readHistoryEntry } from '../../../navigation/history-entry.js';
+import {
+  normalizeRouaultPathname,
+  sanitizeRouaultSearchParams,
+} from '../../../../shared/url/rouault-url-policy.js';
 import { readCurrentShellCommitId } from './app-shell-lifecycle.js';
 
-const SOURCE_URL = '/notes/testing/reader-basic';
-const TARGET_URL = '/notes/testing/toc-readable-long-heading';
-const inScope = (url: string, path: string): boolean => url === path || url === `${path}/`;
+const normalizedUrl = (url: string): string | null => {
+  const parsed = new URL(url, location.origin);
+  if (parsed.origin !== location.origin || !['http:', 'https:'].includes(parsed.protocol))
+    return null;
+  sanitizeRouaultSearchParams(parsed);
+  return `${normalizeRouaultPathname(parsed.pathname)}${parsed.search}${parsed.hash}`;
+};
+const documentPath = (url: string): string | null => {
+  const normalized = normalizedUrl(url);
+  return normalized === null ? null : new URL(normalized, location.origin).pathname;
+};
 
 type PresentSidebar = Extract<RuntimeSidebarShellSnapshot, { present: true }>;
 
@@ -50,6 +62,17 @@ const withoutSelection = (nav: HTMLElement): string => {
 
 const validSelection = (nav: HTMLElement, snapshot: PresentSidebar, url: string): boolean => {
   const selected = nav.querySelectorAll('[aria-current]');
+  const path = documentPath(url);
+  if (path === null || nav.hasAttribute('aria-current')) return false;
+  if (snapshot.selectedId === null)
+    return (
+      selected.length === 0 &&
+      !Array.from(
+        nav.querySelectorAll<HTMLAnchorElement>(
+          'li[data-node-kind="leaf"] > a[data-sidebar-nav-control]',
+        ),
+      ).some((link) => documentPath(link.href) === path)
+    );
   const link = selected[0];
   const row = link?.closest('li[data-node-id]');
   return (
@@ -60,9 +83,12 @@ const validSelection = (nav: HTMLElement, snapshot: PresentSidebar, url: string)
     link.getAttribute('aria-current') === 'page' &&
     row?.getAttribute('data-node-kind') === 'leaf' &&
     row.getAttribute('data-node-id') === snapshot.selectedId &&
-    snapshot.selectedId === url.slice('/notes/'.length) &&
+    Array.from(nav.querySelectorAll('li[data-node-id]')).filter(
+      (element) => element.getAttribute('data-node-id') === snapshot.selectedId,
+    ).length === 1 &&
     row.querySelector(':scope > a') === link &&
-    link.getAttribute('href') === url
+    !new URL(link.getAttribute('href') ?? '', location.origin).hash &&
+    documentPath(link.href) === path
   );
 };
 
@@ -73,7 +99,7 @@ export const prepareSidebarTraverseSelectionPatch = (options: {
   next: RuntimeSidebarShellSnapshot;
   readCurrentSnapshot: () => RuntimeSidebarShellSnapshot;
 }): SidebarTraverseSelectionPatch | null => {
-  // URLだけで一般化せず、単一の検証経路と実projectionの一致を独立に要求する。
+  // ページ名ではなくmanaged traverseの所有権と実projectionの一致を要求する。
   try {
     const { root, previous, next } = options;
     const context = readContentContext();
@@ -84,15 +110,14 @@ export const prepareSidebarTraverseSelectionPatch = (options: {
     if (
       !context ||
       context.mutation ||
+      context.recoveryRequired ||
       !context.root?.isConnected ||
       !context.root.matches('main#main-content') ||
       context.root.ownerDocument !== root.ownerDocument ||
       !intent ||
       !isNavigationIntentCurrent(intent) ||
       intent.cause !== 'traverse' ||
-      !inScope(context.displayedBinding.url, SOURCE_URL) ||
-      !inScope(intent.target.url, TARGET_URL) ||
-      options.navigationUrl !== TARGET_URL ||
+      normalizedUrl(intent.target.url) !== options.navigationUrl ||
       !context.displayedBinding.entryId ||
       !intent.target.entryId ||
       context.displayedBinding.entryId === intent.target.entryId ||
@@ -110,6 +135,8 @@ export const prepareSidebarTraverseSelectionPatch = (options: {
     // payloadはrouter正規化後のURL、intent/addressはbrowser entryのexact URLである。
     // direct表示の末尾slashを消さず、両者のscopeと所有権を別々に照合する。
     const binding = context.displayedBinding;
+    const previousUrl = binding.url;
+    const targetUrl = intent.target.url;
     const contentRoot = context.root;
     const epoch = context.contentEpoch;
     const generation = readCurrentShellCommitId();
@@ -117,6 +144,7 @@ export const prepareSidebarTraverseSelectionPatch = (options: {
       const current = readContentContext();
       return (
         current?.root === contentRoot &&
+        !current.recoveryRequired &&
         contentRoot.isConnected &&
         current.intent?.intentId === intent.intentId &&
         isNavigationIntentCurrent(intent) &&
@@ -146,8 +174,8 @@ export const prepareSidebarTraverseSelectionPatch = (options: {
     if (
       !previousNav ||
       !nextNav ||
-      !validSelection(previousNav, previous, SOURCE_URL) ||
-      !validSelection(nextNav, next, TARGET_URL) ||
+      !validSelection(previousNav, previous, previousUrl) ||
+      !validSelection(nextNav, next, targetUrl) ||
       withoutSelection(previousNav) !== withoutSelection(nextNav)
     )
       return null;
@@ -176,7 +204,7 @@ export const prepareSidebarTraverseSelectionPatch = (options: {
           metadata(current) === metadata(expected) &&
           current.selectedId === expected.selectedId &&
           canonical !== null &&
-          validSelection(canonical, current, expected === previous ? SOURCE_URL : TARGET_URL) &&
+          validSelection(canonical, current, expected === previous ? previousUrl : targetUrl) &&
           withoutSelection(canonical) === withoutSelection(previousNav)
         );
       } catch {

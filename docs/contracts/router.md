@@ -157,10 +157,22 @@ History entryの識別・cause・取消signalをpost-renderへ渡す。共通wri
 
 対象は現在のBaseLayoutを使う公開note、`/tags/{tag}/`、`/search/`、`/corpora/`と個別corpus、`/`、`/about/`、`/memos/`と公開memoなどの既知ページ。note↔tag/search/corpora、sidebar・TOCの有無や本文列幅が変わる組を含め、両端が既知profileなら通常移動を許容する。route manifestのpresenceとshell検証が判定の正本であり、URL prefixから配置を推測しない。`layoutKey`は同配置かを比較する情報であって、演出可否の安全性検証の代替にしない。
 
-初期表示、traverse、hash、state-only、error/not-foundとその直後、manifest未掲載route、document fallback、外部リンク、sidebarの枝開閉はnative演出に含めない。rollback後は次のshell検証成功まで通常commitへ縮退する。別所有者による一方向の限定履歴表示検証は[Reading Position Contract](reading-position.md#限定した履歴表示の検証)を参照。Routerのcommit callbackへ履歴用Animation待機を追加しない。
+初期表示、traverse、hash、state-only、error/not-foundとその直後、manifest未掲載route、document fallback、外部リンク、sidebarの枝開閉はnative演出に含めない。rollback後は次のshell検証成功まで通常commitへ縮退する。別所有者によるBack/Forwardの共通履歴表示は[Reading Position Contract](reading-position.md#履歴表示の共通判定)を参照。Routerのcommit callbackへ履歴用Animation待機を追加しない。
 
 `ContentTransitionCoordinator`はAPI対応・reduced motion・表示状態・演出寿命だけを所有する。`commitLoadedSnapshot`は既存ContentCommitterの本文→shell→DOM検証→head→historyから、current URL・binding採用、`content:load`、既存post-commitのfocusと通常先頭位置適用までを一つの更新callbackへ渡す。callback入口でdestroy/abort/最新intentを再照合し、同じexecution signalをContentCommitterの既存checkCurrentへ渡し、transaction・rollback・epochを維持する。履歴確定後の中断はcommit成功とbindingを保ち、後続post-commitを抑止する。hydration-readyや読書位置の安定化jobはawaitしない。
 
 callbackは保存したPromiseで最大一度実行する。APIの同期開始失敗のみ同じcallbackで通常commitへ縮退する。`updateCallbackDone`で更新完了を待つが、`ready`/`finished`の演出失敗を理由に再commit・history再書込・error文書化しない。実commit失敗は既存failure semanticsへ返す。NavigationQueueは`finished`を待たない。
 
 execution abort/timeout、新intent、pointer/wheel/touchmove、scroll key/Tab/Escape/Enter、非表示化、viewport変更、pagehide、reduced-motion変更、destroyで演出をskipする。skipはcallbackを取り消さないため、既存intent検査が古い更新を防ぐ。演出オブジェクトの同一性でcleanupを守り、古いfinishedが新しいmarkerを消さない。
+
+## Commit acceptance and recovery
+
+Full本文更新では、`before-mutation`でReadingPositionControllerが旧表示のcheckpointと保存抑止を確立してから、新contentEpoch/`mutation: true`を設定する。後続の`mutation`通知でhydrationを取り消す。enhancerの後始末もDOMを変えるため、旧contextのままcleanupを先行させない。state-onlyは本文寿命を変えず、このphaseを通らない。
+
+本文→shell→DOM検証→headの順序を維持し、push/replaceは既存History API成功直後、noneはその後の最終intent/signal・exact entry/address照合直後を受理点とする。受理時にcommitId、intentId、entryId、exact URL、contentEpoch、root、shellCommitId、stateOnlyをimmutableなNavigationCommitReceiptへ固定する。受理前の失敗は従来rollback、受理後の失敗はcommitted:true/degradedとして隔離し、error本文再commit・history再書込・確定本文rollbackを行わない。
+
+binding採用は受理記録と現在のroot/epoch/shell/entry/addressを照合する。採用失敗はbinding-adoption-failed/recoveryRequiredで終端化し、共有content contextの回復状態を立て、成功通知・post-commit処理・表示効果へ進めない。receiptは失敗後のcurrent値から再構成しない。state-onlyも独立receiptを持つがepoch/rootは継続し、full文書成功通知やhydrationを再発行しない。
+
+hostのnavigation-committed通知は、固定receiptのroot/epoch/shell、表示bindingとaddress、mutation:false/recovery:falseを確認してcommitId単位で一度だけ発行する。通知・post-commit・cleanupの失敗を受理前失敗へ戻さない。Animation finishedは受理・queue・hydration完了条件ではない。
+
+回復中の次navigationは、通常の離脱保存やcommitに進まず、current intentと宛先を再検査して既存document fallbackへ委譲する。旧receiptによる別entryの採用、mutation:falseだけの強制解除、再commitによる修復は行わない。fallbackの失敗・失効でも保存抑止を解除しない。この方針ではsame-documentを含む次の有効な要求もdocument移動となり、同entry自動再採用は実装しない。
