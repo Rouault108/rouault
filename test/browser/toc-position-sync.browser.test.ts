@@ -32,7 +32,11 @@ afterEach(() => {
   vi.restoreAllMocks();
   releaseContentContext(root);
   root = null;
-  if (readAddress() !== originalUrl || history.state !== baselineState)
+  // stateが複製されても、参照差だけで無変更の履歴を書き戻さない。
+  if (
+    readAddress() !== originalUrl ||
+    JSON.stringify(history.state) !== JSON.stringify(baselineState)
+  )
     history.replaceState(baselineState, '', originalUrl);
   window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
 });
