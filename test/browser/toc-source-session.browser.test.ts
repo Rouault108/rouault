@@ -361,6 +361,80 @@ describe('TocSourceSession の単一所有と予約・transaction 契約', () =>
     assertCurrent(session.binding.nav, 'session-three');
   });
 
+  it('early位置受理のsequence失効とnew intent後も、未activateの同一sourceをviewport追跡する', async () => {
+    const { session, position } = await setup();
+    const scheduling = captureScheduling();
+    let acceptedCurrent = true;
+    const accepted = { ...position, sequence: 8, isCurrent: () => acceptedCurrent };
+    expect(session.accept(accepted)).toBe('accepted');
+    assertCurrent(session.binding.nav, 'session-two');
+    acceptedCurrent = false;
+    beginNavigationIntent('navigation', readAddress());
+    expect(session.isCurrent()).toBe(true);
+    const status = position.root.dataset['tocNativeSync'];
+    const sequence = position.root.dataset['tocPositionSequence'];
+    window.scrollTo({ top: 2550, behavior: 'instant' });
+    window.dispatchEvent(new Event('scroll'));
+    scheduling.frames.splice(0).forEach((frame) => frame(performance.now()));
+    assertCurrent(session.binding.nav, 'session-three');
+    expect(scheduling.timers).toHaveLength(0);
+    expect(scheduling.microtasks).toHaveLength(0);
+    expect(position.root.dataset['tocNativeSync']).toBe(status);
+    expect(position.root.dataset['tocPositionSequence']).toBe(sequence);
+    // early通常観測の権限は、通常activationのstrict条件免除には昇格しない。
+    requireFixtureValue(position.root.querySelector<HTMLElement>('.note-shell')).style.setProperty(
+      '--note-toc-track',
+      'auto',
+    );
+    window.scrollTo({ top: 1300, behavior: 'instant' });
+    window.dispatchEvent(new Event('scroll'));
+    scheduling.frames.splice(0).forEach((frame) => frame(performance.now()));
+    assertCurrent(session.binding.nav, 'session-three');
+    expect(scrollY).toBe(1300);
+    expect(session.accept(accepted)).toBe('superseded');
+  });
+
+  it('pagehide後もearly通常予約はfresh viewportへ更新し、失効したnative位置証明を再利用しない', async () => {
+    const { session, position } = await setup();
+    const scheduling = captureScheduling();
+    let positionCurrent = true;
+    const observation = nativeObservation(position, 9, () => positionCurrent);
+    session.observe(observation, () => session.isCurrent());
+    expect(position.root.dataset['tocNativeSync']).toBe('accepted');
+    expect(position.root.dataset['tocPositionSequence']).toBe('9');
+    let hidden = false;
+    session.subscribe(() => {
+      if (hidden || session.snapshot?.activeId !== 'session-three') return;
+      hidden = true;
+      session.refresh();
+      positionCurrent = false;
+      window.dispatchEvent(new Event('pagehide'));
+      window.scrollTo({ top: 1300, behavior: 'instant' });
+    });
+    window.scrollTo({ top: 2550, behavior: 'instant' });
+    window.dispatchEvent(new Event('scroll'));
+    scheduling.frames.splice(0).forEach((frame) => frame(performance.now()));
+    expect(hidden).toBe(true);
+    scheduling.drainMicrotasks();
+    assertCurrent(session.binding.nav, 'session-two');
+    expect(getTocSourceSession(requireFixtureValue(controller))).toBe(session);
+    const read = vi.spyOn(session.tracker, 'readCandidate');
+    session.observe(observation);
+    expect(read).not.toHaveBeenCalled();
+    read.mockRestore();
+    assertCurrent(session.binding.nav, 'session-two');
+    expect(position.root.dataset['tocNativeSync']).toBe('accepted');
+    expect(position.root.dataset['tocPositionSequence']).toBe('9');
+    expect(scheduling.timers).toHaveLength(0);
+    requireFixtureValue(position.root.querySelector<HTMLElement>('.note-shell')).style.setProperty(
+      '--note-toc-track',
+      'auto',
+    );
+    window.scrollTo({ top: 2550, behavior: 'instant' });
+    session.refresh();
+    assertCurrent(session.binding.nav, 'session-two');
+  });
+
   it('pagehideはpending strictを失効し、残った通常予約は最新viewportを再読する', async () => {
     const { session, position } = await setup();
     const scheduling = captureScheduling();

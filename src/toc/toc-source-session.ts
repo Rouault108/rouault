@@ -12,6 +12,8 @@ import type {
 import {
   readValidatedShellProof,
   subscribeValidatedShellProof,
+  readCurrentShellCommitId,
+  type ValidatedShellProof,
 } from '../components/app/shell/app-shell-lifecycle.js';
 import { TocActiveTracker } from './toc-active-tracker.js';
 import { readTocSourceBinding, type TocSourceBinding } from './toc-source-binding.js';
@@ -37,6 +39,7 @@ interface Change {
 }
 interface Request {
   readonly strict: boolean;
+  readonly positionBound: boolean;
   readonly preferHash: boolean;
   readonly requestedId?: string;
   readonly key: string;
@@ -80,6 +83,7 @@ export class TocSourceSession {
   private policyRevision = 0;
   private nativePolicy: NativeReadingPositionObservation | null = null;
   private positionProof: (() => boolean) | null = null;
+  private earlyAuthority: (() => boolean) | null = null;
   private readonly surfaces = new Set<Surface>();
   private readonly listeners = new Set<() => void>();
   private stopContext: (() => void) | null = null;
@@ -136,7 +140,7 @@ export class TocSourceSession {
   private onPageHide = (): void => {
     // 通常観測とshellは維持し、保存された位置の成功証明だけを破棄する。
     this.positionProof = null;
-    if (this.pending?.strict) this.pending = null;
+    if (this.pending?.positionBound) this.pending = null;
     this.policyRevision += 1;
   };
   activate(): void {
@@ -216,7 +220,10 @@ export class TocSourceSession {
   setInitialPolicy(position: NativeReadingPositionObservation): void {
     this.nativePolicy = position;
   }
-  observe(position: NativeReadingPositionObservation): void {
+  observe(
+    position: NativeReadingPositionObservation,
+    authority: () => boolean = position.isCurrent,
+  ): void {
     if (!position.isCurrent() || position.root !== this.binding.root) return;
     if (
       this.nativePolicy?.isCurrent() &&
@@ -232,10 +239,18 @@ export class TocSourceSession {
     }
     if (position.phase !== 'accepted') return;
     this.positionProof = position.isCurrent;
+    this.earlyAuthority = authority;
     this.writeFault = false;
     this.connect();
     const result = this.request(
-      this.capture(true, this.snapshot === null, position.isCurrent, position.sequence),
+      this.capture(
+        true,
+        this.snapshot === null,
+        position.isCurrent,
+        position.sequence,
+        undefined,
+        true,
+      ),
     );
     if (this.isCurrent() && position.isCurrent()) {
       this.binding.root.dataset['tocNativeSync'] = result;
@@ -249,9 +264,16 @@ export class TocSourceSession {
       (position.isCurrent?.() ?? true);
     if (!current()) return 'superseded';
     this.positionProof = current;
+    const proof = readValidatedShellProof();
+    const shellCommitId = position.receipt?.shellCommitId;
+    this.earlyAuthority = proof
+      ? () => sameValidatedShell(proof)
+      : () => readCurrentShellCommitId() === shellCommitId;
     this.writeFault = false;
     this.connect();
-    return this.request(this.capture(true, false, current, position.sequence ?? 0));
+    return this.request(
+      this.capture(true, false, current, position.sequence ?? 0, undefined, true),
+    );
   }
   private capture(
     strict: boolean,
@@ -259,6 +281,7 @@ export class TocSourceSession {
     proof?: () => boolean,
     sequence = 0,
     requestedId?: string,
+    positionBound = false,
   ): Request {
     const context = readContentContext();
     const intent = context?.intent;
@@ -269,6 +292,7 @@ export class TocSourceSession {
     const trackerRevision = this.tracker.policyRevision;
     return {
       strict,
+      positionBound,
       preferHash,
       sequence,
       position: strict ? readPosition() : null,
@@ -278,10 +302,16 @@ export class TocSourceSession {
         const next = readContentContext();
         return (
           this.isCurrent(verifyStructure) &&
-          (!strict || this.positionProof === proof) &&
+          (!positionBound || this.positionProof === proof) &&
           (proof?.() ?? true) &&
           next?.contentEpoch === epoch &&
           next?.intent === intent &&
+          (next === null ||
+            (next.root === this.binding.root &&
+              next.displayedBinding.url === url &&
+              next.addressBinding.url === url &&
+              next.displayedBinding.entryId === entry &&
+              next.addressBinding.entryId === entry)) &&
           !intent?.signal.aborted &&
           readAddress() === url &&
           (readHistoryEntry()?.id ?? null) === entry &&
@@ -297,7 +327,7 @@ export class TocSourceSession {
     const fresh = this.capture(
       !this.normalAllowed,
       preferHash,
-      this.normalAllowed ? undefined : (this.positionProof ?? (() => false)),
+      this.normalAllowed ? undefined : (this.earlyAuthority ?? (() => false)),
     );
     const frame = this.refreshFrame;
     let result: TocPositionSyncResult;
@@ -321,8 +351,8 @@ export class TocSourceSession {
         !pending.current() ||
         (pending.position !== null && !samePosition(pending.position, readPosition())) ||
         pending.key !== request.key ||
-        !pending.strict ||
-        (request.strict && request.sequence >= pending.sequence)
+        !pending.positionBound ||
+        (request.positionBound && request.sequence >= pending.sequence)
       )
         this.pending = request;
       this.tracker.deferRefresh();
@@ -493,6 +523,7 @@ export class TocSourceSession {
     this.disposed = true;
     this.pending = null;
     this.positionProof = null;
+    this.earlyAuthority = null;
     this.stopContext?.();
     this.stopContext = null;
     window.removeEventListener('pagehide', this.onPageHide);
@@ -565,6 +596,15 @@ export const syncAcceptedTocPosition = (
   }
   return result;
 };
+// 証明wrapperの再発行と、実際のshell交換を区別する。
+const sameValidatedShell = (proof: ValidatedShellProof): boolean => {
+  const current = readValidatedShellProof();
+  return (
+    current?.document === proof.document &&
+    current.header === proof.header &&
+    current.shellCommitId === proof.shellCommitId
+  );
+};
 const connectNativeObservation = (): void => {
   const observation = nativeObservation;
   const proof = readValidatedShellProof();
@@ -580,10 +620,13 @@ const connectNativeObservation = (): void => {
   if (!controller) return;
   try {
     const session = getTocSourceSession(controller);
-    session?.observe({
-      ...observation,
-      isCurrent: () => observation.isCurrent() && readValidatedShellProof() === proof,
-    });
+    session?.observe(
+      {
+        ...observation,
+        isCurrent: () => observation.isCurrent() && sameValidatedShell(proof),
+      },
+      () => sameValidatedShell(proof),
+    );
   } catch (error) {
     diagnose(error);
   }
