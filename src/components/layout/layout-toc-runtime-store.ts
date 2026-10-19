@@ -23,7 +23,8 @@ export type LayoutTocRuntimeSnapshotInput = Pick<
 
 interface Entry {
   snapshot: LayoutTocRuntimeSnapshot;
-  listeners: Set<(snapshot: LayoutTocRuntimeSnapshot) => void>;
+  listeners: Map<object, (snapshot: LayoutTocRuntimeSnapshot) => void>;
+  revision: number;
 }
 
 const createDefaultSnapshot = (): LayoutTocRuntimeSnapshot => ({
@@ -36,17 +37,19 @@ const createDefaultSnapshot = (): LayoutTocRuntimeSnapshot => ({
 
 const createEntry = (): Entry => ({
   snapshot: createDefaultSnapshot(),
-  listeners: new Set(),
+  listeners: new Map(),
+  revision: 0,
 });
 
 class LayoutTocRuntimeStore {
   private _entries = new Map<string, Entry>();
 
-  publish(id: string | undefined, snapshot: LayoutTocRuntimeSnapshotInput): void {
+  publish(
+    id: string | undefined,
+    snapshot: LayoutTocRuntimeSnapshotInput,
+  ): LayoutTocRuntimeSnapshot {
     const entry = this._ensure(id);
-    entry.snapshot = this._normalizeSnapshot(snapshot);
-
-    this._emit(entry);
+    return this._commit(entry, this._normalizeSnapshot(snapshot));
   }
 
   subscribe(
@@ -55,12 +58,12 @@ class LayoutTocRuntimeStore {
   ): () => void {
     const resolvedId = this._resolveId(id);
     const entry = this._ensure(resolvedId);
-    entry.listeners.add(listener);
-    listener(entry.snapshot);
+    const registration = {};
+    entry.listeners.set(registration, listener);
+    this._notify(listener, entry.snapshot);
 
     return () => {
-      const current = this._entries.get(resolvedId);
-      current?.listeners.delete(listener);
+      entry.listeners.delete(registration);
     };
   }
 
@@ -78,34 +81,35 @@ class LayoutTocRuntimeStore {
   ): LayoutTocRuntimeSnapshot {
     const entry = this._ensure(id);
     const signature = createTocPanelContentSignature(input);
-    entry.snapshot = {
+    return this._commit(entry, {
       ...entry.snapshot,
       panelContentSignature: signature,
-    };
-    this._emit(entry);
-    return entry.snapshot;
+    });
   }
 
   dispose(id: string | undefined): void {
     const resolvedId = this._resolveId(id);
     const entry = this._ensure(resolvedId);
-    entry.snapshot = {
+    this._commit(entry, {
       ...entry.snapshot,
       ready: false,
       hasVisibleHeadings: false,
       activeId: null,
       hydrationState: 'disposed',
-    };
-    this._emit(entry);
+    });
   }
 
   reset(id?: string): void {
     if (id === undefined) {
+      for (const entry of this._entries.values()) this._invalidate(entry);
       this._entries.clear();
       return;
     }
 
-    this._entries.delete(this._resolveId(id));
+    const resolvedId = this._resolveId(id);
+    const entry = this._entries.get(resolvedId);
+    if (entry) this._invalidate(entry);
+    this._entries.delete(resolvedId);
   }
 
   private _ensure(id?: string): Entry {
@@ -141,11 +145,51 @@ class LayoutTocRuntimeStore {
     };
   }
 
-  private _emit(entry: Entry): void {
-    const snapshot = entry.snapshot;
-    for (const listener of entry.listeners) {
-      listener(snapshot);
+  private _commit(entry: Entry, snapshot: LayoutTocRuntimeSnapshot): LayoutTocRuntimeSnapshot {
+    const previous = entry.snapshot;
+    const signature = snapshot.panelContentSignature;
+    const previousSignature = previous.panelContentSignature;
+    if (
+      previous.ready === snapshot.ready &&
+      previous.hasVisibleHeadings === snapshot.hasVisibleHeadings &&
+      previous.activeId === snapshot.activeId &&
+      previous.hydrationState === snapshot.hydrationState &&
+      signature?.ownerId === previousSignature?.ownerId &&
+      signature?.headingCount === previousSignature?.headingCount &&
+      signature?.sourceVersion === previousSignature?.sourceVersion
+    ) {
+      return previous;
     }
+
+    entry.snapshot = snapshot;
+    const revision = ++entry.revision;
+    // 再入で新しい状態が確定した後に、古い通知を後続購読者へ渡さない。
+    for (const [registration, listener] of [...entry.listeners]) {
+      if (entry.revision !== revision) break;
+      if (entry.listeners.has(registration)) this._notify(listener, snapshot);
+    }
+    return snapshot;
+  }
+
+  private _notify(
+    listener: (snapshot: LayoutTocRuntimeSnapshot) => void,
+    snapshot: LayoutTocRuntimeSnapshot,
+  ): void {
+    try {
+      listener(snapshot);
+    } catch (error) {
+      // 購読側の障害で確定済み状態や他の購読を失わせない。
+      try {
+        console.warn('TOC runtime subscriber failed', error);
+      } catch {
+        // 診断先の障害も購読境界の外へ伝播させない。
+      }
+    }
+  }
+
+  private _invalidate(entry: Entry): void {
+    entry.revision += 1;
+    entry.listeners.clear();
   }
 
   private _resolveId(id?: string): string {
