@@ -1,0 +1,41 @@
+# Native位置観測と単一TOC source session
+
+日付: 2026-10-19。baseline: `5b79cced2392842ff3c9c7a6d6f0e81d517df1f8`。先行する[SPA／履歴同期](toc-current-at-accepted-reading-position.md)とは別の変更である。
+
+## 採用判断
+
+直アクセス・reload・BFCacheの位置採用後も、遅延interaction moduleを待つ間はTOC currentが未投影だった。source単位の`TocSourceSession`が一つのtracker、writer、visible/current、policyと観測を所有し、controllerは後からpresentationを接続する。Readingは位置の唯一のwriterであり、TOCのためのscroll、本文の非表示、待機loop、pollingを追加しない。
+
+取得・constructorには購読やDOM書込の副作用を持たせない。actual controller/source/content root/epochを確認し、registryに登録してから接続する。再入は同じ初期化中sessionを取得し、破棄はregistryの同一性を比較して自分の登録だけを消す。本文の正式なbefore-mutationで旧sessionを破棄する。scope選択の変更は同じsessionで再評価する。
+
+## 位置とshellの証明
+
+Readingは同期分類と、実際に位置を採用した後の観測を分けてPostRenderへ渡す。root/epoch/intent/entry/exact URL/shellとsequenceを固定し、isCurrentで照合する。元のcommit receiptは維持し、native経路にreceiptを捏造しない。opaque entryはearly接続を省略し、autoと通常の表示を維持する。
+
+shell ownerはactual Document/header identityと現行shell世代に結び付いた検証証明を直近一個だけ保持する。位置観測とは別の寿命とし、位置とshellの両方が有効なときだけearly接続する。rollbackでheaderが再生成され証明が失効した場合は、既存bridgeの検証contextによる通常activationへ戻す。
+
+reload/history/BFCacheではviewportを古いURL hashより優先する。直アクセスのfragmentは既存reveal/holdを維持する。後から生じた本人hash／TOC操作は新しいintentを優先する。ReadingはscrollごとのTOC供給者にはせず、trackerが既存scroll/resize/pageshow/scopeとfont完了・本文image完了を直接観測する。
+
+位置受理の証明と、接続済みsource/shellで通常観測を続ける権限は別に保持する。earlyの通常観測も現在のXY/range・独立track・witnessをstrict検証するが、元の位置受理結果やsequenceを成功へ書き換えない。pagehideでは未処理の位置要求と受理証明を明示失効させる。session、shell、通常観測は保持し、pageshowで新たな位置観測を行う。復帰前のload/rAF callbackは新sequenceを上書きしない。通常予約も実行時にgeometry/policyを読み直す。
+
+## Transactionと再入
+
+入力側で取消・期限・許可済みtabs revealを処理した後、owner/policyと一つのnowを固定する。candidate算出はholdを変更せず、DOM apply一回、verify一回、canonical commit、通知の順に行う。strictは独立track、XY/range、全見出しwitnessとDOM属性を確認する。normalは正規activation後だけ許可し、owner/source、DOM属性、適用後のvisible/current候補を確認する。strict失敗の同じ呼出し内でnormalへ切り替えない。
+
+apply/verify/rollbackの例外をTOC内で隔離する。rollbackは同じownerに自分の書いた属性/tokenが残る場合だけ一度行い、他の処理、新node、新ownerへ触れない。失敗時はcanonicalを公開せず、実XY/rangeを再読する。nativeの座標回復は保証せず、Readingが実位置を採り直す。write faultはscrollごとに繰り返さず、新しい位置受理または正規activationによる再試行を使う。通知先の例外は確定済みstateを巻き戻さない。
+
+再入はlatest pending一件と既存microtask予約で処理し、再帰apply・同期drainを行わない。有効な同owner/intent/binding/policyのstrictをnormalで弱めず、失効した要求は新入力を妨げない。新intent/binding/policyは通知中でも正当な入力である。因果回数の上限は置かない。同じsemantic state/DOM/公開stateの反復通知で自己駆動しない。
+
+## 起動とpresentation
+
+購読の接続と、既存activation時のinitialStartedを分ける。初期同期処理が失敗しても、liveなsourceでは0ms/rAF/120msとcontroller由来microtask/rAFを個別に一度試行する。一枠の登録例外で他の枠を飛ばさず、登録flagを回復する。presentation retryではtracker、hold、成功済み／消費済みtimerを作り直さない。
+
+mobileはclosed/hidden/inertで作り、link検証、handlers/subscriptions接続、最新viewportの全surface同期成功、owner/lease確認後にreadyを公開する。古いsnapshotの存在だけでreadyにしない。途中のopen要求は記録だけ行う。失敗したpresentationは自分のnode/購読だけを片付け、同じsessionで再試行する。再構築失敗やsource不正化のteardownは同じpresentation ownerにready=falseを公開する。canonicalの後発回復だけでpresentationを自動再構築せず、既存activation要求を待つ。
+
+DOM repairだけではruntimeへ再通知しない。新surfaceは同期し、新subscriberは即時replayし、ready/panel変更は通知する。同runtime IDの新headerにもconsumer側で現在値をreplayする。runtime/mobile storeは登録ごとの解除、例外隔離、revisionによる古い外側通知停止を行う。
+
+## 非保証と検証
+
+head bootstrap、async geometry cache、timer集約、新しい位置補正は追加しない。SSRは先頭currentを出さず、CSSの見た目を変更しない。Reading起動前やUAが最初に表示する全経路のframe、任意の後発layout変化、native rollback後の元座標は保証しない。8ms/16msの上限も設定しない。
+
+実施した試験・性能・環境制約は[検証記録](../references/toc-native-source-session-validation-2026-10-19.md)に記載する。

@@ -102,3 +102,7 @@ Router/ContentCommitterのimmutable受理記録は[Router Contract](router.md#co
 この実装の回復方針は、次のcurrent navigationを既存document navigation fallbackへ委譲すること。同entryへの自動binding再構築を試みず、失敗した旧receiptを新entryへ採用しない。fallback失敗やsupersedeでも保存を勝手に再開しない。新document初期化が整合状態を作る。第4版の自動再構築案全体の採用ではない。
 
 sidebarの実体保持は[Sidebar State Contract](sidebar-state.md#6-transactionとfailure)の独立条件で決まる。全ページ候補化は、全surfaceのDOM差替えをまたぐ押下保持や、未知のbranch差分の部分更新を保証しない。
+
+## Native位置の観測通知
+
+Readingはnative初期分類と実位置採用を分けてPostRenderへ通知する。通知先の例外は位置処理から隔離し、nativeにcommit receiptを捏造しない。pagehideで位置sequenceと旧load/rAFを失効させ、pageshowは新たに観測する。TOCの検証やrollbackでXYが変わった場合も独自scrollを追加せず、実座標を採り直す。TOCの表示成否と位置復元結果は別に扱う。詳細は[TOC source session ADR](../adr/toc-source-session-native-observation.md)。

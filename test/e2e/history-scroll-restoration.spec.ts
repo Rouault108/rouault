@@ -4,6 +4,7 @@ import { resolveRouterArtifactPathname } from '../../shared/navigation/router-ar
 import { registerHistoryLivePresentationTests } from './support/history-live-presentation.js';
 import { registerHistoryPrepaintXYTests } from './support/history-prepaint-xy.js';
 import { registerHistoryPrepaintTocTests } from './support/history-prepaint-toc.js';
+import { registerNativeTocSessionTests } from './support/native-toc-session.js';
 
 interface ReloadProbe {
   modeAtLoad: ScrollRestoration | null;
@@ -1323,3 +1324,5 @@ registerHistoryLivePresentationTests();
 registerHistoryPrepaintXYTests();
 
 registerHistoryPrepaintTocTests();
+
+registerNativeTocSessionTests();

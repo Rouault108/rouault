@@ -1,0 +1,570 @@
+{
+  "baselineSha": "5b79cced2392842ff3c9c7a6d6f0e81d517df1f8",
+  "measuredRuntimeSha": "5f678c805c48931bcfd2a1949eb2390d074cd8c4 (build4; before native fragment priority correction)",
+  "browser": {
+    "name": "Chromium full channel",
+    "version": "153.0.8010.12",
+    "platform": "Linux x64",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "reducedMotion": "reduce"
+  },
+  "method": {
+    "target": "/notes/program/csharp/declarations-modifiers-members/",
+    "runs": 3,
+    "cache": "fresh browser context for direct; same context for reload and document Back; not OS cache eviction",
+    "baselineServer": "local Node HTTP static server at http://127.0.0.1:4177",
+    "sessionServer": "existing local Vite production preview at http://127.0.0.1:4173",
+    "probe": "same intrusive preinstalled MutationObserver/rAF geometry oracle; CDP Performance aggregate metrics sampled 200ms after settled/current",
+    "nativeBoundary": "data-toc-native-sync=accepted and new data-toc-position-sequence; observation begins after load; never a claim about pre-Reading/OS presented first paint",
+    "bfcache": "full Chromium; default --disable-back-forward-cache argument removed; no route interception; success only pageshow.persisted=true",
+    "TLS": "local HTTP only; no certificate exception or bypass",
+    "load": "baseline and final session measured separately without parallel E2E load",
+    "normalSPA": "about -> target via host.navigate; three fresh contexts each; CDP metric deltas exclude initial about load; old about frames before content-dom-replaced are excluded; first rAF DOM state is observable while geometry oracle waits for fonts loaded"
+  },
+  "routes": {
+    "direct": {
+      "baseline": {
+        "runs": [
+          {
+            "repeat": 0,
+            "loadToFirstCurrentMs": 165.1,
+            "fcpToFirstCurrentMs": 359,
+            "layoutCount": 8,
+            "recalcStyleCount": 13,
+            "layoutDurationMs": 491.007,
+            "recalcStyleDurationMs": 137.461,
+            "scriptDurationMs": 61.725,
+            "taskDurationMs": 987.105
+          },
+          {
+            "repeat": 1,
+            "loadToFirstCurrentMs": 104.9,
+            "fcpToFirstCurrentMs": 238.4,
+            "layoutCount": 9,
+            "recalcStyleCount": 14,
+            "layoutDurationMs": 393.54,
+            "recalcStyleDurationMs": 109.636,
+            "scriptDurationMs": 28.93,
+            "taskDurationMs": 723.595
+          },
+          {
+            "repeat": 2,
+            "loadToFirstCurrentMs": 104.9,
+            "fcpToFirstCurrentMs": 354.6,
+            "layoutCount": 8,
+            "recalcStyleCount": 14,
+            "layoutDurationMs": 354.983,
+            "recalcStyleDurationMs": 94.538,
+            "scriptDurationMs": 32.6,
+            "taskDurationMs": 675.615
+          }
+        ],
+        "median": {
+          "loadToFirstCurrentMs": 104.9,
+          "fcpToFirstCurrentMs": 354.6,
+          "layoutCount": 8,
+          "recalcStyleCount": 14,
+          "layoutDurationMs": 393.54,
+          "recalcStyleDurationMs": 109.636,
+          "scriptDurationMs": 32.6,
+          "taskDurationMs": 723.595
+        }
+      },
+      "session": {
+        "runs": [
+          {
+            "repeat": 0,
+            "loadToFirstCurrentMs": 105.7,
+            "fcpToFirstCurrentMs": 202.4,
+            "layoutCount": 8,
+            "recalcStyleCount": 15,
+            "layoutDurationMs": 265.102,
+            "recalcStyleDurationMs": 88.81,
+            "scriptDurationMs": 43.208,
+            "taskDurationMs": 567.194
+          },
+          {
+            "repeat": 1,
+            "loadToFirstCurrentMs": 111.7,
+            "fcpToFirstCurrentMs": 399.2,
+            "layoutCount": 8,
+            "recalcStyleCount": 17,
+            "layoutDurationMs": 305.016,
+            "recalcStyleDurationMs": 41.038,
+            "scriptDurationMs": 66.425,
+            "taskDurationMs": 731.398
+          },
+          {
+            "repeat": 2,
+            "loadToFirstCurrentMs": 158.8,
+            "fcpToFirstCurrentMs": 537.2,
+            "layoutCount": 8,
+            "recalcStyleCount": 17,
+            "layoutDurationMs": 550.278,
+            "recalcStyleDurationMs": 86.955,
+            "scriptDurationMs": 53.227,
+            "taskDurationMs": 952.939
+          }
+        ],
+        "median": {
+          "loadToFirstCurrentMs": 111.7,
+          "fcpToFirstCurrentMs": 399.2,
+          "layoutCount": 8,
+          "recalcStyleCount": 17,
+          "layoutDurationMs": 305.016,
+          "recalcStyleDurationMs": 86.955,
+          "scriptDurationMs": 53.227,
+          "taskDurationMs": 731.398
+        }
+      }
+    },
+    "reload-stale-hash": {
+      "baseline": {
+        "runs": [
+          {
+            "repeat": 0,
+            "loadToFirstCurrentMs": 79.3,
+            "fcpToFirstCurrentMs": 203.4,
+            "layoutCount": 10,
+            "recalcStyleCount": 18,
+            "layoutDurationMs": 234.845,
+            "recalcStyleDurationMs": 52.671,
+            "scriptDurationMs": 31.051,
+            "taskDurationMs": 573.334
+          },
+          {
+            "repeat": 1,
+            "loadToFirstCurrentMs": 73.9,
+            "fcpToFirstCurrentMs": 286.8,
+            "layoutCount": 9,
+            "recalcStyleCount": 17,
+            "layoutDurationMs": 226.792,
+            "recalcStyleDurationMs": 40.264,
+            "scriptDurationMs": 22.637,
+            "taskDurationMs": 505.714
+          },
+          {
+            "repeat": 2,
+            "loadToFirstCurrentMs": 68.6,
+            "fcpToFirstCurrentMs": 353.9,
+            "layoutCount": 9,
+            "recalcStyleCount": 16,
+            "layoutDurationMs": 199.66,
+            "recalcStyleDurationMs": 42.042,
+            "scriptDurationMs": 23.988,
+            "taskDurationMs": 527.305
+          }
+        ],
+        "median": {
+          "loadToFirstCurrentMs": 73.9,
+          "fcpToFirstCurrentMs": 286.8,
+          "layoutCount": 9,
+          "recalcStyleCount": 17,
+          "layoutDurationMs": 226.792,
+          "recalcStyleDurationMs": 42.042,
+          "scriptDurationMs": 23.988,
+          "taskDurationMs": 527.305
+        }
+      },
+      "session": {
+        "runs": [
+          {
+            "repeat": 0,
+            "loadToFirstCurrentMs": 52.2,
+            "fcpToFirstCurrentMs": -17.6,
+            "layoutCount": 5,
+            "recalcStyleCount": 13,
+            "layoutDurationMs": 46.236,
+            "recalcStyleDurationMs": 18.305,
+            "scriptDurationMs": 132.831,
+            "taskDurationMs": 417.492
+          },
+          {
+            "repeat": 1,
+            "loadToFirstCurrentMs": 69.9,
+            "fcpToFirstCurrentMs": 116.3,
+            "layoutCount": 8,
+            "recalcStyleCount": 16,
+            "layoutDurationMs": 137.886,
+            "recalcStyleDurationMs": 24.132,
+            "scriptDurationMs": 30.456,
+            "taskDurationMs": 386.995
+          },
+          {
+            "repeat": 2,
+            "loadToFirstCurrentMs": 63.1,
+            "fcpToFirstCurrentMs": 118,
+            "layoutCount": 8,
+            "recalcStyleCount": 17,
+            "layoutDurationMs": 148.385,
+            "recalcStyleDurationMs": 28.926,
+            "scriptDurationMs": 32.399,
+            "taskDurationMs": 401.913
+          }
+        ],
+        "median": {
+          "loadToFirstCurrentMs": 63.1,
+          "fcpToFirstCurrentMs": 116.3,
+          "layoutCount": 8,
+          "recalcStyleCount": 16,
+          "layoutDurationMs": 137.886,
+          "recalcStyleDurationMs": 24.132,
+          "scriptDurationMs": 32.399,
+          "taskDurationMs": 401.913
+        }
+      }
+    },
+    "normalSPA": {
+      "baseline": {
+        "runs": [
+          {
+            "repeat": 0,
+            "bodyEventToFirstCurrentMs": 161.7,
+            "navigationToFirstCurrentMs": 216.8,
+            "firstNewBodyRafAfterCurrentMs": 2.5,
+            "firstNewBodyRafCurrent": ["41-宣言空間"],
+            "firstNewBodyRafConsistent": true,
+            "oracleFramesAfterNewBody": 13,
+            "wrongOracleFramesAfterNewBody": 0,
+            "layoutCount": 5,
+            "recalcStyleCount": 9,
+            "layoutDurationMs": 188.377,
+            "recalcStyleDurationMs": 55.9,
+            "scriptDurationMs": 20.191,
+            "taskDurationMs": 413.701
+          },
+          {
+            "repeat": 1,
+            "bodyEventToFirstCurrentMs": 207.8,
+            "navigationToFirstCurrentMs": 250.9,
+            "firstNewBodyRafAfterCurrentMs": 1.6,
+            "firstNewBodyRafCurrent": ["41-宣言空間"],
+            "firstNewBodyRafConsistent": true,
+            "oracleFramesAfterNewBody": 13,
+            "wrongOracleFramesAfterNewBody": 0,
+            "layoutCount": 5,
+            "recalcStyleCount": 9,
+            "layoutDurationMs": 106.578,
+            "recalcStyleDurationMs": 135.829,
+            "scriptDurationMs": 20.154,
+            "taskDurationMs": 373.836
+          },
+          {
+            "repeat": 2,
+            "bodyEventToFirstCurrentMs": 110.8,
+            "navigationToFirstCurrentMs": 151.2,
+            "firstNewBodyRafAfterCurrentMs": 2.6,
+            "firstNewBodyRafCurrent": ["41-宣言空間"],
+            "firstNewBodyRafConsistent": true,
+            "oracleFramesAfterNewBody": 13,
+            "wrongOracleFramesAfterNewBody": 0,
+            "layoutCount": 5,
+            "recalcStyleCount": 9,
+            "layoutDurationMs": 125.303,
+            "recalcStyleDurationMs": 28.064,
+            "scriptDurationMs": 21.541,
+            "taskDurationMs": 279.613
+          }
+        ],
+        "median": {
+          "bodyEventToFirstCurrentMs": 161.7,
+          "navigationToFirstCurrentMs": 216.8,
+          "firstNewBodyRafAfterCurrentMs": 2.5,
+          "layoutCount": 5,
+          "recalcStyleCount": 9,
+          "layoutDurationMs": 125.303,
+          "recalcStyleDurationMs": 55.9,
+          "scriptDurationMs": 20.191,
+          "taskDurationMs": 373.836
+        }
+      },
+      "session": {
+        "runs": [
+          {
+            "repeat": 0,
+            "bodyEventToFirstCurrentMs": 112.1,
+            "navigationToFirstCurrentMs": 169,
+            "firstNewBodyRafAfterCurrentMs": 2.5,
+            "firstNewBodyRafCurrent": ["41-宣言空間"],
+            "firstNewBodyRafConsistent": true,
+            "oracleFramesAfterNewBody": 14,
+            "wrongOracleFramesAfterNewBody": 0,
+            "layoutCount": 5,
+            "recalcStyleCount": 11,
+            "layoutDurationMs": 155.472,
+            "recalcStyleDurationMs": 44.14,
+            "scriptDurationMs": 32.221,
+            "taskDurationMs": 382.536
+          },
+          {
+            "repeat": 1,
+            "bodyEventToFirstCurrentMs": 96.6,
+            "navigationToFirstCurrentMs": 149,
+            "firstNewBodyRafAfterCurrentMs": 3.9,
+            "firstNewBodyRafCurrent": ["41-宣言空間"],
+            "firstNewBodyRafConsistent": true,
+            "oracleFramesAfterNewBody": 14,
+            "wrongOracleFramesAfterNewBody": 0,
+            "layoutCount": 5,
+            "recalcStyleCount": 11,
+            "layoutDurationMs": 107.659,
+            "recalcStyleDurationMs": 29.153,
+            "scriptDurationMs": 36.832,
+            "taskDurationMs": 308.253
+          },
+          {
+            "repeat": 2,
+            "bodyEventToFirstCurrentMs": 133.1,
+            "navigationToFirstCurrentMs": 192.5,
+            "firstNewBodyRafAfterCurrentMs": 2.6,
+            "firstNewBodyRafCurrent": ["41-宣言空間"],
+            "firstNewBodyRafConsistent": true,
+            "oracleFramesAfterNewBody": 14,
+            "wrongOracleFramesAfterNewBody": 0,
+            "layoutCount": 5,
+            "recalcStyleCount": 11,
+            "layoutDurationMs": 144.652,
+            "recalcStyleDurationMs": 34.915,
+            "scriptDurationMs": 41.042,
+            "taskDurationMs": 363.589
+          }
+        ],
+        "median": {
+          "bodyEventToFirstCurrentMs": 112.1,
+          "navigationToFirstCurrentMs": 169,
+          "firstNewBodyRafAfterCurrentMs": 2.6,
+          "layoutCount": 5,
+          "recalcStyleCount": 11,
+          "layoutDurationMs": 144.652,
+          "recalcStyleDurationMs": 34.915,
+          "scriptDurationMs": 36.832,
+          "taskDurationMs": 363.589
+        }
+      }
+    }
+  },
+  "bfcache": [
+    {
+      "kind": "baseline",
+      "repeat": 0,
+      "scenario": "bfcache-middle",
+      "persisted": true,
+      "acceptedAfterPageshowMs": null,
+      "wrongFramesAfterAccepted": null
+    },
+    {
+      "kind": "baseline",
+      "repeat": 1,
+      "scenario": "bfcache-middle",
+      "persisted": true,
+      "acceptedAfterPageshowMs": null,
+      "wrongFramesAfterAccepted": null
+    },
+    {
+      "kind": "baseline",
+      "repeat": 2,
+      "scenario": "bfcache-middle",
+      "persisted": true,
+      "acceptedAfterPageshowMs": null,
+      "wrongFramesAfterAccepted": null
+    },
+    {
+      "kind": "session",
+      "repeat": 0,
+      "scenario": "bfcache-middle",
+      "persisted": true,
+      "acceptedAfterPageshowMs": 3.3,
+      "wrongFramesAfterAccepted": 0
+    },
+    {
+      "kind": "session",
+      "repeat": 1,
+      "scenario": "bfcache-middle",
+      "persisted": true,
+      "acceptedAfterPageshowMs": 2.5,
+      "wrongFramesAfterAccepted": 0
+    },
+    {
+      "kind": "session",
+      "repeat": 2,
+      "scenario": "bfcache-middle",
+      "persisted": true,
+      "acceptedAfterPageshowMs": 3.5,
+      "wrongFramesAfterAccepted": 0
+    },
+    {
+      "kind": "session",
+      "repeat": null,
+      "scenario": "resize-away",
+      "persisted": true,
+      "acceptedAfterPageshowMs": 4.9,
+      "wrongFramesAfterAccepted": 0
+    }
+  ],
+  "acceptedFrames": [
+    {
+      "route": "direct",
+      "repeat": 0,
+      "observedFrames": 15,
+      "wrongFrames": 0
+    },
+    {
+      "route": "reload-stale-hash",
+      "repeat": 0,
+      "observedFrames": 7,
+      "wrongFrames": 0
+    },
+    {
+      "route": "bfcache-middle",
+      "repeat": 0,
+      "observedFrames": 34,
+      "wrongFrames": 0
+    },
+    {
+      "route": "direct",
+      "repeat": 1,
+      "observedFrames": 18,
+      "wrongFrames": 0
+    },
+    {
+      "route": "reload-stale-hash",
+      "repeat": 1,
+      "observedFrames": 13,
+      "wrongFrames": 0
+    },
+    {
+      "route": "bfcache-middle",
+      "repeat": 1,
+      "observedFrames": 38,
+      "wrongFrames": 0
+    },
+    {
+      "route": "direct",
+      "repeat": 2,
+      "observedFrames": 15,
+      "wrongFrames": 0
+    },
+    {
+      "route": "reload-stale-hash",
+      "repeat": 2,
+      "observedFrames": 13,
+      "wrongFrames": 0
+    },
+    {
+      "route": "bfcache-middle",
+      "repeat": 2,
+      "observedFrames": 25,
+      "wrongFrames": 0
+    },
+    {
+      "route": "resize-away",
+      "repeat": null,
+      "observedFrames": 69,
+      "wrongFrames": 0
+    }
+  ],
+  "limitations": [
+    "Three samples and different local server stacks; timing differences do not establish causal speedup or regression.",
+    "FCP is not body-specific. Intrusive probes and CDP costs are included.",
+    "ScriptDuration and LayoutDuration cover the sampled document, not the TOC transaction alone. Forced synchronous layouts were not causally isolated.",
+    "Pending interaction module plus real BFCache combination remains unmeasured. Synthetic pagehide ordinary observation is a separate E2E test.",
+    "Firefox could not create a page due read-only /proc/self/uid_map and content SIGSEGV. WebKit could not launch because shared libraries are missing. Neither is counted as passed."
+  ],
+  "normalSPAFirstFrameDiagnostic": {
+    "method": "separate diagnostic run, one per build; geometry also read during font loading; not part of the three-run CPU comparison; old about frames excluded using content-dom-replaced and matching target TOC source/nav IDs",
+    "runs": [
+      {
+        "kind": "baseline",
+        "bodyEventAtMs": 890.6000000014901,
+        "firstTargetRafAtMs": 1017.3999999985099,
+        "current": ["41-宣言空間"],
+        "expected": "41-宣言空間",
+        "mainVisible": true,
+        "consistent": true,
+        "correct": true,
+        "y": 0,
+        "readingDataset": {
+          "readingPositionStatus": "pending",
+          "readingPositionPrepaint": "skipped",
+          "tocPositionSync": "accepted"
+        },
+        "sourceId": "toc-source-program-csharp-declarations-modifiers-members",
+        "sourceOwner": "toc-owner-program-csharp-declarations-modifiers-members",
+        "sourceAndNavIdsMatch": true,
+        "sourceIdsUnique": true,
+        "eachSourceIdHasOneHeading": true,
+        "ownerMatches": true,
+        "capabilities": {
+          "activeTracking": true,
+          "dynamicScopes": false,
+          "mobilePanel": true
+        },
+        "shell": {
+          "display": "grid",
+          "tracks": "813.812px 259.188px",
+          "token": "clamp(15rem, 18vw, 17rem)"
+        },
+        "tocStyle": {
+          "position": "sticky",
+          "gridColumnStart": "2",
+          "alignSelf": "start",
+          "minInlineSize": "0px",
+          "overflowX": "hidden",
+          "overflowY": "hidden",
+          "blockSize": "852px",
+          "maxBlockSize": "852px"
+        },
+        "observedTargetFrames": 16,
+        "wrongTargetFrames": 0
+      },
+      {
+        "kind": "session",
+        "bodyEventAtMs": 550.6000000014901,
+        "firstTargetRafAtMs": 643.7999999970198,
+        "current": ["41-宣言空間"],
+        "expected": "41-宣言空間",
+        "mainVisible": true,
+        "consistent": true,
+        "correct": true,
+        "y": 0,
+        "readingDataset": {
+          "readingPositionStatus": "pending",
+          "readingPositionPrepaint": "skipped",
+          "tocPositionSync": "accepted"
+        },
+        "sourceId": "toc-source-program-csharp-declarations-modifiers-members",
+        "sourceOwner": "toc-owner-program-csharp-declarations-modifiers-members",
+        "sourceAndNavIdsMatch": true,
+        "sourceIdsUnique": true,
+        "eachSourceIdHasOneHeading": true,
+        "ownerMatches": true,
+        "capabilities": {
+          "activeTracking": true,
+          "dynamicScopes": false,
+          "mobilePanel": true
+        },
+        "shell": {
+          "display": "grid",
+          "tracks": "813.812px 259.188px",
+          "token": "clamp(15rem, 18vw, 17rem)"
+        },
+        "tocStyle": {
+          "position": "sticky",
+          "gridColumnStart": "2",
+          "alignSelf": "start",
+          "minInlineSize": "0px",
+          "overflowX": "hidden",
+          "overflowY": "hidden",
+          "blockSize": "852px",
+          "maxBlockSize": "852px"
+        },
+        "observedTargetFrames": 15,
+        "wrongTargetFrames": 0
+      }
+    ]
+  },
+  "subsequentRuntimeChange": "39d975ca changes only native-start/address policy for new fragment navigation. Those hash flows were reverified by unit and production E2E; timings were not remeasured after this correction."
+}

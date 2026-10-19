@@ -70,6 +70,9 @@ Design System patternはUIの見え方と配置判断を扱う。Router、search
 
 ## Reference
 
+- [TOC native source sessionの検証記録](references/toc-native-source-session-validation-2026-10-19.md)
+- [TOC native source sessionの計測](references/toc-native-source-session-metrics-2026-10-19.json)
+- [TOC native source sessionのbundle比較](references/toc-native-source-session-bundle-2026-10-19.json)
 - [TOC初回現在地同期の検証記録](references/toc-current-position-validation-2026-10-18.md)
 
 - `docs/references/navigation-envelope-schema.md`
@@ -91,7 +94,7 @@ Design System patternはUIの見え方と配置判断を扱う。Router、search
 
 ## Architecture
 
-受理済み読書位置でのTOC同期の設計判断は [ADR](adr/toc-current-at-accepted-reading-position.md) を参照する。
+受理済み読書位置でのTOC同期の設計判断は [ADR](adr/toc-current-at-accepted-reading-position.md)、native観測と単一source sessionは[設計ADR](adr/toc-source-session-native-observation.md)を参照する。
 
 - `docs/architecture/navigation-shell-snapshot.md`
 

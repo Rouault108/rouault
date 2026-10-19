@@ -4,7 +4,7 @@
 
 本書は、`layout-toc-controller`、`TocActiveTracker`、`layout-toc-runtime-store`、`layout-toc-mobile-controller`の責務分担を定義します。
 
-静的navは情報構造を、controllerは現在地追跡・mobile panel・runtime stateを所有する。見出し型は`src/toc/toc-headings.ts`の`TocHeading`を参照する。
+静的navは情報構造を、sourceごとの`TocSourceSession`は現在地追跡・writer・canonical visible/currentを所有する。controllerは後付けのmobile panel・interaction・runtime presentationを所有する。見出し型は`src/toc/toc-headings.ts`の`TocHeading`を参照する。
 
 ## 2. 責務分担
 
@@ -12,13 +12,13 @@
 
 - SSR済みdesktop TOC navを取得する
 - `source-id` / `capabilities-json`をdecodeする
-- trackerを接続する
+- 同じsource sessionの正規activationを要求し、trackerを作り直さない
 - header向けruntime snapshotをpublishする
 - mobile panel用clone navを生成する
 
 ### 2.4 `layout-toc-runtime-store`
 
-- `layout-toc-controller`が算出したruntime snapshotを静的header enhancerへ共有する
+- `TocSourceSession`の確定値とpresentation状態からcontrollerが作るruntime snapshotを静的header enhancerへ共有する
 - `ready` / `hasVisibleHeadings` / `activeId`を伝える
 
 ### 2.5 `layout-toc-mobile-controller`
@@ -221,3 +221,7 @@ coordinate-priority中はactiveTracking=trueだけがviewportからcurrentを同
 hashless full commitの位置受理後は、PostRenderからReadingに注入した同期callbackでvisible/current/witness を一括算出する。独立trackと所有権を確認して一度適用・一度検証し、不成立は遅延初期化へ縮退する。本文位置復元の成否とTOC同期結果は分離する。apply/verify/rollback の例外をTOC内で隔離し、同じownerと自分の値が残る属性/tokenだけを一度戻す。
 
 controller/tracker/mobile の最初の公開と、その後の初期再更新も同じ候補計算でvisible/current を一括採用する。先頭仮設定を公開しない。SSRは現在地を決めず、遅延activationは最新viewportで再判定する。設計詳細は [ADR](../adr/toc-current-at-accepted-reading-position.md)、実施範囲は[検証記録](../references/toc-current-position-validation-2026-10-18.md)を参照。
+
+## Native位置観測とsource session
+
+Readingの同期分類、実位置受理、検証済みshellに基づくearly接続と通常activationは同じsessionを使う。normal候補の算出・current書込もsessionを通す。pagehideは位置証明だけを失効し、pageshowは新観測を使う。初期followupは個別に一度試行し、presentation再試行で再登録しない。詳細は[設計ADR](../adr/toc-source-session-native-observation.md)と[検証記録](../references/toc-native-source-session-validation-2026-10-19.md)を参照する。

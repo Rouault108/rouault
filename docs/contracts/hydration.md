@@ -124,3 +124,5 @@ visibleのviewport近傍/focusin/IntersectionObserver非対応時の既存policy
 ## Reading position integration
 
 content readinessはepoch別pending/settled/unavailable/invalidated。mutationでは旧session取消だけを行い、成功full commitと初期SSRの既存起動を維持する。成功rollbackの再生成本文だけをclientから一度再開する。state-onlyは同epochのpendingを引き継ぐ。activation前後とTOC wrapperの内側await後にcapture済みisCurrentを確認する。 詳細は[Reading Position Contract](reading-position.md)。
+
+TOCの位置投影用source sessionはReadingの実位置受理と検証済みshellを根拠に先に接続できる。interaction module、mobile panel、ready公開の起動権限は既存scheduler/header bridgeが所有し、connected時の独自起動へ変更しない。early接続は通常activationの初期timerを前倒しせず、後付けpresentationも同じtrackerを使う。詳細は[TOC source session ADR](../adr/toc-source-session-native-observation.md)。

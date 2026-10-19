@@ -1,0 +1,122 @@
+{
+  "method": "production client-assets; gzip each file with Node zlib defaults; startup graph = entry + router-document-host and transitive static ESM imports; not every dynamically reachable module",
+  "baselineSha": "5b79cced2392842ff3c9c7a6d6f0e81d517df1f8",
+  "session": {
+    "entry": {
+      "name": "client-ByY1G2Id.js",
+      "bytes": 265817,
+      "gzip": 75679
+    },
+    "hostInitializationGraph": [
+      {
+        "name": "client-ByY1G2Id.js",
+        "bytes": 265817,
+        "gzip": 75679
+      },
+      {
+        "name": "router-document-host-BPBLqQ-7.js",
+        "bytes": 100863,
+        "gzip": 27910
+      },
+      {
+        "name": "tabs-url-sync-strategy-Dw4danZe.js",
+        "bytes": 59,
+        "gzip": 76
+      },
+      {
+        "name": "toc-source-session-CPWX4bi9.js",
+        "bytes": 34997,
+        "gzip": 10272
+      },
+      {
+        "name": "tabs-selection-Bs9l0_Fs.js",
+        "bytes": 144,
+        "gzip": 139
+      }
+    ],
+    "hostInitializationTotal": {
+      "bytes": 401880,
+      "gzip": 114076
+    },
+    "allJs": {
+      "bytes": 562195,
+      "gzip": 165880
+    },
+    "tocModules": [
+      {
+        "name": "layout-toc-controller-p2QKgs5M.js",
+        "bytes": 15798,
+        "gzip": 4483
+      },
+      {
+        "name": "toc-source-session-CPWX4bi9.js",
+        "bytes": 34997,
+        "gzip": 10272
+      }
+    ]
+  },
+  "baseline": {
+    "entry": {
+      "name": "client-DBPXQZFo.js",
+      "bytes": 264058,
+      "gzip": 75064
+    },
+    "hostInitializationGraph": [
+      {
+        "name": "client-DBPXQZFo.js",
+        "bytes": 264058,
+        "gzip": 75064
+      },
+      {
+        "name": "router-document-host-DmF_hdj_.js",
+        "bytes": 105604,
+        "gzip": 29519
+      },
+      {
+        "name": "tabs-url-sync-strategy-Dw4danZe.js",
+        "bytes": 59,
+        "gzip": 76
+      },
+      {
+        "name": "toc-density-tier-DuhqN0p0.js",
+        "bytes": 6862,
+        "gzip": 2822
+      },
+      {
+        "name": "tabs-selection-Bs9l0_Fs.js",
+        "bytes": 144,
+        "gzip": 139
+      }
+    ],
+    "hostInitializationTotal": {
+      "bytes": 376727,
+      "gzip": 107620
+    },
+    "allJs": {
+      "bytes": 548868,
+      "gzip": 161881
+    },
+    "tocModules": [
+      {
+        "name": "layout-toc-controller-Bc3311Zv.js",
+        "bytes": 27625,
+        "gzip": 6940
+      }
+    ]
+  },
+  "sessionBuild": "final build5; includes native-fragment priority regression correction; runtime implementation recorded in git history",
+  "delta": {
+    "entry": {
+      "bytes": 1759,
+      "gzip": 615
+    },
+    "hostInitializationTotal": {
+      "bytes": 25153,
+      "gzip": 6456
+    },
+    "allJs": {
+      "bytes": 13327,
+      "gzip": 3999
+    }
+  }
+}
