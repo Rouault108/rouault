@@ -493,12 +493,14 @@ export class ReadingPositionController {
     this.mode('auto');
     const intent = readContentContext()?.intent;
     const root = readContentContext()?.root;
-    if (intent && root) this.observeNativePosition(root, intent, 'native-viewport', 'classified');
+    // native-start/addressは新しいfragment操作であり、reloadの古いhashとは優先順位が異なる。
+    const policy = intent?.cause === 'native-navigation' ? 'initial-fragment' : 'native-viewport';
+    if (intent && root) this.observeNativePosition(root, intent, policy, 'classified');
     const generation = ++this.nativeGeneration;
     requestAnimationFrame(() => {
       if (this.disposed || generation !== this.nativeGeneration || intent?.signal.aborted) return;
       if (this.sampleCurrent() && intent && root)
-        this.observeNativePosition(root, intent, 'native-viewport', 'accepted');
+        this.observeNativePosition(root, intent, policy, 'accepted');
       this.mode(this.renderedId ? 'manual' : 'auto');
     });
   }

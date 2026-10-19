@@ -3,6 +3,7 @@ import { fixture, requireFixtureValue } from './harness/browser-fixture.js';
 import {
   disposeTocSourceSession,
   getTocSourceSession,
+  observeNativeTocPosition,
   type TocSourceSession,
 } from '../../src/toc/toc-source-session.js';
 import {
@@ -16,7 +17,12 @@ import {
   readHistoryEntry,
   writeHistoryEntry,
 } from '../../src/navigation/history-entry.js';
-import { readCurrentShellCommitId } from '../../src/components/app/shell/app-shell-lifecycle.js';
+import {
+  readCurrentShellCommitId,
+  recordValidatedShellProof,
+  readValidatedShellProof,
+} from '../../src/components/app/shell/app-shell-lifecycle.js';
+import type { AppShellValidatedDetail } from '../../src/components/app/shell/app-shell-events.js';
 import type {
   AcceptedReadingPosition,
   NativeReadingPositionObservation,
@@ -433,6 +439,64 @@ describe('TocSourceSession の単一所有と予約・transaction 契約', () =>
     window.scrollTo({ top: 2550, behavior: 'instant' });
     session.refresh();
     assertCurrent(session.binding.nav, 'session-two');
+  });
+
+  it('production native接続は同じshell証明の再発行を許容し、header実体交換でearly追跡権限を失効する', async () => {
+    const { session, position } = await setup();
+    const header = await fixture('<header data-layout-header style="height:0"></header>');
+    const scheduling = captureScheduling();
+    const url = readAddress();
+    const detail: AppShellValidatedDetail = {
+      header,
+      shellCommitId: readCurrentShellCommitId(),
+      navigationUrl: url,
+      shell: { headerHtml: header.outerHTML, sidebarProjection: null },
+      linkValidationContext: {
+        siteUrlContext: { siteOrigin: location.origin, basePath: '' },
+        currentAbsoluteUrl: new URL(url, location.origin).href,
+        normalizedNavigationUrl: url,
+        routeManifestState: {
+          status: 'loaded',
+          manifest: {
+            version: 1,
+            buildId: 'session-shell-proof-test',
+            buildLabel: 'test',
+            generatedAt: '2026-10-19T00:00:00.000Z',
+            siteOrigin: location.origin,
+            basePath: '',
+            routes: [url],
+          },
+          routeSet: { routes: [url], has: (path) => path === url },
+        },
+      },
+    };
+    let positionCurrent = true;
+    observeNativeTocPosition(
+      nativeObservation(position, 10, () => positionCurrent && session.isCurrent()),
+    );
+    expect(session.snapshot).toBeNull();
+    recordValidatedShellProof(detail, document);
+    assertCurrent(session.binding.nav, 'session-two');
+    expect(position.root.dataset['tocNativeSync']).toBe('accepted');
+    expect(position.root.dataset['tocPositionSequence']).toBe('10');
+    const originalProof = readValidatedShellProof();
+    positionCurrent = false;
+    recordValidatedShellProof({ ...detail }, document);
+    expect(readValidatedShellProof()).not.toBe(originalProof);
+    window.scrollTo({ top: 2550, behavior: 'instant' });
+    window.dispatchEvent(new Event('scroll'));
+    scheduling.frames.splice(0).forEach((frame) => frame(performance.now()));
+    assertCurrent(session.binding.nav, 'session-three');
+    header.replaceWith(header.cloneNode(true));
+    expect(readValidatedShellProof()).toBeNull();
+    window.scrollTo({ top: 1300, behavior: 'instant' });
+    window.dispatchEvent(new Event('scroll'));
+    scheduling.frames.splice(0).forEach((frame) => frame(performance.now()));
+    assertCurrent(session.binding.nav, 'session-three');
+    expect(position.root.dataset['tocNativeSync']).toBe('accepted');
+    expect(position.root.dataset['tocPositionSequence']).toBe('10');
+    expect(scheduling.timers).toHaveLength(0);
+    expect(getTocSourceSession(requireFixtureValue(controller))).toBe(session);
   });
 
   it('pagehideはpending strictを失効し、残った通常予約は最新viewportを再読する', async () => {

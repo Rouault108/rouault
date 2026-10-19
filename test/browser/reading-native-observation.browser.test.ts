@@ -14,6 +14,7 @@ import { adoptHistoryEntry, readAddress } from '../../src/navigation/history-ent
 
 let root: HTMLElement;
 let reader: ReadingPositionController | null = null;
+const originalUrl = readAddress();
 const frame = (): Promise<void> => new Promise((resolve) => requestAnimationFrame(() => resolve()));
 
 beforeEach(async () => {
@@ -37,7 +38,48 @@ afterEach(() => {
   reader?.dispose();
   reader = null;
   releaseContentContext(root);
+  if (readAddress() !== originalUrl) history.replaceState(history.state, '', originalUrl);
   vi.restoreAllMocks();
+});
+
+it('本人のnative hash遷移はstart/address分類と実採用でfragment優先を維持する', async () => {
+  const observations: NativeReadingPositionObservation[] = [];
+  reader = new ReadingPositionController(vi.fn(), vi.fn(), (value) => observations.push(value));
+  reader.start(root);
+  window.dispatchEvent(new Event('load'));
+  await frame();
+  const previous = observations.at(-1);
+  const url = `${originalUrl.split('#')[0]}#native-fragment-target`;
+  const intent = beginNavigationIntent('native-navigation', url, 'native');
+  const scroll = vi.spyOn(window, 'scrollTo');
+
+  document.dispatchEvent(new Event('reading-position:native-start'));
+  expect(observations.at(-1)).toMatchObject({
+    phase: 'classified',
+    policy: 'initial-fragment',
+    intent,
+  });
+  expect(previous?.isCurrent()).toBe(false);
+  const start = observations.at(-1);
+  history.replaceState(history.state, '', url);
+  adoptContentBinding(readAddress());
+  document.dispatchEvent(new Event('reading-position:native-address'));
+  expect(start?.isCurrent()).toBe(false);
+  expect(observations.at(-1)).toMatchObject({
+    phase: 'classified',
+    policy: 'initial-fragment',
+    url,
+  });
+  await frame();
+  expect(observations.at(-1)).toMatchObject({
+    phase: 'accepted',
+    policy: 'initial-fragment',
+    url,
+  });
+  expect(observations.at(-1)?.isCurrent()).toBe(true);
+  expect(observations.filter((value) => value.phase === 'accepted')).toHaveLength(2);
+  expect(scroll).not.toHaveBeenCalled();
+  expect(history.scrollRestoration).toBe('manual');
 });
 
 it('reloadを同期分類し、実採用後だけreceiptを捏造せずnative観測を通知する', async () => {
