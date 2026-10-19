@@ -96,6 +96,13 @@
   text-decoration: none;
 }
 
+/* reduced-motionの全称0.01ms規則でも、初回currentのrailやweightを補間しない。 */
+.layout-toc__link,
+.layout-toc__link::before,
+.layout-toc__link::after {
+  transition-property: none;
+}
+
 .layout-toc__link::before {
   content: '';
   position: absolute;

@@ -1,4 +1,5 @@
 import { ReadingPositionController } from './reading-position-controller.js';
+import { syncTocAtReadingPosition } from '../../../toc/sync-toc-at-reading-position.js';
 import { readCurrentShellCommitId } from '../shell/app-shell-lifecycle.js';
 import { FocusManager } from '../../../router/focus-manager.js';
 import type { PostCommitController } from '../../../router/router.js';
@@ -18,9 +19,14 @@ import {
 export class RouterDocumentHostPostRenderController {
   private readonly focusManager = new FocusManager();
   private clearTimer: number | null = null;
-  private readonly reading = new ReadingPositionController((error) => {
-    this.reportBackgroundError(error);
-  });
+  private readonly reading = new ReadingPositionController(
+    (error) => {
+      this.reportBackgroundError(error);
+    },
+    (position) => {
+      syncTocAtReadingPosition(position);
+    },
+  );
   private tablePreparation: AbortController | null = null;
   private readonly stopTablePreparation = subscribeContentContext((reason) => {
     // before-mutationの離脱座標保存より後に、旧本文の準備と操作購読を解放する。

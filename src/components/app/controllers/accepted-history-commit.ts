@@ -35,7 +35,8 @@ export const ownsAcceptedHistoryCommit = (
     entryId !== null &&
     receipt.entryId === entryId &&
     receipt.url === url &&
-    intent.target.entryId === entryId &&
+    // 通常pushのintentは離脱元entryで始まる。新entryは元receiptとbindingで検証する。
+    (intent.cause === 'navigation' || intent.target.entryId === entryId) &&
     intent.target.url === url &&
     context.displayedBinding.entryId === entryId &&
     context.displayedBinding.url === url &&

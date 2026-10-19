@@ -3,6 +3,7 @@ import { e2eNoteFixtures } from './support/note-fixtures.js';
 import { resolveRouterArtifactPathname } from '../../shared/navigation/router-artifact-path.js';
 import { registerHistoryLivePresentationTests } from './support/history-live-presentation.js';
 import { registerHistoryPrepaintXYTests } from './support/history-prepaint-xy.js';
+import { registerHistoryPrepaintTocTests } from './support/history-prepaint-toc.js';
 
 interface ReloadProbe {
   modeAtLoad: ScrollRestoration | null;
@@ -1320,3 +1321,5 @@ for (const variant of [
 registerHistoryLivePresentationTests();
 
 registerHistoryPrepaintXYTests();
+
+registerHistoryPrepaintTocTests();

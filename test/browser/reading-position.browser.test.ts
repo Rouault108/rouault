@@ -1816,6 +1816,66 @@ describe('tabsと凍結したtraverse候補', () => {
   });
 });
 
+it('遅延した位置受理callbackがXYを動かしてもcandidateを保持し、補正してからsettledにする', async () => {
+  await setup();
+  if (!root) throw new Error('root');
+  const content = root;
+  let inject = false;
+  let moved = false;
+  const accepted: number[] = [];
+  const errors = vi.fn();
+  reader = new ReadingPositionController(errors, () => {
+    if (!inject) return;
+    accepted.push(scrollY);
+    if (!moved) {
+      moved = true;
+      window.scrollTo({ top: 1100, behavior: 'instant' });
+      expect(content.dataset['readingPositionStatus']).toBe('pending');
+      expect(reader).toMatchObject({ candidate: { y: 800 }, restoring: true });
+    }
+  });
+  reader.start(content);
+  await expect.poll(() => content.dataset['readingPositionStatus']).toBe('settled');
+  window.scrollTo({ top: 800, behavior: 'instant' });
+  await frame();
+  window.dispatchEvent(new Event('scroll'));
+  const intent = beginNavigationIntent('traverse', readAddress());
+  const epoch = beginContentMutation(content);
+  adoptContentBinding(readAddress());
+  setContentReadiness({
+    contentEpoch: epoch,
+    root: content,
+    shellCommitId: 0,
+    status: 'settled',
+    started: true,
+  });
+  window.scrollTo({ top: 0, behavior: 'instant' });
+  inject = true;
+  reader.schedule({
+    intent,
+    root: content,
+    url: readAddress(),
+    stateOnly: false,
+    error: false,
+    shellCommitId: 0,
+  });
+  const settledPositions: number[] = [];
+  const sample = (): void => {
+    if (content.dataset['readingPositionStatus'] === 'settled') settledPositions.push(scrollY);
+    else requestAnimationFrame(sample);
+  };
+  requestAnimationFrame(sample);
+  await expect.poll(() => content.dataset['readingPositionStatus']).toBe('settled');
+  await frame();
+  expect(errors).not.toHaveBeenCalled();
+  expect(moved).toBe(true);
+  expect(accepted.length).toBeGreaterThanOrEqual(2);
+  expect(accepted.every((y) => Math.abs(y - 800) <= 2)).toBe(true);
+  expect(settledPositions.length).toBeGreaterThan(0);
+  expect(settledPositions.every((y) => Math.abs(y - 800) <= 2)).toBe(true);
+  expect(Math.abs(scrollY - 800)).toBeLessThanOrEqual(2);
+});
+
 it('error文書のscroll/checkpointで同entryの成功文書recordを消さない（A8）', async () => {
   await setup();
   if (!root) throw new Error('root');

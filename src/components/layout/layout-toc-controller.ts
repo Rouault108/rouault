@@ -1,12 +1,5 @@
-import { hasCoordinatePriority } from '../../navigation/content-navigation-context.js';
 import type { TocHeading as Heading } from '../../toc/toc-headings.js';
-import {
-  filterHeadingsByScopeSelections,
-  filterVisibleHeadings,
-  findContentRoot,
-  readTocScopeSelectionMap,
-  type TocCapabilities,
-} from '../../toc/filter-visible-headings.js';
+import { findContentRoot, type TocCapabilities } from '../../toc/filter-visible-headings.js';
 import { hasDynamicTocScopeSelections, normalizeTocCapabilities } from '../../toc/toc-headings.js';
 import { readTocJsonSourceScriptHeadings } from '../../toc/toc-json-source-script.js';
 import type { HydrationActivationResult } from '../../../shared/hydration/hydration-activation.js';
@@ -22,7 +15,6 @@ import { TocHydrationSessionController } from '../../toc/toc-hydration-session.j
 import { TocNavigationController } from '../../toc/toc-navigation-controller.js';
 import { TOC_MOBILE_PANEL_SELECTOR } from '../../toc/toc-mobile-panel-dom-css-contract.js';
 import { syncLayoutTocControllersForSession } from '../../toc/sync-layout-toc-controllers.js';
-import { decodeHashFragment } from '../../router/url-hash.js';
 import { focusWithoutScroll } from '../../lib/focus-without-scroll.js';
 import { layoutTocMobileController } from './layout-toc-mobile-controller.js';
 import {
@@ -45,14 +37,6 @@ const parseJsonValue = (value: string): unknown => {
   }
 };
 
-const readLocationHash = (): string => {
-  if (typeof window === 'undefined') {
-    return '';
-  }
-
-  return hasCoordinatePriority() ? '' : (decodeHashFragment(window.location.hash) ?? '');
-};
-
 const removeIdsFromTree = (root: ParentNode): void => {
   const elements =
     'querySelectorAll' in root ? Array.from(root.querySelectorAll<HTMLElement>('[id]')) : [];
@@ -73,6 +57,7 @@ export class LayoutTocController extends HTMLElement {
   private _desktopNavClickAttached = false;
   private readonly _hydrationSessionController = new TocHydrationSessionController();
   private _ready = false;
+  private _initializing = false;
   private _activeId = '';
   private _allHeadings: Heading[] = [];
   private _visibleHeadings: Heading[] = [];
@@ -143,12 +128,15 @@ export class LayoutTocController extends HTMLElement {
     this._allHeadings = readTocJsonSourceScriptHeadings(source);
     this._capabilities = normalizeTocCapabilities(parseJsonValue(this.capabilitiesJson));
 
+    // module待機中のスクロールも反映し、公開・mobile構築より先に現在地を確定する。
+    this._initializing = true;
+    this._connectTracker();
     this._connectMobileController();
     this._attachDesktopNavClickListener();
     this._ensureMobilePanel();
-    this._applyVisibleHeadings(this._resolveVisibleHeadings(this._allHeadings));
-    this._connectTracker();
+    this._syncMobilePanelState();
     this._hydrationSessionController.markHydrated();
+    this._initializing = false;
     this._publishRuntimeSnapshot();
     return { status: 'activated' };
   }
@@ -159,19 +147,6 @@ export class LayoutTocController extends HTMLElement {
     }
 
     return findTocSourceScript(resolveTocSourceLookupRoot(this), this.sourceId);
-  }
-
-  private _resolveVisibleHeadings(headings: Heading[]): Heading[] {
-    const contentRoot = this._resolveContentRoot();
-    const hasDynamicScopes = hasDynamicTocScopeSelections(headings);
-    const scopedHeadings =
-      contentRoot === null || !(this._capabilities.dynamicScopes || hasDynamicScopes)
-        ? headings
-        : filterHeadingsByScopeSelections(headings, readTocScopeSelectionMap(contentRoot));
-
-    return contentRoot === null
-      ? scopedHeadings
-      : filterVisibleHeadings(contentRoot, scopedHeadings);
   }
 
   private _resolveContentRoot(): HTMLElement | null {
@@ -191,11 +166,8 @@ export class LayoutTocController extends HTMLElement {
         dynamicScopes: this._capabilities.dynamicScopes || hasDynamicScopes,
       },
       getActiveId: () => this._activeId,
-      onVisibleHeadingsChange: (headings) => {
-        this._applyVisibleHeadings(headings);
-      },
-      onActiveIdChange: (id) => {
-        this._applyActiveId(id);
+      onSnapshotChange: (headings, activeId) => {
+        this._applySnapshot(headings, activeId);
       },
     });
     this._tracker.start();
@@ -208,8 +180,9 @@ export class LayoutTocController extends HTMLElement {
     });
   }
 
-  private _applyVisibleHeadings(headings: Heading[]): void {
+  private _applySnapshot(headings: Heading[], activeId: string): void {
     this._visibleHeadings = headings;
+    this._activeId = activeId;
     const visibleIds = new Set(headings.map((heading) => heading.id));
     const densityTier = resolveTocDensityTier(headings);
 
@@ -223,14 +196,7 @@ export class LayoutTocController extends HTMLElement {
     );
     this._panelRoot?.setAttribute('data-density-tier', densityTier);
 
-    const hash = readLocationHash();
-    if (hash.length > 0 && visibleIds.has(hash)) {
-      this._applyActiveId(hash);
-    } else if (!visibleIds.has(this._activeId)) {
-      this._applyActiveId(headings[0]?.id ?? '');
-    } else {
-      this._syncActiveDom();
-    }
+    this._syncActiveDom();
 
     this._ready = true;
     this._publishRuntimeSnapshot();
@@ -404,7 +370,7 @@ export class LayoutTocController extends HTMLElement {
   }
 
   private _publishRuntimeSnapshot(): void {
-    if (typeof window === 'undefined') {
+    if (typeof window === 'undefined' || this._initializing) {
       return;
     }
 

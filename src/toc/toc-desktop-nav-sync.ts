@@ -12,11 +12,28 @@ export interface SyncTocNavOptions {
   readonly ownerId: string;
   readonly activeHeadingId: string | null;
   readonly visibleHeadingIds: ReadonlySet<string>;
+  readonly writer?: TocDomWriter;
 }
+
+export interface TocDomWriter {
+  attribute(element: HTMLElement, name: string, value: string | null): void;
+  activeClass(element: HTMLElement, active: boolean): void;
+}
+
+const defaultWriter: TocDomWriter = {
+  attribute(element, name, value) {
+    if (value === null) element.removeAttribute(name);
+    else element.setAttribute(name, value);
+  },
+  activeClass(element, active) {
+    element.classList.toggle('is-active', active);
+  },
+};
 
 export const syncTocHeadingVisibility = (
   nav: HTMLElement | null,
   visibleHeadingIds: ReadonlySet<string>,
+  writer: TocDomWriter = defaultWriter,
 ): void => {
   if (!(nav instanceof HTMLElement)) {
     return;
@@ -26,13 +43,14 @@ export const syncTocHeadingVisibility = (
   for (const item of items) {
     const headingId = item.getAttribute('data-heading-id') ?? '';
     const visible = headingId.length > 0 && visibleHeadingIds.has(headingId);
-    item.hidden = !visible;
-    item.setAttribute('aria-hidden', visible ? 'false' : 'true');
+    writer.attribute(item, 'hidden', visible ? null : '');
+    writer.attribute(item, 'aria-hidden', visible ? 'false' : 'true');
   }
 };
 
 export const syncTocActiveLinks = (options: SyncTocNavOptions): TocDesktopNavSyncSnapshot => {
   const { nav, ownerId, activeHeadingId, visibleHeadingIds } = options;
+  const writer = options.writer ?? defaultWriter;
   const diagnostics: TocControllerSyncDiagnosticPayload[] = [];
 
   if (!(nav instanceof HTMLElement)) {
@@ -55,13 +73,13 @@ export const syncTocActiveLinks = (options: SyncTocNavOptions): TocDesktopNavSyn
 
     if (active) {
       activeLinkFound = true;
-      link.setAttribute('aria-current', 'location');
-      link.setAttribute('data-active', 'true');
-      link.classList.add('is-active');
+      writer.attribute(link, 'aria-current', 'location');
+      writer.attribute(link, 'data-active', 'true');
+      writer.activeClass(link, true);
     } else {
-      link.removeAttribute('aria-current');
-      link.removeAttribute('data-active');
-      link.classList.remove('is-active');
+      writer.attribute(link, 'aria-current', null);
+      writer.attribute(link, 'data-active', null);
+      writer.activeClass(link, false);
     }
   }
 

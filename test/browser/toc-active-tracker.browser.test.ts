@@ -16,39 +16,132 @@ const waitForRefresh = async (): Promise<void> => {
 };
 
 describe('TocActiveTracker', () => {
-  it.each(['javascript', 'rust'])('canonical selection (%s)とpanel visibilityを追跡する', async (initial) => {
-    const content = await nativeNoteFixture(element('article', { id: 'content-root' }, [
-      element('ui-tabs', { 'data-toc-scope': 'toc-scope-1', 'default-selected-value': initial }, [
-        element('div', { slot: 'tab', value: 'javascript' }, [text('JavaScript')]),
-        element('section', { slot: 'panel' }, [element('h3', { id: 'js-heading' }, [text('JavaScript')])]),
-        element('div', { slot: 'tab', value: 'rust' }, [text('Rust')]),
-        element('section', { slot: 'panel' }, [element('h3', { id: 'rust-heading' }, [text('Rust')])]),
-      ]),
-    ]));
-    const tabs = requireFixtureValue(content.querySelector<HTMLElement>('[data-tabs-root]'));
-    const headings: Heading[] = [
-      { id: 'js-heading', text: 'JavaScript', level: 3, scopeSelections: [{ scopeId: 'toc-scope-1', value: 'javascript' }] },
-      { id: 'rust-heading', text: 'Rust', level: 3, scopeSelections: [{ scopeId: 'toc-scope-1', value: 'rust' }] },
-    ];
-    const snapshots: string[][] = [];
-    const tracker = new TocActiveTracker({
-      contentRootId: 'content-root', headings,
-      capabilities: { activeTracking: false, dynamicScopes: true, mobilePanel: false },
-      getActiveId: () => '',
-      onVisibleHeadingsChange: (visible) => { snapshots.push(visible.map(({ id }) => id)); },
-      onActiveIdChange: () => undefined,
-    });
-    try {
-      tracker.start();
-      expect(snapshots.at(-1)).toEqual(['js-heading', 'rust-heading']);
-      activateTabs(tabs, fixtureAbortController(content).signal);
-      await waitForRefresh();
-      expect(snapshots.at(-1)).toEqual([initial === 'rust' ? 'rust-heading' : 'js-heading']);
-      selectTabsValue(tabs, initial === 'rust' ? 'javascript' : 'rust', { historyMode: 'none' });
-      await waitForRefresh();
-      expect(snapshots.at(-1)).toEqual([initial === 'rust' ? 'js-heading' : 'rust-heading']);
-    } finally { tracker.destroy(); }
-  });
+  it.each([0, 1, 2])(
+    'initial viewport candidate %i is published atomically through every initial refresh',
+    async (candidate) => {
+      document.body.innerHTML =
+        '<article id="content-root"><h2 id="one">One</h2><h2 id="two">Two</h2><h2 id="three">Three</h2></article>';
+      const previousUrl = window.location.href;
+      const url = new URL(previousUrl);
+      url.hash = '';
+      window.history.replaceState(null, '', url);
+      const headings: Heading[] = ['one', 'two', 'three'].map((id) => ({ id, text: id, level: 2 }));
+      for (const [index, heading] of headings.entries()) {
+        const element = document.getElementById(heading.id);
+        if (!element) throw new Error('missing heading');
+        const top = (index - candidate) * 200 - 1;
+        Object.defineProperty(element, 'getBoundingClientRect', {
+          configurable: true,
+          value: () => ({
+            top,
+            bottom: top + 32,
+            left: 0,
+            right: 800,
+            x: 0,
+            y: top,
+            width: 800,
+            height: 32,
+            toJSON: () => undefined,
+          }),
+        });
+      }
+      let activeId = '';
+      const published: { ids: string[]; activeId: string }[] = [];
+      const tracker = new TocActiveTracker({
+        contentRootId: 'content-root',
+        headings,
+        capabilities: { activeTracking: true, dynamicScopes: false, mobilePanel: false },
+        getActiveId: () => activeId,
+        onSnapshotChange: (visible, id) => {
+          activeId = id;
+          published.push({ ids: visible.map((heading) => heading.id), activeId: id });
+        },
+      });
+      try {
+        tracker.start();
+        expect(published).to.deep.equal([
+          { ids: ['one', 'two', 'three'], activeId: headings[candidate]?.id },
+        ]);
+        queueMicrotask(() => tracker.refresh());
+        requestAnimationFrame(() => tracker.refresh());
+        await new Promise<void>((resolve) => setTimeout(resolve, 160));
+        // 同じ状態の初期再更新で書込・公開を繰り返さない。
+        expect(published.length).to.equal(1);
+        expect(
+          published.every(
+            (snapshot) =>
+              snapshot.activeId === headings[candidate]?.id && snapshot.ids.length === 3,
+          ),
+        ).to.equal(true);
+      } finally {
+        tracker.destroy();
+        document.getElementById('content-root')?.remove();
+        window.history.replaceState(null, '', previousUrl);
+      }
+    },
+  );
+
+  it.each(['javascript', 'rust'])(
+    'canonical selection (%s)とpanel visibilityを追跡する',
+    async (initial) => {
+      const content = await nativeNoteFixture(
+        element('article', { id: 'content-root' }, [
+          element(
+            'ui-tabs',
+            { 'data-toc-scope': 'toc-scope-1', 'default-selected-value': initial },
+            [
+              element('div', { slot: 'tab', value: 'javascript' }, [text('JavaScript')]),
+              element('section', { slot: 'panel' }, [
+                element('h3', { id: 'js-heading' }, [text('JavaScript')]),
+              ]),
+              element('div', { slot: 'tab', value: 'rust' }, [text('Rust')]),
+              element('section', { slot: 'panel' }, [
+                element('h3', { id: 'rust-heading' }, [text('Rust')]),
+              ]),
+            ],
+          ),
+        ]),
+      );
+      const tabs = requireFixtureValue(content.querySelector<HTMLElement>('[data-tabs-root]'));
+      const headings: Heading[] = [
+        {
+          id: 'js-heading',
+          text: 'JavaScript',
+          level: 3,
+          scopeSelections: [{ scopeId: 'toc-scope-1', value: 'javascript' }],
+        },
+        {
+          id: 'rust-heading',
+          text: 'Rust',
+          level: 3,
+          scopeSelections: [{ scopeId: 'toc-scope-1', value: 'rust' }],
+        },
+      ];
+      const snapshots: string[][] = [];
+      const tracker = new TocActiveTracker({
+        contentRootId: 'content-root',
+        headings,
+        capabilities: { activeTracking: false, dynamicScopes: true, mobilePanel: false },
+        getActiveId: () => '',
+        onVisibleHeadingsChange: (visible) => {
+          snapshots.push(visible.map(({ id }) => id));
+        },
+        onActiveIdChange: () => undefined,
+      });
+      try {
+        tracker.start();
+        expect(snapshots.at(-1)).toEqual(['js-heading', 'rust-heading']);
+        activateTabs(tabs, fixtureAbortController(content).signal);
+        await waitForRefresh();
+        expect(snapshots.at(-1)).toEqual([initial === 'rust' ? 'rust-heading' : 'js-heading']);
+        selectTabsValue(tabs, initial === 'rust' ? 'javascript' : 'rust', { historyMode: 'none' });
+        await waitForRefresh();
+        expect(snapshots.at(-1)).toEqual([initial === 'rust' ? 'js-heading' : 'rust-heading']);
+      } finally {
+        tracker.destroy();
+      }
+    },
+  );
   it('スクロール位置に応じて現在見出しを幾何学的に再計算すること', async () => {
     document.body.innerHTML = `
       <article id="content-root">

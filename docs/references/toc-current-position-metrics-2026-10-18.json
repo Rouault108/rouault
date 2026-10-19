@@ -1,0 +1,496 @@
+{
+  "baselineCommit": "78dd121f39996d4ec6681cea7d69432a8f7fd614",
+  "methodology": {
+    "browser": "headless Chromium",
+    "viewport": "1440x1000",
+    "reducedMotion": "reduce",
+    "iterations": "one initial plus five warmed paired iterations per scenario",
+    "latency": "intrusive rAF/posttask geometry and indicator ::before opacity samples; correct means active attrs/class and indicator opacity1; first visible new DOM opportunity, not OS presented frame",
+    "sync": "ReadingPositionController.schedule wrapper wall time; optional positionAccepted wrapper",
+    "trace": "separate one navigation run without per-frame geometry reads; forced layouts classified by Layout beginData.stackTrace containing JavaScript frames; this includes all app work, not isolated TOC",
+    "limits": "observational timings under concurrent work; no hard performance budget; browser probe overhead and cold caches affect results"
+  },
+  "runtime": [
+    {
+      "label": "baseline",
+      "scenarios": [
+        {
+          "scenario": "navigate",
+          "warmIterations": 5,
+          "firstFrameLatencyMs": {
+            "min": 29.699999999953434,
+            "median": 46.40000000002328,
+            "max": 57.29999999993015
+          },
+          "firstCorrectLatencyMs": {
+            "min": 82.40000000002328,
+            "median": 84.69999999995343,
+            "max": 107
+          },
+          "firstVisibleToCorrectMs": {
+            "min": 37.59999999997672,
+            "median": 44.199999999953434,
+            "max": 52.70000000006985
+          },
+          "incorrectVisibleSamples": [6, 8, 8, 6, 8],
+          "syncScheduleMs": {
+            "min": 0.09999999997671694,
+            "median": 0.19999999995343387,
+            "max": 0.30000000004656613
+          },
+          "syncPositionAcceptedMs": {
+            "min": null,
+            "median": null,
+            "max": null
+          }
+        },
+        {
+          "scenario": "back",
+          "warmIterations": 5,
+          "firstFrameLatencyMs": {
+            "min": 24,
+            "median": 37.5,
+            "max": 55.40000000002328
+          },
+          "firstCorrectLatencyMs": {
+            "min": 58.90000000002328,
+            "median": 98.39999999990687,
+            "max": 123.5
+          },
+          "firstVisibleToCorrectMs": {
+            "min": 34.90000000002328,
+            "median": 51.199999999953434,
+            "max": 68.09999999997672
+          },
+          "incorrectVisibleSamples": [6, 8, 8, 6, 6],
+          "syncScheduleMs": {
+            "min": 0.09999999997671694,
+            "median": 0.30000000004656613,
+            "max": 0.8000000000465661
+          },
+          "syncPositionAcceptedMs": {
+            "min": null,
+            "median": null,
+            "max": null
+          }
+        }
+      ],
+      "trace": {
+        "deltas": {
+          "LayoutCount": 4,
+          "RecalcStyleCount": 6,
+          "LayoutDuration": 0.04776,
+          "RecalcStyleDuration": 0.016338,
+          "ScriptDuration": 0.00999,
+          "TaskDuration": 0.134714
+        },
+        "layoutEvents": 4,
+        "forcedLayoutsWithJsStack": 2,
+        "forcedLayoutStacks": [
+          {
+            "durationMs": 47.15,
+            "stack": [
+              "_ensureContentRoot",
+              "_syncBusyState",
+              "",
+              "emit",
+              "setBusy",
+              "runNavigation"
+            ]
+          },
+          {
+            "durationMs": 0.391,
+            "stack": ["range", "restore"]
+          }
+        ],
+        "synchronousLayoutDurationMs": 47.541,
+        "maxRunTaskMs": 87.907,
+        "traceFile": "/tmp/toc-runtime-baseline-trace.json"
+      }
+    },
+    {
+      "label": "changed",
+      "scenarios": [
+        {
+          "scenario": "navigate",
+          "warmIterations": 5,
+          "firstFrameLatencyMs": {
+            "min": 19.099999999976717,
+            "median": 24.899999999906868,
+            "max": 54.800000000046566
+          },
+          "firstCorrectLatencyMs": {
+            "min": 19.099999999976717,
+            "median": 24.899999999906868,
+            "max": 54.800000000046566
+          },
+          "firstVisibleToCorrectMs": {
+            "min": 0,
+            "median": 0,
+            "max": 0
+          },
+          "incorrectVisibleSamples": [0, 0, 0, 0, 0],
+          "syncScheduleMs": {
+            "min": 5.400000000023283,
+            "median": 6.900000000023283,
+            "max": 15.199999999953434
+          },
+          "syncPositionAcceptedMs": {
+            "min": 1.1999999999534339,
+            "median": 1.400000000023283,
+            "max": 4.199999999953434
+          }
+        },
+        {
+          "scenario": "back",
+          "warmIterations": 5,
+          "firstFrameLatencyMs": {
+            "min": 22.300000000046566,
+            "median": 23.79999999993015,
+            "max": 28.099999999976717
+          },
+          "firstCorrectLatencyMs": {
+            "min": 22.300000000046566,
+            "median": 23.79999999993015,
+            "max": 28.099999999976717
+          },
+          "firstVisibleToCorrectMs": {
+            "min": 0,
+            "median": 0,
+            "max": 0
+          },
+          "incorrectVisibleSamples": [0, 0, 0, 0, 0],
+          "syncScheduleMs": {
+            "min": 1.2999999999301508,
+            "median": 1.7999999999301508,
+            "max": 2.3999999999068677
+          },
+          "syncPositionAcceptedMs": {
+            "min": 1.099999999976717,
+            "median": 1.5,
+            "max": 2.099999999976717
+          }
+        }
+      ],
+      "trace": {
+        "deltas": {
+          "LayoutCount": 4,
+          "RecalcStyleCount": 7,
+          "LayoutDuration": 0.002236,
+          "RecalcStyleDuration": 0.003328,
+          "ScriptDuration": 0.004351,
+          "TaskDuration": 0.030093
+        },
+        "layoutEvents": 4,
+        "forcedLayoutsWithJsStack": 3,
+        "forcedLayoutStacks": [
+          {
+            "durationMs": 2.08,
+            "stack": ["restore", "schedule", "reading.<computed>", "run", "runPostCommit", ""]
+          },
+          {
+            "durationMs": 0.162,
+            "stack": [
+              "gt",
+              "Wr",
+              "",
+              "positionAccepted",
+              "reading.<computed>",
+              "restore",
+              "schedule",
+              "reading.<computed>",
+              "run",
+              "runPostCommit",
+              ""
+            ]
+          },
+          {
+            "durationMs": 0.152,
+            "stack": ["la", "ep", "tp", "np", "op", "#e"]
+          }
+        ],
+        "synchronousLayoutDurationMs": 2.394,
+        "maxRunTaskMs": 14.366,
+        "traceFile": "/tmp/toc-runtime-changed-trace.json"
+      }
+    }
+  ],
+  "bundle": {
+    "baseline": {
+      "count": 12,
+      "rawBytes": 543204,
+      "gzipBytes": 159166,
+      "files": [
+        {
+          "file": "client-assets/client-Cz84QrwF.js",
+          "rawBytes": 263935,
+          "gzipBytes": 75017
+        },
+        {
+          "file": "client-assets/router-document-host-BI5NL8kK.js",
+          "rawBytes": 100388,
+          "gzipBytes": 27922
+        },
+        {
+          "file": "client-assets/worker-DkqrNd_l.js",
+          "rawBytes": 56706,
+          "gzipBytes": 18613
+        },
+        {
+          "file": "client-assets/layout-toc-controller-DTq_jG3B.js",
+          "rawBytes": 34292,
+          "gzipBytes": 8804
+        },
+        {
+          "file": "client-assets/video-enhancer-CJK_rhvz.js",
+          "rawBytes": 29057,
+          "gzipBytes": 7157
+        },
+        {
+          "file": "client-assets/anchored-overlay-controller-M7QVv743.js",
+          "rawBytes": 20548,
+          "gzipBytes": 7636
+        },
+        {
+          "file": "client-assets/tabs-enhancer-CallvbXw.js",
+          "rawBytes": 13798,
+          "gzipBytes": 4010
+        },
+        {
+          "file": "client-assets/preview-sandbox-enhancer-BIiAmP82.js",
+          "rawBytes": 9394,
+          "gzipBytes": 3601
+        },
+        {
+          "file": "client-assets/code-preview-enhancer-Cs8fGPhM.js",
+          "rawBytes": 7421,
+          "gzipBytes": 2774
+        },
+        {
+          "file": "client-assets/suzume-IWndcxe0.js",
+          "rawBytes": 5385,
+          "gzipBytes": 2453
+        },
+        {
+          "file": "client-assets/translation-overlay-enhancer-DGOYWLJo.js",
+          "rawBytes": 2221,
+          "gzipBytes": 1103
+        },
+        {
+          "file": "client-assets/tabs-url-sync-strategy-Dw4danZe.js",
+          "rawBytes": 59,
+          "gzipBytes": 76
+        }
+      ]
+    },
+    "changed": {
+      "count": 14,
+      "rawBytes": 548868,
+      "gzipBytes": 161881,
+      "files": [
+        {
+          "file": "client-assets/client-DBPXQZFo.js",
+          "rawBytes": 264058,
+          "gzipBytes": 75064
+        },
+        {
+          "file": "client-assets/router-document-host-DmF_hdj_.js",
+          "rawBytes": 105604,
+          "gzipBytes": 29519
+        },
+        {
+          "file": "client-assets/worker-DkqrNd_l.js",
+          "rawBytes": 56706,
+          "gzipBytes": 18613
+        },
+        {
+          "file": "client-assets/video-enhancer-CJK_rhvz.js",
+          "rawBytes": 29057,
+          "gzipBytes": 7157
+        },
+        {
+          "file": "client-assets/layout-toc-controller-Bc3311Zv.js",
+          "rawBytes": 27625,
+          "gzipBytes": 6940
+        },
+        {
+          "file": "client-assets/anchored-overlay-controller-M7QVv743.js",
+          "rawBytes": 20548,
+          "gzipBytes": 7636
+        },
+        {
+          "file": "client-assets/tabs-enhancer-DOQgOgo_.js",
+          "rawBytes": 13784,
+          "gzipBytes": 3984
+        },
+        {
+          "file": "client-assets/preview-sandbox-enhancer-BIiAmP82.js",
+          "rawBytes": 9394,
+          "gzipBytes": 3601
+        },
+        {
+          "file": "client-assets/code-preview-enhancer-Cs8fGPhM.js",
+          "rawBytes": 7421,
+          "gzipBytes": 2774
+        },
+        {
+          "file": "client-assets/toc-density-tier-DuhqN0p0.js",
+          "rawBytes": 6862,
+          "gzipBytes": 2822
+        },
+        {
+          "file": "client-assets/suzume-IWndcxe0.js",
+          "rawBytes": 5385,
+          "gzipBytes": 2453
+        },
+        {
+          "file": "client-assets/translation-overlay-enhancer-DGOYWLJo.js",
+          "rawBytes": 2221,
+          "gzipBytes": 1103
+        },
+        {
+          "file": "client-assets/tabs-selection-Bs9l0_Fs.js",
+          "rawBytes": 144,
+          "gzipBytes": 139
+        },
+        {
+          "file": "client-assets/tabs-url-sync-strategy-Dw4danZe.js",
+          "rawBytes": 59,
+          "gzipBytes": 76
+        }
+      ]
+    },
+    "delta": {
+      "rawBytes": 5664,
+      "gzipBytes": 2715
+    },
+    "manifest": {
+      "_anchored-overlay-controller-M7QVv743.js": {
+        "file": "client-assets/anchored-overlay-controller-M7QVv743.js",
+        "name": "anchored-overlay-controller"
+      },
+      "_tabs-selection-Bs9l0_Fs.js": {
+        "file": "client-assets/tabs-selection-Bs9l0_Fs.js",
+        "name": "tabs-selection"
+      },
+      "_tabs-url-sync-strategy-Dw4danZe.js": {
+        "file": "client-assets/tabs-url-sync-strategy-Dw4danZe.js",
+        "name": "tabs-url-sync-strategy"
+      },
+      "_toc-density-tier-DuhqN0p0.js": {
+        "file": "client-assets/toc-density-tier-DuhqN0p0.js",
+        "name": "toc-density-tier",
+        "imports": ["src/client.ts", "_tabs-selection-Bs9l0_Fs.js"]
+      },
+      "node_modules/.pnpm/@fontsource-variable+geist-mono@5.2.8/node_modules/@fontsource-variable/geist-mono/files/geist-mono-cyrillic-ext-wght-normal.woff2": {
+        "file": "client-assets/geist-mono-cyrillic-ext-wght-normal-I4S5GZfc.woff2",
+        "src": "node_modules/.pnpm/@fontsource-variable+geist-mono@5.2.8/node_modules/@fontsource-variable/geist-mono/files/geist-mono-cyrillic-ext-wght-normal.woff2"
+      },
+      "node_modules/.pnpm/@fontsource-variable+geist-mono@5.2.8/node_modules/@fontsource-variable/geist-mono/files/geist-mono-cyrillic-wght-normal.woff2": {
+        "file": "client-assets/geist-mono-cyrillic-wght-normal-BmXc_FBt.woff2",
+        "src": "node_modules/.pnpm/@fontsource-variable+geist-mono@5.2.8/node_modules/@fontsource-variable/geist-mono/files/geist-mono-cyrillic-wght-normal.woff2"
+      },
+      "node_modules/.pnpm/@fontsource-variable+geist-mono@5.2.8/node_modules/@fontsource-variable/geist-mono/files/geist-mono-latin-ext-wght-normal.woff2": {
+        "file": "client-assets/geist-mono-latin-ext-wght-normal-DrnZ1wKl.woff2",
+        "src": "node_modules/.pnpm/@fontsource-variable+geist-mono@5.2.8/node_modules/@fontsource-variable/geist-mono/files/geist-mono-latin-ext-wght-normal.woff2"
+      },
+      "node_modules/.pnpm/@fontsource-variable+geist-mono@5.2.8/node_modules/@fontsource-variable/geist-mono/files/geist-mono-latin-wght-normal.woff2": {
+        "file": "client-assets/geist-mono-latin-wght-normal-B_7UjwxQ.woff2",
+        "src": "node_modules/.pnpm/@fontsource-variable+geist-mono@5.2.8/node_modules/@fontsource-variable/geist-mono/files/geist-mono-latin-wght-normal.woff2"
+      },
+      "node_modules/.pnpm/@fontsource-variable+geist-mono@5.2.8/node_modules/@fontsource-variable/geist-mono/files/geist-mono-symbols2-wght-normal.woff2": {
+        "file": "client-assets/geist-mono-symbols2-wght-normal-GZpp1pK2.woff2",
+        "src": "node_modules/.pnpm/@fontsource-variable+geist-mono@5.2.8/node_modules/@fontsource-variable/geist-mono/files/geist-mono-symbols2-wght-normal.woff2"
+      },
+      "node_modules/.pnpm/@fontsource-variable+geist-mono@5.2.8/node_modules/@fontsource-variable/geist-mono/files/geist-mono-vietnamese-wght-normal.woff2": {
+        "file": "client-assets/geist-mono-vietnamese-wght-normal-D8KDMBhC.woff2",
+        "src": "node_modules/.pnpm/@fontsource-variable+geist-mono@5.2.8/node_modules/@fontsource-variable/geist-mono/files/geist-mono-vietnamese-wght-normal.woff2"
+      },
+      "src/assets/css/main.css": {
+        "file": "client-assets/style-BIEux8Bl.css",
+        "src": "src/assets/css/main.css",
+        "isEntry": true,
+        "name": "style",
+        "names": ["style.css"]
+      },
+      "src/client.ts": {
+        "file": "client-assets/client-DBPXQZFo.js",
+        "name": "client",
+        "src": "src/client.ts",
+        "isEntry": true,
+        "dynamicImports": [
+          "src/components/layout/layout-toc-controller.ts",
+          "src/components/layout/layout-toc-controller.ts",
+          "src/components/app/router-document-host.ts",
+          "src/components/layout/layout-toc-controller.ts",
+          "src/client/post-hydrate/code-preview-enhancer.ts",
+          "src/client/post-hydrate/code-preview-enhancer.ts",
+          "src/client/post-hydrate/preview-sandbox-enhancer.ts",
+          "src/client/post-hydrate/preview-sandbox-enhancer.ts",
+          "src/client/post-hydrate/tabs-enhancer.ts",
+          "src/client/post-hydrate/tabs-enhancer.ts",
+          "src/client/post-hydrate/translation-overlay-enhancer.ts",
+          "src/client/post-hydrate/translation-overlay-enhancer.ts",
+          "src/client/post-hydrate/video-enhancer.ts",
+          "src/client/post-hydrate/video-enhancer.ts"
+        ]
+      },
+      "src/client/post-hydrate/code-preview-enhancer.ts": {
+        "file": "client-assets/code-preview-enhancer-Cs8fGPhM.js",
+        "name": "code-preview-enhancer",
+        "src": "src/client/post-hydrate/code-preview-enhancer.ts",
+        "isDynamicEntry": true,
+        "imports": ["_anchored-overlay-controller-M7QVv743.js"]
+      },
+      "src/client/post-hydrate/preview-sandbox-enhancer.ts": {
+        "file": "client-assets/preview-sandbox-enhancer-BIiAmP82.js",
+        "name": "preview-sandbox-enhancer",
+        "src": "src/client/post-hydrate/preview-sandbox-enhancer.ts",
+        "isDynamicEntry": true
+      },
+      "src/client/post-hydrate/tabs-enhancer.ts": {
+        "file": "client-assets/tabs-enhancer-DOQgOgo_.js",
+        "name": "tabs-enhancer",
+        "src": "src/client/post-hydrate/tabs-enhancer.ts",
+        "isDynamicEntry": true,
+        "imports": [
+          "src/client.ts",
+          "_tabs-url-sync-strategy-Dw4danZe.js",
+          "_tabs-selection-Bs9l0_Fs.js"
+        ]
+      },
+      "src/client/post-hydrate/translation-overlay-enhancer.ts": {
+        "file": "client-assets/translation-overlay-enhancer-DGOYWLJo.js",
+        "name": "translation-overlay-enhancer",
+        "src": "src/client/post-hydrate/translation-overlay-enhancer.ts",
+        "isDynamicEntry": true,
+        "imports": ["_anchored-overlay-controller-M7QVv743.js"]
+      },
+      "src/client/post-hydrate/video-enhancer.ts": {
+        "file": "client-assets/video-enhancer-CJK_rhvz.js",
+        "name": "video-enhancer",
+        "src": "src/client/post-hydrate/video-enhancer.ts",
+        "isDynamicEntry": true
+      },
+      "src/components/app/router-document-host.ts": {
+        "file": "client-assets/router-document-host-DmF_hdj_.js",
+        "name": "router-document-host",
+        "src": "src/components/app/router-document-host.ts",
+        "isDynamicEntry": true,
+        "imports": [
+          "src/client.ts",
+          "_tabs-url-sync-strategy-Dw4danZe.js",
+          "_toc-density-tier-DuhqN0p0.js",
+          "_tabs-selection-Bs9l0_Fs.js"
+        ]
+      },
+      "src/components/layout/layout-toc-controller.ts": {
+        "file": "client-assets/layout-toc-controller-Bc3311Zv.js",
+        "name": "layout-toc-controller",
+        "src": "src/components/layout/layout-toc-controller.ts",
+        "isDynamicEntry": true,
+        "imports": ["_toc-density-tier-DuhqN0p0.js", "src/client.ts", "_tabs-selection-Bs9l0_Fs.js"]
+      }
+    }
+  }
+}

@@ -54,6 +54,79 @@ describe('layout-toc-controller', () => {
     document.querySelectorAll(TOC_MOBILE_PANEL_SELECTOR).forEach((element) => element.remove());
   });
 
+  it('遅延 activation の最新 viewport を初回 publish と mobile clone に採用し初期 refresh でも維持すること', async () => {
+    const cleanup = appendContentFixture();
+    const restoreHash = withLocationHash('');
+    const published: string[] = [];
+    let root: HTMLElement | null = null;
+    const unsubscribe = layoutTocRuntimeStore.subscribe('toc-source-test', (snapshot) => {
+      if (snapshot.ready) published.push(snapshot.activeId ?? '');
+    });
+    try {
+      const currentRoot = await fixture<HTMLElement>(`
+        <div data-layout-toc-root>
+          <nav data-layout-toc-nav>
+            <ol>${headings.map((heading) => `<li class="layout-toc__item" data-heading-id="${heading.id}"><a data-toc-link data-heading-id="${heading.id}" href="#${heading.id}">${heading.text}</a></li>`).join('')}</ol>
+          </nav>
+          <layout-toc-controller source-id="toc-source-test" toc-runtime-id="toc-source-test"
+            content-root-id="note-content-test"
+            capabilities-json='{"activeTracking":true,"dynamicScopes":false,"mobilePanel":true}'
+          ></layout-toc-controller>
+        </div>
+      `);
+      root = currentRoot;
+      // moduleの待機中にユーザーがスクロールしてからactivationされる場合を再現する。
+      for (const [id, top] of [
+        ['section-1', -300],
+        ['section-2', -10],
+      ] as const) {
+        const heading = document.getElementById(id);
+        if (!heading) throw new Error('missing fixture heading');
+        Object.defineProperty(heading, 'getBoundingClientRect', {
+          configurable: true,
+          value: () => ({
+            top,
+            bottom: top + 32,
+            left: 0,
+            right: 800,
+            x: 0,
+            y: top,
+            width: 800,
+            height: 32,
+            toJSON: () => undefined,
+          }),
+        });
+      }
+      const controller = currentRoot.querySelector<LayoutTocController>('layout-toc-controller');
+      if (!controller) throw new Error('missing controller');
+      activateLayoutTocController(controller);
+      const assertCurrent = (): void => {
+        const panel = document.querySelector(TOC_MOBILE_PANEL_SELECTOR);
+        for (const nav of [currentRoot, panel]) {
+          const active = nav?.querySelector('[aria-current="location"]');
+          expect(active?.getAttribute('data-heading-id')).to.equal('section-2');
+          expect(active?.getAttribute('data-active')).to.equal('true');
+          expect(active?.classList.contains('is-active')).to.equal(true);
+          expect(nav?.querySelectorAll('[aria-current]').length).to.equal(1);
+        }
+      };
+      assertCurrent();
+      expect(published).to.deep.equal(['section-2']);
+      await Promise.resolve();
+      assertCurrent();
+      await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+      assertCurrent();
+      await new Promise<void>((resolve) => setTimeout(resolve, 160));
+      assertCurrent();
+      expect(published).to.deep.equal(['section-2']);
+    } finally {
+      unsubscribe();
+      root?.remove();
+      restoreHash();
+      cleanup();
+    }
+  });
+
   it('hydrate 後に SSR nav の active state と runtime snapshot を同期すること', async () => {
     const cleanup = appendContentFixture();
     const restoreHash = withLocationHash('section-2');
@@ -261,8 +334,19 @@ describe('layout-toc-controller', () => {
         '事前に current state が同期されること',
       );
 
-      document.querySelector('#section-1')?.remove();
-      document.querySelector('#section-2')?.remove();
+      // sourceの見出しは全て存在し、enhancedの非選択panelだけが正当に可視ゼロになる。
+      const tabs = document.createElement('section');
+      tabs.setAttribute('data-tabs-root', '');
+      tabs.setAttribute('data-tabs-enhanced', '');
+      const panel = document.createElement('section');
+      panel.setAttribute('data-tab-panel', '');
+      panel.hidden = true;
+      tabs.append(panel);
+      for (const id of ['section-1', 'section-2']) {
+        const heading = document.getElementById(id);
+        if (heading) panel.append(heading);
+      }
+      document.getElementById('note-content-test')?.append(tabs);
 
       await waitForCondition(() => {
         const snapshot = layoutTocRuntimeStore.getSnapshot('toc-source-test');

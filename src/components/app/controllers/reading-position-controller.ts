@@ -59,6 +59,11 @@ interface ScrollJob {
   candidate: ReadingPosition | null;
   url: string;
 }
+export interface AcceptedReadingPosition {
+  readonly root: HTMLElement;
+  readonly intent: NavigationIntent;
+  readonly receipt: NavigationCommitReceipt | undefined;
+}
 const interventionKeys = new Set([
   'ArrowDown',
   'ArrowUp',
@@ -96,7 +101,12 @@ export class ReadingPositionController {
   private fontPreparationEpoch = -1;
   private traverseVisual: { entryId: string | null; url: string; active: boolean | null } | null =
     null;
-  constructor(private readonly reportError: (error: unknown) => void) {}
+  constructor(
+    private readonly reportError: (error: unknown) => void,
+    private readonly onPositionAccepted: (position: AcceptedReadingPosition) => void = () => {
+      /* TOC連携を持たない利用者は位置復元だけを行う。 */
+    },
+  ) {}
 
   start(root: HTMLElement): void {
     adoptHistoryEntry();
@@ -492,6 +502,8 @@ export class ReadingPositionController {
     const readyTimer = window.setTimeout(abortReady, 5000);
     try {
       const rawApplied = this.restoreRawHistoryBeforePaint(job);
+      let notified = rawApplied;
+      if (rawApplied) this.positionAccepted(job);
       this.restoreVerifiedHistoryBeforePaint(job, rawApplied);
       // 履歴成功・binding採用後の既知の先頭だけを描画待ちより前に適用する。
       // 完了判定と取消は、このjobの準備後の安定化まで引き続き所有する。
@@ -505,8 +517,13 @@ export class ReadingPositionController {
         binding?.entryId === this.renderedId &&
         binding.url === job.url &&
         this.current(job)
-      )
+      ) {
         window.scrollTo({ left: 0, top: 0, behavior: 'instant' });
+        if (Math.abs(scrollX) <= 2 && Math.abs(scrollY) <= 2) {
+          this.positionAccepted(job);
+          notified = true;
+        }
+      }
       const readiness = await waitForContentReadiness(job.epoch, readinessController.signal);
       if (
         !this.current(job) ||
@@ -567,10 +584,35 @@ export class ReadingPositionController {
             : 0;
         previous = values.join(':');
         if (!pending || expired()) {
-          if (Math.abs(window.scrollX - target.x) > 2 || Math.abs(window.scrollY - target.y) > 2) {
+          const corrected =
+            Math.abs(window.scrollX - target.x) > 2 || Math.abs(window.scrollY - target.y) > 2;
+          if (corrected) {
             this.cancelJobPresentation(job, 'position-correction');
             if (!this.current(job)) return;
             window.scrollTo({ left: target.x, top: target.y, behavior: 'instant' });
+          }
+          if (
+            (!notified || corrected) &&
+            Math.abs(scrollX - target.x) <= 2 &&
+            Math.abs(scrollY - target.y) <= 2
+          ) {
+            this.positionAccepted(job);
+            notified = true;
+            if (!this.current(job)) return;
+            const after = this.range();
+            if (
+              Math.abs(scrollX - target.x) > 2 ||
+              Math.abs(scrollY - target.y) > 2 ||
+              Math.abs(after.x - range.x) > 2 ||
+              Math.abs(after.y - range.y) > 2
+            ) {
+              stable = 0;
+              previous = '';
+              // TOCの巻き戻しが位置を動かしても、完了扱いにせず同じReading jobで補正する。
+              if (!expired()) continue;
+              const finalTarget = clampReadingPosition(target, after.x, after.y);
+              window.scrollTo({ left: finalTarget.x, top: finalTarget.y, behavior: 'instant' });
+            }
           }
           if (stable >= 2 || expired()) return;
         }
@@ -665,11 +707,16 @@ export class ReadingPositionController {
         return;
       this.cancelJobPresentation(job, 'verified-position-apply');
       if (!this.presentationCurrent(job)) return;
-      if (
-        !rawApplied &&
-        (Math.abs(scrollX - job.candidate.x) > 2 || Math.abs(scrollY - job.candidate.y) > 2)
-      )
+      const corrected =
+        Math.abs(scrollX - job.candidate.x) > 2 || Math.abs(scrollY - job.candidate.y) > 2;
+      if (corrected)
         window.scrollTo({ left: job.candidate.x, top: job.candidate.y, behavior: 'instant' });
+      if (
+        (!rawApplied || corrected) &&
+        Math.abs(scrollX - job.candidate.x) <= 2 &&
+        Math.abs(scrollY - job.candidate.y) <= 2
+      )
+        this.positionAccepted(job);
       const anchor = readHistoryGeometryAnchor(job.root, checkpoint);
       if (
         !this.presentationCurrent(job) ||
@@ -711,6 +758,10 @@ export class ReadingPositionController {
       context.addressBinding.url === job.url &&
       readHistoryEntry()?.id === job.entryId
     );
+  }
+  private positionAccepted(job: ScrollJob): void {
+    if (!this.current(job)) return;
+    this.onPositionAccepted({ root: job.root, intent: job.intent, receipt: job.receipt });
   }
   private cancelPresentation(reason: string): void {
     try {

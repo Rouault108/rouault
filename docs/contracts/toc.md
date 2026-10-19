@@ -146,7 +146,7 @@ CSS contract testの初期制約として、hover / focus-visible surface select
 - static-only TOCはtesting fixture限定で、SSR出力だけで成立させる
 - static-only TOCのlinkは`data-toc-link`を持たず、active sync / mobile panelの対象にしない
 - SSR層はrequest URLのhashを正本としてcurrent stateを出力しない
-- current stateはhydration後の`layout-toc-controller`がvisible headingsとhashを照合して決定する
+- current stateは受理済み位置の同期処理、または`layout-toc-controller`がvisible headingsとviewport/hashを照合して決定する
 
 presenceとhydrationは分離する。
 
@@ -217,3 +217,7 @@ build-time annotationのownerはextract-toc-from-html.ts/prepareTocHtmlである
 ## Reading position integration
 
 coordinate-priority中はactiveTracking=trueだけがviewportからcurrentを同期する。falseへ新規追跡を加えない。通常hash選択は本人intentをDOM変更前に受理する。 詳細は[Reading Position Contract](reading-position.md)。
+
+hashless full commit の位置受理後は、PostRender から Reading に注入した同期 callback で visible/current/witness を一括算出する。独立 track と所有権を確認して一度適用・一度検証し、不成立は遅延初期化へ縮退する。本文位置復元の成否と TOC 同期結果は分離する。apply/verify/rollback の例外を TOC 内で隔離し、同じ owner と自分の値が残る属性/token だけを一度戻す。
+
+controller/tracker/mobile の最初の公開と、その後の初期再更新も同じ候補計算で visible/current を一括採用する。先頭仮設定を公開しない。SSR は現在地を決めず、遅延 activation は最新 viewport で再判定する。設計詳細は [ADR](../adr/toc-current-at-accepted-reading-position.md)、実施範囲は[検証記録](../references/toc-current-position-validation-2026-10-18.md)を参照。

@@ -1,4 +1,4 @@
-import { readTabsSelection, selectTabsValue } from '../client/post-hydrate/tabs-enhancer.js';
+import { readTabsSelection, selectTabsValue } from '../components/ui/tabs/tabs-selection.js';
 import { isHTMLElement } from '../lib/dom.js';
 import type { TocCapabilities, TocHeading as Heading, TocScopeSelection } from './toc-headings.js';
 

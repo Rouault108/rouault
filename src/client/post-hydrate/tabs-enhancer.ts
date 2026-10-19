@@ -9,23 +9,10 @@ import type {
   UrlHistoryMode,
 } from '../../components/ui/tabs/tabs.types.js';
 
-const controllers = new WeakMap<HTMLElement, TabsController>();
-export type TabsSelectionResult =
-  | 'not-enhanced'
-  | 'invalid-value'
-  | 'selected'
-  | 'unchanged'
-  | 'superseded';
-
-export const selectTabsValue = (
-  root: HTMLElement,
-  value: string,
-  options: { historyMode: UrlHistoryMode },
-): TabsSelectionResult =>
-  controllers.get(root)?.select(value, options.historyMode) ?? 'not-enhanced';
-
-export const readTabsSelection = (root: HTMLElement): string | null =>
-  controllers.get(root)?.getActiveValue() ?? null;
+import { tabsSelectionControllers as controllers } from '../../components/ui/tabs/tabs-selection.js';
+export { readTabsSelection, selectTabsValue } from '../../components/ui/tabs/tabs-selection.js';
+export type { TabsSelectionResult } from '../../components/ui/tabs/tabs-selection.js';
+import type { TabsSelectionResult } from '../../components/ui/tabs/tabs-selection.js';
 
 class TabsController {
   private readonly tabs: HTMLAnchorElement[];

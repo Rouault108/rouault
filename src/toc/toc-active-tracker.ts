@@ -4,14 +4,11 @@ import { decodeHashFragment } from '../router/url-hash.js';
 import { readRootScrollY } from '../router/root-scroll.js';
 import {
   applyTocScopeSelections,
-  filterHeadingsByScopeSelections,
   findContentRoot,
-  filterVisibleHeadings,
   type TocCapabilities,
-  readTocScopeSelectionMap,
 } from './filter-visible-headings.js';
+import { readTocViewportSnapshot } from './toc-viewport-snapshot.js';
 import {
-  hasHeadingPassedTocActivationLine,
   isHeadingIntersectingViewport,
   resolveTocActivationOffset,
   type TocScrollMetrics,
@@ -36,8 +33,9 @@ export interface TocActiveTrackerOptions {
   headings: Heading[];
   capabilities: TocCapabilities;
   getActiveId: () => string;
-  onVisibleHeadingsChange: (headings: Heading[]) => void;
-  onActiveIdChange: (id: string) => void;
+  onSnapshotChange?: (headings: Heading[], activeId: string) => void;
+  onVisibleHeadingsChange?: (headings: Heading[]) => void;
+  onActiveIdChange?: (id: string) => void;
 }
 
 export type TocNavigationCancelReason =
@@ -108,6 +106,7 @@ export class TocActiveTracker {
   private readonly _contentRootId: string;
   private readonly _capabilities: TocCapabilities;
   private readonly _getActiveId: () => string;
+  private readonly _onSnapshotChange: TocActiveTrackerOptions['onSnapshotChange'];
   private readonly _onVisibleHeadingsChange: (headings: Heading[]) => void;
   private readonly _onActiveIdChange: (id: string) => void;
   private _allHeadings: Heading[];
@@ -115,12 +114,12 @@ export class TocActiveTracker {
   private _mutationObserver: MutationObserver | null = null;
   private _visibleHeadings: Heading[] = [];
   private _started = false;
+  private _hasSnapshot = false;
   private _refreshScheduled = false;
   private _viewportSyncScheduled = false;
   private _initialRefreshTimer: number | null = null;
   private _initialViewportSyncFrame: number | null = null;
   private _initialHashStabilizationTimer: number | null = null;
-  private _pendingEmptyVisibleHeadingsTimer: number | null = null;
   private _programmaticNavigation: TocProgrammaticNavigation | null = null;
   private _hashNavigationHold: TocHashNavigationHold | null = null;
   private _suppressedHashActivePreservationId: string | null = null;
@@ -130,8 +129,9 @@ export class TocActiveTracker {
     this._allHeadings = options.headings;
     this._capabilities = options.capabilities;
     this._getActiveId = options.getActiveId;
-    this._onVisibleHeadingsChange = options.onVisibleHeadingsChange;
-    this._onActiveIdChange = options.onActiveIdChange;
+    this._onSnapshotChange = options.onSnapshotChange;
+    this._onVisibleHeadingsChange = options.onVisibleHeadingsChange ?? (() => undefined);
+    this._onActiveIdChange = options.onActiveIdChange ?? (() => undefined);
   }
 
   setHeadings(headings: Heading[]): void {
@@ -224,11 +224,6 @@ export class TocActiveTracker {
       this._initialHashStabilizationTimer = null;
     }
 
-    if (this._pendingEmptyVisibleHeadingsTimer !== null) {
-      clearTimeout(this._pendingEmptyVisibleHeadingsTimer);
-      this._pendingEmptyVisibleHeadingsTimer = null;
-    }
-
     this._cancelHashNavigationHold();
     this.cancelProgrammaticNavigation('destroy');
   }
@@ -279,105 +274,85 @@ export class TocActiveTracker {
   refresh(): void {
     this._contentRoot = findContentRoot(this._contentRootId);
     this._setupMutationObserver();
-    this._syncVisibleHeadings();
-    this._syncActiveHeadingFromHash();
+    this._revealCurrentHashTarget();
+    this._syncViewportSnapshot(!this._hasSnapshot);
     this._scheduleViewportSync();
   }
 
-  private _syncVisibleHeadings(): void {
+  private _commitSnapshot(
+    headings: Heading[],
+    activeId: string,
+    previousHeadings: readonly Heading[],
+  ): void {
+    const unchanged =
+      this._hasSnapshot &&
+      activeId === this._getActiveId() &&
+      headings.length === previousHeadings.length &&
+      headings.every((heading, index) => heading.id === previousHeadings[index]?.id);
+    this._visibleHeadings = headings;
+    if (unchanged) {
+      return;
+    }
+    this._hasSnapshot = true;
+    if (this._onSnapshotChange) {
+      this._onSnapshotChange(headings, activeId);
+      return;
+    }
+
+    // 既存利用者にも同じ確定値を渡し、controllerは一括callbackだけを使う。
+    this._onVisibleHeadingsChange(headings);
+    if (activeId !== this._getActiveId()) {
+      this._onActiveIdChange(activeId);
+    }
+  }
+
+  private _syncViewportSnapshot(preferHash = false): void {
     const contentRoot = this._contentRoot;
-    const scopedHeadings =
-      this._capabilities.dynamicScopes && contentRoot
-        ? filterHeadingsByScopeSelections(this._allHeadings, readTocScopeSelectionMap(contentRoot))
-        : this._allHeadings;
-
-    const nextVisibleHeadings = contentRoot
-      ? filterVisibleHeadings(contentRoot, scopedHeadings)
-      : scopedHeadings;
-
-    if (
-      contentRoot &&
-      !this._capabilities.dynamicScopes &&
-      nextVisibleHeadings.length === 0 &&
-      this._visibleHeadings.length > 0 &&
-      scopedHeadings.length > 0
+    if (contentRoot === null) {
+      return;
+    }
+    const snapshot = readTocViewportSnapshot(contentRoot, this._allHeadings, this._capabilities);
+    if (snapshot === null) {
+      return;
+    }
+    const headings = snapshot.visibleHeadings;
+    // 新しい可視集合でholdを判定し、visible/currentを一括で公開する。
+    const previousHeadings = this._visibleHeadings;
+    this._visibleHeadings = headings;
+    const visible = (id: string): boolean => headings.some((heading) => heading.id === id);
+    const currentId = this._getActiveId();
+    const hash = hasCoordinatePriority() ? '' : decodeHash(window.location.hash);
+    const forcedId = hasCoordinatePriority() ? '' : this._resolveProgrammaticActiveId();
+    const holdId = this._resolveHashNavigationHoldActiveId();
+    let activeId = snapshot.activeId;
+    if (visible(forcedId)) {
+      activeId = forcedId;
+    } else if (preferHash && visible(hash)) {
+      activeId = hash;
+    } else if (visible(holdId)) {
+      activeId = holdId;
+    } else if (
+      visible(currentId) &&
+      (!this._capabilities.activeTracking || this._shouldPreserveCurrentHashActiveId())
     ) {
-      /*
-       * hydration / post-commit 中は heading 要素が一瞬だけ差し替えられ、
-       * filterVisibleHeadings() が空配列を返すことがある。
-       * ここで TOC を即座に空描画へ戻すと current 同期が途切れるため、
-       * 静的 heading 集合では短時間だけ直前値を維持し、空状態の確定を遅延させる。
-       */
-      this._pendingEmptyVisibleHeadingsTimer ??= window.setTimeout(() => {
-        this._pendingEmptyVisibleHeadingsTimer = null;
-        this._visibleHeadings = [];
-        this._onVisibleHeadingsChange([]);
-        if (this._getActiveId().length > 0) {
-          this._onActiveIdChange('');
-        }
-      }, 80);
-      return;
-    } else {
-      if (this._pendingEmptyVisibleHeadingsTimer !== null) {
-        clearTimeout(this._pendingEmptyVisibleHeadingsTimer);
-        this._pendingEmptyVisibleHeadingsTimer = null;
-      }
-      this._visibleHeadings = nextVisibleHeadings;
-      this._onVisibleHeadingsChange(this._visibleHeadings);
+      activeId = currentId;
     }
-
-    const currentActiveId = this._getActiveId();
-    if (currentActiveId.length === 0) {
-      const nextId = this._resolveInitialActiveId();
-      if (nextId.length > 0) {
-        this._onActiveIdChange(nextId);
-      }
-      return;
-    }
-
-    const isCurrentVisible = this._visibleHeadings.some(
-      (heading) => heading.id === currentActiveId,
-    );
-    if (!isCurrentVisible) {
-      const fallbackId = this._resolveInitialActiveId();
-      this._onActiveIdChange(fallbackId);
-    }
+    this._commitSnapshot(headings, activeId, previousHeadings);
   }
 
-  private _resolveInitialActiveId(): string {
+  private _revealCurrentHashTarget(): void {
     const hash = hasCoordinatePriority() ? '' : decodeHash(window.location.hash);
-    if (hash.length > 0 && this._visibleHeadings.some((heading) => heading.id === hash)) {
-      return hash;
-    }
-
-    return this._visibleHeadings[0]?.id ?? '';
-  }
-
-  private _syncActiveHeadingFromHash(): void {
-    const hash = hasCoordinatePriority() ? '' : decodeHash(window.location.hash);
-    if (hash.length === 0) {
-      return;
-    }
-
     const targetHeading = this._allHeadings.find((heading) => heading.id === hash);
-    if (!targetHeading) {
-      return;
-    }
-
-    if (
-      this._contentRoot &&
-      targetHeading.scopeSelections &&
-      targetHeading.scopeSelections.length > 0
-    ) {
+    if (this._contentRoot && targetHeading?.scopeSelections?.length) {
       applyTocScopeSelections(this._contentRoot, targetHeading.scopeSelections, {
         historyMode: 'none',
       });
-      this._syncVisibleHeadings();
     }
+  }
 
-    if (this._visibleHeadings.some((heading) => heading.id === hash)) {
-      this._onActiveIdChange(hash);
-    }
+  private _syncActiveHeadingFromHash(): void {
+    this._revealCurrentHashTarget();
+    this._syncViewportSnapshot(true);
   }
 
   private _beginHashNavigationHoldFromCurrentHash(source: 'initial' | 'hashchange'): void {
@@ -494,74 +469,18 @@ export class TocActiveTracker {
      * scroll 後に対象見出しが viewport 内へ入っているなら、
      * 初期 current は hash を正本に戻してから通常の viewport 同期へ委ねる。
      */
-    this._onActiveIdChange(hash);
+    this._syncViewportSnapshot(true);
     this._scheduleViewportSync();
   }
 
-  private _resolveActiveHeadingFromViewport(): string {
-    if (this._visibleHeadings.length === 0) {
-      return '';
-    }
-
-    const headingElements = this._visibleHeadings
-      .map((heading) => {
-        const element = this._resolveHeadingElement(heading.id);
-        return element instanceof HTMLElement ? { heading, element } : null;
-      })
-      .filter((entry): entry is { heading: Heading; element: HTMLElement } => entry !== null);
-
-    if (headingElements.length === 0) {
-      return this._resolveInitialActiveId();
-    }
-
-    let candidateId = headingElements[0]?.heading.id ?? '';
-
-    for (const { heading, element } of headingElements) {
-      if (hasHeadingPassedTocActivationLine(element)) {
-        candidateId = heading.id;
-        continue;
-      }
-      break;
-    }
-
-    return candidateId;
-  }
-
   private _syncActiveHeadingFromViewport(): void {
-    if (!this._started) {
+    if (
+      !this._started ||
+      (!this._capabilities.activeTracking && this._programmaticNavigation === null)
+    ) {
       return;
     }
-
-    const forcedId = hasCoordinatePriority() ? '' : this._resolveProgrammaticActiveId();
-    if (forcedId.length > 0) {
-      if (forcedId !== this._getActiveId()) {
-        this._onActiveIdChange(forcedId);
-      }
-      return;
-    }
-
-    if (!this._capabilities.activeTracking) {
-      return;
-    }
-
-    const hashHoldId = this._resolveHashNavigationHoldActiveId();
-    if (hashHoldId.length > 0) {
-      if (hashHoldId !== this._getActiveId()) {
-        this._onActiveIdChange(hashHoldId);
-      }
-      return;
-    }
-
-    if (this._shouldPreserveCurrentHashActiveId()) {
-      return;
-    }
-
-    const nextId = this._resolveActiveHeadingFromViewport();
-    if (nextId.length === 0 || nextId === this._getActiveId()) {
-      return;
-    }
-
-    this._onActiveIdChange(nextId);
+    this._syncViewportSnapshot();
   }
 
   private _shouldPreserveCurrentHashActiveId(): boolean {
