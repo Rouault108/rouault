@@ -23,7 +23,7 @@ baselineは`5b79cced2392842ff3c9c7a6d6f0e81d517df1f8`。公開済みSPA／履歴
 
 ## Native reloadの対照とCI記録
 
-runtime `8047ccdcb85ae50da3a94867e21d70603e307872` の[既存CI run](https://github.com/Rouault108/rouault/actions/runs/39240023567)では、Node 1,243 passed / 1 skipped、SSR 610 passed、3 engine Browser 3,114 passed、dev E2E 45 passed、Chromium production E2E 307 passed / 1 skippedだった。Firefox productionは189 passed / 1 skipped / 新reload試験3 failed、WebKit productionは206 passed / 8 skipped / 同3 failedで、run全体は失敗だった。deployと公開後確認は対象外でskipされた。
+runtime `8047ccdcb85ae50da3a94867e21d70603e307872`の[既存CI run](https://github.com/Rouault108/rouault/actions/runs/39240023567)では、Node 1,243 passed / 1 skipped、SSR 610 passed、3 engine Browser 3,114 passed、dev E2E 45 passed、Chromium production E2E 307 passed / 1 skippedだった。Firefox productionは189 passed / 1 skipped / 新reload試験3 failed、WebKit productionは206 passed / 8 skipped / 同3 failedで、run全体は失敗だった。deployと公開後確認は対象外でskipされた。
 
 この3件はnative受理後の全frameをreload前の保存Yへ固定しており、[既存Reading契約](../contracts/reading-position.md#approved-native-behavior-adjustment)が保証していない条件だった。Firefoxの最初の失敗frameの保存Yとの差は上部231・中部179（retryでは178も観測）・末尾588 CSS px、WebKitは232・177・586 CSS pxだった。この差だけからUA復元が原因と断定しない。
 

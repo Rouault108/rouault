@@ -170,8 +170,8 @@ const readAt = async (page: Page, fraction: number): Promise<number> => {
   }, fraction);
 };
 
-const installReloadProbe = (page: Page): Promise<void> =>
-  page.addInitScript(() => {
+const installReloadProbe = async (page: Page): Promise<void> => {
+  await page.addInitScript(() => {
     const probe = (window.__nativeTocReload = {
       initialMode: history.scrollRestoration,
       modeAtLoad: null as ScrollRestoration | null,
@@ -195,6 +195,7 @@ const installReloadProbe = (page: Page): Promise<void> =>
       intoView.call(this, options);
     };
   });
+};
 
 const reloadSnapshot = (page: Page) =>
   page.evaluate(() => {
