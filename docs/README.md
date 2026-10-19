@@ -70,7 +70,7 @@ Design System patternはUIの見え方と配置判断を扱う。Router、search
 
 ## Reference
 
-- [TOC 初回現在地同期の検証記録](references/toc-current-position-validation-2026-10-18.md)
+- [TOC初回現在地同期の検証記録](references/toc-current-position-validation-2026-10-18.md)
 
 - `docs/references/navigation-envelope-schema.md`
 - `docs/references/search-data-model.md`
@@ -91,7 +91,7 @@ Design System patternはUIの見え方と配置判断を扱う。Router、search
 
 ## Architecture
 
-受理済み読書位置での TOC 同期の設計判断は [ADR](adr/toc-current-at-accepted-reading-position.md) を参照する。
+受理済み読書位置でのTOC同期の設計判断は [ADR](adr/toc-current-at-accepted-reading-position.md) を参照する。
 
 - `docs/architecture/navigation-shell-snapshot.md`
 
