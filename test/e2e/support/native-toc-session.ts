@@ -7,6 +7,7 @@ interface NativeTocFrame {
   settled: boolean;
   nativeSync: string | null;
   sequence: string | null;
+  x: number;
   y: number;
   expected: string | null;
   current: string[];
@@ -22,9 +23,15 @@ interface NativeTocProbe {
   active: boolean;
   preferFragment: boolean;
 }
+interface NativeReloadProbe {
+  initialMode: ScrollRestoration;
+  modeAtLoad: ScrollRestoration | null;
+  scrollCalls: string[];
+}
 declare global {
   interface Window {
     __nativeTocSession: NativeTocProbe;
+    __nativeTocReload: NativeReloadProbe;
   }
 }
 
@@ -98,6 +105,7 @@ const install = async (page: Page, preferFragment = false): Promise<void> => {
         settled: main.dataset['readingPositionStatus'] === 'settled',
         nativeSync: main.dataset['tocNativeSync'] ?? null,
         sequence: main.dataset['tocPositionSequence'] ?? null,
+        x: scrollX,
         y: scrollY,
         expected,
         current: desktop.current,
@@ -161,6 +169,69 @@ const readAt = async (page: Page, fraction: number): Promise<number> => {
     return scrollY;
   }, fraction);
 };
+
+const installReloadProbe = (page: Page): Promise<void> =>
+  page.addInitScript(() => {
+    const probe = (window.__nativeTocReload = {
+      initialMode: history.scrollRestoration,
+      modeAtLoad: null as ScrollRestoration | null,
+      scrollCalls: [] as string[],
+    });
+    window.addEventListener('load', () => {
+      probe.modeAtLoad = history.scrollRestoration;
+    });
+    // UA内部の復元とappによる追加scrollを分け、parse中のgeometryは読まない。
+    for (const method of ['scrollTo', 'scroll', 'scrollBy'] as const) {
+      const original = window[method].bind(window);
+      window[method] = (options?: ScrollToOptions | number, top?: number): void => {
+        probe.scrollCalls.push(JSON.stringify([method, options, top]));
+        if (typeof options === 'number') original(options, top ?? 0);
+        else original(options);
+      };
+    }
+    const intoView = Element.prototype.scrollIntoView;
+    Element.prototype.scrollIntoView = function (options?: boolean | ScrollIntoViewOptions): void {
+      probe.scrollCalls.push(JSON.stringify(['scrollIntoView', this.id, options]));
+      intoView.call(this, options);
+    };
+  });
+
+const reloadSnapshot = (page: Page) =>
+  page.evaluate(() => {
+    const root = document.scrollingElement;
+    if (!root) throw new Error('scrollingElement');
+    return {
+      url: location.pathname + location.search + location.hash,
+      x: scrollX,
+      y: scrollY,
+      maxX: root.scrollWidth - root.clientWidth,
+      maxY: root.scrollHeight - root.clientHeight,
+      mode: history.scrollRestoration,
+      state: history.state as unknown,
+      length: history.length,
+      fonts: document.fonts.status,
+      readyState: document.readyState,
+      probe: window.__nativeTocReload,
+    };
+  });
+
+const settleReload = async (page: Page): Promise<void> => {
+  await page.waitForLoadState('load');
+  let previous = '';
+  let stable = 0;
+  await expect
+    .poll(
+      async () => {
+        const value = await reloadSnapshot(page);
+        const key = JSON.stringify([value.x, value.y, value.maxX, value.maxY]);
+        stable = value.fonts === 'loaded' && key === previous ? stable + 1 : 0;
+        previous = key;
+        return stable;
+      },
+      { intervals: [16] },
+    )
+    .toBeGreaterThanOrEqual(2);
+};
 const assertFrames = (frames: NativeTocFrame[], y?: number): void => {
   expect(frames.length, 'Reading settled後の観測が必要').toBeGreaterThan(0);
   expect(frames.some((f) => f.phase === 'raf')).toBe(true);
@@ -181,6 +252,7 @@ const finish = async (
   name: string,
   y?: number,
   newerThanSequence = -1,
+  beforeAssert?: (frames: NativeTocFrame[]) => Promise<void>,
 ): Promise<NativeTocFrame[]> => {
   await ready(page);
   await page.waitForTimeout(220); // 独立した0ms/rAF/120msの初期再更新を含める。
@@ -196,11 +268,188 @@ const finish = async (
   const accepted = probe.frames.findIndex(
     (f) => f.nativeSync === 'accepted' && Number(f.sequence) > newerThanSequence,
   );
+  const frames = accepted < 0 ? [] : probe.frames.slice(accepted);
+  await beforeAssert?.(frames);
   expect(accepted, 'native受理とTOC transaction成功の観測が必要').toBeGreaterThanOrEqual(0);
-  const frames = probe.frames.slice(accepted);
   assertFrames(frames, y);
   expect((frames.at(-1)?.at ?? 0) - (frames[0]?.at ?? Infinity)).toBeGreaterThanOrEqual(120);
   return frames;
+};
+
+const compareReloadWithNative = async (
+  app: Page,
+  info: TestInfo,
+  name: string,
+  fraction: number,
+): Promise<void> => {
+  const browser = app.context().browser();
+  if (!browser) throw new Error('native対照には同じbrowserが必要です');
+  await install(app);
+  await installReloadProbe(app);
+  // native側のscript置換とHTTP cache条件を揃える。BFCache試験にはこのroutingを使わない。
+  await app.route('**/*', (route) => route.continue());
+  await app.emulateMedia({ reducedMotion: 'reduce' });
+  await app.goto(e2eNoteFixtures.tocReadableLongHeading.directPath);
+  await ready(app);
+  await settleReload(app);
+  const environment = await app.evaluate(() => ({
+    userAgent: navigator.userAgent,
+    locale: navigator.language,
+    deviceScaleFactor: devicePixelRatio,
+  }));
+  const context = await browser.newContext({
+    ...environment,
+    viewport: app.viewportSize() ?? { width: 1440, height: 900 },
+    reducedMotion: 'reduce',
+  });
+  try {
+    const native = await context.newPage();
+    await install(native);
+    await installReloadProbe(native);
+    // 既存compareNativeReloadと同じく、app moduleの位置でmodeだけを受け渡す。
+    await native.route('**/*', async (route) => {
+      if (route.request().resourceType() !== 'script') {
+        await route.continue();
+        return;
+      }
+      const response = await route.fetch();
+      await route.fulfill({
+        response,
+        contentType: 'text/javascript',
+        body: `
+          history.scrollRestoration = 'auto';
+          addEventListener('pagehide', () => { history.scrollRestoration = 'auto'; });
+          addEventListener('load', () => requestAnimationFrame(() => {
+            const entry = history.state?.__rouaultHistoryEntry;
+            history.scrollRestoration = entry?.version === 1 && typeof entry.id === 'string'
+              ? 'manual' : 'auto';
+          }), { once: true });
+        `,
+      });
+    });
+    await native.goto(app.url());
+    await settleReload(native);
+    expect(
+      await native.evaluate(() => customElements.get('router-document-host') !== undefined),
+    ).toBe(false);
+    const address = await app.evaluate(() => {
+      const first = document.querySelector<HTMLElement>('[data-layout-toc-nav] [data-toc-link]')
+        ?.dataset['headingId'];
+      if (!first) throw new Error('heading');
+      return { state: history.state as unknown, url: `#${encodeURIComponent(first)}` };
+    });
+    for (const page of [native, app])
+      await page.evaluate(({ state, url }) => {
+        // appへhash revealを要求せず、対照と同じentry state/addressを保持する。
+        history.replaceState(state, '', url);
+        history.scrollRestoration = 'manual';
+      }, address);
+    await app.bringToFront();
+    const savedY = await readAt(app, fraction);
+    await native.bringToFront();
+    await native.evaluate((y) => scrollTo({ top: y, left: 0, behavior: 'instant' }), savedY);
+    await settleReload(native);
+    await settleReload(app);
+    const beforeApp = await reloadSnapshot(app);
+    const beforeNative = await reloadSnapshot(native);
+    const record = async (phase: string, frames: NativeTocFrame[] = []): Promise<void> => {
+      const evidence = {
+        case: name,
+        project: info.project.name,
+        phase,
+        saved: { x: beforeApp.x, y: savedY },
+        beforeApp,
+        beforeNative,
+        app: await reloadSnapshot(app),
+        native: await reloadSnapshot(native),
+        firstAcceptedFrame: frames[0] ?? null,
+        acceptedFrameCount: frames.length,
+        nativeFrames: await native.evaluate(() => window.__nativeTocSession.frames),
+      };
+      await info.attach(`native-reload-${name}-${phase}-coordinate-control`, {
+        body: JSON.stringify(evidence, null, 2),
+        contentType: 'application/json',
+      });
+      // CI成果物を取得できない環境でも、同条件対照と実座標をログから検証できるようにする。
+      const frame = evidence.firstAcceptedFrame;
+      console.log(
+        'native-toc-reload-control',
+        JSON.stringify({
+          case: name,
+          project: info.project.name,
+          phase,
+          saved: evidence.saved,
+          app: evidence.app,
+          native: evidence.native,
+          firstAcceptedFrame: frame
+            ? {
+                x: frame.x,
+                y: frame.y,
+                sequence: frame.sequence,
+                expected: frame.expected,
+                current: frame.current,
+                consistent: frame.consistent,
+              }
+            : null,
+          acceptedFrameCount: frames.length,
+          nativeFrameCount: evidence.nativeFrames.length,
+        }),
+      );
+    };
+    await record('before');
+    expect(beforeApp.mode).toBe('manual');
+    expect(beforeNative.mode).toBe(beforeApp.mode);
+    expect(beforeNative.url).toBe(beforeApp.url);
+    expect(beforeNative.state).toEqual(beforeApp.state);
+    expect(beforeNative.fonts).toBe('loaded');
+    expect(beforeApp.fonts).toBe('loaded');
+    expect(Math.abs(beforeApp.maxX - beforeNative.maxX)).toBeLessThanOrEqual(2);
+    expect(Math.abs(beforeApp.maxY - beforeNative.maxY)).toBeLessThanOrEqual(2);
+    expect(Math.abs(beforeApp.y - beforeNative.y)).toBeLessThanOrEqual(2);
+    let acceptedFrames: NativeTocFrame[] = [];
+    try {
+      await native.reload();
+      await settleReload(native);
+      await app.bringToFront();
+      await app.reload();
+      // nativeの実位置へ毎frame追従することを検証し、過去の保存Yへ固定しない。
+      await finish(app, info, `native-reload-${name}`, undefined, -1, async (frames) => {
+        acceptedFrames = frames;
+        await record('after', frames);
+      });
+      await settleReload(app);
+      for (const page of [app, native]) {
+        const value = await reloadSnapshot(page);
+        expect(value.url).toBe(beforeApp.url);
+        expect(value.state).toEqual(beforeApp.state);
+        expect(value.length).toBe(page === app ? beforeApp.length : beforeNative.length);
+        expect(value.mode).toBe('manual');
+        expect(value.fonts).toBe('loaded');
+        expect(value.readyState).toBe('complete');
+        expect(value.probe.modeAtLoad).toBe('auto');
+        expect(value.probe.scrollCalls).toEqual([]);
+      }
+      const afterApp = await reloadSnapshot(app);
+      const afterNative = await reloadSnapshot(native);
+      expect(afterApp.probe.initialMode).toBe(afterNative.probe.initialMode);
+      expect(Math.abs(afterApp.maxX - afterNative.maxX)).toBeLessThanOrEqual(2);
+      expect(Math.abs(afterApp.maxY - afterNative.maxY)).toBeLessThanOrEqual(2);
+      // UAのload後の復元も含め、同じmodeのnative対照の実座標を基準にする。
+      await expect
+        .poll(async () => {
+          const [actual, control] = await Promise.all([
+            reloadSnapshot(app),
+            reloadSnapshot(native),
+          ]);
+          return Math.max(Math.abs(actual.x - control.x), Math.abs(actual.y - control.y));
+        })
+        .toBeLessThanOrEqual(2);
+    } finally {
+      await record('final', acceptedFrames);
+    }
+  } finally {
+    await context.close();
+  }
 };
 
 export const registerNativeTocSessionTests = (): void => {
@@ -290,20 +539,7 @@ export const registerNativeTocSessionTests = (): void => {
       ['end', 1],
     ] as const) {
       test(`reloadはstale hashよりnative ${name} viewportを採用する`, async ({ page }, info) => {
-        await install(page);
-        await page.emulateMedia({ reducedMotion: 'reduce' });
-        await page.goto(e2eNoteFixtures.tocReadableLongHeading.directPath);
-        await ready(page);
-        // appへreveal/scrollを要求せずfragmentを持つアドレスを保持する。
-        await page.evaluate(() => {
-          const first = document.querySelector<HTMLElement>('[data-layout-toc-nav] [data-toc-link]')
-            ?.dataset['headingId'];
-          if (!first) throw new Error('heading');
-          history.replaceState(history.state, '', `#${encodeURIComponent(first)}`);
-        });
-        const y = await readAt(page, fraction);
-        await page.reload();
-        await finish(page, info, `native-reload-${name}`, y);
+        await compareReloadWithNative(page, info, name, fraction);
       });
     }
     test('direct fragmentは既存のhash reveal/current policyを維持する', async ({ page }, info) => {

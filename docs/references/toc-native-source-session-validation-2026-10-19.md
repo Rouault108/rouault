@@ -21,6 +21,14 @@ baselineは`5b79cced2392842ff3c9c7a6d6f0e81d517df1f8`。公開済みSPA／履歴
 
 全体Browser suite前の関連9 filesも192 passedだったが、重複のため1,030件へ加算しない。後発のSession試験は24 passedで、位置証明失効後のearly追跡、実shell proof経由の接続・再発行・header交換まで確認した。後発ケースを含む総数は最終CIを正本とする。通常SPA／Back/Forward初回表示の既存production E2Eも14 passedだった。既存hash回帰でnative fragmentをviewport優先にしていた問題を検出し、新しいnative-navigationはfragmentを優先するよう修正した。reloadのstale hash優先順位は維持した。
 
+## Native reloadの対照とCI記録
+
+runtime `8047ccdcb85ae50da3a94867e21d70603e307872` の[既存CI run](https://github.com/Rouault108/rouault/actions/runs/39240023567)では、Node 1,243 passed / 1 skipped、SSR 610 passed、3 engine Browser 3,114 passed、dev E2E 45 passed、Chromium production E2E 307 passed / 1 skippedだった。Firefox productionは189 passed / 1 skipped / 新reload試験3 failed、WebKit productionは206 passed / 8 skipped / 同3 failedで、run全体は失敗だった。deployと公開後確認は対象外でskipされた。
+
+この3件はnative受理後の全frameをreload前の保存Yへ固定しており、[既存Reading契約](../contracts/reading-position.md#approved-native-behavior-adjustment)が保証していない条件だった。Firefoxの最初の失敗frameの保存Yとの差は上部231・中部179（retryでは178も観測）・末尾588 CSS px、WebKitは232・177・586 CSS pxだった。この差だけからUA復元が原因と断定しない。
+
+修正した試験では、既存A8と同じmode handoffだけのnative対照を使う。HTML/CSS、URL/state、viewport/DPR/locale/UA、reduced motion、reload前mode、load時mode、採用後mode、字体/range、HTTP cache条件、前面化、load後geometry probeを揃える。TOCのnative受理以後の各frameでcurrent・viewport oracle・aria/data/class/indicator一致を引き続きassertする。reload後のapp/native双方の追加scroll呼出ゼロ、state/entry数保全、安定後のnative実XYとの既存±2 CSS px比較も要求する。保存Y、app/nativeの実測XY、字体/range/mode、初期frameは比較assert前に診断へ保存し、保存Yへ到達しないrunも値を残す。閾値拡大、browser別固定座標、skipへの置換は行わない。対照追加後のローカルChromium 3件は成功し、保存Y／app実Y／native実Yは上部0/0/0、中部424/424/424、末尾847/847/847だった（当該環境のrange 847）。独立レビューでも初期frame判定の弱化や未解決P1/P2なしを確認した。Firefox/WebKitの原因確定はこの対照で再検証し、最終結果は検証ブランチの最新CI runを正本とする。
+
 ## 独立レビュー
 
 別担当がsource/session/tracker、nativeとshell proof、presentation、通知ストアを直接レビューした。stale pendingによる最新入力消失、DOM readback不足、surface登録の例外残留、古いsnapshotでのready確定、再構築失敗/source不正化後のready残留を修正した。最終確認で指摘された、隠した見出しの再表示による古いprogrammatic/hash hold復活と新intentの取消漏れも、candidateを純粋に保った入力境界の取消で修正した。hidden/aria-hidden双方の再現試験を含め関連61件が成功し、最終レビューで未解決P1/P2なしを確認した。
