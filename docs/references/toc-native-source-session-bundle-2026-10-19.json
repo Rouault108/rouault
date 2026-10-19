@@ -3,20 +3,20 @@
   "baselineSha": "5b79cced2392842ff3c9c7a6d6f0e81d517df1f8",
   "session": {
     "entry": {
-      "name": "client-Ch54_Atw.js",
+      "name": "client-DYFS_VRS.js",
       "bytes": 265817,
-      "gzip": 75679
+      "gzip": 75678
     },
     "hostInitializationGraph": [
       {
-        "name": "client-Ch54_Atw.js",
+        "name": "client-DYFS_VRS.js",
         "bytes": 265817,
-        "gzip": 75679
+        "gzip": 75678
       },
       {
-        "name": "router-document-host-CUDe9GPY.js",
-        "bytes": 100863,
-        "gzip": 27910
+        "name": "router-document-host-BF3mzulX.js",
+        "bytes": 100945,
+        "gzip": 27932
       },
       {
         "name": "tabs-url-sync-strategy-Dw4danZe.js",
@@ -24,7 +24,7 @@
         "gzip": 76
       },
       {
-        "name": "toc-source-session-DxjvjX9-.js",
+        "name": "toc-source-session-DgGmhOXt.js",
         "bytes": 35910,
         "gzip": 10477
       },
@@ -35,21 +35,21 @@
       }
     ],
     "hostInitializationTotal": {
-      "bytes": 402793,
-      "gzip": 114281
+      "bytes": 402875,
+      "gzip": 114302
     },
     "allJs": {
-      "bytes": 563108,
-      "gzip": 166085
+      "bytes": 563190,
+      "gzip": 166103
     },
     "tocModules": [
       {
-        "name": "layout-toc-controller-nKpN2pWE.js",
+        "name": "layout-toc-controller-BT-CgHJ2.js",
         "bytes": 15798,
-        "gzip": 4482
+        "gzip": 4479
       },
       {
-        "name": "toc-source-session-DxjvjX9-.js",
+        "name": "toc-source-session-DgGmhOXt.js",
         "bytes": 35910,
         "gzip": 10477
       }
@@ -104,19 +104,19 @@
       }
     ]
   },
-  "sessionBuild": "final build6; includes native-fragment priority and stale navigation hold cancellation corrections; runtime implementation recorded in git history",
+  "sessionBuild": "final build7; includes native-fragment priority, stale navigation hold cancellation, and verified-font preparation reuse; runtime implementation recorded in git history",
   "delta": {
     "entry": {
       "bytes": 1759,
-      "gzip": 615
+      "gzip": 614
     },
     "hostInitializationTotal": {
-      "bytes": 26066,
-      "gzip": 6661
+      "bytes": 26148,
+      "gzip": 6682
     },
     "allJs": {
-      "bytes": 14240,
-      "gzip": 4204
+      "bytes": 14322,
+      "gzip": 4222
     }
   }
 }

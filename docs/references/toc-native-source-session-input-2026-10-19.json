@@ -1,0 +1,1356 @@
+{
+  "browser": "local Chromium",
+  "baselineSha": "5b79cced2392842ff3c9c7a6d6f0e81d517df1f8",
+  "currentRuntimeSha": "8047ccdcb85ae50da3a94867e21d70603e307872",
+  "rows": [
+    {
+      "runtime": "baseline",
+      "case": "main-early",
+      "readyAnimMs": 16.689999997476114,
+      "downAnimMs": 33.28999999747606,
+      "readyToDownMs": 33.600000001490116,
+      "longTasks": [
+        {
+          "start": 1025,
+          "end": 1085
+        }
+      ],
+      "readyAt": 1118.7999999970198
+    },
+    {
+      "runtime": "baseline",
+      "case": "main-late",
+      "readyAnimMs": 100.04699999968292,
+      "downAnimMs": 100.04699999968292,
+      "readyToDownMs": 6.0999999940395355,
+      "longTasks": [
+        {
+          "start": 1031.5,
+          "end": 1093.5
+        }
+      ],
+      "readyAt": 1200.2000000029802
+    },
+    {
+      "runtime": "baseline",
+      "case": "header-early",
+      "readyAnimMs": 16.668000002089013,
+      "downAnimMs": 16.668000002089013,
+      "readyToDownMs": 5.5,
+      "longTasks": [
+        {
+          "start": 885.7000000029802,
+          "end": 937.7000000029802
+        }
+      ],
+      "readyAt": 963.3999999985099
+    },
+    {
+      "runtime": "baseline",
+      "case": "header-late",
+      "readyAnimMs": 116.59699999926376,
+      "downAnimMs": 116.59699999926376,
+      "readyToDownMs": 4.800000004470348,
+      "longTasks": [
+        {
+          "start": 934.8999999985099,
+          "end": 1016.8999999985099
+        }
+      ],
+      "readyAt": 1132.1999999955297
+    },
+    {
+      "runtime": "baseline",
+      "case": "sidebar-early",
+      "readyAnimMs": 16.680000000982574,
+      "downAnimMs": 16.680000000982574,
+      "readyToDownMs": 4.399999998509884,
+      "longTasks": [
+        {
+          "start": 1074.8999999985099,
+          "end": 1139.8999999985099
+        }
+      ],
+      "readyAt": 1163
+    },
+    {
+      "runtime": "baseline",
+      "case": "sidebar-late",
+      "readyAnimMs": 116.67199999543377,
+      "downAnimMs": 116.67199999543377,
+      "readyToDownMs": 5.5,
+      "longTasks": [
+        {
+          "start": 955.7000000029802,
+          "end": 1016.7000000029802
+        }
+      ],
+      "readyAt": 1141.6000000014901
+    },
+    {
+      "runtime": "current",
+      "case": "main-early",
+      "readyAnimMs": 16.593999993533394,
+      "downAnimMs": 99.99399999353331,
+      "readyToDownMs": 78.80000000447035,
+      "longTasks": [
+        {
+          "start": 1247.8000000044703,
+          "end": 1348.8000000044703
+        },
+        {
+          "start": 1412.7000000029802,
+          "end": 1472.7000000029802
+        },
+        {
+          "start": 1495.7000000029802,
+          "end": 1579.7000000029802
+        }
+      ],
+      "readyAt": 1404.3999999985099
+    },
+    {
+      "runtime": "current",
+      "case": "main-late",
+      "readyAnimMs": 100.05600000401027,
+      "downAnimMs": 100.05600000401027,
+      "readyToDownMs": 10.600000001490116,
+      "longTasks": [
+        {
+          "start": 1401.8999999985099,
+          "end": 1485.8999999985099
+        }
+      ],
+      "readyAt": 1596.0999999940395
+    },
+    {
+      "runtime": "current",
+      "case": "header-early",
+      "readyAnimMs": 16.61100000124427,
+      "downAnimMs": 16.61100000124427,
+      "readyToDownMs": 23.200000002980232,
+      "longTasks": [
+        {
+          "start": 1211.5,
+          "end": 1276.5
+        }
+      ],
+      "readyAt": 1302.2999999970198
+    },
+    {
+      "runtime": "current",
+      "case": "header-late",
+      "readyAnimMs": 116.6959999995889,
+      "downAnimMs": 116.6959999995889,
+      "readyToDownMs": 7.899999998509884,
+      "longTasks": [
+        {
+          "start": 876,
+          "end": 966
+        }
+      ],
+      "readyAt": 1097
+    },
+    {
+      "runtime": "current",
+      "case": "sidebar-early",
+      "readyAnimMs": 16.645999996259377,
+      "downAnimMs": 16.645999996259377,
+      "readyToDownMs": 7.5999999940395355,
+      "longTasks": [
+        {
+          "start": 1080.7000000029802,
+          "end": 1133.7000000029802
+        }
+      ],
+      "readyAt": 1159.3000000044703
+    },
+    {
+      "runtime": "current",
+      "case": "sidebar-late",
+      "readyAnimMs": 100.01399999710259,
+      "downAnimMs": 100.01399999710259,
+      "readyToDownMs": 9.700000002980232,
+      "longTasks": [
+        {
+          "start": 964.7000000029802,
+          "end": 1024.7000000029802
+        }
+      ],
+      "readyAt": 1137.8999999985099
+    },
+    {
+      "runtime": "current-after-font-fix",
+      "case": "main-early",
+      "readyAnimMs": 16.67400000444608,
+      "downAnimMs": 16.67400000444608,
+      "readyToDownMs": 12.699999995529652,
+      "longTasks": [
+        {
+          "start": 1305,
+          "end": 1366
+        }
+      ],
+      "readyAt": 1391.3000000044703,
+      "longTasksSupported": true
+    },
+    {
+      "runtime": "current-after-font-fix",
+      "case": "main-late",
+      "readyAnimMs": 116.6619999967633,
+      "downAnimMs": 116.6619999967633,
+      "readyToDownMs": 6.299999997019768,
+      "longTasks": [
+        {
+          "start": 1461.2000000029802,
+          "end": 1537.2000000029802
+        }
+      ],
+      "readyAt": 1663.7000000029802,
+      "longTasksSupported": true
+    },
+    {
+      "runtime": "current-after-font-fix",
+      "case": "header-early",
+      "readyAnimMs": 16.66499999755766,
+      "downAnimMs": 16.66499999755766,
+      "readyToDownMs": 7.699999995529652,
+      "longTasks": [
+        {
+          "start": 1295.6999999955297,
+          "end": 1357.6999999955297
+        }
+      ],
+      "readyAt": 1388,
+      "longTasksSupported": true
+    },
+    {
+      "runtime": "current-after-font-fix",
+      "case": "header-late",
+      "readyAnimMs": 149.99200000204138,
+      "downAnimMs": 166.59200000204154,
+      "readyToDownMs": 21.899999998509884,
+      "longTasks": [
+        {
+          "start": 1056.2000000029802,
+          "end": 1114.2000000029802
+        }
+      ],
+      "readyAt": 1282.3000000044703,
+      "longTasksSupported": true
+    },
+    {
+      "runtime": "current-after-font-fix",
+      "case": "sidebar-early",
+      "readyAnimMs": 33.31600000110924,
+      "downAnimMs": 33.31600000110924,
+      "readyToDownMs": 15.5,
+      "longTasks": [
+        {
+          "start": 1075.3000000044703,
+          "end": 1159.3000000044703
+        }
+      ],
+      "readyAt": 1200.3000000044703,
+      "longTasksSupported": true
+    },
+    {
+      "runtime": "current-after-font-fix",
+      "case": "sidebar-late",
+      "readyAnimMs": 100.02500000107095,
+      "downAnimMs": 116.62500000107113,
+      "readyToDownMs": 21.399999998509884,
+      "longTasks": [
+        {
+          "start": 1378.6999999955297,
+          "end": 1448.6999999955297
+        }
+      ],
+      "readyAt": 1548,
+      "longTasksSupported": true
+    }
+  ],
+  "limits": "Sequential single-context runs; longtask presence does not attribute CPU cause.",
+  "afterRuntime": "final build7; verified-font preparation reuse; commit recorded in git history",
+  "method": {
+    "protocol": "same browser binding armed before Back; trusted Playwright down/up at natural animation phase; early [0,90), late [90,180) unchanged",
+    "runs": "one sequential six-case run per runtime; no parallel build or test workload",
+    "baselineServer": "Vite preview archive of 5b79cced on port 4177",
+    "currentServer": "Vite production preview on port 4173",
+    "longTasks": "PerformanceObserver longtask; unsupported/error distinguished from empty; no attribution from presence alone",
+    "profile": "separate intrusive CDP sampling/trace single main-early run per runtime; not the same failed non-profiled observation"
+  },
+  "ciFailureHistory": {
+    "run": "https://github.com/Rouault108/rouault/actions/runs/39243242148",
+    "sha": "20c606169b0c377491a0c2b7567692aae7d0ac01",
+    "attempt1": "WebKit header-early down animation 101/99/100ms; 208 passed, 8 skipped, 1 failed",
+    "attempt2": "WebKit main-early 93/161/121ms; header/sidebar early also flaky; 206 passed, 8 skipped, 2 flaky, 1 failed",
+    "thresholdMeaning": "90ms is half of natural 180ms animation, not an application input latency budget",
+    "outcome": "both failed; one bounded unchanged-SHA rerun provided no resolution; no further unchanged rerun"
+  },
+  "profileObservations": [
+    {
+      "runtime": "baseline",
+      "readyAnimMs": 16.699000000604425,
+      "downAnimMs": 16.699000000604425,
+      "readyToDownMs": 8.399999998509884,
+      "longTasks": [
+        {
+          "start": 1384.3999999985099,
+          "end": 1535.3999999985099
+        }
+      ]
+    },
+    {
+      "runtime": "current",
+      "readyAnimMs": 16.662999997008487,
+      "downAnimMs": 33.262999997008656,
+      "readyToDownMs": 51.100000001490116,
+      "longTasks": [
+        {
+          "start": 1308.3999999985099,
+          "end": 1398.3999999985099
+        }
+      ]
+    },
+    {
+      "runtime": "current-after",
+      "readyAnimMs": 16.651000002562142,
+      "downAnimMs": 16.651000002562142,
+      "readyToDownMs": 8.099999994039536,
+      "longTasks": [
+        {
+          "start": 1071.8999999985099,
+          "end": 1145.8999999985099
+        }
+      ]
+    }
+  ],
+  "interpretation": "Before change, the failed non-profiled main early case overlaps a 60ms task. A separate profile found redundant prepareHistoryFonts below sampleCurrent/restore.finally and source-session tracker work during input handoff. This does not attribute the entire failed task or the prior WebKit failures to fonts. Fresh verified geometry proof now suppresses only same-epoch duplicate preparation. After change six cases passed locally; samples are too small for general performance/no-regression claims.",
+  "nativeReloadControl": {
+    "workflow": "https://github.com/Rouault108/rouault/actions/runs/39243242148",
+    "observations": [
+      {
+        "engine": "chromium",
+        "case": "upper",
+        "saved": {
+          "x": 0,
+          "y": 0
+        },
+        "before": {
+          "app": {
+            "url": "/notes/testing/toc-readable-long-heading/#%E7%AC%AC1%E7%AB%A0-%E8%AA%AD%E6%9B%B8%E9%9D%A2%E3%81%A8%E8%A3%9C%E5%8A%A9%E3%83%8A%E3%83%93%E3%82%B2%E3%83%BC%E3%82%B7%E3%83%A7%E3%83%B3%E3%81%AE%E5%BD%B9%E5%89%B2%E3%82%92%E5%88%86%E3%81%91%E3%82%8B",
+            "x": 0,
+            "y": 0,
+            "maxX": -15,
+            "maxY": 847,
+            "mode": "manual",
+            "state": {
+              "__rouaultHistoryEntry": {
+                "version": 1,
+                "id": "e03b889d-fda6-417c-8bec-28aeb6b359d0"
+              }
+            },
+            "length": 2,
+            "fonts": "loaded",
+            "readyState": "complete",
+            "probe": {
+              "initialMode": "auto",
+              "modeAtLoad": "auto",
+              "scrollCalls": ["[\"scrollTo\",{\"top\":0,\"behavior\":\"instant\"},null]"]
+            }
+          },
+          "native": {
+            "url": "/notes/testing/toc-readable-long-heading/#%E7%AC%AC1%E7%AB%A0-%E8%AA%AD%E6%9B%B8%E9%9D%A2%E3%81%A8%E8%A3%9C%E5%8A%A9%E3%83%8A%E3%83%93%E3%82%B2%E3%83%BC%E3%82%B7%E3%83%A7%E3%83%B3%E3%81%AE%E5%BD%B9%E5%89%B2%E3%82%92%E5%88%86%E3%81%91%E3%82%8B",
+            "x": 0,
+            "y": 0,
+            "maxX": -15,
+            "maxY": 847,
+            "mode": "manual",
+            "state": {
+              "__rouaultHistoryEntry": {
+                "version": 1,
+                "id": "e03b889d-fda6-417c-8bec-28aeb6b359d0"
+              }
+            },
+            "length": 2,
+            "fonts": "loaded",
+            "readyState": "complete",
+            "probe": {
+              "initialMode": "auto",
+              "modeAtLoad": "auto",
+              "scrollCalls": ["[\"scrollTo\",{\"top\":0,\"left\":0,\"behavior\":\"instant\"},null]"]
+            }
+          }
+        },
+        "after": {
+          "app": {
+            "url": "/notes/testing/toc-readable-long-heading/#%E7%AC%AC1%E7%AB%A0-%E8%AA%AD%E6%9B%B8%E9%9D%A2%E3%81%A8%E8%A3%9C%E5%8A%A9%E3%83%8A%E3%83%93%E3%82%B2%E3%83%BC%E3%82%B7%E3%83%A7%E3%83%B3%E3%81%AE%E5%BD%B9%E5%89%B2%E3%82%92%E5%88%86%E3%81%91%E3%82%8B",
+            "x": 0,
+            "y": 0,
+            "maxX": -15,
+            "maxY": 847,
+            "mode": "manual",
+            "state": {
+              "__rouaultHistoryEntry": {
+                "version": 1,
+                "id": "e03b889d-fda6-417c-8bec-28aeb6b359d0"
+              }
+            },
+            "length": 2,
+            "fonts": "loaded",
+            "readyState": "complete",
+            "probe": {
+              "initialMode": "auto",
+              "modeAtLoad": "auto",
+              "scrollCalls": []
+            }
+          },
+          "native": {
+            "url": "/notes/testing/toc-readable-long-heading/#%E7%AC%AC1%E7%AB%A0-%E8%AA%AD%E6%9B%B8%E9%9D%A2%E3%81%A8%E8%A3%9C%E5%8A%A9%E3%83%8A%E3%83%93%E3%82%B2%E3%83%BC%E3%82%B7%E3%83%A7%E3%83%B3%E3%81%AE%E5%BD%B9%E5%89%B2%E3%82%92%E5%88%86%E3%81%91%E3%82%8B",
+            "x": 0,
+            "y": 0,
+            "maxX": -15,
+            "maxY": 847,
+            "mode": "manual",
+            "state": {
+              "__rouaultHistoryEntry": {
+                "version": 1,
+                "id": "e03b889d-fda6-417c-8bec-28aeb6b359d0"
+              }
+            },
+            "length": 2,
+            "fonts": "loaded",
+            "readyState": "complete",
+            "probe": {
+              "initialMode": "auto",
+              "modeAtLoad": "auto",
+              "scrollCalls": []
+            }
+          }
+        },
+        "firstAcceptedFrame": {
+          "x": 0,
+          "y": 0,
+          "sequence": "3",
+          "expected": "\u7b2c1\u7ae0-\u8aad\u66f8\u9762\u3068\u88dc\u52a9\u30ca\u30d3\u30b2\u30fc\u30b7\u30e7\u30f3\u306e\u5f79\u5272\u3092\u5206\u3051\u308b",
+          "current": [
+            "\u7b2c1\u7ae0-\u8aad\u66f8\u9762\u3068\u88dc\u52a9\u30ca\u30d3\u30b2\u30fc\u30b7\u30e7\u30f3\u306e\u5f79\u5272\u3092\u5206\u3051\u308b"
+          ],
+          "consistent": true
+        },
+        "acceptedFrameCount": 17,
+        "nativeFrameCount": 41
+      },
+      {
+        "engine": "chromium",
+        "case": "middle",
+        "saved": {
+          "x": 0,
+          "y": 424
+        },
+        "before": {
+          "app": {
+            "url": "/notes/testing/toc-readable-long-heading/#%E7%AC%AC1%E7%AB%A0-%E8%AA%AD%E6%9B%B8%E9%9D%A2%E3%81%A8%E8%A3%9C%E5%8A%A9%E3%83%8A%E3%83%93%E3%82%B2%E3%83%BC%E3%82%B7%E3%83%A7%E3%83%B3%E3%81%AE%E5%BD%B9%E5%89%B2%E3%82%92%E5%88%86%E3%81%91%E3%82%8B",
+            "x": 0,
+            "y": 424,
+            "maxX": -15,
+            "maxY": 847,
+            "mode": "manual",
+            "state": {
+              "__rouaultHistoryEntry": {
+                "version": 1,
+                "id": "fdd1db17-2b4d-4831-b4ae-388e68d5a1e4"
+              }
+            },
+            "length": 2,
+            "fonts": "loaded",
+            "readyState": "complete",
+            "probe": {
+              "initialMode": "auto",
+              "modeAtLoad": "auto",
+              "scrollCalls": ["[\"scrollTo\",{\"top\":424,\"behavior\":\"instant\"},null]"]
+            }
+          },
+          "native": {
+            "url": "/notes/testing/toc-readable-long-heading/#%E7%AC%AC1%E7%AB%A0-%E8%AA%AD%E6%9B%B8%E9%9D%A2%E3%81%A8%E8%A3%9C%E5%8A%A9%E3%83%8A%E3%83%93%E3%82%B2%E3%83%BC%E3%82%B7%E3%83%A7%E3%83%B3%E3%81%AE%E5%BD%B9%E5%89%B2%E3%82%92%E5%88%86%E3%81%91%E3%82%8B",
+            "x": 0,
+            "y": 424,
+            "maxX": -15,
+            "maxY": 847,
+            "mode": "manual",
+            "state": {
+              "__rouaultHistoryEntry": {
+                "version": 1,
+                "id": "fdd1db17-2b4d-4831-b4ae-388e68d5a1e4"
+              }
+            },
+            "length": 2,
+            "fonts": "loaded",
+            "readyState": "complete",
+            "probe": {
+              "initialMode": "auto",
+              "modeAtLoad": "auto",
+              "scrollCalls": [
+                "[\"scrollTo\",{\"top\":424,\"left\":0,\"behavior\":\"instant\"},null]"
+              ]
+            }
+          }
+        },
+        "after": {
+          "app": {
+            "url": "/notes/testing/toc-readable-long-heading/#%E7%AC%AC1%E7%AB%A0-%E8%AA%AD%E6%9B%B8%E9%9D%A2%E3%81%A8%E8%A3%9C%E5%8A%A9%E3%83%8A%E3%83%93%E3%82%B2%E3%83%BC%E3%82%B7%E3%83%A7%E3%83%B3%E3%81%AE%E5%BD%B9%E5%89%B2%E3%82%92%E5%88%86%E3%81%91%E3%82%8B",
+            "x": 0,
+            "y": 424,
+            "maxX": -15,
+            "maxY": 847,
+            "mode": "manual",
+            "state": {
+              "__rouaultHistoryEntry": {
+                "version": 1,
+                "id": "fdd1db17-2b4d-4831-b4ae-388e68d5a1e4"
+              }
+            },
+            "length": 2,
+            "fonts": "loaded",
+            "readyState": "complete",
+            "probe": {
+              "initialMode": "auto",
+              "modeAtLoad": "auto",
+              "scrollCalls": []
+            }
+          },
+          "native": {
+            "url": "/notes/testing/toc-readable-long-heading/#%E7%AC%AC1%E7%AB%A0-%E8%AA%AD%E6%9B%B8%E9%9D%A2%E3%81%A8%E8%A3%9C%E5%8A%A9%E3%83%8A%E3%83%93%E3%82%B2%E3%83%BC%E3%82%B7%E3%83%A7%E3%83%B3%E3%81%AE%E5%BD%B9%E5%89%B2%E3%82%92%E5%88%86%E3%81%91%E3%82%8B",
+            "x": 0,
+            "y": 424,
+            "maxX": -15,
+            "maxY": 847,
+            "mode": "manual",
+            "state": {
+              "__rouaultHistoryEntry": {
+                "version": 1,
+                "id": "fdd1db17-2b4d-4831-b4ae-388e68d5a1e4"
+              }
+            },
+            "length": 2,
+            "fonts": "loaded",
+            "readyState": "complete",
+            "probe": {
+              "initialMode": "auto",
+              "modeAtLoad": "auto",
+              "scrollCalls": []
+            }
+          }
+        },
+        "firstAcceptedFrame": {
+          "x": 0,
+          "y": 424,
+          "sequence": "3",
+          "expected": "\u7b2c2\u7ae0-\u30bd\u30fc\u30b9\u30b3\u30fc\u30c9\u304b\u3089\u5b9f\u884c\u307e\u3067\u30b3\u30f3\u30d1\u30a4\u30eb\u5358\u4f4d\u30a2\u30bb\u30f3\u30d6\u30eail\u30e1\u30bf\u30c7\u30fc\u30bfclr\u306e\u95a2\u4fc2",
+          "current": [
+            "\u7b2c2\u7ae0-\u30bd\u30fc\u30b9\u30b3\u30fc\u30c9\u304b\u3089\u5b9f\u884c\u307e\u3067\u30b3\u30f3\u30d1\u30a4\u30eb\u5358\u4f4d\u30a2\u30bb\u30f3\u30d6\u30eail\u30e1\u30bf\u30c7\u30fc\u30bfclr\u306e\u95a2\u4fc2"
+          ],
+          "consistent": true
+        },
+        "acceptedFrameCount": 17,
+        "nativeFrameCount": 42
+      },
+      {
+        "engine": "chromium",
+        "case": "end",
+        "saved": {
+          "x": 0,
+          "y": 847
+        },
+        "before": {
+          "app": {
+            "url": "/notes/testing/toc-readable-long-heading/#%E7%AC%AC1%E7%AB%A0-%E8%AA%AD%E6%9B%B8%E9%9D%A2%E3%81%A8%E8%A3%9C%E5%8A%A9%E3%83%8A%E3%83%93%E3%82%B2%E3%83%BC%E3%82%B7%E3%83%A7%E3%83%B3%E3%81%AE%E5%BD%B9%E5%89%B2%E3%82%92%E5%88%86%E3%81%91%E3%82%8B",
+            "x": 0,
+            "y": 847,
+            "maxX": -15,
+            "maxY": 847,
+            "mode": "manual",
+            "state": {
+              "__rouaultHistoryEntry": {
+                "version": 1,
+                "id": "a4a537f8-b20a-4f07-9054-f854e864fa0f"
+              }
+            },
+            "length": 2,
+            "fonts": "loaded",
+            "readyState": "complete",
+            "probe": {
+              "initialMode": "auto",
+              "modeAtLoad": "auto",
+              "scrollCalls": ["[\"scrollTo\",{\"top\":847,\"behavior\":\"instant\"},null]"]
+            }
+          },
+          "native": {
+            "url": "/notes/testing/toc-readable-long-heading/#%E7%AC%AC1%E7%AB%A0-%E8%AA%AD%E6%9B%B8%E9%9D%A2%E3%81%A8%E8%A3%9C%E5%8A%A9%E3%83%8A%E3%83%93%E3%82%B2%E3%83%BC%E3%82%B7%E3%83%A7%E3%83%B3%E3%81%AE%E5%BD%B9%E5%89%B2%E3%82%92%E5%88%86%E3%81%91%E3%82%8B",
+            "x": 0,
+            "y": 847,
+            "maxX": -15,
+            "maxY": 847,
+            "mode": "manual",
+            "state": {
+              "__rouaultHistoryEntry": {
+                "version": 1,
+                "id": "a4a537f8-b20a-4f07-9054-f854e864fa0f"
+              }
+            },
+            "length": 2,
+            "fonts": "loaded",
+            "readyState": "complete",
+            "probe": {
+              "initialMode": "auto",
+              "modeAtLoad": "auto",
+              "scrollCalls": [
+                "[\"scrollTo\",{\"top\":847,\"left\":0,\"behavior\":\"instant\"},null]"
+              ]
+            }
+          }
+        },
+        "after": {
+          "app": {
+            "url": "/notes/testing/toc-readable-long-heading/#%E7%AC%AC1%E7%AB%A0-%E8%AA%AD%E6%9B%B8%E9%9D%A2%E3%81%A8%E8%A3%9C%E5%8A%A9%E3%83%8A%E3%83%93%E3%82%B2%E3%83%BC%E3%82%B7%E3%83%A7%E3%83%B3%E3%81%AE%E5%BD%B9%E5%89%B2%E3%82%92%E5%88%86%E3%81%91%E3%82%8B",
+            "x": 0,
+            "y": 847,
+            "maxX": -15,
+            "maxY": 847,
+            "mode": "manual",
+            "state": {
+              "__rouaultHistoryEntry": {
+                "version": 1,
+                "id": "a4a537f8-b20a-4f07-9054-f854e864fa0f"
+              }
+            },
+            "length": 2,
+            "fonts": "loaded",
+            "readyState": "complete",
+            "probe": {
+              "initialMode": "auto",
+              "modeAtLoad": "auto",
+              "scrollCalls": []
+            }
+          },
+          "native": {
+            "url": "/notes/testing/toc-readable-long-heading/#%E7%AC%AC1%E7%AB%A0-%E8%AA%AD%E6%9B%B8%E9%9D%A2%E3%81%A8%E8%A3%9C%E5%8A%A9%E3%83%8A%E3%83%93%E3%82%B2%E3%83%BC%E3%82%B7%E3%83%A7%E3%83%B3%E3%81%AE%E5%BD%B9%E5%89%B2%E3%82%92%E5%88%86%E3%81%91%E3%82%8B",
+            "x": 0,
+            "y": 847,
+            "maxX": -15,
+            "maxY": 847,
+            "mode": "manual",
+            "state": {
+              "__rouaultHistoryEntry": {
+                "version": 1,
+                "id": "a4a537f8-b20a-4f07-9054-f854e864fa0f"
+              }
+            },
+            "length": 2,
+            "fonts": "loaded",
+            "readyState": "complete",
+            "probe": {
+              "initialMode": "auto",
+              "modeAtLoad": "auto",
+              "scrollCalls": []
+            }
+          }
+        },
+        "firstAcceptedFrame": {
+          "x": 0,
+          "y": 847,
+          "sequence": "3",
+          "expected": "\u7b2c6\u7ae0-active-rail-\u3068-aria-current-\u3092\u4e3b\u8868\u73fe\u306b\u3057\u305f\u73fe\u5728\u5730\u8868\u793a",
+          "current": [
+            "\u7b2c6\u7ae0-active-rail-\u3068-aria-current-\u3092\u4e3b\u8868\u73fe\u306b\u3057\u305f\u73fe\u5728\u5730\u8868\u793a"
+          ],
+          "consistent": true
+        },
+        "acceptedFrameCount": 17,
+        "nativeFrameCount": 42
+      },
+      {
+        "engine": "firefox",
+        "case": "upper",
+        "saved": {
+          "x": 0,
+          "y": 0
+        },
+        "before": {
+          "app": {
+            "url": "/notes/testing/toc-readable-long-heading/#%E7%AC%AC1%E7%AB%A0-%E8%AA%AD%E6%9B%B8%E9%9D%A2%E3%81%A8%E8%A3%9C%E5%8A%A9%E3%83%8A%E3%83%93%E3%82%B2%E3%83%BC%E3%82%B7%E3%83%A7%E3%83%B3%E3%81%AE%E5%BD%B9%E5%89%B2%E3%82%92%E5%88%86%E3%81%91%E3%82%8B",
+            "x": 0,
+            "y": 0,
+            "maxX": 0,
+            "maxY": 819,
+            "mode": "manual",
+            "state": {
+              "__rouaultHistoryEntry": {
+                "version": 1,
+                "id": "b862d40f-1132-4a2a-b10c-7d62bccb5365"
+              }
+            },
+            "length": 1,
+            "fonts": "loaded",
+            "readyState": "complete",
+            "probe": {
+              "initialMode": "auto",
+              "modeAtLoad": "auto",
+              "scrollCalls": ["[\"scrollTo\",{\"top\":0,\"behavior\":\"instant\"},null]"]
+            }
+          },
+          "native": {
+            "url": "/notes/testing/toc-readable-long-heading/#%E7%AC%AC1%E7%AB%A0-%E8%AA%AD%E6%9B%B8%E9%9D%A2%E3%81%A8%E8%A3%9C%E5%8A%A9%E3%83%8A%E3%83%93%E3%82%B2%E3%83%BC%E3%82%B7%E3%83%A7%E3%83%B3%E3%81%AE%E5%BD%B9%E5%89%B2%E3%82%92%E5%88%86%E3%81%91%E3%82%8B",
+            "x": 0,
+            "y": 0,
+            "maxX": 0,
+            "maxY": 819,
+            "mode": "manual",
+            "state": {
+              "__rouaultHistoryEntry": {
+                "version": 1,
+                "id": "b862d40f-1132-4a2a-b10c-7d62bccb5365"
+              }
+            },
+            "length": 1,
+            "fonts": "loaded",
+            "readyState": "complete",
+            "probe": {
+              "initialMode": "auto",
+              "modeAtLoad": "auto",
+              "scrollCalls": ["[\"scrollTo\",{\"top\":0,\"left\":0,\"behavior\":\"instant\"},null]"]
+            }
+          }
+        },
+        "after": {
+          "app": {
+            "url": "/notes/testing/toc-readable-long-heading/#%E7%AC%AC1%E7%AB%A0-%E8%AA%AD%E6%9B%B8%E9%9D%A2%E3%81%A8%E8%A3%9C%E5%8A%A9%E3%83%8A%E3%83%93%E3%82%B2%E3%83%BC%E3%82%B7%E3%83%A7%E3%83%B3%E3%81%AE%E5%BD%B9%E5%89%B2%E3%82%92%E5%88%86%E3%81%91%E3%82%8B",
+            "x": 0,
+            "y": 231.5,
+            "maxX": 0,
+            "maxY": 819,
+            "mode": "manual",
+            "state": {
+              "__rouaultHistoryEntry": {
+                "version": 1,
+                "id": "b862d40f-1132-4a2a-b10c-7d62bccb5365"
+              }
+            },
+            "length": 1,
+            "fonts": "loaded",
+            "readyState": "complete",
+            "probe": {
+              "initialMode": "manual",
+              "modeAtLoad": "auto",
+              "scrollCalls": []
+            }
+          },
+          "native": {
+            "url": "/notes/testing/toc-readable-long-heading/#%E7%AC%AC1%E7%AB%A0-%E8%AA%AD%E6%9B%B8%E9%9D%A2%E3%81%A8%E8%A3%9C%E5%8A%A9%E3%83%8A%E3%83%93%E3%82%B2%E3%83%BC%E3%82%B7%E3%83%A7%E3%83%B3%E3%81%AE%E5%BD%B9%E5%89%B2%E3%82%92%E5%88%86%E3%81%91%E3%82%8B",
+            "x": 0,
+            "y": 231.5,
+            "maxX": 0,
+            "maxY": 819,
+            "mode": "manual",
+            "state": {
+              "__rouaultHistoryEntry": {
+                "version": 1,
+                "id": "b862d40f-1132-4a2a-b10c-7d62bccb5365"
+              }
+            },
+            "length": 1,
+            "fonts": "loaded",
+            "readyState": "complete",
+            "probe": {
+              "initialMode": "manual",
+              "modeAtLoad": "auto",
+              "scrollCalls": []
+            }
+          }
+        },
+        "firstAcceptedFrame": {
+          "x": 0,
+          "y": 231.5,
+          "sequence": "3",
+          "expected": "\u7b2c1\u7ae0-\u8aad\u66f8\u9762\u3068\u88dc\u52a9\u30ca\u30d3\u30b2\u30fc\u30b7\u30e7\u30f3\u306e\u5f79\u5272\u3092\u5206\u3051\u308b",
+          "current": [
+            "\u7b2c1\u7ae0-\u8aad\u66f8\u9762\u3068\u88dc\u52a9\u30ca\u30d3\u30b2\u30fc\u30b7\u30e7\u30f3\u306e\u5f79\u5272\u3092\u5206\u3051\u308b"
+          ],
+          "consistent": true
+        },
+        "acceptedFrameCount": 15,
+        "nativeFrameCount": 36
+      },
+      {
+        "engine": "firefox",
+        "case": "middle",
+        "saved": {
+          "x": 0,
+          "y": 410
+        },
+        "before": {
+          "app": {
+            "url": "/notes/testing/toc-readable-long-heading/#%E7%AC%AC1%E7%AB%A0-%E8%AA%AD%E6%9B%B8%E9%9D%A2%E3%81%A8%E8%A3%9C%E5%8A%A9%E3%83%8A%E3%83%93%E3%82%B2%E3%83%BC%E3%82%B7%E3%83%A7%E3%83%B3%E3%81%AE%E5%BD%B9%E5%89%B2%E3%82%92%E5%88%86%E3%81%91%E3%82%8B",
+            "x": 0,
+            "y": 410,
+            "maxX": 0,
+            "maxY": 819,
+            "mode": "manual",
+            "state": {
+              "__rouaultHistoryEntry": {
+                "version": 1,
+                "id": "124844c7-a758-49e4-a1b3-49b949c5c972"
+              }
+            },
+            "length": 1,
+            "fonts": "loaded",
+            "readyState": "complete",
+            "probe": {
+              "initialMode": "auto",
+              "modeAtLoad": "manual",
+              "scrollCalls": ["[\"scrollTo\",{\"top\":410,\"behavior\":\"instant\"},null]"]
+            }
+          },
+          "native": {
+            "url": "/notes/testing/toc-readable-long-heading/#%E7%AC%AC1%E7%AB%A0-%E8%AA%AD%E6%9B%B8%E9%9D%A2%E3%81%A8%E8%A3%9C%E5%8A%A9%E3%83%8A%E3%83%93%E3%82%B2%E3%83%BC%E3%82%B7%E3%83%A7%E3%83%B3%E3%81%AE%E5%BD%B9%E5%89%B2%E3%82%92%E5%88%86%E3%81%91%E3%82%8B",
+            "x": 0,
+            "y": 410,
+            "maxX": 0,
+            "maxY": 819,
+            "mode": "manual",
+            "state": {
+              "__rouaultHistoryEntry": {
+                "version": 1,
+                "id": "124844c7-a758-49e4-a1b3-49b949c5c972"
+              }
+            },
+            "length": 1,
+            "fonts": "loaded",
+            "readyState": "complete",
+            "probe": {
+              "initialMode": "auto",
+              "modeAtLoad": "auto",
+              "scrollCalls": [
+                "[\"scrollTo\",{\"top\":410,\"left\":0,\"behavior\":\"instant\"},null]"
+              ]
+            }
+          }
+        },
+        "after": {
+          "app": {
+            "url": "/notes/testing/toc-readable-long-heading/#%E7%AC%AC1%E7%AB%A0-%E8%AA%AD%E6%9B%B8%E9%9D%A2%E3%81%A8%E8%A3%9C%E5%8A%A9%E3%83%8A%E3%83%93%E3%82%B2%E3%83%BC%E3%82%B7%E3%83%A7%E3%83%B3%E3%81%AE%E5%BD%B9%E5%89%B2%E3%82%92%E5%88%86%E3%81%91%E3%82%8B",
+            "x": 0,
+            "y": 231.5,
+            "maxX": 0,
+            "maxY": 819,
+            "mode": "manual",
+            "state": {
+              "__rouaultHistoryEntry": {
+                "version": 1,
+                "id": "124844c7-a758-49e4-a1b3-49b949c5c972"
+              }
+            },
+            "length": 1,
+            "fonts": "loaded",
+            "readyState": "complete",
+            "probe": {
+              "initialMode": "manual",
+              "modeAtLoad": "auto",
+              "scrollCalls": []
+            }
+          },
+          "native": {
+            "url": "/notes/testing/toc-readable-long-heading/#%E7%AC%AC1%E7%AB%A0-%E8%AA%AD%E6%9B%B8%E9%9D%A2%E3%81%A8%E8%A3%9C%E5%8A%A9%E3%83%8A%E3%83%93%E3%82%B2%E3%83%BC%E3%82%B7%E3%83%A7%E3%83%B3%E3%81%AE%E5%BD%B9%E5%89%B2%E3%82%92%E5%88%86%E3%81%91%E3%82%8B",
+            "x": 0,
+            "y": 231.5,
+            "maxX": 0,
+            "maxY": 819,
+            "mode": "manual",
+            "state": {
+              "__rouaultHistoryEntry": {
+                "version": 1,
+                "id": "124844c7-a758-49e4-a1b3-49b949c5c972"
+              }
+            },
+            "length": 1,
+            "fonts": "loaded",
+            "readyState": "complete",
+            "probe": {
+              "initialMode": "manual",
+              "modeAtLoad": "auto",
+              "scrollCalls": []
+            }
+          }
+        },
+        "firstAcceptedFrame": {
+          "x": 0,
+          "y": 231.5,
+          "sequence": "3",
+          "expected": "\u7b2c1\u7ae0-\u8aad\u66f8\u9762\u3068\u88dc\u52a9\u30ca\u30d3\u30b2\u30fc\u30b7\u30e7\u30f3\u306e\u5f79\u5272\u3092\u5206\u3051\u308b",
+          "current": [
+            "\u7b2c1\u7ae0-\u8aad\u66f8\u9762\u3068\u88dc\u52a9\u30ca\u30d3\u30b2\u30fc\u30b7\u30e7\u30f3\u306e\u5f79\u5272\u3092\u5206\u3051\u308b"
+          ],
+          "consistent": true
+        },
+        "acceptedFrameCount": 16,
+        "nativeFrameCount": 36
+      },
+      {
+        "engine": "firefox",
+        "case": "end",
+        "saved": {
+          "x": 0,
+          "y": 819
+        },
+        "before": {
+          "app": {
+            "url": "/notes/testing/toc-readable-long-heading/#%E7%AC%AC1%E7%AB%A0-%E8%AA%AD%E6%9B%B8%E9%9D%A2%E3%81%A8%E8%A3%9C%E5%8A%A9%E3%83%8A%E3%83%93%E3%82%B2%E3%83%BC%E3%82%B7%E3%83%A7%E3%83%B3%E3%81%AE%E5%BD%B9%E5%89%B2%E3%82%92%E5%88%86%E3%81%91%E3%82%8B",
+            "x": 0,
+            "y": 819,
+            "maxX": 0,
+            "maxY": 819,
+            "mode": "manual",
+            "state": {
+              "__rouaultHistoryEntry": {
+                "version": 1,
+                "id": "ae26df8b-a857-43f1-a102-046821470d55"
+              }
+            },
+            "length": 1,
+            "fonts": "loaded",
+            "readyState": "complete",
+            "probe": {
+              "initialMode": "auto",
+              "modeAtLoad": "auto",
+              "scrollCalls": ["[\"scrollTo\",{\"top\":819,\"behavior\":\"instant\"},null]"]
+            }
+          },
+          "native": {
+            "url": "/notes/testing/toc-readable-long-heading/#%E7%AC%AC1%E7%AB%A0-%E8%AA%AD%E6%9B%B8%E9%9D%A2%E3%81%A8%E8%A3%9C%E5%8A%A9%E3%83%8A%E3%83%93%E3%82%B2%E3%83%BC%E3%82%B7%E3%83%A7%E3%83%B3%E3%81%AE%E5%BD%B9%E5%89%B2%E3%82%92%E5%88%86%E3%81%91%E3%82%8B",
+            "x": 0,
+            "y": 819,
+            "maxX": 0,
+            "maxY": 819,
+            "mode": "manual",
+            "state": {
+              "__rouaultHistoryEntry": {
+                "version": 1,
+                "id": "ae26df8b-a857-43f1-a102-046821470d55"
+              }
+            },
+            "length": 1,
+            "fonts": "loaded",
+            "readyState": "complete",
+            "probe": {
+              "initialMode": "auto",
+              "modeAtLoad": "auto",
+              "scrollCalls": [
+                "[\"scrollTo\",{\"top\":819,\"left\":0,\"behavior\":\"instant\"},null]"
+              ]
+            }
+          }
+        },
+        "after": {
+          "app": {
+            "url": "/notes/testing/toc-readable-long-heading/#%E7%AC%AC1%E7%AB%A0-%E8%AA%AD%E6%9B%B8%E9%9D%A2%E3%81%A8%E8%A3%9C%E5%8A%A9%E3%83%8A%E3%83%93%E3%82%B2%E3%83%BC%E3%82%B7%E3%83%A7%E3%83%B3%E3%81%AE%E5%BD%B9%E5%89%B2%E3%82%92%E5%88%86%E3%81%91%E3%82%8B",
+            "x": 0,
+            "y": 231.5,
+            "maxX": 0,
+            "maxY": 819,
+            "mode": "manual",
+            "state": {
+              "__rouaultHistoryEntry": {
+                "version": 1,
+                "id": "ae26df8b-a857-43f1-a102-046821470d55"
+              }
+            },
+            "length": 1,
+            "fonts": "loaded",
+            "readyState": "complete",
+            "probe": {
+              "initialMode": "manual",
+              "modeAtLoad": "auto",
+              "scrollCalls": []
+            }
+          },
+          "native": {
+            "url": "/notes/testing/toc-readable-long-heading/#%E7%AC%AC1%E7%AB%A0-%E8%AA%AD%E6%9B%B8%E9%9D%A2%E3%81%A8%E8%A3%9C%E5%8A%A9%E3%83%8A%E3%83%93%E3%82%B2%E3%83%BC%E3%82%B7%E3%83%A7%E3%83%B3%E3%81%AE%E5%BD%B9%E5%89%B2%E3%82%92%E5%88%86%E3%81%91%E3%82%8B",
+            "x": 0,
+            "y": 231.5,
+            "maxX": 0,
+            "maxY": 819,
+            "mode": "manual",
+            "state": {
+              "__rouaultHistoryEntry": {
+                "version": 1,
+                "id": "ae26df8b-a857-43f1-a102-046821470d55"
+              }
+            },
+            "length": 1,
+            "fonts": "loaded",
+            "readyState": "complete",
+            "probe": {
+              "initialMode": "manual",
+              "modeAtLoad": "auto",
+              "scrollCalls": []
+            }
+          }
+        },
+        "firstAcceptedFrame": {
+          "x": 0,
+          "y": 231.5,
+          "sequence": "3",
+          "expected": "\u7b2c1\u7ae0-\u8aad\u66f8\u9762\u3068\u88dc\u52a9\u30ca\u30d3\u30b2\u30fc\u30b7\u30e7\u30f3\u306e\u5f79\u5272\u3092\u5206\u3051\u308b",
+          "current": [
+            "\u7b2c1\u7ae0-\u8aad\u66f8\u9762\u3068\u88dc\u52a9\u30ca\u30d3\u30b2\u30fc\u30b7\u30e7\u30f3\u306e\u5f79\u5272\u3092\u5206\u3051\u308b"
+          ],
+          "consistent": true
+        },
+        "acceptedFrameCount": 16,
+        "nativeFrameCount": 36
+      },
+      {
+        "engine": "webkit",
+        "case": "upper",
+        "saved": {
+          "x": 0,
+          "y": 0
+        },
+        "before": {
+          "app": {
+            "url": "/notes/testing/toc-readable-long-heading/#%E7%AC%AC1%E7%AB%A0-%E8%AA%AD%E6%9B%B8%E9%9D%A2%E3%81%A8%E8%A3%9C%E5%8A%A9%E3%83%8A%E3%83%93%E3%82%B2%E3%83%BC%E3%82%B7%E3%83%A7%E3%83%B3%E3%81%AE%E5%BD%B9%E5%89%B2%E3%82%92%E5%88%86%E3%81%91%E3%82%8B",
+            "x": 0,
+            "y": 0,
+            "maxX": 0,
+            "maxY": 818,
+            "mode": "manual",
+            "state": {
+              "__rouaultHistoryEntry": {
+                "version": 1,
+                "id": "fbd952cd-00b3-4f01-9160-0345e52ebabb"
+              }
+            },
+            "length": 2,
+            "fonts": "loaded",
+            "readyState": "complete",
+            "probe": {
+              "initialMode": "auto",
+              "modeAtLoad": "auto",
+              "scrollCalls": ["[\"scrollTo\",{\"top\":0,\"behavior\":\"instant\"},null]"]
+            }
+          },
+          "native": {
+            "url": "/notes/testing/toc-readable-long-heading/#%E7%AC%AC1%E7%AB%A0-%E8%AA%AD%E6%9B%B8%E9%9D%A2%E3%81%A8%E8%A3%9C%E5%8A%A9%E3%83%8A%E3%83%93%E3%82%B2%E3%83%BC%E3%82%B7%E3%83%A7%E3%83%B3%E3%81%AE%E5%BD%B9%E5%89%B2%E3%82%92%E5%88%86%E3%81%91%E3%82%8B",
+            "x": 0,
+            "y": 0,
+            "maxX": 0,
+            "maxY": 818,
+            "mode": "manual",
+            "state": {
+              "__rouaultHistoryEntry": {
+                "version": 1,
+                "id": "fbd952cd-00b3-4f01-9160-0345e52ebabb"
+              }
+            },
+            "length": 2,
+            "fonts": "loaded",
+            "readyState": "complete",
+            "probe": {
+              "initialMode": "auto",
+              "modeAtLoad": "auto",
+              "scrollCalls": ["[\"scrollTo\",{\"top\":0,\"left\":0,\"behavior\":\"instant\"},null]"]
+            }
+          }
+        },
+        "after": {
+          "app": {
+            "url": "/notes/testing/toc-readable-long-heading/#%E7%AC%AC1%E7%AB%A0-%E8%AA%AD%E6%9B%B8%E9%9D%A2%E3%81%A8%E8%A3%9C%E5%8A%A9%E3%83%8A%E3%83%93%E3%82%B2%E3%83%BC%E3%82%B7%E3%83%A7%E3%83%B3%E3%81%AE%E5%BD%B9%E5%89%B2%E3%82%92%E5%88%86%E3%81%91%E3%82%8B",
+            "x": 0,
+            "y": 232,
+            "maxX": 0,
+            "maxY": 818,
+            "mode": "manual",
+            "state": {
+              "__rouaultHistoryEntry": {
+                "version": 1,
+                "id": "fbd952cd-00b3-4f01-9160-0345e52ebabb"
+              }
+            },
+            "length": 2,
+            "fonts": "loaded",
+            "readyState": "complete",
+            "probe": {
+              "initialMode": "auto",
+              "modeAtLoad": "auto",
+              "scrollCalls": []
+            }
+          },
+          "native": {
+            "url": "/notes/testing/toc-readable-long-heading/#%E7%AC%AC1%E7%AB%A0-%E8%AA%AD%E6%9B%B8%E9%9D%A2%E3%81%A8%E8%A3%9C%E5%8A%A9%E3%83%8A%E3%83%93%E3%82%B2%E3%83%BC%E3%82%B7%E3%83%A7%E3%83%B3%E3%81%AE%E5%BD%B9%E5%89%B2%E3%82%92%E5%88%86%E3%81%91%E3%82%8B",
+            "x": 0,
+            "y": 232,
+            "maxX": 0,
+            "maxY": 818,
+            "mode": "manual",
+            "state": {
+              "__rouaultHistoryEntry": {
+                "version": 1,
+                "id": "fbd952cd-00b3-4f01-9160-0345e52ebabb"
+              }
+            },
+            "length": 2,
+            "fonts": "loaded",
+            "readyState": "complete",
+            "probe": {
+              "initialMode": "auto",
+              "modeAtLoad": "auto",
+              "scrollCalls": []
+            }
+          }
+        },
+        "firstAcceptedFrame": {
+          "x": 0,
+          "y": 232,
+          "sequence": "3",
+          "expected": "\u7b2c1\u7ae0-\u8aad\u66f8\u9762\u3068\u88dc\u52a9\u30ca\u30d3\u30b2\u30fc\u30b7\u30e7\u30f3\u306e\u5f79\u5272\u3092\u5206\u3051\u308b",
+          "current": [
+            "\u7b2c1\u7ae0-\u8aad\u66f8\u9762\u3068\u88dc\u52a9\u30ca\u30d3\u30b2\u30fc\u30b7\u30e7\u30f3\u306e\u5f79\u5272\u3092\u5206\u3051\u308b"
+          ],
+          "consistent": true
+        },
+        "acceptedFrameCount": 13,
+        "nativeFrameCount": 52
+      },
+      {
+        "engine": "webkit",
+        "case": "middle",
+        "saved": {
+          "x": 0,
+          "y": 409
+        },
+        "before": {
+          "app": {
+            "url": "/notes/testing/toc-readable-long-heading/#%E7%AC%AC1%E7%AB%A0-%E8%AA%AD%E6%9B%B8%E9%9D%A2%E3%81%A8%E8%A3%9C%E5%8A%A9%E3%83%8A%E3%83%93%E3%82%B2%E3%83%BC%E3%82%B7%E3%83%A7%E3%83%B3%E3%81%AE%E5%BD%B9%E5%89%B2%E3%82%92%E5%88%86%E3%81%91%E3%82%8B",
+            "x": 0,
+            "y": 409,
+            "maxX": 0,
+            "maxY": 818,
+            "mode": "manual",
+            "state": {
+              "__rouaultHistoryEntry": {
+                "version": 1,
+                "id": "115dc242-f1cb-4825-811b-dc89d184b6d4"
+              }
+            },
+            "length": 2,
+            "fonts": "loaded",
+            "readyState": "complete",
+            "probe": {
+              "initialMode": "auto",
+              "modeAtLoad": "auto",
+              "scrollCalls": ["[\"scrollTo\",{\"top\":409,\"behavior\":\"instant\"},null]"]
+            }
+          },
+          "native": {
+            "url": "/notes/testing/toc-readable-long-heading/#%E7%AC%AC1%E7%AB%A0-%E8%AA%AD%E6%9B%B8%E9%9D%A2%E3%81%A8%E8%A3%9C%E5%8A%A9%E3%83%8A%E3%83%93%E3%82%B2%E3%83%BC%E3%82%B7%E3%83%A7%E3%83%B3%E3%81%AE%E5%BD%B9%E5%89%B2%E3%82%92%E5%88%86%E3%81%91%E3%82%8B",
+            "x": 0,
+            "y": 409,
+            "maxX": 0,
+            "maxY": 818,
+            "mode": "manual",
+            "state": {
+              "__rouaultHistoryEntry": {
+                "version": 1,
+                "id": "115dc242-f1cb-4825-811b-dc89d184b6d4"
+              }
+            },
+            "length": 2,
+            "fonts": "loaded",
+            "readyState": "complete",
+            "probe": {
+              "initialMode": "auto",
+              "modeAtLoad": "auto",
+              "scrollCalls": [
+                "[\"scrollTo\",{\"top\":409,\"left\":0,\"behavior\":\"instant\"},null]"
+              ]
+            }
+          }
+        },
+        "after": {
+          "app": {
+            "url": "/notes/testing/toc-readable-long-heading/#%E7%AC%AC1%E7%AB%A0-%E8%AA%AD%E6%9B%B8%E9%9D%A2%E3%81%A8%E8%A3%9C%E5%8A%A9%E3%83%8A%E3%83%93%E3%82%B2%E3%83%BC%E3%82%B7%E3%83%A7%E3%83%B3%E3%81%AE%E5%BD%B9%E5%89%B2%E3%82%92%E5%88%86%E3%81%91%E3%82%8B",
+            "x": 0,
+            "y": 232,
+            "maxX": 0,
+            "maxY": 818,
+            "mode": "manual",
+            "state": {
+              "__rouaultHistoryEntry": {
+                "version": 1,
+                "id": "115dc242-f1cb-4825-811b-dc89d184b6d4"
+              }
+            },
+            "length": 2,
+            "fonts": "loaded",
+            "readyState": "complete",
+            "probe": {
+              "initialMode": "auto",
+              "modeAtLoad": "auto",
+              "scrollCalls": []
+            }
+          },
+          "native": {
+            "url": "/notes/testing/toc-readable-long-heading/#%E7%AC%AC1%E7%AB%A0-%E8%AA%AD%E6%9B%B8%E9%9D%A2%E3%81%A8%E8%A3%9C%E5%8A%A9%E3%83%8A%E3%83%93%E3%82%B2%E3%83%BC%E3%82%B7%E3%83%A7%E3%83%B3%E3%81%AE%E5%BD%B9%E5%89%B2%E3%82%92%E5%88%86%E3%81%91%E3%82%8B",
+            "x": 0,
+            "y": 232,
+            "maxX": 0,
+            "maxY": 818,
+            "mode": "manual",
+            "state": {
+              "__rouaultHistoryEntry": {
+                "version": 1,
+                "id": "115dc242-f1cb-4825-811b-dc89d184b6d4"
+              }
+            },
+            "length": 2,
+            "fonts": "loaded",
+            "readyState": "complete",
+            "probe": {
+              "initialMode": "auto",
+              "modeAtLoad": "auto",
+              "scrollCalls": []
+            }
+          }
+        },
+        "firstAcceptedFrame": {
+          "x": 0,
+          "y": 232,
+          "sequence": "3",
+          "expected": "\u7b2c1\u7ae0-\u8aad\u66f8\u9762\u3068\u88dc\u52a9\u30ca\u30d3\u30b2\u30fc\u30b7\u30e7\u30f3\u306e\u5f79\u5272\u3092\u5206\u3051\u308b",
+          "current": [
+            "\u7b2c1\u7ae0-\u8aad\u66f8\u9762\u3068\u88dc\u52a9\u30ca\u30d3\u30b2\u30fc\u30b7\u30e7\u30f3\u306e\u5f79\u5272\u3092\u5206\u3051\u308b"
+          ],
+          "consistent": true
+        },
+        "acceptedFrameCount": 15,
+        "nativeFrameCount": 58
+      },
+      {
+        "engine": "webkit",
+        "case": "end",
+        "saved": {
+          "x": 0,
+          "y": 818
+        },
+        "before": {
+          "app": {
+            "url": "/notes/testing/toc-readable-long-heading/#%E7%AC%AC1%E7%AB%A0-%E8%AA%AD%E6%9B%B8%E9%9D%A2%E3%81%A8%E8%A3%9C%E5%8A%A9%E3%83%8A%E3%83%93%E3%82%B2%E3%83%BC%E3%82%B7%E3%83%A7%E3%83%B3%E3%81%AE%E5%BD%B9%E5%89%B2%E3%82%92%E5%88%86%E3%81%91%E3%82%8B",
+            "x": 0,
+            "y": 818,
+            "maxX": 0,
+            "maxY": 818,
+            "mode": "manual",
+            "state": {
+              "__rouaultHistoryEntry": {
+                "version": 1,
+                "id": "9430ef92-696b-4a3e-a217-3fd93bde3c98"
+              }
+            },
+            "length": 2,
+            "fonts": "loaded",
+            "readyState": "complete",
+            "probe": {
+              "initialMode": "auto",
+              "modeAtLoad": "auto",
+              "scrollCalls": ["[\"scrollTo\",{\"top\":818,\"behavior\":\"instant\"},null]"]
+            }
+          },
+          "native": {
+            "url": "/notes/testing/toc-readable-long-heading/#%E7%AC%AC1%E7%AB%A0-%E8%AA%AD%E6%9B%B8%E9%9D%A2%E3%81%A8%E8%A3%9C%E5%8A%A9%E3%83%8A%E3%83%93%E3%82%B2%E3%83%BC%E3%82%B7%E3%83%A7%E3%83%B3%E3%81%AE%E5%BD%B9%E5%89%B2%E3%82%92%E5%88%86%E3%81%91%E3%82%8B",
+            "x": 0,
+            "y": 818,
+            "maxX": 0,
+            "maxY": 818,
+            "mode": "manual",
+            "state": {
+              "__rouaultHistoryEntry": {
+                "version": 1,
+                "id": "9430ef92-696b-4a3e-a217-3fd93bde3c98"
+              }
+            },
+            "length": 2,
+            "fonts": "loaded",
+            "readyState": "complete",
+            "probe": {
+              "initialMode": "auto",
+              "modeAtLoad": "auto",
+              "scrollCalls": [
+                "[\"scrollTo\",{\"top\":818,\"left\":0,\"behavior\":\"instant\"},null]"
+              ]
+            }
+          }
+        },
+        "after": {
+          "app": {
+            "url": "/notes/testing/toc-readable-long-heading/#%E7%AC%AC1%E7%AB%A0-%E8%AA%AD%E6%9B%B8%E9%9D%A2%E3%81%A8%E8%A3%9C%E5%8A%A9%E3%83%8A%E3%83%93%E3%82%B2%E3%83%BC%E3%82%B7%E3%83%A7%E3%83%B3%E3%81%AE%E5%BD%B9%E5%89%B2%E3%82%92%E5%88%86%E3%81%91%E3%82%8B",
+            "x": 0,
+            "y": 232,
+            "maxX": 0,
+            "maxY": 818,
+            "mode": "manual",
+            "state": {
+              "__rouaultHistoryEntry": {
+                "version": 1,
+                "id": "9430ef92-696b-4a3e-a217-3fd93bde3c98"
+              }
+            },
+            "length": 2,
+            "fonts": "loaded",
+            "readyState": "complete",
+            "probe": {
+              "initialMode": "auto",
+              "modeAtLoad": "auto",
+              "scrollCalls": []
+            }
+          },
+          "native": {
+            "url": "/notes/testing/toc-readable-long-heading/#%E7%AC%AC1%E7%AB%A0-%E8%AA%AD%E6%9B%B8%E9%9D%A2%E3%81%A8%E8%A3%9C%E5%8A%A9%E3%83%8A%E3%83%93%E3%82%B2%E3%83%BC%E3%82%B7%E3%83%A7%E3%83%B3%E3%81%AE%E5%BD%B9%E5%89%B2%E3%82%92%E5%88%86%E3%81%91%E3%82%8B",
+            "x": 0,
+            "y": 232,
+            "maxX": 0,
+            "maxY": 818,
+            "mode": "manual",
+            "state": {
+              "__rouaultHistoryEntry": {
+                "version": 1,
+                "id": "9430ef92-696b-4a3e-a217-3fd93bde3c98"
+              }
+            },
+            "length": 2,
+            "fonts": "loaded",
+            "readyState": "complete",
+            "probe": {
+              "initialMode": "auto",
+              "modeAtLoad": "auto",
+              "scrollCalls": []
+            }
+          }
+        },
+        "firstAcceptedFrame": {
+          "x": 0,
+          "y": 232,
+          "sequence": "3",
+          "expected": "\u7b2c1\u7ae0-\u8aad\u66f8\u9762\u3068\u88dc\u52a9\u30ca\u30d3\u30b2\u30fc\u30b7\u30e7\u30f3\u306e\u5f79\u5272\u3092\u5206\u3051\u308b",
+          "current": [
+            "\u7b2c1\u7ae0-\u8aad\u66f8\u9762\u3068\u88dc\u52a9\u30ca\u30d3\u30b2\u30fc\u30b7\u30e7\u30f3\u306e\u5f79\u5272\u3092\u5206\u3051\u308b"
+          ],
+          "consistent": true
+        },
+        "acceptedFrameCount": 14,
+        "nativeFrameCount": 49
+      }
+    ],
+    "interpretation": "Saved Y was not restored identically by all UAs. App/native actual Y and extra scroll calls matched in the same-condition native control; first-current frame assertions stayed enabled."
+  }
+}

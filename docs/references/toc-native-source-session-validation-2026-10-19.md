@@ -52,7 +52,7 @@ production E2Eは既存のfixture build/server入口を使う。生成物を変�
 
 ## 性能とbundle
 
-[計測JSON](toc-native-source-session-metrics-2026-10-19.json)と[bundle明細](toc-native-source-session-bundle-2026-10-19.json)を正本とする。runtime計測は`5f678c80`、比較baselineは`5b79cced`。その後`39d975ca`で新しいnative fragment操作の優先順位を修正し、その経路をunitとproduction E2Eで再検証した。続いて入力境界の古いhold取消を補正した（holdなしの通常入力は即return）。時間計測はこの二つの補正後に再実施していない。bundle明細は両補正後のbuild6を再集計した。同じChromiumでfresh context各3回、load後に観測する同じrAF/MO oracleとCDP集計を用いた。baselineはNode static server、修正版はVite previewであり、環境・probe費用も含む。
+[計測JSON](toc-native-source-session-metrics-2026-10-19.json)と[bundle明細](toc-native-source-session-bundle-2026-10-19.json)を正本とする。runtime計測は`5f678c80`、比較baselineは`5b79cced`。その後`39d975ca`で新しいnative fragment操作の優先順位を修正し、その経路をunitとproduction E2Eで再検証した。続いて入力境界の古いhold取消を補正した（holdなしの通常入力は即return）。さらに検証済み字体の同epoch再準備を省いた。上表の経路時間計測はこの三つの補正後に再実施していない。bundle明細は三補正後のbuild7を再集計した。同じChromiumでfresh context各3回、load後に観測する同じrAF/MO oracleとCDP集計を用いた。baselineはNode static server、修正版はVite previewであり、環境・probe費用も含む。
 
 | 観測（3回の中央値）                    |  baseline |    修正版 |
 | -------------------------------------- | --------: | --------: |
@@ -65,6 +65,18 @@ production E2Eは既存のfixture build/server入口を使う。生成物を変�
 
 単一transactionの同期CPU、入力遅延、強制layoutの因果的な内訳は未分離である。数値から全体の高速化や無回帰を主張しない。特にScriptDurationと初期読込量には増加があり、8ms/16msの固定上限や達成保証は設けない。
 
-entry JSは264,058→265,817 raw bytes（+1,759）。clientとrouter hostからのstatic import graphは376,727→402,793（+26,066 raw / +6,661 gzip）。全JSは548,868→563,108（+14,240 raw / +4,204 gzip）。TOC interaction moduleは遅延のままだが、source sessionとtrackerを先に使う費用が初期graphに移った。entry単体や遅延chunkの減少を総削減と扱わない。
+entry JSは264,058→265,817 raw bytes（+1,759）。clientとrouter hostからのstatic import graphは376,727→402,875（+26,148 raw / +6,682 gzip）。全JSは548,868→563,190（+14,322 raw / +4,222 gzip）。TOC interaction moduleは遅延のままだが、source sessionとtrackerを先に使う費用が初期graphに移った。entry単体や遅延chunkの減少を総削減と扱わない。
 
 実測のdirect/reload各3回と実BFCache中部3回、画面幅変更後の実BFCache1回は、native accepted以後の観測frameで不一致0だった。計測対象build4のBFCache acceptedはpageshowから2.5〜4.9msの観測範囲だった。中間buildには341.5msの外れ値もあり、最初のOS提示frameや全環境での即時採用は保証しない。interaction module未完了のまま離脱する実BFCacheの組合せは未測定で、合成pagehide試験と混同しない。
+
+## 自然演出中の実入力と重複字体準備
+
+`20c60616`の[CI run](https://github.com/Rouault108/rouault/actions/runs/39243242148)は2 attemptとも失敗した。attempt 1はWebKit header earlyの実down時刻101/99/100ms、attempt 2はmain earlyの93/161/121msが条件外だった。attempt 2ではheader/sidebar earlyもflakyだった。90msは自然180ms演出の前半境界であり、製品の入力遅延予算ではない。既存mainのCI成功だけではUA eligible=falseの非入力枝と区別できないため、入力成功の対照とは扱わない。
+
+新しいharnessはBack前にpointerとbrowser内phase監視を準備し、同entry/epochの自然演出からbinding通知した後にtrusted down/upを送る。演出時間の変更、停止・seek、合成DOM入力は使わず、earlyの[0,90)、lateの[90,180)、一度のtrusted down/click、UI効果、位置保全を維持する。browser/Nodeの時刻、event.timeStamp、実animation時刻、longtask対応有無を判定前に証跡へ残す。途中の複数RPCを減らしたが、旧mouse.click自体は一つのclient RPCであり、move/down/upの直列配達が原因とは断定しない。
+
+同じbinding harnessでbaselineを6件、補正前を6件、build7を6件、順次実行した。[入力計測JSON](toc-native-source-session-input-2026-10-19.json)が正本である。baselineは6成功、補正前は5成功・main early 1失敗で、通知からdownまで78.8msの区間に60ms taskが重なった。別のCDP profileではsampleCurrent→restore.finallyの字体再準備とtrackerの処理を観測した。このprofileは失敗runと別であり、60ms全体やWebKit失敗の原因を字体へ帰属させない。
+
+直前の幾何照合が実textと使用字体を検証済みの経路だけ、最終owner/anchor/XY確認後にもfontsがloadedなら同epochの準備を充足する。新しいcache/timerは追加しない。証明不成立とnativeで連結textの準備が残り、verifiedで重複checkが消えることを実呼出しで確認した。Reading対象4件・native 7件・geometry 114件がChromiumで成功し、app/node両typecheckとlintも成功した。独立レビューに未解決P1/P2はない。
+
+build7の最終production回帰は初回frame/native 21成功・BFCache不成立1 skip、tabs 6成功、full Chromiumで実BFCache 1成功だった。app typecheck、対象Prettier、文書spacing policy 4件も成功した。build7は実入力6件すべて成功し、main/header/sidebar earlyのdownは16.7/16.7/33.3msだった。通知→downにlongtaskの重なりはなかった。別profileのmain earlyも成功した。各1runの小標本かつprofile自体の費用もあるため、全体の高速化・入力無回帰・WebKitの解決をこの結果だけから主張しない。最新SHAの既存CI結果で確認する。過去失敗のartifact ZIP取得はredirect先でHTTP 403だったため、取得できたdecoded job logと新しい診断を用いた。証明書回避は行っていない。

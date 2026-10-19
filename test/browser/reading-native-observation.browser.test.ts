@@ -102,6 +102,19 @@ it('reloadを同期分類し、実採用後だけreceiptを捏造せずnative観
   expect(history.scrollRestoration).toBe('manual');
 });
 
+it('native reloadには検証済み復元の省略を適用せず実textの字体準備を維持する', async () => {
+  root.innerHTML = '<p>native準備一</p><p>native準備二</p>';
+  await document.fonts.ready;
+  const check = vi.spyOn(document.fonts, 'check');
+  reader = new ReadingPositionController(vi.fn());
+  reader.start(root);
+  expect(check.mock.calls.some(([, text]) => text === 'native準備一native準備二')).toBe(true);
+  window.dispatchEvent(new Event('load'));
+  await frame();
+  expect(root.dataset['readingPositionStatus']).toBe('settled');
+  expect(history.scrollRestoration).toBe('manual');
+});
+
 it.each([false, true])(
   'pagehideは旧load frameと受理証明を失効し、pageshowの新sequenceを守る（採用済=%s）',
   async (adopted) => {

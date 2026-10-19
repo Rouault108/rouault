@@ -34,6 +34,8 @@ mobileはclosed/hidden/inertで作り、link検証、handlers/subscriptions接�
 
 DOM repairだけではruntimeへ再通知しない。新surfaceは同期し、新subscriberは即時replayし、ready/panel変更は通知する。同runtime IDの新headerにもconsumer側で現在値をreplayする。runtime/mobile storeは登録ごとの解除、例外隔離、revisionによる古い外側通知停止を行う。
 
+検証済み履歴の字体準備は、直前の幾何照合が実text・使用字体とTOCの両weightを読込済みと証明し、最後のowner・anchor・XY確認後もfontsがloadedの場合だけ、同epochの準備済みとして扱う。新しいcacheや待機処理は追加せず、証明不成立・native・新epochの従来準備を維持する。
+
 ## 非保証と検証
 
 head bootstrap、async geometry cache、timer集約、新しい位置補正は追加しない。SSRは先頭currentを出さず、CSSの見た目を変更しない。Reading起動前やUAが最初に表示する全経路のframe、任意の後発layout変化、native rollback後の元座標は保証しない。8ms/16msの上限も設定しない。

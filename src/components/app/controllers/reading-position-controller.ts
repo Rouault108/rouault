@@ -774,6 +774,8 @@ export class ReadingPositionController {
         Math.abs(anchor.getBoundingClientRect().top - (checkpoint.anchorY - job.candidate.y)) > 2
       )
         return;
+      // 同epochの実textと使用字体は幾何照合で読込済みと確認しており、保存開始時に再準備しない。
+      if (job.root.ownerDocument.fonts.status === 'loaded') this.fontPreparationEpoch = job.epoch;
       outcome('ready');
       // UA効果とapp効果は重ねない。情報未提供でも座標の先行適用は妨げない。
       const visual = this.traverseVisual;

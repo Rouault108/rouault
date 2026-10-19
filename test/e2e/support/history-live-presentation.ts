@@ -51,6 +51,8 @@ interface HistoryLiveProbe {
   }[];
   inputs: {
     at: number;
+    date: number;
+    eventTimeStamp: number;
     type: string;
     trusted: boolean;
     currentTime: number | null;
@@ -69,9 +71,31 @@ interface HistoryLiveProbe {
   raceDetachments: { at: number; kind: string }[];
   stateChanges: number;
 }
+interface LiveInputPhaseReady {
+  token: string;
+  eligible: boolean;
+  at: number;
+  date: number;
+  timeOrigin: number;
+  currentTime: number | null;
+  entryId: string | null;
+  epoch: number | null;
+}
+interface LiveInputArm {
+  token: string;
+  notified: boolean;
+  cancelled: boolean;
+  ready: LiveInputPhaseReady | null;
+  longTasksSupported: boolean;
+  longTasksError: string | null;
+  longTasks: { start: number; end: number }[];
+  cancel: () => void;
+}
 declare global {
   interface Window {
     __rouaultHistoryLiveProbe: HistoryLiveProbe;
+    __rouaultHistoryLiveInputArm?: LiveInputArm;
+    __rouaultHistoryLiveInputReady: (ready: LiveInputPhaseReady) => Promise<void>;
   }
 }
 interface SavedReading {
@@ -286,6 +310,8 @@ const installProbe = async (
             const target = event.target instanceof Element ? event.target : null;
             probe.inputs.push({
               at: performance.now(),
+              date: Date.now(),
+              eventTimeStamp: event.timeStamp,
               type: name,
               trusted: event.isTrusted,
               currentTime:
@@ -423,6 +449,194 @@ const back = async (page: Page): Promise<boolean> => {
   const visual = await page.evaluate(() => window.__rouaultHistoryLiveProbe.visual);
   return visual?.provided === true && visual.value === false;
 };
+
+const inputDuringNaturalPhase = async (
+  page: Page,
+  info: TestInfo,
+  saved: SavedReading,
+  control: keyof SavedReading['points'],
+  phase: 'early' | 'late',
+  testStartedAt: number,
+): Promise<boolean> => {
+  const token = `${info.testId}:${info.retry}:${Date.now()}`;
+  const point = saved.points[control];
+  // Back後はphase通知からdownまでを直結させ、位置取得やphase判定のRPCを挟まない。
+  await page.mouse.move(point.x, point.y);
+  const node: { name: string; at: number; date: number }[] = [];
+  const stamp = (name: string): void => {
+    node.push({ name, at: performance.now(), date: Date.now() });
+  };
+  let received: LiveInputPhaseReady | null = null;
+  let delivered = false;
+  let active = true;
+  let resolveDelivery!: (eligible: boolean) => void;
+  let rejectDelivery!: (error: unknown) => void;
+  const delivery = new Promise<boolean>((resolve, reject) => {
+    resolveDelivery = resolve;
+    rejectDelivery = reject;
+  });
+  await page.exposeBinding(
+    '__rouaultHistoryLiveInputReady',
+    async (source, signal: LiveInputPhaseReady) => {
+      if (
+        !active ||
+        source.page !== page ||
+        source.frame !== page.mainFrame() ||
+        signal.token !== token ||
+        signal.entryId !== saved.entryId ||
+        (signal.epoch ?? -1) <= saved.epochBeforeBack ||
+        received
+      )
+        return;
+      received = signal;
+      stamp('notification-received');
+      if (!signal.eligible) {
+        resolveDelivery(false);
+        return;
+      }
+      try {
+        stamp('down-dispatch');
+        await page.mouse.down();
+        stamp('down-acknowledged');
+        stamp('up-dispatch');
+        await page.mouse.up();
+        stamp('up-acknowledged');
+        delivered = true;
+        resolveDelivery(true);
+      } catch (error) {
+        rejectDelivery(error);
+      }
+    },
+  );
+  await page.evaluate(
+    ({ token, saved, threshold }) => {
+      window.__rouaultHistoryLiveInputArm?.cancel();
+      let raf = 0;
+      let observer: PerformanceObserver | null = null;
+      const run: LiveInputArm = {
+        token,
+        notified: false,
+        cancelled: false,
+        ready: null,
+        longTasksSupported:
+          typeof PerformanceObserver !== 'undefined' &&
+          PerformanceObserver.supportedEntryTypes.includes('longtask'),
+        longTasks: [],
+        longTasksError: null,
+        cancel: () => {
+          run.cancelled = true;
+          cancelAnimationFrame(raf);
+          if (observer) {
+            collect(observer.takeRecords());
+            observer.disconnect();
+          }
+        },
+      };
+      const collect = (entries: PerformanceEntry[]): void => {
+        run.longTasks.push(
+          ...entries.map((entry) => ({
+            start: entry.startTime,
+            end: entry.startTime + entry.duration,
+          })),
+        );
+      };
+      window.__rouaultHistoryLiveInputArm = run;
+      if (run.longTasksSupported) {
+        observer = new PerformanceObserver((list) => collect(list.getEntries()));
+        try {
+          observer.observe({ type: 'longtask' });
+        } catch (error) {
+          run.longTasksError = String(error);
+          observer.disconnect();
+          observer = null;
+        }
+      }
+      const check = (): void => {
+        if (run.cancelled || run.notified || window.__rouaultHistoryLiveInputArm !== run) return;
+        const probe = window.__rouaultHistoryLiveProbe;
+        const main = document.querySelector('#main-content');
+        if (
+          location.pathname === '/notes/testing/toc-readable-long-heading' &&
+          main?.querySelector('h1')?.textContent?.trim() === 'TOC Readable Long Heading' &&
+          history.state?.__rouaultHistoryEntry?.id === saved.entryId &&
+          (probe.epoch ?? -1) > saved.epochBeforeBack &&
+          probe.visual !== null
+        ) {
+          const eligible = probe.visual.provided && probe.visual.value === false;
+          const animation = document
+            .getAnimations()
+            .find((item) => item.id === 'rouault-history-content');
+          const currentTime =
+            typeof animation?.currentTime === 'number' ? animation.currentTime : null;
+          if (!eligible || (currentTime !== null && currentTime >= threshold)) {
+            run.notified = true;
+            const ready: LiveInputPhaseReady = {
+              token,
+              eligible,
+              at: performance.now(),
+              date: Date.now(),
+              timeOrigin: performance.timeOrigin,
+              currentTime,
+              entryId: history.state?.__rouaultHistoryEntry?.id ?? null,
+              epoch: probe.epoch,
+            };
+            run.ready = ready;
+            void window.__rouaultHistoryLiveInputReady(ready).catch(() => {
+              // Node側が失敗を保持するため、browser側で通知や入力を再送しない。
+            });
+            return;
+          }
+        }
+        raf = requestAnimationFrame(check);
+      };
+      raf = requestAnimationFrame(check);
+    },
+    { token, saved, threshold: phase === 'early' ? 10 : 100 },
+  );
+  // 入力時刻の合否とは別のwatchdog。test期限前に観測資源を解放して診断を残す。
+  const watchdog = setTimeout(
+    () => rejectDelivery(new Error('Natural phase notification/input did not complete')),
+    Math.max(1, info.timeout - (Date.now() - testStartedAt) - 1000),
+  );
+  try {
+    const [, eligible] = await Promise.all([page.evaluate(() => history.back()), delivery]);
+    return eligible;
+  } finally {
+    active = false;
+    clearTimeout(watchdog);
+    const observation = await page.evaluate((token) => {
+      const run = window.__rouaultHistoryLiveInputArm;
+      if (run?.token !== token) return null;
+      run.cancel();
+      return {
+        ready: run.ready,
+        notified: run.notified,
+        cancelled: run.cancelled,
+        longTasksSupported: run.longTasksSupported,
+        longTasksError: run.longTasksError,
+        longTasks: run.longTasks,
+        inputs: window.__rouaultHistoryLiveProbe.inputs.filter(
+          (event) => event.type !== 'pointermove',
+        ),
+      };
+    }, token);
+    const data = {
+      case: `${control}-${phase}`,
+      project: info.project.name,
+      token,
+      delivered,
+      received,
+      node,
+      observation,
+    };
+    await info.attach('history-live-input-protocol', {
+      body: JSON.stringify(data, null, 2),
+      contentType: 'application/json',
+    });
+    console.log('history-live-input-protocol', JSON.stringify(data));
+  }
+};
+
 const finishFrames = async (page: Page): Promise<void> => {
   await ready(page);
   await expect
@@ -795,9 +1009,17 @@ export const registerHistoryLivePresentationTests = (): void => {
         test(`自然180msの${phase}に実pointerで${control}を一度操作できる`, async ({
           page,
         }, info) => {
+          const testStartedAt = Date.now();
           await installProbe(page);
           const saved = await prepare(page);
-          const eligible = await back(page);
+          const eligible = await inputDuringNaturalPhase(
+            page,
+            info,
+            saved,
+            control,
+            phase,
+            testStartedAt,
+          );
           if (!eligible) {
             await assertPositionReadyWithoutMotion(page, saved);
             await evidence(
@@ -807,27 +1029,13 @@ export const registerHistoryLivePresentationTests = (): void => {
             );
             return;
           }
-          const point = saved.points[control];
-          if (control === 'main') await page.mouse.move(point.x, point.y);
-          await page.waitForFunction(
-            (threshold) => {
-              const animation = document
-                .getAnimations()
-                .find((item) => item.id === 'rouault-history-content');
-              return (
-                typeof animation?.currentTime === 'number' && animation.currentTime >= threshold
-              );
-            },
-            phase === 'early' ? 10 : 100,
-            { polling: 'raf' },
-          );
-          await page.mouse.click(point.x, point.y);
           const probe = await snapshot(page);
           const down = probe.inputs.filter((event) => event.type === 'pointerdown');
           const clicks = probe.inputs.filter((event) => event.type === 'click');
           expect(down).toHaveLength(1);
           expect(clicks).toHaveLength(1);
           expect(down[0]?.trusted).toBe(true);
+          expect(clicks[0]?.trusted).toBe(true);
           expect(down[0]?.currentTime).not.toBeNull();
           const time = down[0]?.currentTime ?? Infinity;
           expect(time).toBeGreaterThanOrEqual(phase === 'early' ? 0 : 90);

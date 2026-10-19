@@ -892,6 +892,7 @@ describe('検証済み履歴経路の表示状態', () => {
       const scroll = vi.spyOn(window, 'scrollTo');
       const animate = vi.spyOn(content, 'animate');
       const writes = vi.spyOn(ReadingPositionStore.prototype, 'write');
+      const fontCheck = vi.spyOn(document.fonts, 'check');
       const receipt = Object.freeze({
         commitId: 1,
         intentId: intent.intentId,
@@ -948,6 +949,15 @@ describe('検証済み履歴経路の表示状態', () => {
         ),
       ).toBe(true);
       expect(errors).not.toHaveBeenCalled();
+      // 幾何照合は各要素のtextを検査する。準備処理だけが同fontの異なるtextを連結する。
+      // 検証済み復元ではこの重複を省き、証明のない復元では従来の準備を保つ。
+      expect(
+        fontCheck.mock.calls.some(
+          ([, text]) =>
+            text?.includes('静的な日本語本文を保存位置へ戻します。') &&
+            text.includes('本文とアンカーの実座標を確認します。'),
+        ),
+      ).toBe(!early);
     },
   );
 
