@@ -3,18 +3,18 @@
   "baselineSha": "5b79cced2392842ff3c9c7a6d6f0e81d517df1f8",
   "session": {
     "entry": {
-      "name": "client-ByY1G2Id.js",
+      "name": "client-Ch54_Atw.js",
       "bytes": 265817,
       "gzip": 75679
     },
     "hostInitializationGraph": [
       {
-        "name": "client-ByY1G2Id.js",
+        "name": "client-Ch54_Atw.js",
         "bytes": 265817,
         "gzip": 75679
       },
       {
-        "name": "router-document-host-BPBLqQ-7.js",
+        "name": "router-document-host-CUDe9GPY.js",
         "bytes": 100863,
         "gzip": 27910
       },
@@ -24,9 +24,9 @@
         "gzip": 76
       },
       {
-        "name": "toc-source-session-CPWX4bi9.js",
-        "bytes": 34997,
-        "gzip": 10272
+        "name": "toc-source-session-DxjvjX9-.js",
+        "bytes": 35910,
+        "gzip": 10477
       },
       {
         "name": "tabs-selection-Bs9l0_Fs.js",
@@ -35,23 +35,23 @@
       }
     ],
     "hostInitializationTotal": {
-      "bytes": 401880,
-      "gzip": 114076
+      "bytes": 402793,
+      "gzip": 114281
     },
     "allJs": {
-      "bytes": 562195,
-      "gzip": 165880
+      "bytes": 563108,
+      "gzip": 166085
     },
     "tocModules": [
       {
-        "name": "layout-toc-controller-p2QKgs5M.js",
+        "name": "layout-toc-controller-nKpN2pWE.js",
         "bytes": 15798,
-        "gzip": 4483
+        "gzip": 4482
       },
       {
-        "name": "toc-source-session-CPWX4bi9.js",
-        "bytes": 34997,
-        "gzip": 10272
+        "name": "toc-source-session-DxjvjX9-.js",
+        "bytes": 35910,
+        "gzip": 10477
       }
     ]
   },
@@ -104,19 +104,19 @@
       }
     ]
   },
-  "sessionBuild": "final build5; includes native-fragment priority regression correction; runtime implementation recorded in git history",
+  "sessionBuild": "final build6; includes native-fragment priority and stale navigation hold cancellation corrections; runtime implementation recorded in git history",
   "delta": {
     "entry": {
       "bytes": 1759,
       "gzip": 615
     },
     "hostInitializationTotal": {
-      "bytes": 25153,
-      "gzip": 6456
+      "bytes": 26066,
+      "gzip": 6661
     },
     "allJs": {
-      "bytes": 13327,
-      "gzip": 3999
+      "bytes": 14240,
+      "gzip": 4204
     }
   }
 }

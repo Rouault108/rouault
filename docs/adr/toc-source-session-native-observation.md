@@ -20,7 +20,7 @@ reload/history/BFCacheではviewportを古いURL hashより優先する。直ア
 
 ## Transactionと再入
 
-入力側で取消・期限・許可済みtabs revealを処理した後、owner/policyと一つのnowを固定する。candidate算出はholdを変更せず、DOM apply一回、verify一回、canonical commit、通知の順に行う。strictは独立track、XY/range、全見出しwitnessとDOM属性を確認する。normalは正規activation後だけ許可し、owner/source、DOM属性、適用後のvisible/current候補を確認する。strict失敗の同じ呼出し内でnormalへ切り替えない。
+入力側で取消・期限・許可済みtabs revealを処理した後、owner/policyと一つのnowを固定する。隠れたtarget、移動済みviewport、期限切れ、新intentのhold取消は入力境界で消費し、後から見出しが再表示されても復活させない。candidate算出はholdを変更せず、DOM apply一回、verify一回、canonical commit、通知の順に行う。strictは独立track、XY/range、全見出しwitnessとDOM属性を確認する。normalは正規activation後だけ許可し、owner/source、DOM属性、適用後のvisible/current候補を確認する。strict失敗の同じ呼出し内でnormalへ切り替えない。
 
 apply/verify/rollbackの例外をTOC内で隔離する。rollbackは同じownerに自分の書いた属性/tokenが残る場合だけ一度行い、他の処理、新node、新ownerへ触れない。失敗時はcanonicalを公開せず、実XY/rangeを再読する。nativeの座標回復は保証せず、Readingが実位置を採り直す。write faultはscrollごとに繰り返さず、新しい位置受理または正規activationによる再試行を使う。通知先の例外は確定済みstateを巻き戻さない。
 

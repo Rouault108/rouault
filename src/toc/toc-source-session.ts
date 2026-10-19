@@ -124,6 +124,7 @@ export class TocSourceSession {
     this.connected = true;
     try {
       this.stopContext = subscribeContentContext((reason) => {
+        if (reason === 'intent') this.tracker.invalidateNavigationIntent();
         if (
           (reason === 'before-mutation' && readContentContext()?.root === this.binding.root) ||
           !this.isCurrent()

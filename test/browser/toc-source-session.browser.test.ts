@@ -8,6 +8,7 @@ import {
 } from '../../src/toc/toc-source-session.js';
 import {
   beginNavigationIntent,
+  adoptContentBinding,
   initializeContentContext,
   readContentContext,
   releaseContentContext,
@@ -23,6 +24,7 @@ import {
   readValidatedShellProof,
 } from '../../src/components/app/shell/app-shell-lifecycle.js';
 import type { AppShellValidatedDetail } from '../../src/components/app/shell/app-shell-events.js';
+import { resolveTocScrollMetrics } from '../../src/toc/toc-scroll-contract.js';
 import type {
   AcceptedReadingPosition,
   NativeReadingPositionObservation,
@@ -497,6 +499,89 @@ describe('TocSourceSession の単一所有と予約・transaction 契約', () =>
     expect(position.root.dataset['tocPositionSequence']).toBe('10');
     expect(scheduling.timers).toHaveLength(0);
     expect(getTocSourceSession(requireFixtureValue(controller))).toBe(session);
+  });
+
+  it('settled programmatic holdはtargetがscope非表示になった入力で消費され、再表示で復活しない', async () => {
+    const { session, position } = await setup();
+    captureScheduling();
+    const target = requireFixtureValue(position.root.querySelector<HTMLElement>('#session-three'));
+    const tabs = document.createElement('div');
+    tabs.setAttribute('data-tabs-root', '');
+    tabs.setAttribute('data-tabs-enhanced', '');
+    const panel = document.createElement('div');
+    panel.setAttribute('data-tab-panel', '');
+    target.replaceWith(tabs);
+    tabs.append(panel);
+    panel.append(target);
+    window.scrollTo({ top: 2000, behavior: 'instant' });
+    expect(session.accept(position)).toBe('accepted');
+    session.activate();
+    assertCurrent(session.binding.nav, 'session-two');
+    session.tracker.beginPostSettlementHold('session-three', resolveTocScrollMetrics(target));
+    session.refresh();
+    assertCurrent(session.binding.nav, 'session-three');
+    const y = scrollY;
+    panel.hidden = true;
+    session.refresh();
+    assertCurrent(session.binding.nav, 'session-two');
+    panel.hidden = false;
+    session.refresh();
+    assertCurrent(session.binding.nav, 'session-two');
+    expect(scrollY).toBe(y);
+    expect(location.hash).toBe('');
+  });
+
+  it.each(['hidden', 'aria-hidden'] as const)(
+    'runtime hash holdはtargetのscope %s で消費され、同じhashとXYで再表示しても復活しない',
+    async (attribute) => {
+      const { session, position } = await setup();
+      captureScheduling();
+      const target = requireFixtureValue(
+        position.root.querySelector<HTMLElement>('#session-three'),
+      );
+      const tabs = document.createElement('div');
+      tabs.setAttribute('data-tabs-root', '');
+      tabs.setAttribute('data-tabs-enhanced', '');
+      const panel = document.createElement('div');
+      panel.setAttribute('data-tab-panel', '');
+      target.replaceWith(tabs);
+      tabs.append(panel);
+      panel.append(target);
+      window.scrollTo({ top: 2000, behavior: 'instant' });
+      expect(session.accept(position)).toBe('accepted');
+      session.activate();
+      const url = `${location.pathname}${location.search}#session-three`;
+      beginNavigationIntent('navigation', url);
+      writeHistoryEntry({ mode: 'replace', owner: 'feature', url });
+      adoptContentBinding(url);
+      window.dispatchEvent(new HashChangeEvent('hashchange'));
+      assertCurrent(session.binding.nav, 'session-three');
+      const y = scrollY;
+      panel.setAttribute(attribute, attribute === 'hidden' ? '' : 'true');
+      session.refresh();
+      assertCurrent(session.binding.nav, 'session-two');
+      panel.removeAttribute(attribute);
+      session.refresh();
+      assertCurrent(session.binding.nav, 'session-two');
+      expect(scrollY).toBe(y);
+      expect(location.hash).toBe('#session-three');
+    },
+  );
+
+  it('new intentは進行中のprogrammatic targetを取消し、次の入力で最新viewport候補を採用する', async () => {
+    const { session, position } = await setup();
+    captureScheduling();
+    expect(session.accept(position)).toBe('accepted');
+    session.activate();
+    const target = requireFixtureValue(position.root.querySelector<HTMLElement>('#session-three'));
+    session.tracker.beginProgrammaticNavigation('session-three', resolveTocScrollMetrics(target));
+    session.refresh();
+    assertCurrent(session.binding.nav, 'session-three');
+    const y = scrollY;
+    beginNavigationIntent('navigation', readAddress());
+    session.refresh();
+    assertCurrent(session.binding.nav, 'session-two');
+    expect(scrollY).toBe(y);
   });
 
   it('pagehideはpending strictを失効し、残った通常予約は最新viewportを再読する', async () => {

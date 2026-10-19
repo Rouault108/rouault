@@ -4,6 +4,9 @@ import { decodeHashFragment } from '../router/url-hash.js';
 import { readRootScrollY } from '../router/root-scroll.js';
 import {
   applyTocScopeSelections,
+  filterHeadingsByScopeSelections,
+  isHeadingInsideInactivePanel,
+  readTocScopeSelectionMap,
   findContentRoot,
   type TocCapabilities,
 } from './filter-visible-headings.js';
@@ -395,8 +398,50 @@ export class TocActiveTracker {
     }
   }
 
+  invalidateNavigationIntent(): void {
+    this.cancelProgrammaticNavigation('new-navigation');
+    this._cancelHashNavigationHold();
+  }
+
+  // DOM rollbackは入力の取消を戻さない。candidateを読む前に失効holdを一度消費する。
+  private _reconcileNavigationInput(): void {
+    const root = this._contentRoot;
+    if (!root || (!this._programmaticNavigation && !this._hashNavigationHold)) return;
+    const headings = filterHeadingsByScopeSelections(
+      this._allHeadings,
+      readTocScopeSelectionMap(root),
+    );
+    const navigation = this._programmaticNavigation;
+    if (navigation) {
+      const target = this._resolveHeadingElement(navigation.targetId);
+      if (
+        !target ||
+        !headings.some((h) => h.id === navigation.targetId) ||
+        isHeadingInsideInactivePanel(target, root) ||
+        !isElementRenderable(target) ||
+        (navigation.phase === 'settled-hold' && !isHeadingIntersectingViewport(target))
+      ) {
+        this.cancelProgrammaticNavigation('target-missing');
+      } else if (
+        navigation.phase === 'settled-hold' &&
+        Math.abs(readRootScrollY() - navigation.startedAtScrollY) > TOC_SCROLL_POSITION_TOLERANCE_PX
+      ) {
+        this.cancelProgrammaticNavigation('user-scroll');
+      }
+    }
+    const hold = this._hashNavigationHold;
+    if (
+      hold &&
+      (performance.now() > hold.expiresAt ||
+        this._resolveHoldableHashTarget(headings)?.id !== hold.targetId ||
+        (hold.source === 'initial' && !shouldPreserveHashActiveId(hold.targetId, this._priority())))
+    )
+      this._cancelHashNavigationHold();
+  }
+
   private _requestSnapshot(preferHash = false): void {
     if (!this._live()) return;
+    this._reconcileNavigationInput();
     if (this._options.requestSnapshot) {
       this._options.requestSnapshot(preferHash);
       return;
@@ -537,6 +582,7 @@ export class TocActiveTracker {
       !(target instanceof HTMLElement) ||
       !contentRoot.contains(target) ||
       !headings.some((heading) => heading.id === targetId) ||
+      isHeadingInsideInactivePanel(target, contentRoot) ||
       !isElementRenderable(target)
     ) {
       return null;

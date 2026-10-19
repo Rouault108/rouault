@@ -566,5 +566,5 @@
       }
     ]
   },
-  "subsequentRuntimeChange": "39d975ca changes only native-start/address policy for new fragment navigation. Those hash flows were reverified by unit and production E2E; timings were not remeasured after this correction."
+  "subsequentRuntimeChange": "39d975ca corrects native-start/address policy for new fragment navigation. A later correction cancels stale programmatic/hash holds at the input boundary and old holds on new intent; ordinary inputs without a hold return immediately. These paths were reverified by unit and production E2E; timings were not remeasured after either correction. Final build6 bundle bytes are recorded separately."
 }

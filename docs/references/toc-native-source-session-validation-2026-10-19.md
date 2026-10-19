@@ -19,11 +19,11 @@ baselineは`5b79cced2392842ff3c9c7a6d6f0e81d517df1f8`。公開済みSPA／履歴
 - 途中write/verify/rollback例外、他処理の属性保持、DOM readback、rollback後XY変化、surface接続例外後の再試行。
 - mobile link検証前の非公開、古いsnapshotでreadyにしないこと、再構築失敗/source不正化時のready=false、新ownerを旧leaseが上書きしないこと、同runtime IDのheader再接続replay。
 
-全体Browser suite前の関連9 filesも192 passedだったが、重複のため1,030件へ加算しない。後発のSession試験は20 passedで、位置証明失効後のearly追跡、実shell proof経由の接続・再発行・header交換まで確認した。後発ケースを含む総数は最終CIを正本とする。通常SPA／Back/Forward初回表示の既存production E2Eも14 passedだった。既存hash回帰でnative fragmentをviewport優先にしていた問題を検出し、新しいnative-navigationはfragmentを優先するよう修正した。reloadのstale hash優先順位は維持した。
+全体Browser suite前の関連9 filesも192 passedだったが、重複のため1,030件へ加算しない。後発のSession試験は24 passedで、位置証明失効後のearly追跡、実shell proof経由の接続・再発行・header交換まで確認した。後発ケースを含む総数は最終CIを正本とする。通常SPA／Back/Forward初回表示の既存production E2Eも14 passedだった。既存hash回帰でnative fragmentをviewport優先にしていた問題を検出し、新しいnative-navigationはfragmentを優先するよう修正した。reloadのstale hash優先順位は維持した。
 
 ## 独立レビュー
 
-別担当がsource/session/tracker、nativeとshell proof、presentation、通知ストアを直接レビューした。stale pendingによる最新入力消失、DOM readback不足、surface登録の例外残留、古いsnapshotでのready確定、再構築失敗/source不正化後のready残留を修正し、最終レビューで未解決P1/P2なしを確認した。
+別担当がsource/session/tracker、nativeとshell proof、presentation、通知ストアを直接レビューした。stale pendingによる最新入力消失、DOM readback不足、surface登録の例外残留、古いsnapshotでのready確定、再構築失敗/source不正化後のready残留を修正した。最終確認で指摘された、隠した見出しの再表示による古いprogrammatic/hash hold復活と新intentの取消漏れも、candidateを純粋に保った入力境界の取消で修正した。hidden/aria-hidden双方の再現試験を含め関連61件が成功し、最終レビューで未解決P1/P2なしを確認した。
 
 ## 実施上の制約
 
@@ -44,7 +44,7 @@ production E2Eは既存のfixture build/server入口を使う。生成物を変�
 
 ## 性能とbundle
 
-[計測JSON](toc-native-source-session-metrics-2026-10-19.json)と[bundle明細](toc-native-source-session-bundle-2026-10-19.json)を正本とする。runtime計測は`5f678c80`、比較baselineは`5b79cced`。その後`39d975ca`で新しいnative fragment操作の優先順位を修正し、その経路をunitとproduction E2Eで再検証した。時間計測はこの補正後に再実施していない。bundle明細は補正後のbuild5を再集計した。同じChromiumでfresh context各3回、load後に観測する同じrAF/MO oracleとCDP集計を用いた。baselineはNode static server、修正版はVite previewであり、環境・probe費用も含む。
+[計測JSON](toc-native-source-session-metrics-2026-10-19.json)と[bundle明細](toc-native-source-session-bundle-2026-10-19.json)を正本とする。runtime計測は`5f678c80`、比較baselineは`5b79cced`。その後`39d975ca`で新しいnative fragment操作の優先順位を修正し、その経路をunitとproduction E2Eで再検証した。続いて入力境界の古いhold取消を補正した（holdなしの通常入力は即return）。時間計測はこの二つの補正後に再実施していない。bundle明細は両補正後のbuild6を再集計した。同じChromiumでfresh context各3回、load後に観測する同じrAF/MO oracleとCDP集計を用いた。baselineはNode static server、修正版はVite previewであり、環境・probe費用も含む。
 
 | 観測（3回の中央値）                    |  baseline |    修正版 |
 | -------------------------------------- | --------: | --------: |
@@ -57,6 +57,6 @@ production E2Eは既存のfixture build/server入口を使う。生成物を変�
 
 単一transactionの同期CPU、入力遅延、強制layoutの因果的な内訳は未分離である。数値から全体の高速化や無回帰を主張しない。特にScriptDurationと初期読込量には増加があり、8ms/16msの固定上限や達成保証は設けない。
 
-entry JSは264,058→265,817 raw bytes（+1,759）。clientとrouter hostからのstatic import graphは376,727→401,880（+25,153 raw / +6,456 gzip）。全JSは548,868→562,195（+13,327 raw / +3,999 gzip）。TOC interaction moduleは遅延のままだが、source sessionとtrackerを先に使う費用が初期graphに移った。entry単体や遅延chunkの減少を総削減と扱わない。
+entry JSは264,058→265,817 raw bytes（+1,759）。clientとrouter hostからのstatic import graphは376,727→402,793（+26,066 raw / +6,661 gzip）。全JSは548,868→563,108（+14,240 raw / +4,204 gzip）。TOC interaction moduleは遅延のままだが、source sessionとtrackerを先に使う費用が初期graphに移った。entry単体や遅延chunkの減少を総削減と扱わない。
 
-実測のdirect/reload各3回と実BFCache中部3回、画面幅変更後の実BFCache1回は、native accepted以後の観測frameで不一致0だった。最終実装のBFCache acceptedはpageshowから2.5〜4.9msの観測範囲だった。中間buildには341.5msの外れ値もあり、最初のOS提示frameや全環境での即時採用は保証しない。interaction module未完了のまま離脱する実BFCacheの組合せは未測定で、合成pagehide試験と混同しない。
+実測のdirect/reload各3回と実BFCache中部3回、画面幅変更後の実BFCache1回は、native accepted以後の観測frameで不一致0だった。計測対象build4のBFCache acceptedはpageshowから2.5〜4.9msの観測範囲だった。中間buildには341.5msの外れ値もあり、最初のOS提示frameや全環境での即時採用は保証しない。interaction module未完了のまま離脱する実BFCacheの組合せは未測定で、合成pagehide試験と混同しない。
