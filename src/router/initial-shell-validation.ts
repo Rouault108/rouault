@@ -3,6 +3,7 @@ import type { RouterRuntimeUrlDependencies } from './router-types.js';
 import { STATIC_HEADER_ROOT_SELECTOR } from '../../shared/navigation/static-header-contract.js';
 import { readCanonicalStaticHeaderHtml } from '../components/app/shell/static-header-shell-mutation.js';
 import { readLayoutFooterCopyrightText } from '../components/app/shell/footer-shell-mutation.js';
+import { recordValidatedShellProof } from '../components/app/shell/app-shell-lifecycle.js';
 import {
   readSidebarShellSnapshot,
   SIDEBAR_ROOT_SELECTOR,
@@ -46,6 +47,7 @@ export const validateInitialAppShell = (options: {
     shellCommitId: 0,
     linkValidationContext,
   };
+  recordValidatedShellProof(detail, document);
   document.dispatchEvent(
     new CustomEvent<AppShellValidatedDetail>('app-shell:validated', { detail }),
   );

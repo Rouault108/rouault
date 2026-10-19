@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { fixture } from './harness/browser-fixture.js';
+import { fixture as createFixture } from './harness/browser-fixture.js';
 import { waitForCondition } from './harness/browser-test-utilities.js';
 import {
   activateLayoutTocController,
@@ -11,7 +11,30 @@ import {
   syncTocActiveLinks,
   syncTocHeadingVisibility,
 } from '../../src/toc/toc-desktop-nav-sync.js';
+import { getTocSourceSession } from '../../src/toc/toc-source-session.js';
 import { TOC_MOBILE_PANEL_SELECTOR } from '../../src/toc/toc-mobile-panel-dom-css-contract.js';
+
+// 実際のbuild-time owner/source配置を持つfixtureへ揃える。
+const fixture = async <T extends HTMLElement>(html: string): Promise<T> => {
+  const root = await createFixture<T>(html);
+  const controller = root.querySelector('layout-toc-controller');
+  if (controller) {
+    const toc = controller.closest('[data-layout-toc-root]');
+    const source = document.getElementById('toc-source-test');
+    const content = document.getElementById('note-content-test');
+    controller.setAttribute('toc-owner-id', 'toc-owner-test');
+    toc?.setAttribute('data-hydration-owner-id', 'toc-owner-test');
+    if (source && toc) {
+      source.setAttribute('data-toc-owner-id', 'toc-owner-test');
+      source.setAttribute('data-hydration-owner-id', 'toc-owner-test');
+      source.setAttribute('data-hydration-marker', 'toc-source');
+      source.setAttribute('data-hydration-scope', 'note-toc');
+      toc.append(source);
+    }
+    if (content) root.parentElement?.prepend(content);
+  }
+  return root;
+};
 
 const headings = [
   { id: 'section-1', text: 'Section 1', level: 2 },
@@ -52,6 +75,177 @@ describe('layout-toc-controller', () => {
     layoutTocMobileController.reset();
     layoutTocRuntimeStore.reset();
     document.querySelectorAll(TOC_MOBILE_PANEL_SELECTOR).forEach((element) => element.remove());
+  });
+
+  it('mobile検証中のopenはhiddenのまま保持し、検証失敗後も同じsourceで再試行できること', async () => {
+    const cleanup = appendContentFixture();
+    const root = await fixture<HTMLElement>(`
+      <div data-layout-toc-root>
+        <nav data-layout-toc-nav><ol>${headings.map((heading) => `<li data-heading-id="${heading.id}"><a href="#${heading.id}" data-toc-link data-heading-id="${heading.id}">${heading.text}</a></li>`).join('')}</ol></nav>
+        <layout-toc-controller source-id="toc-source-test" toc-runtime-id="toc-source-test" content-root-id="note-content-test" capabilities-json='{"activeTracking":true,"dynamicScopes":false,"mobilePanel":true}'></layout-toc-controller>
+      </div>
+    `);
+    const controller = root.querySelector<LayoutTocController>('layout-toc-controller');
+    if (!controller) throw new Error('missing controller');
+    const source = getTocSourceSession(controller);
+    const ready: boolean[] = [];
+    const unsubscribe = layoutTocRuntimeStore.subscribe('toc-source-test', (snapshot) =>
+      ready.push(snapshot.ready),
+    );
+    try {
+      expect(() =>
+        activateLayoutTocController(controller, {
+          validatePanel: (panel) => {
+            layoutTocMobileController.open('toc-source-test');
+            expect(panel.hasAttribute('hidden')).to.equal(true);
+            expect(panel.hasAttribute('inert')).to.equal(true);
+            expect(layoutTocRuntimeStore.getSnapshot('toc-source-test').ready).to.equal(false);
+            throw new Error('injected panel validation failure');
+          },
+        }),
+      ).to.throw('injected panel validation failure');
+      expect(document.querySelector(TOC_MOBILE_PANEL_SELECTOR)).to.equal(null);
+      expect(ready).to.deep.equal([false]);
+      expect(getTocSourceSession(controller)).to.equal(source);
+      let validated = false;
+      const result = activateLayoutTocController(controller, {
+        validatePanel: (panel) => {
+          expect(panel.hasAttribute('hidden')).to.equal(true);
+          validated = true;
+        },
+      });
+      expect(result.status).to.equal('activated');
+      expect(validated).to.equal(true);
+      expect(getTocSourceSession(controller)).to.equal(source);
+      expect(document.querySelector(TOC_MOBILE_PANEL_SELECTOR)?.hasAttribute('hidden')).to.equal(
+        false,
+      );
+      expect(ready).to.deep.equal([false, true]);
+    } finally {
+      unsubscribe();
+      root.remove();
+      cleanup();
+    }
+  });
+
+  it('source破損時の旧presentation終了は新ownerのruntime公開を上書きしないこと', async () => {
+    const cleanup = appendContentFixture();
+    const root = await fixture<HTMLElement>(`
+      <div data-layout-toc-root>
+        <nav data-layout-toc-nav><ol>${headings.map((heading) => `<li data-heading-id="${heading.id}"><a href="#${heading.id}" data-toc-link data-heading-id="${heading.id}">${heading.text}</a></li>`).join('')}</ol></nav>
+        <layout-toc-controller source-id="toc-source-test" toc-runtime-id="toc-source-test" content-root-id="note-content-test" capabilities-json='{"activeTracking":true,"dynamicScopes":false,"mobilePanel":true}'></layout-toc-controller>
+      </div>
+    `);
+    const controller = root.querySelector<LayoutTocController>('layout-toc-controller');
+    const source = root.querySelector<HTMLScriptElement>('#toc-source-test');
+    if (!controller || !source) throw new Error('missing fixture');
+    let ownerCurrent = true;
+    try {
+      expect(
+        activateLayoutTocController(controller, { isCurrent: () => ownerCurrent }).status,
+      ).to.equal('activated');
+      ownerCurrent = false;
+      source.text = '{ invalid json';
+      layoutTocRuntimeStore.publish('toc-source-test', {
+        ready: true,
+        hasVisibleHeadings: true,
+        activeId: 'new-owner-current',
+        hydrationState: 'hydrated',
+      });
+      expect(activateLayoutTocController(controller).status).to.equal('skipped');
+      expect(layoutTocRuntimeStore.getSnapshot('toc-source-test').ready).to.equal(true);
+      expect(layoutTocRuntimeStore.getSnapshot('toc-source-test').activeId).to.equal(
+        'new-owner-current',
+      );
+      expect(document.querySelector(TOC_MOBILE_PANEL_SELECTOR)).to.equal(null);
+    } finally {
+      root.remove();
+      cleanup();
+    }
+  });
+
+  it('古いcanonicalがあっても最新surfaceのwrite失敗をready成功に数えないこと', async () => {
+    const cleanup = appendContentFixture();
+    const restoreHash = withLocationHash('');
+    const root = await fixture<HTMLElement>(`
+      <div data-layout-toc-root>
+        <nav data-layout-toc-nav><ol>${headings.map((heading) => `<li data-heading-id="${heading.id}"><a href="#${heading.id}" data-toc-link data-heading-id="${heading.id}">${heading.text}</a></li>`).join('')}</ol></nav>
+        <layout-toc-controller source-id="toc-source-test" toc-runtime-id="toc-source-test" content-root-id="note-content-test" capabilities-json='{"activeTracking":true,"dynamicScopes":false,"mobilePanel":true}'></layout-toc-controller>
+      </div>
+    `);
+    const controller = root.querySelector<LayoutTocController>('layout-toc-controller');
+    const link = root.querySelector<HTMLAnchorElement>(
+      '[data-toc-link][data-heading-id="section-2"]',
+    );
+    if (!controller || !link) throw new Error('missing fixture');
+    const source = getTocSourceSession(controller);
+    if (!source) throw new Error('missing session');
+    let secondTop = 300;
+    for (const id of ['section-1', 'section-2']) {
+      const heading = document.getElementById(id);
+      if (!heading) throw new Error('missing heading');
+      heading.getBoundingClientRect = () =>
+        new DOMRect(0, id === 'section-1' ? -300 : secondTop, 800, 32);
+    }
+    const original = link.setAttribute;
+    try {
+      source.activate();
+      expect(source.snapshot?.activeId).to.equal('section-1');
+      secondTop = -10;
+      link.setAttribute = function (name: string, value: string): void {
+        if (name === 'data-active' && value === 'true')
+          throw new Error('injected latest current write failure');
+        original.call(this, name, value);
+      };
+      const failed = activateLayoutTocController(controller);
+      expect(failed.status).to.equal('aborted');
+      expect(source.snapshot?.activeId).to.equal('section-1');
+      expect(layoutTocRuntimeStore.getSnapshot('toc-source-test').ready).to.equal(false);
+      expect(document.querySelector(TOC_MOBILE_PANEL_SELECTOR)).to.equal(null);
+      link.setAttribute = original;
+      const retried = activateLayoutTocController(controller);
+      expect(retried.status).to.equal('activated');
+      expect(source.snapshot?.activeId).to.equal('section-2');
+      expect(layoutTocRuntimeStore.getSnapshot('toc-source-test').ready).to.equal(true);
+    } finally {
+      link.setAttribute = original;
+      root.remove();
+      restoreHash();
+      cleanup();
+    }
+  });
+
+  it('検証中のowner失効時は自分のpanelだけを除去し、同じIDの後続panelに触れないこと', async () => {
+    const cleanup = appendContentFixture();
+    const root = await fixture<HTMLElement>(`
+      <div data-layout-toc-root>
+        <nav data-layout-toc-nav><ol>${headings.map((heading) => `<li data-heading-id="${heading.id}"><a href="#${heading.id}" data-toc-link data-heading-id="${heading.id}">${heading.text}</a></li>`).join('')}</ol></nav>
+        <layout-toc-controller source-id="toc-source-test" toc-runtime-id="toc-source-test" content-root-id="note-content-test" capabilities-json='{"activeTracking":true,"dynamicScopes":false,"mobilePanel":true}'></layout-toc-controller>
+      </div>
+    `);
+    const controller = root.querySelector<LayoutTocController>('layout-toc-controller');
+    if (!controller) throw new Error('missing controller');
+    const replacement = document.createElement('div');
+    let current = true;
+    try {
+      const result = activateLayoutTocController(controller, {
+        isCurrent: () => current,
+        validatePanel: (panel) => {
+          replacement.id = panel.id;
+          replacement.setAttribute('data-layout-toc-mobile-panel', '');
+          document.body.append(replacement);
+          current = false;
+        },
+      });
+      expect(result.status).to.equal('aborted');
+      expect(document.querySelectorAll(TOC_MOBILE_PANEL_SELECTOR)).to.have.length(1);
+      expect(replacement.isConnected).to.equal(true);
+      expect(layoutTocRuntimeStore.getSnapshot('toc-source-test').ready).to.equal(false);
+    } finally {
+      replacement.remove();
+      root.remove();
+      cleanup();
+    }
   });
 
   it('遅延 activation の最新 viewport を初回 publish と mobile clone に採用し初期 refresh でも維持すること', async () => {
@@ -512,7 +706,7 @@ describe('layout-toc-controller', () => {
             source-id="toc-source-test"
             toc-runtime-id="toc-source-test"
             content-root-id="note-content-test"
-            capabilities-json='{"activeTracking":false,"dynamicScopes":false,"mobilePanel":false}'
+            capabilities-json='{"activeTracking":false,"dynamicScopes":true,"mobilePanel":false}'
           ></layout-toc-controller>
         </div>
       `);
@@ -600,7 +794,7 @@ describe('layout-toc-controller', () => {
             source-id="toc-source-test"
             toc-runtime-id="toc-source-test"
             content-root-id="note-content-test"
-            capabilities-json='{"activeTracking":false,"dynamicScopes":false,"mobilePanel":false}'
+            capabilities-json='{"activeTracking":false,"dynamicScopes":true,"mobilePanel":false}'
           ></layout-toc-controller>
         </div>
       `);
@@ -672,6 +866,9 @@ describe('layout-toc-controller', () => {
                 >
                   <span class="layout-toc__link-label">Section 1</span>
                 </a>
+              </li>
+              <li class="layout-toc__item" data-heading-id="section-2">
+                <a class="layout-toc__link" href="#section-2" data-toc-link data-heading-id="section-2">Section 2</a>
               </li>
             </ol>
           </nav>

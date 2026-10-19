@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it } from 'vitest';
 
 import { waitForCondition } from './harness/browser-test-utilities.js';
+import { activateLayoutTocController } from '../../src/components/layout/layout-toc-controller.js';
 import { enhanceLayoutHeaderTocBridge } from '../../src/client/post-hydrate/layout-header-toc-bridge.js';
 import {
   commitShellGeneration,
@@ -77,7 +78,7 @@ const appendBridgeFixture = (): HTMLElement => {
         <h2 id="section-2">Section 2</h2>
         <p>second</p>
       </article>
-      <div id="layout-toc-toc-source-test" data-layout-toc-root>
+      <div id="layout-toc-toc-source-test" data-layout-toc-root data-hydration-owner-id="toc-owner-test">
         <nav class="layout-toc" aria-label="目次" data-layout-toc-nav>
           <ol>
             <li data-heading-id="section-1">
@@ -109,9 +110,11 @@ const appendBridgeFixture = (): HTMLElement => {
           data-toc-trigger-reserved="true"
         ></layout-toc-controller>
       </div>
-      <script id="toc-source-test" type="application/json">${JSON.stringify(headings)}</script>
+      <script id="toc-source-test" type="application/json" data-toc-owner-id="toc-owner-test" data-hydration-owner-id="toc-owner-test" data-hydration-marker="toc-source" data-hydration-scope="note-toc">${JSON.stringify(headings)}</script>
     </main>
   `;
+  const source = root.querySelector('#toc-source-test');
+  if (source) root.querySelector('[data-layout-toc-root]')?.append(source);
   document.body.append(root);
   return root;
 };
@@ -156,6 +159,105 @@ describe('layout-header-toc-bridge', () => {
     layoutTocRuntimeStore.reset();
     resetShellLifecycleForTest();
     document.body.replaceChildren();
+  });
+
+  it('ready後にsourceが壊れても同じpresentation ownerの終了を公開すること', async () => {
+    const root = appendBridgeFixture();
+    const header = root.querySelector<HTMLElement>('header[data-layout-header]');
+    const toc = root.querySelector<HTMLElement>('layout-toc-controller');
+    const source = root.querySelector<HTMLScriptElement>('#toc-source-test');
+    const trigger = root.querySelector<HTMLElement>('[data-toc-trigger]');
+    if (!header || !toc || !source || !trigger) throw new Error('missing fixture');
+    controller = new AbortController();
+    enhanceLayoutHeaderTocBridge(controller.signal);
+    commitShellGeneration(1);
+    dispatchValidated(header, 1);
+    await waitForCondition(
+      () => layoutTocRuntimeStore.getSnapshot('toc-source-test').ready,
+      'initial presentation is ready',
+    );
+    const before = layoutTocRuntimeStore.getSnapshot('toc-source-test');
+    source.text = '{ invalid json';
+    const result = activateLayoutTocController(toc, { validatePanel: () => undefined });
+    expect(result).to.deep.equal({ status: 'skipped', reason: 'missing-source' });
+    const after = layoutTocRuntimeStore.getSnapshot('toc-source-test');
+    expect(after.ready).to.equal(false);
+    expect(after.activeId).to.equal(before.activeId);
+    expect(after.hasVisibleHeadings).to.equal(before.hasVisibleHeadings);
+    expect(document.querySelector(TOC_MOBILE_PANEL_SELECTOR)).to.equal(null);
+    expect(trigger.getAttribute('data-toc-trigger-interactive')).to.equal('false');
+    expect(trigger.getAttribute('aria-disabled')).to.equal('true');
+  });
+
+  it('ready後の再検証失敗ではpanelとreadyを解除し、同じsourceで再試行できること', async () => {
+    const root = appendBridgeFixture();
+    const header = root.querySelector<HTMLElement>('header[data-layout-header]');
+    const toc = root.querySelector<HTMLElement>('layout-toc-controller');
+    const trigger = root.querySelector<HTMLElement>('[data-toc-trigger]');
+    if (!header || !toc || !trigger) throw new Error('missing fixture');
+    controller = new AbortController();
+    enhanceLayoutHeaderTocBridge(controller.signal);
+    commitShellGeneration(1);
+    dispatchValidated(header, 1);
+    await waitForCondition(
+      () => layoutTocRuntimeStore.getSnapshot('toc-source-test').ready,
+      'initial presentation is ready',
+    );
+    const before = layoutTocRuntimeStore.getSnapshot('toc-source-test');
+    expect(() =>
+      activateLayoutTocController(toc, {
+        validatePanel: () => {
+          throw new Error('injected revalidation failure');
+        },
+      }),
+    ).to.throw('injected revalidation failure');
+    const failed = layoutTocRuntimeStore.getSnapshot('toc-source-test');
+    expect(failed.ready).to.equal(false);
+    expect(failed.activeId).to.equal(before.activeId);
+    expect(failed.hasVisibleHeadings).to.equal(before.hasVisibleHeadings);
+    expect(document.querySelector(TOC_MOBILE_PANEL_SELECTOR)).to.equal(null);
+    expect(trigger.getAttribute('data-toc-trigger-interactive')).to.equal('false');
+    expect(trigger.getAttribute('aria-disabled')).to.equal('true');
+    const result = activateLayoutTocController(toc, { validatePanel: () => undefined });
+    expect(result.status).to.equal('activated');
+    expect(layoutTocRuntimeStore.getSnapshot('toc-source-test').ready).to.equal(true);
+    expect(document.querySelector(TOC_MOBILE_PANEL_SELECTOR)).not.to.equal(null);
+    expect(trigger.getAttribute('data-toc-trigger-interactive')).to.equal('true');
+  });
+
+  it('同じruntime IDのheader再接続でも現在のruntime/mobile状態をreplayすること', () => {
+    const root = appendBridgeFixture();
+    const header = root.querySelector<HTMLElement>('header[data-layout-header]');
+    if (!header) throw new Error('missing header');
+    controller = new AbortController();
+    enhanceLayoutHeaderTocBridge(controller.signal);
+    layoutTocRuntimeStore.publish('toc-source-test', {
+      ready: true,
+      hasVisibleHeadings: true,
+      activeId: 'section-2',
+      hydrationState: 'hydrated',
+    });
+    layoutTocMobileController.open('toc-source-test');
+    const replacement = header.cloneNode(true) as HTMLElement;
+    const trigger = replacement.querySelector<HTMLElement>('[data-toc-trigger]');
+    if (!trigger) throw new Error('missing trigger');
+    trigger.removeAttribute('data-visible');
+    trigger.setAttribute('aria-expanded', 'false');
+    header.replaceWith(replacement);
+    document.dispatchEvent(
+      new CustomEvent<AppShellCommittedDetail>('app-shell:committed', {
+        detail: {
+          header: replacement,
+          navigationUrl: '/notes/current',
+          shellCommitId: 0,
+          shell: { headerHtml: replacement.outerHTML, sidebarProjection: null },
+        },
+      }),
+    );
+    expect(trigger.getAttribute('data-visible')).to.equal('true');
+    expect(trigger.getAttribute('data-toc-trigger-interactive')).to.equal('true');
+    expect(trigger.getAttribute('aria-expanded')).to.equal('true');
+    expect(trigger.getAttribute('aria-label')).to.equal('目次を閉じる');
   });
 
   it('app-shell:committed では状態同期だけを行い、validated 後に TOC controller と mobile panel を起動すること', async () => {
@@ -227,6 +329,7 @@ describe('layout-header-toc-bridge', () => {
     expect(trigger.getAttribute('data-toc-hydration-state')).to.equal('hydrated');
 
     trigger.setAttribute('data-toc-trigger-reserved', 'false');
+    document.dispatchEvent(new CustomEvent('app-shell:committed'));
     layoutTocRuntimeStore.publish('toc-source-test', {
       ready: true,
       hasVisibleHeadings: true,

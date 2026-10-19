@@ -24,6 +24,7 @@ interface TocBridgeState {
   linkValidationContext: RuntimeDomLinkValidationContext | null;
   validationContexts: Map<number, RuntimeDomLinkValidationContext>;
   activationAbortController: AbortController | null;
+  presentationCleanup: (() => void | Promise<void>) | null;
 }
 
 const readRuntimeId = (): string | null => {
@@ -97,6 +98,11 @@ const refreshSubscriptions = (state: TocBridgeState): void => {
     state.runtimeCleanup !== null &&
     state.mobileCleanup !== null
   ) {
+    // 同じruntimeでもheader実体は置換され得るため、producerの次の変化を待たない。
+    if (runtimeId !== null) {
+      syncRuntimeSnapshot(layoutTocRuntimeStore.getSnapshot(runtimeId));
+      syncMobileSnapshot(layoutTocMobileController.getSnapshot(runtimeId).panelOpen);
+    }
     return;
   }
   disconnectSubscriptions(state);
@@ -135,18 +141,6 @@ const resolveCurrentTocController = (runtimeId: string): HTMLElement | null => {
   const contentRoot = document.getElementById(contentRootId);
   if (!(contentRoot instanceof HTMLElement) || !contentRoot.isConnected) return null;
   return controller;
-};
-
-const removeRuntimeMobilePanel = (runtimeId: string): void => {
-  const panelId = `layout-toc-panel-${runtimeId}`;
-  document.querySelectorAll<HTMLElement>(MOBILE_PANEL_SELECTOR).forEach((panel) => {
-    if (panel.id === panelId) panel.remove();
-  });
-};
-
-const removeCurrentRuntimeMobilePanel = (): void => {
-  const runtimeId = readRuntimeId();
-  if (runtimeId !== null) removeRuntimeMobilePanel(runtimeId);
 };
 
 const abortPostValidationActivation = (state: TocBridgeState): void => {
@@ -206,35 +200,32 @@ const releaseAndActivateTocController = async (
   ) {
     return;
   }
-  controller.removeAttribute('data-toc-trigger-reserved');
-  module.activateLayoutTocController(controller);
-  if (
-    !isActiveSignal(state, signal) ||
-    !isCurrentShellActivation(state, shellCommitId, runtimeId, context)
-  ) {
-    removeRuntimeMobilePanel(runtimeId);
-    return;
-  }
-  const panel = resolveRuntimeMobilePanel(runtimeId);
-  if (panel instanceof HTMLElement) {
-    try {
+  let presentationCommitted = false;
+  const result = module.activateLayoutTocController(controller, {
+    isCurrent: () =>
+      (presentationCommitted || isActiveSignal(state, signal)) &&
+      controller.isConnected &&
+      isCurrentShellActivation(state, shellCommitId, runtimeId, context),
+    validatePanel: (panel) => {
       validateRuntimeDomLinkContractSubtree({
         root: panel,
         sourceLabel: `toc-mobile-panel:${runtimeId}`,
         ...context,
       });
-    } catch (error) {
-      panel.remove();
-      throw error;
-    }
+    },
+  });
+  if (result.status === 'activated') {
+    presentationCommitted = true;
+    const cleanup = result.cleanup;
+    state.presentationCleanup =
+      typeof cleanup === 'function' ? cleanup : (cleanup?.cleanup ?? null);
+    controller.removeAttribute('data-toc-trigger-reserved');
   }
   if (
     !isActiveSignal(state, signal) ||
     !isCurrentShellActivation(state, shellCommitId, runtimeId, context)
-  ) {
-    removeRuntimeMobilePanel(runtimeId);
+  )
     return;
-  }
   syncMobileSnapshot(layoutTocMobileController.getSnapshot(runtimeId).panelOpen);
   refreshSubscriptions(state);
 };
@@ -248,6 +239,7 @@ export const enhanceLayoutHeaderTocBridge = (signal: AbortSignal): void => {
     linkValidationContext: null,
     validationContexts: new Map(),
     activationAbortController: null,
+    presentationCleanup: null,
   };
   const refresh = (): void => {
     refreshSubscriptions(state);
@@ -266,7 +258,9 @@ export const enhanceLayoutHeaderTocBridge = (signal: AbortSignal): void => {
     'app-shell:rollback-start',
     () => {
       abortPostValidationActivation(state);
-      removeCurrentRuntimeMobilePanel();
+      const cleanup = state.presentationCleanup;
+      state.presentationCleanup = null;
+      void cleanup?.();
     },
     { signal },
   );

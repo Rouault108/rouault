@@ -1,5 +1,8 @@
 import { ReadingPositionController } from './reading-position-controller.js';
-import { syncTocAtReadingPosition } from '../../../toc/sync-toc-at-reading-position.js';
+import {
+  observeNativeTocPosition,
+  syncAcceptedTocPosition,
+} from '../../../toc/toc-source-session.js';
 import { readCurrentShellCommitId } from '../shell/app-shell-lifecycle.js';
 import { FocusManager } from '../../../router/focus-manager.js';
 import type { PostCommitController } from '../../../router/router.js';
@@ -24,7 +27,10 @@ export class RouterDocumentHostPostRenderController {
       this.reportBackgroundError(error);
     },
     (position) => {
-      syncTocAtReadingPosition(position);
+      syncAcceptedTocPosition(position);
+    },
+    (observation) => {
+      observeNativeTocPosition(observation);
     },
   );
   private tablePreparation: AbortController | null = null;

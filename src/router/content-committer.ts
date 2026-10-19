@@ -14,6 +14,7 @@ import {
   readCurrentShellCommitId,
   reserveShellCommitId,
   restoreShellGeneration,
+  recordValidatedShellProof,
 } from '../components/app/shell/app-shell-lifecycle.js';
 import type {
   AppShellCommittedDetail,
@@ -58,6 +59,7 @@ const normalizeError = (error: unknown): Error =>
   error instanceof Error ? error : new Error(String(error));
 
 const dispatchShellValidated = (detail: AppShellValidatedDetail): void => {
+  recordValidatedShellProof(detail, document);
   document.dispatchEvent(
     new CustomEvent<AppShellValidatedDetail>('app-shell:validated', { detail }),
   );

@@ -1650,16 +1650,18 @@ describe('featureの呼出し元までの失効', () => {
       if (!root) throw new Error('root');
       root.id = 'reading-mobile-content';
       const toc = await fixture<HTMLElement>(`
-        <div data-layout-toc-root>
-          <script id="reading-mobile-source" type="application/json" data-toc-owner-id="reading-mobile-owner">[{"id":"reading-heading","text":"見出し","level":2}]</script>
+        <div data-layout-toc-root data-hydration-owner-id="reading-mobile-owner">
+          <script id="reading-mobile" type="application/json" data-toc-owner-id="reading-mobile-owner"
+            data-hydration-owner-id="reading-mobile-owner" data-hydration-marker="toc-source" data-hydration-scope="note-toc">[{"id":"reading-heading","text":"見出し","level":2}]</script>
           <nav data-layout-toc-nav aria-label="目次"><ol><li data-heading-id="reading-heading">
             <a href="#reading-heading" data-toc-link data-heading-id="reading-heading">見出し</a>
           </li></ol></nav>
-          <layout-toc-controller source-id="reading-mobile-source" toc-runtime-id="reading-mobile"
+          <layout-toc-controller source-id="reading-mobile" toc-runtime-id="reading-mobile" toc-owner-id="reading-mobile-owner"
             content-root-id="reading-mobile-content"
             capabilities-json='{"activeTracking":false,"dynamicScopes":false,"mobilePanel":true}'></layout-toc-controller>
         </div>
       `);
+      root.append(toc);
       const controller = toc.querySelector<HTMLElement>('layout-toc-controller');
       if (!controller) throw new Error('TOC controller');
       activateLayoutTocController(controller);

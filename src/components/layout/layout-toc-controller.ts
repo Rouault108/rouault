@@ -1,19 +1,15 @@
-import type { TocHeading as Heading } from '../../toc/toc-headings.js';
-import { findContentRoot, type TocCapabilities } from '../../toc/filter-visible-headings.js';
-import { hasDynamicTocScopeSelections, normalizeTocCapabilities } from '../../toc/toc-headings.js';
-import { readTocJsonSourceScriptHeadings } from '../../toc/toc-json-source-script.js';
+import { readContentContext } from '../../navigation/content-navigation-context.js';
+import { findContentRoot } from '../../toc/filter-visible-headings.js';
+import { normalizeTocCapabilities } from '../../toc/toc-headings.js';
 import type { HydrationActivationResult } from '../../../shared/hydration/hydration-activation.js';
-import { syncTocActiveLinks, syncTocHeadingVisibility } from '../../toc/toc-desktop-nav-sync.js';
 import { resolveTocRuntimeId } from '../../toc/toc-source-id-resolution.js';
 import {
-  findTocSourceScript,
-  resolveTocSourceLookupRoot,
-} from '../../toc/toc-source-lookup-root.js';
-import { TocActiveTracker } from '../../toc/toc-active-tracker.js';
-import { resolveTocDensityTier } from '../../toc/toc-density-tier.js';
+  getTocSourceSession,
+  disposeTocSourceSession,
+  type TocSourceSession,
+} from '../../toc/toc-source-session.js';
 import { TocHydrationSessionController } from '../../toc/toc-hydration-session.js';
 import { TocNavigationController } from '../../toc/toc-navigation-controller.js';
-import { TOC_MOBILE_PANEL_SELECTOR } from '../../toc/toc-mobile-panel-dom-css-contract.js';
 import { syncLayoutTocControllersForSession } from '../../toc/sync-layout-toc-controllers.js';
 import { focusWithoutScroll } from '../../lib/focus-without-scroll.js';
 import { layoutTocMobileController } from './layout-toc-mobile-controller.js';
@@ -24,14 +20,14 @@ import {
 
 const DEFAULT_LAYOUT_TOC_RUNTIME_ID = 'page-toc';
 
-const parseJsonValue = (value: string): unknown => {
-  const normalized = value.trim();
-  if (normalized.length === 0) {
-    return null;
-  }
+export interface LayoutTocActivationOptions {
+  readonly isCurrent?: () => boolean;
+  readonly validatePanel?: (panel: HTMLElement) => void;
+}
 
+const parseJsonValue = (value: string): unknown => {
   try {
-    return JSON.parse(normalized) as unknown;
+    return JSON.parse(value) as unknown;
   } catch {
     return null;
   }
@@ -46,26 +42,21 @@ const removeIdsFromTree = (root: ParentNode): void => {
 };
 
 export class LayoutTocController extends HTMLElement {
-  private _hydrationActivated = false;
-  private _tracker: TocActiveTracker | null = null;
+  private _sourceSession: TocSourceSession | null = null;
+  private _sourceCleanup: (() => void) | null = null;
+  private _surfaceCleanup: (() => void) | null = null;
   private _mobileCleanup: (() => void) | null = null;
   private _navigationController: TocNavigationController | null = null;
   private _panelRoot: HTMLElement | null = null;
   private _panelNav: HTMLElement | null = null;
   private _panelOpen = false;
   private _documentListenersAttached = false;
-  private _desktopNavClickAttached = false;
+  private _desktopNav: HTMLElement | null = null;
   private readonly _hydrationSessionController = new TocHydrationSessionController();
   private _ready = false;
   private _initializing = false;
-  private _activeId = '';
-  private _allHeadings: Heading[] = [];
-  private _visibleHeadings: Heading[] = [];
-  private _capabilities: TocCapabilities = {
-    activeTracking: false,
-    dynamicScopes: false,
-    mobilePanel: false,
-  };
+  private _presentationGeneration = 0;
+  private _presentationOwnerCheck: (() => boolean) | null = null;
 
   get sourceId(): string {
     return this.getAttribute('source-id')?.trim() ?? '';
@@ -88,12 +79,10 @@ export class LayoutTocController extends HTMLElement {
   }
 
   disconnectedCallback(): void {
-    this._mobileCleanup?.();
-    this._mobileCleanup = null;
-    this._navigationController?.destroy();
-    this._navigationController = null;
-    this._tracker?.destroy();
-    this._tracker = null;
+    this._presentationGeneration += 1;
+    this._cleanupPresentation();
+    disposeTocSourceSession(this);
+    this._sourceSession = null;
     const disposedSession = this._hydrationSessionController.dispose();
     if (disposedSession !== null) {
       layoutTocRuntimeStore.publish(disposedSession.runtimeId, {
@@ -103,177 +92,157 @@ export class LayoutTocController extends HTMLElement {
         hydrationState: disposedSession.state,
       });
     }
-    this._detachPanelDocumentListeners();
-    this._removeMobilePanel();
   }
 
-  activateHydration(): HydrationActivationResult {
-    if (this._hydrationActivated || typeof window === 'undefined') {
-      return { status: 'skipped', reason: 'already-activated' };
+  activateHydration(options: LayoutTocActivationOptions = {}): HydrationActivationResult {
+    if (typeof window === 'undefined' || !this.isConnected) {
+      return { status: 'skipped', reason: 'element-disconnected' };
     }
-
-    const source = this._readSourceScript();
-    if (source === null) {
+    if (this._initializing) return { status: 'aborted' };
+    if (this.hasAttribute('data-toc-trigger-reserved') && options.validatePanel === undefined) {
+      return { status: 'deferred', reason: 'toc-trigger' };
+    }
+    // shellの再検証ではpresentationだけ作り直し、sourceの追跡・hold・初期予約を維持する。
+    this._initializing = true;
+    if (this._ready) this._cleanupPresentation();
+    const sourceSession = getTocSourceSession(this);
+    if (sourceSession === null) {
+      this._initializing = false;
       return { status: 'skipped', reason: 'missing-source' };
     }
-
-    this._navigationController = new TocNavigationController(this);
-    this._hydrationActivated = true;
+    const generation = ++this._presentationGeneration;
+    const binding = sourceSession.binding;
+    const context = readContentContext();
+    const epoch = context?.root === binding.root ? context.contentEpoch : null;
+    const runtimeId = this.tocRuntimeId;
+    const ownerId = this.tocOwnerId;
+    // sourceの破損でも表示層を終了できるよう、DOM所有権だけのleaseを別に保持する。
+    this._presentationOwnerCheck = (): boolean => {
+      const currentContext = readContentContext();
+      return (
+        this.isConnected &&
+        binding.root.isConnected &&
+        binding.toc.isConnected &&
+        binding.root.contains(binding.toc) &&
+        binding.toc.contains(this) &&
+        binding.root.contains(binding.contentRoot) &&
+        this.tocRuntimeId === runtimeId &&
+        this.tocOwnerId === ownerId &&
+        (options.isCurrent?.() ?? true) &&
+        (epoch === null ||
+          (currentContext?.root === binding.root && currentContext.contentEpoch === epoch))
+      );
+    };
+    const isCurrent = (): boolean =>
+      this.isConnected &&
+      this._presentationGeneration === generation &&
+      this._sourceSession === sourceSession &&
+      sourceSession.isCurrent() &&
+      (options.isCurrent?.() ?? true);
+    this._sourceSession = sourceSession;
+    this._initializing = true;
     this._hydrationSessionController.start({
       runtimeId: this.tocRuntimeId,
       ownerId: this.tocOwnerId,
       sourceId: this.sourceId,
       contentRootId: this.contentRootId,
     });
-    this._allHeadings = readTocJsonSourceScriptHeadings(source);
-    this._capabilities = normalizeTocCapabilities(parseJsonValue(this.capabilitiesJson));
-
-    // module待機中のスクロールも反映し、公開・mobile構築より先に現在地を確定する。
-    this._initializing = true;
-    this._connectTracker();
-    this._connectMobileController();
-    this._attachDesktopNavClickListener();
-    this._ensureMobilePanel();
-    this._syncMobilePanelState();
-    this._hydrationSessionController.markHydrated();
-    this._initializing = false;
-    this._publishRuntimeSnapshot();
-    return { status: 'activated' };
-  }
-
-  private _readSourceScript(): HTMLScriptElement | null {
-    if (typeof document === 'undefined') {
-      return null;
+    let completed = false;
+    try {
+      // 追跡の起動と初期予約はsource側の一度限りの責務で、presentation再試行では戻さない。
+      sourceSession.activate();
+      if (!isCurrent()) return { status: 'aborted' };
+      this._ensureMobilePanel();
+      if (!isCurrent()) return { status: 'aborted' };
+      if (this._panelRoot !== null) options.validatePanel?.(this._panelRoot);
+      if (!isCurrent()) return { status: 'aborted' };
+      this._navigationController = new TocNavigationController(this);
+      this._attachDesktopNavClickListener();
+      this._panelNav?.addEventListener('click', this._handleNavClick);
+      if (this._panelNav !== null && this._panelRoot !== null) {
+        const cleanup = sourceSession.attachSurface({ nav: this._panelNav, root: this._panelRoot });
+        if (!isCurrent()) {
+          cleanup();
+          return { status: 'aborted' };
+        }
+        this._surfaceCleanup = cleanup;
+      }
+      const sourceCleanup = sourceSession.subscribe(() => {
+        if (isCurrent()) this._publishRuntimeSnapshot();
+      });
+      if (!isCurrent()) {
+        sourceCleanup();
+        return { status: 'aborted' };
+      }
+      this._sourceCleanup = sourceCleanup;
+      this._connectMobileController(isCurrent);
+      if (!isCurrent()) return { status: 'aborted' };
+      const refreshed = sourceSession.refresh();
+      if (!isCurrent() || refreshed !== 'accepted' || sourceSession.snapshot === null)
+        return { status: 'aborted' };
+      this._hydrationSessionController.markHydrated();
+      this._ready = true;
+      this._initializing = false;
+      this._syncMobilePanelState();
+      if (this._panelOpen) this._attachPanelDocumentListeners();
+      this._publishRuntimeSnapshot();
+      if (!isCurrent()) return { status: 'aborted' };
+      completed = true;
+      return {
+        status: 'activated',
+        cleanup: () => {
+          if (this._presentationGeneration === generation) {
+            this._presentationGeneration += 1;
+            this._cleanupPresentation();
+          }
+        },
+      };
+    } finally {
+      if (this._presentationGeneration === generation) {
+        this._initializing = false;
+        if (!completed || !isCurrent()) this._cleanupPresentation();
+      }
     }
-
-    return findTocSourceScript(resolveTocSourceLookupRoot(this), this.sourceId);
   }
 
   private _resolveContentRoot(): HTMLElement | null {
     return findContentRoot(this.contentRootId);
   }
 
-  private _connectTracker(): void {
-    this._tracker?.destroy();
-
-    const hasDynamicScopes = hasDynamicTocScopeSelections(this._allHeadings);
-
-    this._tracker = new TocActiveTracker({
-      contentRootId: this.contentRootId,
-      headings: this._allHeadings,
-      capabilities: {
-        ...this._capabilities,
-        dynamicScopes: this._capabilities.dynamicScopes || hasDynamicScopes,
-      },
-      getActiveId: () => this._activeId,
-      onSnapshotChange: (headings, activeId) => {
-        this._applySnapshot(headings, activeId);
-      },
-    });
-    this._tracker.start();
-
-    queueMicrotask(() => {
-      this._tracker?.refresh();
-    });
-    requestAnimationFrame(() => {
-      this._tracker?.refresh();
-    });
-  }
-
-  private _applySnapshot(headings: Heading[], activeId: string): void {
-    this._visibleHeadings = headings;
-    this._activeId = activeId;
-    const visibleIds = new Set(headings.map((heading) => heading.id));
-    const densityTier = resolveTocDensityTier(headings);
-
-    this._syncHeadingVisibility(this._resolveDesktopNav(), visibleIds);
-    this._syncHeadingVisibility(this._panelNav, visibleIds);
-    this._syncDensityTier(this._resolveDesktopNav(), densityTier);
-    this._syncDensityTier(this._panelNav, densityTier);
-    this.closest<HTMLElement>('[data-layout-toc-root]')?.setAttribute(
-      'data-density-tier',
-      densityTier,
-    );
-    this._panelRoot?.setAttribute('data-density-tier', densityTier);
-
-    this._syncActiveDom();
-
-    this._ready = true;
-    this._publishRuntimeSnapshot();
-  }
-
-  private _applyActiveId(id: string): void {
-    this._activeId = id;
-    this._syncActiveDom();
-    this._publishRuntimeSnapshot();
-  }
-
-  private _syncActiveDom(): void {
-    this._syncActiveLinks(this._resolveDesktopNav());
-    this._syncActiveLinks(this._panelNav);
-  }
-
-  private _syncHeadingVisibility(nav: HTMLElement | null, visibleIds: ReadonlySet<string>): void {
-    syncTocHeadingVisibility(nav, visibleIds);
-  }
-
-  private _syncDensityTier(nav: HTMLElement | null, densityTier: string): void {
-    nav?.setAttribute('data-density-tier', densityTier);
-  }
-
-  private _syncActiveLinks(nav: HTMLElement | null): void {
-    syncTocActiveLinks({
-      nav,
-      ownerId: this._getRuntimeId(),
-      activeHeadingId: this._activeId.length > 0 ? this._activeId : null,
-      visibleHeadingIds: new Set(this._visibleHeadings.map((heading) => heading.id)),
-    });
-  }
-
-  private _connectMobileController(): void {
-    this._mobileCleanup?.();
-    this._mobileCleanup = layoutTocMobileController.subscribe(this._getRuntimeId(), (snapshot) => {
+  private _connectMobileController(isCurrent: () => boolean): void {
+    const cleanup = layoutTocMobileController.subscribe(this._getRuntimeId(), (snapshot) => {
+      if (!isCurrent()) return;
       const previousOpen = this._panelOpen;
       this._panelOpen = snapshot.panelOpen;
+      // 検証前のopen通知は記録のみ行い、未検証panelを開かない。
+      if (!this._ready) return;
       this._syncMobilePanelState();
-
-      if (this._panelOpen) {
-        this._attachPanelDocumentListeners();
-      } else {
+      if (this._panelOpen) this._attachPanelDocumentListeners();
+      else {
         this._detachPanelDocumentListeners();
         if (previousOpen) {
-          const returnFocusTarget = layoutTocMobileController.consumeReturnFocusTarget(
-            this._getRuntimeId(),
-          );
-          if (returnFocusTarget instanceof HTMLElement) {
-            focusWithoutScroll(returnFocusTarget);
-          }
+          const target = layoutTocMobileController.consumeReturnFocusTarget(this._getRuntimeId());
+          if (target instanceof HTMLElement) focusWithoutScroll(target);
         }
       }
     });
+    if (isCurrent()) this._mobileCleanup = cleanup;
+    else cleanup();
   }
 
   private _ensureMobilePanel(): void {
-    if (!this._capabilities.mobilePanel || typeof document === 'undefined') {
-      return;
-    }
-
+    const capabilities = normalizeTocCapabilities(parseJsonValue(this.capabilitiesJson));
+    if (!capabilities.mobilePanel) return;
     const panel = document.createElement('div');
     panel.id = this._getPanelId();
     panel.className = 'layout-toc-mobile-panel';
     panel.setAttribute('data-layout-toc-mobile-panel', '');
-    panel.setAttribute('data-density-tier', resolveTocDensityTier(this._visibleHeadings));
     panel.setAttribute('aria-hidden', 'true');
     panel.setAttribute('hidden', '');
     panel.setAttribute('inert', '');
-    panel.setAttribute(
-      'data-hydration-state',
-      this._hydrationSessionController.current?.state ?? 'unhydrated',
-    );
-
+    panel.setAttribute('data-hydration-state', 'hydrating');
     const header = document.createElement('div');
     header.className = 'layout-toc-mobile-panel__header';
-
     const closeButton = document.createElement('button');
     closeButton.type = 'button';
     closeButton.className = 'layout-toc-mobile-panel__close';
@@ -281,60 +250,58 @@ export class LayoutTocController extends HTMLElement {
     closeButton.textContent = '閉じる';
     closeButton.addEventListener('click', this._handleCloseClick);
     header.append(closeButton);
-
     const desktopNav = this._resolveDesktopNav();
     const mobileNav =
-      desktopNav instanceof HTMLElement
-        ? (desktopNav.cloneNode(true) as HTMLElement)
-        : document.createElement('nav');
-
+      desktopNav === null
+        ? document.createElement('nav')
+        : (desktopNav.cloneNode(true) as HTMLElement);
     mobileNav.classList.add('layout-toc--mobile');
     mobileNav.removeAttribute('data-layout-toc-nav');
     mobileNav.setAttribute('aria-label', '目次');
     mobileNav.setAttribute('data-layout-toc-mobile-nav', '');
     removeIdsFromTree(mobileNav);
-    mobileNav.addEventListener('click', this._handleNavClick);
-
     panel.append(header, mobileNav);
-    document.body.append(panel);
-
     this._panelRoot = panel;
     this._panelNav = mobileNav;
-    this._syncHeadingVisibility(
-      this._panelNav,
-      new Set(this._visibleHeadings.map((heading) => heading.id)),
-    );
-    this._syncActiveLinks(this._panelNav);
+    document.body.append(panel);
   }
 
   private _attachDesktopNavClickListener(): void {
-    if (this._desktopNavClickAttached) {
-      return;
-    }
-
-    const desktopNavElement = this._resolveDesktopNav();
-    if (!(desktopNavElement instanceof HTMLElement)) {
-      return;
-    }
-
-    desktopNavElement.addEventListener('click', this._handleNavClick);
-    this._desktopNavClickAttached = true;
+    const nav = this._resolveDesktopNav();
+    nav?.addEventListener('click', this._handleNavClick);
+    this._desktopNav = nav;
   }
 
-  private _removeMobilePanel(): void {
-    if (this._desktopNavClickAttached) {
-      this._resolveDesktopNav()?.removeEventListener('click', this._handleNavClick);
-      this._desktopNavClickAttached = false;
-    }
-    this._panelNav?.removeEventListener('click', this._handleNavClick);
-    this._panelRoot?.remove();
-    document.querySelectorAll(TOC_MOBILE_PANEL_SELECTOR).forEach((element) => {
-      if (element.id === this._getPanelId()) {
-        element.remove();
+  private _cleanupPresentation(): void {
+    const wasReady = this._ready;
+    const generation = this._presentationGeneration;
+    const cleanups = [this._sourceCleanup, this._surfaceCleanup, this._mobileCleanup];
+    const navigation = this._navigationController;
+    const desktopNav = this._desktopNav;
+    const panel = this._panelRoot;
+    const panelNav = this._panelNav;
+    this._sourceCleanup = this._surfaceCleanup = this._mobileCleanup = null;
+    this._navigationController = null;
+    this._desktopNav = this._panelRoot = this._panelNav = null;
+    this._ready = false;
+    this._detachPanelDocumentListeners();
+    const operations = [
+      ...cleanups,
+      () => navigation?.destroy(),
+      () => desktopNav?.removeEventListener('click', this._handleNavClick),
+      () => panelNav?.removeEventListener('click', this._handleNavClick),
+      () => panel?.remove(),
+    ];
+    for (const operation of operations) {
+      try {
+        operation?.();
+      } catch {
+        // 一つの解除失敗で残りの自分の資源を残さない。
       }
-    });
-    this._panelRoot = null;
-    this._panelNav = null;
+    }
+    if (wasReady && this._presentationGeneration === generation && this.isConnected) {
+      this._publishRuntimeSnapshot(true);
+    }
   }
 
   private _syncMobilePanelState(): void {
@@ -343,7 +310,7 @@ export class LayoutTocController extends HTMLElement {
       return;
     }
 
-    if (this._panelOpen) {
+    if (this._ready && this._panelOpen) {
       panel.setAttribute(
         'data-hydration-state',
         this._hydrationSessionController.current?.state ?? 'unhydrated',
@@ -361,16 +328,21 @@ export class LayoutTocController extends HTMLElement {
 
   private _buildRuntimeSnapshot(): LayoutTocRuntimeSnapshot {
     const hydrationState = this._hydrationSessionController.current?.state;
+    const activeId = this._sourceSession?.snapshot?.activeId ?? '';
     return {
       ready: this._ready,
-      hasVisibleHeadings: this._visibleHeadings.length > 0,
-      activeId: this._activeId.length > 0 ? this._activeId : null,
+      hasVisibleHeadings: (this._sourceSession?.snapshot?.visibleHeadings.length ?? 0) > 0,
+      activeId: activeId.length > 0 ? activeId : null,
       ...(hydrationState === undefined ? {} : { hydrationState }),
     };
   }
 
-  private _publishRuntimeSnapshot(): void {
-    if (typeof window === 'undefined' || this._initializing) {
+  private _publishRuntimeSnapshot(presentationChange = false): void {
+    if (
+      typeof window === 'undefined' ||
+      (this._initializing && !presentationChange) ||
+      (presentationChange ? !this._presentationOwnerCheck?.() : !this._sourceSession?.isCurrent())
+    ) {
       return;
     }
 
@@ -432,7 +404,7 @@ export class LayoutTocController extends HTMLElement {
   };
 
   private _handleNavClick = (event: Event): void => {
-    if (!(event instanceof MouseEvent) || this._tracker === null) {
+    if (!(event instanceof MouseEvent) || this._sourceSession === null) {
       return;
     }
 
@@ -445,10 +417,10 @@ export class LayoutTocController extends HTMLElement {
     const result = this._navigationController.handleTocLinkClick(event, {
       tocRuntimeId: this._getRuntimeId(),
       contentRoot,
-      tracker: this._tracker,
-      getActiveId: () => this._activeId,
+      tracker: this._sourceSession.tracker,
+      getActiveId: () => this._sourceSession?.snapshot?.activeId ?? '',
       applyActiveId: (id) => {
-        this._applyActiveId(id);
+        this._sourceSession?.applyActiveId(id);
       },
     });
 
@@ -506,10 +478,13 @@ if (!customElements.get('layout-toc-controller')) {
   customElements.define('layout-toc-controller', LayoutTocController);
 }
 
-export const activateLayoutTocController = (element: HTMLElement): HydrationActivationResult => {
+export const activateLayoutTocController = (
+  element: HTMLElement,
+  options?: LayoutTocActivationOptions,
+): HydrationActivationResult => {
   if (!(element instanceof LayoutTocController)) {
     return { status: 'skipped', reason: 'invalid-element' };
   }
 
-  return element.activateHydration();
+  return element.activateHydration(options);
 };

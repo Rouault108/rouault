@@ -7,7 +7,7 @@ import {
   findContentRoot,
   type TocCapabilities,
 } from './filter-visible-headings.js';
-import { readTocViewportSnapshot } from './toc-viewport-snapshot.js';
+import { readTocViewportSnapshot, type TocViewportSnapshot } from './toc-viewport-snapshot.js';
 import {
   isHeadingIntersectingViewport,
   resolveTocActivationOffset,
@@ -33,6 +33,11 @@ export interface TocActiveTrackerOptions {
   headings: Heading[];
   capabilities: TocCapabilities;
   getActiveId: () => string;
+  getVisibleHeadings?: () => readonly Heading[];
+  requestSnapshot?: (preferHash: boolean) => void;
+  coordinatePriority?: () => boolean;
+  isCurrent?: () => boolean;
+  onError?: (error: unknown) => void;
   onSnapshotChange?: (headings: Heading[], activeId: string) => void;
   onVisibleHeadingsChange?: (headings: Heading[]) => void;
   onActiveIdChange?: (id: string) => void;
@@ -67,8 +72,11 @@ const HASH_NAVIGATION_HOLD_MS = TOC_SCROLL_SETTLE_TIMEOUT_MS;
 
 const decodeHash = (hash: string): string => decodeHashFragment(hash) ?? '';
 
-const shouldPreserveHashActiveId = (activeId: string): boolean => {
-  const hash = hasCoordinatePriority() ? '' : decodeHash(window.location.hash);
+const shouldPreserveHashActiveId = (
+  activeId: string,
+  coordinatePriority = hasCoordinatePriority(),
+): boolean => {
+  const hash = coordinatePriority ? '' : decodeHash(window.location.hash);
   if (hash.length === 0 || hash !== activeId) {
     return false;
   }
@@ -103,6 +111,9 @@ const isElementRenderable = (element: HTMLElement): boolean => {
 };
 
 export class TocActiveTracker {
+  private readonly _options: TocActiveTrackerOptions;
+  private _initialStarted = false;
+  private _policyRevision = 0;
   private readonly _contentRootId: string;
   private readonly _capabilities: TocCapabilities;
   private readonly _getActiveId: () => string;
@@ -125,6 +136,7 @@ export class TocActiveTracker {
   private _suppressedHashActivePreservationId: string | null = null;
 
   constructor(options: TocActiveTrackerOptions) {
+    this._options = options;
     this._contentRootId = options.contentRootId;
     this._allHeadings = options.headings;
     this._capabilities = options.capabilities;
@@ -136,59 +148,128 @@ export class TocActiveTracker {
 
   setHeadings(headings: Heading[]): void {
     this._allHeadings = headings;
-    if (!this._started) {
+    if (!this._live()) {
       return;
     }
 
     this.refresh();
+  }
+
+  get policyRevision(): number {
+    return this._policyRevision;
+  }
+
+  private _headings(): readonly Heading[] {
+    return this._options.getVisibleHeadings?.() ?? this._visibleHeadings;
+  }
+
+  private _priority(): boolean {
+    return this._options.coordinatePriority?.() ?? hasCoordinatePriority();
+  }
+
+  private _live(): boolean {
+    return this._started && (this._options.isCurrent?.() ?? true);
+  }
+
+  private _attempt(action: () => void): void {
+    try {
+      action();
+    } catch (error) {
+      try {
+        this._options.onError?.(error);
+      } catch {
+        /* 診断の例外も初期予約を止めない。 */
+      }
+    }
+  }
+
+  // early観測は購読だけを開始し、既存activationのfollowup枠を前倒ししない。
+  observe(): void {
+    if (this._started || typeof window === 'undefined') return;
+    this._started = true;
+    try {
+      window.addEventListener('hashchange', this._onHashChange);
+      window.addEventListener('popstate', this._onPopState);
+      window.addEventListener('scroll', this._onViewportChange, { passive: true });
+      window.addEventListener('wheel', this._onUserScrollIntent, { passive: true });
+      window.addEventListener('touchmove', this._onUserScrollIntent, { passive: true });
+      window.addEventListener('keydown', this._onKeydown);
+      window.addEventListener('resize', this._onResize);
+      window.addEventListener('pageshow', this._onViewportChange);
+      document.addEventListener('ui-tab-change', this._onTabChange as EventListener);
+      document.fonts.addEventListener('loadingdone', this._onViewportChange);
+      document.fonts.addEventListener('loadingerror', this._onViewportChange);
+      this._contentRoot = findContentRoot(this._contentRootId);
+      this._contentRoot?.addEventListener('load', this._onImageLayout, true);
+      this._contentRoot?.addEventListener('error', this._onImageLayout, true);
+      this._setupMutationObserver();
+    } catch (error) {
+      this.destroy();
+      throw error;
+    }
   }
 
   start(): void {
-    if (this._started || typeof window === 'undefined') {
-      return;
-    }
-
-    this._started = true;
-    window.addEventListener('hashchange', this._onHashChange);
-    window.addEventListener('popstate', this._onPopState);
-    window.addEventListener('scroll', this._onViewportChange, { passive: true });
-    window.addEventListener('wheel', this._onUserScrollIntent, { passive: true });
-    window.addEventListener('touchmove', this._onUserScrollIntent, { passive: true });
-    window.addEventListener('keydown', this._onKeydown);
-    window.addEventListener('resize', this._onResize);
-    window.addEventListener('pageshow', this._onViewportChange);
-    document.addEventListener('ui-tab-change', this._onTabChange as EventListener);
-
-    this.refresh();
-    this._beginHashNavigationHoldFromCurrentHash('initial');
-    this._scheduleViewportSync();
-
-    this._initialRefreshTimer = window.setTimeout(() => {
-      this._initialRefreshTimer = null;
-      if (!this._started) {
-        return;
-      }
+    if (this._initialStarted || typeof window === 'undefined') return;
+    this._initialStarted = true;
+    const needsInitialHold = !this._hasSnapshot;
+    try {
+      this.observe();
       this.refresh();
-      this._scheduleViewportSync();
-    }, 0);
-
-    this._initialViewportSyncFrame = window.requestAnimationFrame(() => {
-      this._initialViewportSyncFrame = null;
-      if (!this._started) {
-        return;
-      }
-      this._syncActiveHeadingFromViewport();
-    });
-
-    this._initialHashStabilizationTimer = window.setTimeout(() => {
-      this._initialHashStabilizationTimer = null;
-      if (!this._started) {
-        return;
-      }
-
-      this._syncInitialHashActiveId();
-    }, 120);
+      if (needsInitialHold) this._beginHashNavigationHoldFromCurrentHash('initial');
+    } finally {
+      // 一枠の例外でも残る既存枠を試行する。presentation再試行では再登録しない。
+      const attempt = (action: () => void): void => {
+        if (this._live()) this._attempt(action);
+      };
+      attempt(() => {
+        this._scheduleViewportSync();
+      });
+      attempt(() => {
+        this._initialRefreshTimer = window.setTimeout(() => {
+          this._initialRefreshTimer = null;
+          if (!this._live()) return;
+          this._attempt(() => {
+            this.refresh();
+          });
+          this._attempt(() => {
+            this._scheduleViewportSync();
+          });
+        }, 0);
+      });
+      attempt(() => {
+        this._initialViewportSyncFrame = window.requestAnimationFrame(() => {
+          this._initialViewportSyncFrame = null;
+          if (this._live())
+            this._attempt(() => {
+              this._syncActiveHeadingFromViewport();
+            });
+        });
+      });
+      attempt(() => {
+        this._initialHashStabilizationTimer = window.setTimeout(() => {
+          this._initialHashStabilizationTimer = null;
+          if (this._live())
+            this._attempt(() => {
+              this._syncInitialHashActiveId();
+            });
+        }, 120);
+      });
+    }
   }
+
+  deferRefresh(): void {
+    this._scheduleRefresh();
+  }
+
+  adoptSnapshot(snapshot: TocViewportSnapshot): void {
+    if (!this._options.getVisibleHeadings) this._visibleHeadings = snapshot.visibleHeadings;
+    this._hasSnapshot = true;
+  }
+
+  private _onImageLayout = (event: Event): void => {
+    if (event.target instanceof HTMLImageElement) this._scheduleViewportSync();
+  };
 
   destroy(): void {
     if (!this._started || typeof window === 'undefined') {
@@ -204,6 +285,10 @@ export class TocActiveTracker {
     window.removeEventListener('keydown', this._onKeydown);
     window.removeEventListener('resize', this._onResize);
     window.removeEventListener('pageshow', this._onViewportChange);
+    document.fonts.removeEventListener('loadingdone', this._onViewportChange);
+    document.fonts.removeEventListener('loadingerror', this._onViewportChange);
+    this._contentRoot?.removeEventListener('load', this._onImageLayout, true);
+    this._contentRoot?.removeEventListener('error', this._onImageLayout, true);
     document.removeEventListener('ui-tab-change', this._onTabChange as EventListener);
     this._teardownMutationObserver();
     this._refreshScheduled = false;
@@ -229,6 +314,7 @@ export class TocActiveTracker {
   }
 
   beginProgrammaticNavigation(targetId: string, metrics: TocScrollMetrics): void {
+    this._policyRevision += 1;
     this._programmaticNavigation = {
       targetId,
       metrics,
@@ -239,6 +325,7 @@ export class TocActiveTracker {
   }
 
   finishProgrammaticNavigation(targetId: string): void {
+    this._policyRevision += 1;
     if (this._programmaticNavigation?.targetId !== targetId) {
       return;
     }
@@ -247,6 +334,7 @@ export class TocActiveTracker {
   }
 
   beginPostSettlementHold(targetId: string, metrics: TocScrollMetrics): void {
+    this._policyRevision += 1;
     this._programmaticNavigation = {
       targetId,
       metrics,
@@ -257,6 +345,7 @@ export class TocActiveTracker {
   }
 
   cancelProgrammaticNavigation(_reason: TocNavigationCancelReason): void {
+    this._policyRevision += 1;
     this._programmaticNavigation = null;
   }
 
@@ -265,7 +354,7 @@ export class TocActiveTracker {
     return (
       contentRoot !== null &&
       contentRoot.contains(target) &&
-      this._visibleHeadings.some((heading) => heading.id === targetId) &&
+      this._headings().some((heading) => heading.id === targetId) &&
       isElementRenderable(target) &&
       isHeadingIntersectingViewport(target)
     );
@@ -275,7 +364,7 @@ export class TocActiveTracker {
     this._contentRoot = findContentRoot(this._contentRootId);
     this._setupMutationObserver();
     this._revealCurrentHashTarget();
-    this._syncViewportSnapshot(!this._hasSnapshot);
+    this._requestSnapshot(!this._hasSnapshot);
     this._scheduleViewportSync();
   }
 
@@ -306,42 +395,49 @@ export class TocActiveTracker {
     }
   }
 
-  private _syncViewportSnapshot(preferHash = false): void {
-    const contentRoot = this._contentRoot;
-    if (contentRoot === null) {
+  private _requestSnapshot(preferHash = false): void {
+    if (!this._live()) return;
+    if (this._options.requestSnapshot) {
+      this._options.requestSnapshot(preferHash);
       return;
     }
+    const snapshot = this.readCandidate(preferHash, performance.now());
+    if (snapshot)
+      this._commitSnapshot(snapshot.visibleHeadings, snapshot.activeId, this._visibleHeadings);
+  }
+
+  // holdの取消しや時刻更新は入力側で行い、apply/verifyは同じnowから純粋に再計算する。
+  readCandidate(
+    preferHash: boolean,
+    now: number,
+    requestedId?: string,
+  ): TocViewportSnapshot | null {
+    const contentRoot = this._contentRoot ?? findContentRoot(this._contentRootId);
+    if (!contentRoot) return null;
     const snapshot = readTocViewportSnapshot(contentRoot, this._allHeadings, this._capabilities);
-    if (snapshot === null) {
-      return;
-    }
+    if (!snapshot) return null;
     const headings = snapshot.visibleHeadings;
-    // 新しい可視集合でholdを判定し、visible/currentを一括で公開する。
-    const previousHeadings = this._visibleHeadings;
-    this._visibleHeadings = headings;
     const visible = (id: string): boolean => headings.some((heading) => heading.id === id);
     const currentId = this._getActiveId();
-    const hash = hasCoordinatePriority() ? '' : decodeHash(window.location.hash);
-    const forcedId = hasCoordinatePriority() ? '' : this._resolveProgrammaticActiveId();
-    const holdId = this._resolveHashNavigationHoldActiveId();
+    const hash = this._priority() ? '' : decodeHash(window.location.hash);
+    const forcedId = this._priority() ? '' : this._resolveProgrammaticActiveId(headings);
+    const holdId = this._resolveHashNavigationHoldActiveId(now, headings);
     let activeId = snapshot.activeId;
-    if (visible(forcedId)) {
-      activeId = forcedId;
-    } else if (preferHash && visible(hash)) {
+    if (requestedId !== undefined && visible(requestedId)) activeId = requestedId;
+    else if (visible(forcedId)) activeId = forcedId;
+    else if (preferHash && this._suppressedHashActivePreservationId !== hash && visible(hash))
       activeId = hash;
-    } else if (visible(holdId)) {
-      activeId = holdId;
-    } else if (
+    else if (visible(holdId)) activeId = holdId;
+    else if (
       visible(currentId) &&
       (!this._capabilities.activeTracking || this._shouldPreserveCurrentHashActiveId())
-    ) {
+    )
       activeId = currentId;
-    }
-    this._commitSnapshot(headings, activeId, previousHeadings);
+    return { ...snapshot, activeId };
   }
 
   private _revealCurrentHashTarget(): void {
-    const hash = hasCoordinatePriority() ? '' : decodeHash(window.location.hash);
+    const hash = this._priority() ? '' : decodeHash(window.location.hash);
     const targetHeading = this._allHeadings.find((heading) => heading.id === hash);
     if (this._contentRoot && targetHeading?.scopeSelections?.length) {
       applyTocScopeSelections(this._contentRoot, targetHeading.scopeSelections, {
@@ -352,10 +448,16 @@ export class TocActiveTracker {
 
   private _syncActiveHeadingFromHash(): void {
     this._revealCurrentHashTarget();
-    this._syncViewportSnapshot(true);
+    this._requestSnapshot(true);
   }
 
   private _beginHashNavigationHoldFromCurrentHash(source: 'initial' | 'hashchange'): void {
+    this._policyRevision += 1;
+    if (
+      source === 'initial' &&
+      this._suppressedHashActivePreservationId === decodeHash(window.location.hash)
+    )
+      return;
     this._cancelHashNavigationHold();
 
     if (!this._capabilities.activeTracking) {
@@ -390,6 +492,7 @@ export class TocActiveTracker {
   }
 
   private _cancelHashNavigationHold(): void {
+    this._policyRevision += 1;
     if (this._hashNavigationHold === null) {
       return;
     }
@@ -398,33 +501,32 @@ export class TocActiveTracker {
     this._hashNavigationHold = null;
   }
 
-  private _resolveHashNavigationHoldActiveId(): string {
+  private _resolveHashNavigationHoldActiveId(now: number, headings: readonly Heading[]): string {
     const hold = this._hashNavigationHold;
     if (hold === null) {
       return '';
     }
 
-    if (performance.now() > hold.expiresAt) {
-      this._cancelHashNavigationHold();
+    if (now > hold.expiresAt) {
       return '';
     }
 
-    const target = this._resolveHoldableHashTarget();
+    const target = this._resolveHoldableHashTarget(headings);
     if (target?.id !== hold.targetId) {
-      this._cancelHashNavigationHold();
       return '';
     }
 
-    if (hold.source === 'initial' && !shouldPreserveHashActiveId(hold.targetId)) {
-      this._cancelHashNavigationHold();
+    if (hold.source === 'initial' && !shouldPreserveHashActiveId(hold.targetId, this._priority())) {
       return '';
     }
 
     return target.id;
   }
 
-  private _resolveHoldableHashTarget(): { id: string; element: HTMLElement } | null {
-    const targetId = hasCoordinatePriority() ? '' : decodeHash(window.location.hash);
+  private _resolveHoldableHashTarget(
+    headings: readonly Heading[] = this._headings(),
+  ): { id: string; element: HTMLElement } | null {
+    const targetId = this._priority() ? '' : decodeHash(window.location.hash);
     const contentRoot = this._contentRoot;
     if (targetId.length === 0 || contentRoot === null) {
       return null;
@@ -434,7 +536,7 @@ export class TocActiveTracker {
     if (
       !(target instanceof HTMLElement) ||
       !contentRoot.contains(target) ||
-      !this._visibleHeadings.some((heading) => heading.id === targetId) ||
+      !headings.some((heading) => heading.id === targetId) ||
       !isElementRenderable(target)
     ) {
       return null;
@@ -444,12 +546,12 @@ export class TocActiveTracker {
   }
 
   private _syncInitialHashActiveId(): void {
-    const hash = hasCoordinatePriority() ? '' : decodeHash(window.location.hash);
+    const hash = this._priority() ? '' : decodeHash(window.location.hash);
     if (hash.length === 0 || this._getActiveId() === hash) {
       return;
     }
 
-    if (!this._visibleHeadings.some((heading) => heading.id === hash)) {
+    if (!this._headings().some((heading) => heading.id === hash)) {
       return;
     }
 
@@ -469,7 +571,7 @@ export class TocActiveTracker {
      * scroll 後に対象見出しが viewport 内へ入っているなら、
      * 初期 current は hash を正本に戻してから通常の viewport 同期へ委ねる。
      */
-    this._syncViewportSnapshot(true);
+    this._requestSnapshot(true);
     this._scheduleViewportSync();
   }
 
@@ -480,13 +582,12 @@ export class TocActiveTracker {
     ) {
       return;
     }
-    this._syncViewportSnapshot();
+    this._requestSnapshot();
   }
 
   private _shouldPreserveCurrentHashActiveId(): boolean {
-    const hash = hasCoordinatePriority() ? '' : decodeHash(window.location.hash);
+    const hash = this._priority() ? '' : decodeHash(window.location.hash);
     if (hash.length === 0) {
-      this._suppressedHashActivePreservationId = null;
       return false;
     }
 
@@ -494,11 +595,9 @@ export class TocActiveTracker {
       if (this._suppressedHashActivePreservationId === hash) {
         return false;
       }
-
-      this._suppressedHashActivePreservationId = null;
     }
 
-    return shouldPreserveHashActiveId(this._getActiveId());
+    return shouldPreserveHashActiveId(this._getActiveId(), this._priority());
   }
 
   private _scheduleViewportSync(): void {
@@ -507,13 +606,20 @@ export class TocActiveTracker {
     }
 
     this._viewportSyncScheduled = true;
-    requestAnimationFrame(() => {
+    try {
+      requestAnimationFrame(() => {
+        this._viewportSyncScheduled = false;
+        if (!this._live()) {
+          return;
+        }
+        this._attempt(() => {
+          this._syncActiveHeadingFromViewport();
+        });
+      });
+    } catch (error) {
       this._viewportSyncScheduled = false;
-      if (!this._started) {
-        return;
-      }
-      this._syncActiveHeadingFromViewport();
-    });
+      throw error;
+    }
   }
 
   private _setupMutationObserver(): void {
@@ -566,15 +672,22 @@ export class TocActiveTracker {
     }
 
     this._refreshScheduled = true;
-    queueMicrotask(() => {
+    try {
+      queueMicrotask(() => {
+        this._refreshScheduled = false;
+
+        if (!this._live()) {
+          return;
+        }
+
+        this._attempt(() => {
+          this.refresh();
+        });
+      });
+    } catch (error) {
       this._refreshScheduled = false;
-
-      if (!this._started) {
-        return;
-      }
-
-      this.refresh();
-    });
+      throw error;
+    }
   }
 
   private _onHashChange = (): void => {
@@ -597,6 +710,7 @@ export class TocActiveTracker {
   };
 
   private _onUserScrollIntent = (): void => {
+    this._policyRevision += 1;
     let shouldSync = false;
 
     if (this._hashNavigationHold !== null) {
@@ -604,7 +718,7 @@ export class TocActiveTracker {
       shouldSync = true;
     }
 
-    const hash = hasCoordinatePriority() ? '' : decodeHash(window.location.hash);
+    const hash = this._priority() ? '' : decodeHash(window.location.hash);
     if (hash.length > 0 && this._getActiveId() === hash) {
       this._suppressedHashActivePreservationId = hash;
       shouldSync = true;
@@ -649,7 +763,7 @@ export class TocActiveTracker {
     this._scheduleViewportSync();
   };
 
-  private _resolveProgrammaticActiveId(): string {
+  private _resolveProgrammaticActiveId(headings: readonly Heading[]): string {
     const navigation = this._programmaticNavigation;
     if (navigation === null) {
       return '';
@@ -662,15 +776,16 @@ export class TocActiveTracker {
     const target = this._resolveHeadingElement(navigation.targetId);
     if (
       !(target instanceof HTMLElement) ||
-      !this.canHoldProgrammaticTarget(navigation.targetId, target)
+      !this._contentRoot?.contains(target) ||
+      !headings.some((heading) => heading.id === navigation.targetId) ||
+      !isElementRenderable(target) ||
+      !isHeadingIntersectingViewport(target)
     ) {
-      this.cancelProgrammaticNavigation('target-missing');
       return '';
     }
 
     const distance = Math.abs(readRootScrollY() - navigation.startedAtScrollY);
     if (distance > TOC_SCROLL_POSITION_TOLERANCE_PX) {
-      this.cancelProgrammaticNavigation('user-scroll');
       return '';
     }
 

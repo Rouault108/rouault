@@ -63,6 +63,20 @@ export interface AcceptedReadingPosition {
   readonly root: HTMLElement;
   readonly intent: NavigationIntent;
   readonly receipt: NavigationCommitReceipt | undefined;
+  readonly sequence?: number;
+  readonly isCurrent?: () => boolean;
+}
+export interface NativeReadingPositionObservation {
+  readonly root: HTMLElement;
+  readonly intent: NavigationIntent;
+  readonly contentEpoch: number;
+  readonly shellCommitId: number;
+  readonly entryId: string | null;
+  readonly url: string;
+  readonly sequence: number;
+  readonly policy: 'native-viewport' | 'initial-fragment';
+  readonly phase: 'classified' | 'accepted';
+  readonly isCurrent: () => boolean;
 }
 const interventionKeys = new Set([
   'ArrowDown',
@@ -89,6 +103,7 @@ export class ReadingPositionController {
   private restoring = false;
   private disposed = false;
   private nativeGeneration = 0;
+  private positionSequence = 0;
   private interruptedIntent = -1;
   private pendingIntent: number | null = null;
   private originalMode: ScrollRestoration = history.scrollRestoration;
@@ -105,6 +120,11 @@ export class ReadingPositionController {
     private readonly reportError: (error: unknown) => void,
     private readonly onPositionAccepted: (position: AcceptedReadingPosition) => void = () => {
       /* TOC連携を持たない利用者は位置復元だけを行う。 */
+    },
+    private readonly onNativeObservation: (
+      observation: NativeReadingPositionObservation,
+    ) => void = () => {
+      /* native位置の観測先を持たない利用者は既存の位置採用だけを行う。 */
     },
   ) {}
 
@@ -204,6 +224,7 @@ export class ReadingPositionController {
       () => {
         this.checkpoint();
         this.cancel();
+        this.nativeGeneration += 1;
         this.mode('auto');
       },
       { signal },
@@ -229,6 +250,16 @@ export class ReadingPositionController {
         this.renderedId = entry?.id ?? null;
         this.renderedUrl = url;
         this.restoring = false;
+        const nativeIntent =
+          context?.intent && !context.intent.signal.aborted
+            ? context.intent
+            : beginNavigationIntent('initial', url, 'native');
+        this.observeNativePosition(
+          context?.root ?? root,
+          nativeIntent,
+          'native-viewport',
+          'classified',
+        );
         if (!matches && entry && this.store.read(entry.id, url) && context?.root) {
           const intent = beginNavigationIntent('traverse', url);
           this.schedule({
@@ -240,7 +271,13 @@ export class ReadingPositionController {
             shellCommitId: readCurrentShellCommitId(),
           });
         } else {
-          this.sampleCurrent();
+          if (this.sampleCurrent())
+            this.observeNativePosition(
+              context?.root ?? root,
+              nativeIntent,
+              'native-viewport',
+              'accepted',
+            );
           this.mode(entry ? 'manual' : 'auto');
         }
       },
@@ -323,12 +360,16 @@ export class ReadingPositionController {
     if (nativeInitial || this.renderedId === null) {
       this.mode('auto');
       const intent = beginNavigationIntent('initial', readAddress(), 'native');
+      this.observeNativePosition(root, intent, 'native-viewport', 'classified');
+      const generation = ++this.nativeGeneration;
       const adopt = (): void => {
-        if (intent.signal.aborted || this.disposed) return;
+        if (intent.signal.aborted || this.disposed || generation !== this.nativeGeneration) return;
         requestAnimationFrame(() => {
-          if (intent.signal.aborted || this.disposed) return;
+          if (intent.signal.aborted || this.disposed || generation !== this.nativeGeneration)
+            return;
           this.restoring = false;
-          this.sampleCurrent();
+          if (this.sampleCurrent())
+            this.observeNativePosition(root, intent, 'native-viewport', 'accepted');
           root.dataset['readingPositionStatus'] = 'settled';
           this.mode(this.renderedId ? 'manual' : 'auto');
         });
@@ -339,6 +380,7 @@ export class ReadingPositionController {
     }
     this.mode('manual');
     const intent = beginNavigationIntent('initial', readAddress());
+    this.observeNativePosition(root, intent, 'initial-fragment', 'classified');
     if (hasInitialIntervention()) this.interruptedIntent = intent.intentId;
     this.schedule({
       intent,
@@ -450,10 +492,13 @@ export class ReadingPositionController {
     this.renderedUrl = readAddress();
     this.mode('auto');
     const intent = readContentContext()?.intent;
+    const root = readContentContext()?.root;
+    if (intent && root) this.observeNativePosition(root, intent, 'native-viewport', 'classified');
     const generation = ++this.nativeGeneration;
     requestAnimationFrame(() => {
       if (this.disposed || generation !== this.nativeGeneration || intent?.signal.aborted) return;
-      this.sampleCurrent();
+      if (this.sampleCurrent() && intent && root)
+        this.observeNativePosition(root, intent, 'native-viewport', 'accepted');
       this.mode(this.renderedId ? 'manual' : 'auto');
     });
   }
@@ -761,7 +806,84 @@ export class ReadingPositionController {
   }
   private positionAccepted(job: ScrollJob): void {
     if (!this.current(job)) return;
-    this.onPositionAccepted({ root: job.root, intent: job.intent, receipt: job.receipt });
+    if (!job.receipt && job.intent.cause === 'initial')
+      this.observeNativePosition(job.root, job.intent, 'initial-fragment', 'accepted');
+    else this.positionSequence += 1;
+    const sequence = this.positionSequence;
+    const isCurrent = (): boolean => sequence === this.positionSequence && this.current(job);
+    this.notifyPositionObserver(() => {
+      this.onPositionAccepted({
+        root: job.root,
+        intent: job.intent,
+        receipt: job.receipt,
+        sequence,
+        isCurrent,
+      });
+    });
+  }
+  private observeNativePosition(
+    root: HTMLElement,
+    intent: NavigationIntent,
+    policy: NativeReadingPositionObservation['policy'],
+    phase: NativeReadingPositionObservation['phase'],
+  ): void {
+    const context = readContentContext();
+    if (context?.root !== root || context.mutation || context.recoveryRequired) return;
+    const contentEpoch = context.contentEpoch;
+    const shellCommitId = readCurrentShellCommitId();
+    const entryId = readHistoryEntry()?.id ?? null;
+    const url = readAddress();
+    const sequence = ++this.positionSequence;
+    const isCurrent = (): boolean => {
+      const current = readContentContext();
+      return (
+        !this.disposed &&
+        sequence === this.positionSequence &&
+        !intent.signal.aborted &&
+        root.isConnected &&
+        root.ownerDocument === document &&
+        document.getElementById('main-content') === root &&
+        current?.root === root &&
+        current.contentEpoch === contentEpoch &&
+        !current.mutation &&
+        !current.recoveryRequired &&
+        current.intent?.intentId === intent.intentId &&
+        readCurrentShellCommitId() === shellCommitId &&
+        readAddress() === url &&
+        (readHistoryEntry()?.id ?? null) === entryId &&
+        current.displayedBinding.entryId === entryId &&
+        current.displayedBinding.url === url &&
+        current.addressBinding.entryId === entryId &&
+        current.addressBinding.url === url
+      );
+    };
+    this.notifyPositionObserver(() => {
+      this.onNativeObservation({
+        root,
+        intent,
+        contentEpoch,
+        shellCommitId,
+        entryId,
+        url,
+        sequence,
+        policy,
+        phase,
+        isCurrent,
+      });
+    });
+    // TOCの検証・巻戻しで実位置が変わっても、nativeへ独自補正せず実座標を採り直す。
+    if (phase === 'accepted' && isCurrent()) this.sampleCurrent();
+  }
+  private notifyPositionObserver(notify: () => void): void {
+    try {
+      notify();
+    } catch (error) {
+      try {
+        this.reportError(error);
+      } catch {
+        /* 観測先と診断先の例外を位置jobへ戻さない。 */
+      }
+    }
   }
   private cancelPresentation(reason: string): void {
     try {
@@ -780,7 +902,7 @@ export class ReadingPositionController {
       y: Math.max(0, root.scrollHeight - root.clientHeight),
     };
   }
-  private sampleCurrent(capture = false): void {
+  private sampleCurrent(capture = false): boolean {
     const context = readContentContext();
     if (
       this.restoring ||
@@ -790,7 +912,7 @@ export class ReadingPositionController {
       this.renderedUrl !== readAddress() ||
       this.renderedId !== (readHistoryEntry()?.id ?? null)
     )
-      return;
+      return false;
     this.sample = {
       version: 1,
       url: this.renderedUrl,
@@ -849,6 +971,7 @@ export class ReadingPositionController {
         }, 120);
       }
     }
+    return true;
   }
   private rememberGeometry(entryId: string, checkpoint: HistoryGeometryCheckpoint): void {
     this.geometry.delete(entryId);
@@ -911,6 +1034,7 @@ export class ReadingPositionController {
     this.sampleCurrent();
   }
   private cancel(): void {
+    this.positionSequence += 1;
     if (this.geometryTimer !== null) clearTimeout(this.geometryTimer);
     this.geometryTimer = null;
     this.cancelPresentation('position-job-cancelled');
