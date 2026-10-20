@@ -411,9 +411,29 @@ const scrollTocToEnd = async (
       element.scrollTop = element.scrollHeight;
     });
   else {
-    const box = await root.boundingBox();
-    if (!box) throw new Error('TOC has no scrollport rectangle');
-    await page.mouse.move(box.x + box.width / 2, box.y + Math.min(80, box.height / 2));
+    const point = await root.evaluate((element) => {
+      const rect = element.getBoundingClientRect();
+      let left = Math.max(0, rect.left + element.clientLeft);
+      let right = Math.min(innerWidth, rect.left + element.clientLeft + element.clientWidth);
+      let top = Math.max(0, rect.top + element.clientTop);
+      let bottom = Math.min(innerHeight, rect.top + element.clientTop + element.clientHeight);
+      for (let ancestor = element.parentElement; ancestor; ancestor = ancestor.parentElement) {
+        const style = getComputedStyle(ancestor);
+        const bounds = ancestor.getBoundingClientRect();
+        if (/^(auto|scroll|hidden|clip)$/.test(style.overflowX)) {
+          left = Math.max(left, bounds.left + ancestor.clientLeft);
+          right = Math.min(right, bounds.left + ancestor.clientLeft + ancestor.clientWidth);
+        }
+        if (/^(auto|scroll|hidden|clip)$/.test(style.overflowY)) {
+          top = Math.max(top, bounds.top + ancestor.clientTop);
+          bottom = Math.min(bottom, bounds.top + ancestor.clientTop + ancestor.clientHeight);
+        }
+      }
+      if (right - left < 8 || bottom - top < 8)
+        throw new Error('TOC scrollport has no visible wheel coordinate');
+      return { x: left + 4, y: top + Math.min(80, (bottom - top) / 2) };
+    });
+    await page.mouse.move(point.x, point.y);
     await page.mouse.wheel(0, (await tocMetrics(root)).scrollHeight);
   }
   await tocStable(root, true);
@@ -435,12 +455,10 @@ for (const surface of ['desktop', 'mobile'] as const) {
         forcedColors: matchMedia('(forced-colors: active)').matches,
         userAgent: navigator.userAgent,
       }));
-      test
-        .info()
-        .annotations.push({
-          type: 'scrollbar-environment',
-          description: JSON.stringify({ browserName, surface, environment, ...support }),
-        });
+      test.info().annotations.push({
+        type: 'scrollbar-environment',
+        description: JSON.stringify({ browserName, surface, environment, ...support }),
+      });
       for (const state of ['normal', 'hover', 'focus-within'] as const) {
         const root = await openTocScrollport(page, surface);
         await page.mouse.move(0, 0);
@@ -461,12 +479,10 @@ for (const surface of ['desktop', 'mobile'] as const) {
           surface === 'mobile' ? [root, page.locator('[data-layout-toc-mobile-nav]')] : [root];
         for (const [index, scrollport] of scrollports.entries()) {
           const metrics = await tocMetrics(scrollport);
-          await test
-            .info()
-            .attach(`${surface}-${environment}-${state}-${index}`, {
-              body: JSON.stringify(metrics, null, 2),
-              contentType: 'application/json',
-            });
+          await test.info().attach(`${surface}-${environment}-${state}-${index}`, {
+            body: JSON.stringify(metrics, null, 2),
+            contentType: 'application/json',
+          });
           if (support.width) expect(metrics.scrollbarWidth).toBe('thin');
           if (support.color) expect(metrics.scrollbarColor).toBe('auto');
           expect(metrics.overflowY).toBe('auto');
@@ -506,12 +522,10 @@ for (const surface of ['desktop', 'mobile'] as const) {
           await tocStable(root, true);
         }
       }
-      await test
-        .info()
-        .attach('endpoint', {
-          body: JSON.stringify(await tocMetrics(root)),
-          contentType: 'application/json',
-        });
+      await test.info().attach('endpoint', {
+        body: JSON.stringify(await tocMetrics(root)),
+        contentType: 'application/json',
+      });
       await expectTocSurface(target);
       await target.click();
       await expect
@@ -533,12 +547,10 @@ for (const surface of ['desktop', 'mobile'] as const) {
       surface === 'mobile' ? [root, page.locator('[data-layout-toc-mobile-nav]')] : [root];
     for (const [index, scrollport] of scrollports.entries()) {
       const metrics = await tocMetrics(scrollport);
-      await test
-        .info()
-        .attach(`short-${index}`, {
-          body: JSON.stringify(metrics),
-          contentType: 'application/json',
-        });
+      await test.info().attach(`short-${index}`, {
+        body: JSON.stringify(metrics),
+        contentType: 'application/json',
+      });
       expect(metrics.scrollHeight).toBeLessThanOrEqual(metrics.clientHeight + 1);
     }
   });

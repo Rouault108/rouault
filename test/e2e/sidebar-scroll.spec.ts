@@ -34,8 +34,8 @@ const sidebarViewports = {
 } as const;
 type SidebarMode = keyof typeof sidebarViewports;
 
-const openSidebar = async (page: Page, mode: SidebarMode): Promise<Locator> => {
-  await page.setViewportSize(sidebarViewports[mode]);
+const openSidebar = async (page: Page, mode: SidebarMode, height = 480): Promise<Locator> => {
+  await page.setViewportSize({ ...sidebarViewports[mode], height });
   await page.goto(sourceEntryPath);
   const root = page.locator(sidebarSelector);
   await expect(page.locator('[data-sidebar-enhancement-state]')).toHaveAttribute(
@@ -44,7 +44,9 @@ const openSidebar = async (page: Page, mode: SidebarMode): Promise<Locator> => {
   );
   await expect(root).toHaveAttribute('data-mode', mode);
   if (mode === 'overlay') {
-    await page.locator('[data-layout-sidebar-toggle]').click();
+    if ((await root.getAttribute('data-state')) !== 'expanded') {
+      await page.locator('[data-layout-sidebar-toggle]').click();
+    }
     await expect(root).toHaveAttribute('data-state', 'expanded');
   }
   return root;
@@ -282,8 +284,7 @@ test('sidebar keyboard movement / roving / details / focus return stay independe
 });
 
 test('short fixed sidebar remains nonoverflowing', async ({ page }) => {
-  const root = await openSidebar(page, 'fixed');
-  await page.setViewportSize({ width: 1280, height: 900 });
+  const root = await openSidebar(page, 'fixed', 900);
   await sidebarStable(root);
   const metrics = await sidebarMetrics(root);
   await test
@@ -306,8 +307,7 @@ for (const mode of ['fixed', 'overlay'] as const) {
 }
 
 test('short overlay sidebar remains nonoverflowing', async ({ page }) => {
-  const root = await openSidebar(page, 'overlay');
-  await page.setViewportSize({ width: 768, height: 900 });
+  const root = await openSidebar(page, 'overlay', 900);
   await sidebarStable(root);
   const metrics = await sidebarMetrics(root);
   await test
