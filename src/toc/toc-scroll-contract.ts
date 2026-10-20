@@ -3,6 +3,9 @@ import {
   readMaxRootScrollY,
   readRootScrollY,
 } from '../router/root-scroll.js';
+import { readHeadingScrollOffset } from '../navigation/heading-scroll-offset.js';
+
+export { readComputedPx } from '../navigation/heading-scroll-offset.js';
 
 export interface TocScrollMetrics {
   idealTargetY: number;
@@ -20,25 +23,15 @@ export const TOC_SCROLL_POSITION_TOLERANCE_PX = 1.5;
 export const TOC_SCROLL_SETTLE_STABLE_FRAMES = 2;
 export const TOC_SCROLL_SETTLE_TIMEOUT_MS = 800;
 
-export const readComputedPx = (value: string): number => {
-  const parsed = Number.parseFloat(value);
-  return Number.isFinite(parsed) ? Math.max(0, parsed) : 0;
-};
-
-export const resolveTocActivationOffset = (target: HTMLElement): number => {
-  const scrollPaddingTop = readComputedPx(
-    getComputedStyle(document.documentElement).scrollPaddingTop,
-  );
-  const scrollMarginTop = readComputedPx(getComputedStyle(target).scrollMarginTop);
-  return scrollPaddingTop + scrollMarginTop;
-};
+export const resolveTocActivationOffset = (target: HTMLElement): number =>
+  readHeadingScrollOffset(target).offset;
 
 export const resolveTocScrollMetrics = (target: HTMLElement): TocScrollMetrics => {
-  const scrollPaddingTop = readComputedPx(
-    getComputedStyle(document.documentElement).scrollPaddingTop,
-  );
-  const scrollMarginTop = readComputedPx(getComputedStyle(target).scrollMarginTop);
-  const activationOffset = scrollPaddingTop + scrollMarginTop;
+  const {
+    scrollPaddingTop,
+    scrollMarginTop,
+    offset: activationOffset,
+  } = readHeadingScrollOffset(target);
   const currentScrollY = readRootScrollY();
   const maxScrollY = readMaxRootScrollY();
   const idealTargetY = currentScrollY + target.getBoundingClientRect().top - activationOffset;

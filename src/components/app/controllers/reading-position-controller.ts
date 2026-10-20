@@ -21,6 +21,7 @@ import {
   type ReadingPosition,
 } from '../navigation/reading-position-store.js';
 import { readDecodedHash } from '../navigation/primary-tab-url-state.js';
+import { readHeadingScrollOffset } from '../../../navigation/heading-scroll-offset.js';
 import { readCurrentShellCommitId } from '../shell/app-shell-lifecycle.js';
 import { readContentTransitionShell } from '../../../router/content-transition-shell.js';
 import type { AppShellValidatedDetail } from '../shell/app-shell-events.js';
@@ -597,17 +598,12 @@ export class ReadingPositionController {
           const element = hash ? document.getElementById(hash) : null;
           if (element instanceof HTMLElement && element.getClientRects().length > 0) {
             element.setAttribute('data-router-hash-target', 'true');
-            const style = getComputedStyle(element);
+            const { offset } = readHeadingScrollOffset(element);
             target = {
               version: 1,
               url: job.url,
               x: 0,
-              y: Math.max(
-                0,
-                element.getBoundingClientRect().top +
-                  window.scrollY -
-                  (parseFloat(style.scrollMarginTop) || 0),
-              ),
+              y: Math.max(0, element.getBoundingClientRect().top + window.scrollY - offset),
             };
           } else if (job.stateOnly && job.intent.cause !== 'traverse') return;
           else target = { version: 1, url: job.url, x: 0, y: 0 };

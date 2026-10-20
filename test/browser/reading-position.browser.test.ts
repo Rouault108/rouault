@@ -1,4 +1,4 @@
-import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { page } from 'vitest/browser';
 import { fixture, fixtureAbortController } from './harness/browser-fixture.js';
 import { activateTabs } from '../../src/client/post-hydrate/tabs-enhancer.js';
@@ -2103,5 +2103,114 @@ describe('同期受理した履歴本文のraw XY先行適用', () => {
       expect(scroll).toHaveBeenCalledTimes(1);
     }
     expect(errors).not.toHaveBeenCalled();
+  });
+});
+
+describe('明示hashの停止位置とCSS offset', () => {
+  let priorPadding = '';
+  beforeEach(() => {
+    priorPadding = document.documentElement.style.scrollPaddingTop;
+    document.documentElement.style.scrollPaddingTop = '48px';
+  });
+  afterEach(() => {
+    document.documentElement.style.scrollPaddingTop = priorPadding;
+  });
+  const startHash = async (position: 'middle' | 'start' | 'end', pending = false) => {
+    const epoch = await setup();
+    if (!root) throw new Error('root');
+    const target = root.querySelector<HTMLElement>('#reading-heading');
+    if (!target) throw new Error('heading');
+    target.style.scrollMarginTop = '32px';
+    target.style.marginTop =
+      position === 'start' ? '0px' : position === 'end' ? '5900px' : '1200px';
+    const url = `${originalUrl.split('#')[0]}#reading-heading`;
+    history.replaceState(baselineState, '', url);
+    adoptContentBinding(url);
+    if (pending)
+      setContentReadiness({
+        contentEpoch: epoch,
+        root,
+        shellCommitId: 0,
+        status: 'pending',
+        started: true,
+      });
+    reader = new ReadingPositionController((error) => {
+      throw error;
+    });
+    reader.start(root);
+    return { content: root, target, epoch, url };
+  };
+
+  it.each(['middle', 'start', 'end'] as const)(
+    '初期hashの%sはroot paddingとheading marginの和を使い到達範囲へclampする',
+    async (position) => {
+      const { content, target } = await startHash(position);
+      await expect.poll(() => content.dataset['readingPositionStatus']).toBe('settled');
+      const offset =
+        Number.parseFloat(getComputedStyle(document.documentElement).scrollPaddingTop) +
+        Number.parseFloat(getComputedStyle(target).scrollMarginTop);
+      const top = target.getBoundingClientRect().top;
+      const ideal = scrollY + top - offset;
+      const scrolling = document.scrollingElement;
+      if (!scrolling) throw new Error('scrolling root');
+      const max = Math.max(0, scrolling.scrollHeight - scrolling.clientHeight);
+      expect(offset).toBe(80);
+      expect(Math.abs(scrollY - Math.min(max, Math.max(0, ideal)))).toBeLessThanOrEqual(2);
+      if (position === 'middle') expect(Math.abs(top - offset)).toBeLessThanOrEqual(2);
+      if (position === 'start') expect(ideal).toBeLessThan(0);
+      if (position === 'end') expect(ideal).toBeGreaterThan(max);
+    },
+  );
+
+  it('hashの待機中に本人が介入したらoffset位置へ引き戻さない', async () => {
+    const { content, epoch } = await startHash('middle', true);
+    window.dispatchEvent(new WheelEvent('wheel', { deltaY: 100 }));
+    window.scrollTo({ top: 650, behavior: 'instant' });
+    setContentReadiness({
+      contentEpoch: epoch,
+      root: content,
+      shellCommitId: 0,
+      status: 'settled',
+      started: true,
+    });
+    for (let i = 0; i < 4; i++) await frame();
+    expect(content.dataset['readingPositionStatus']).toBe('cancelled');
+    expect(Math.abs(scrollY - 650)).toBeLessThanOrEqual(2);
+  });
+
+  it('hashを持つ履歴entryの既知の保存XYはoffsetで置換しない', async () => {
+    const { content, url } = await startHash('middle');
+    if (!reader) throw new Error('reader');
+    await expect.poll(() => content.dataset['readingPositionStatus']).toBe('settled');
+    window.scrollTo({ top: 650, behavior: 'instant' });
+    await frame();
+    const state: unknown = history.state;
+    const away = '/notes/heading-offset-away';
+    const next = beginNavigationIntent('navigation', away);
+    writeHistoryEntry({ mode: 'push', owner: 'router', url: away });
+    adoptContentBinding(away);
+    reader.schedule({
+      intent: next,
+      root: content,
+      url: away,
+      stateOnly: false,
+      error: false,
+      shellCommitId: 0,
+    });
+    await expect.poll(() => content.dataset['readingPositionStatus']).toBe('settled');
+    expect(scrollY).toBe(0);
+    history.replaceState(state, '', url);
+    const back = beginNavigationIntent('traverse', url);
+    adoptContentBinding(url);
+    reader.schedule({
+      intent: back,
+      root: content,
+      url,
+      stateOnly: true,
+      error: false,
+      shellCommitId: 0,
+    });
+    await expect.poll(() => content.dataset['readingPositionStatus']).toBe('settled');
+    expect(Math.abs(scrollY - 650)).toBeLessThanOrEqual(2);
   });
 });

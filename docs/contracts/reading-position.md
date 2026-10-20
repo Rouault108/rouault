@@ -18,6 +18,8 @@ native fragmentはbrowser生成stateを採用し、離脱元stateを複製しな
 
 passive scroll、History API直前、最初の本文mutation直前、pagehideで現在の読書位置を採る。popstateでは離脱entryをcontrollerが保持し、その直前sampleを使う。未表示の中間entryへ旧文書の座標を書かない。traverse候補は受理時に凍結し、clampや初期tabsの正当な同entry normalizationでは座標を置換しない。
 
+明示見出しの目標は、見出しのdocument座標から同documentのroot scroll-padding-topと見出しscroll-margin-topのcomputed値の和を引き、rootの到達範囲へclampする。ReadingとTOCは小さなCSS読取primitiveを共有し、TOC側の遅延再scrollで直アクセスを補正しない。保存XYの候補を持つtraverseとnative採用のreload/history初期表示は、このhash目標で上書きしない。
+
 新規link/APIはhash/topへ進み、以前の同URLの座標を流用しない。traverseは保存座標をhashより優先する。管理entryでrecord欠落/不正/URL不一致ならhash、なければ先頭。state-onlyの新規hash不存在は現在位置を保持する。error/not-foundは先頭と既存a11y処理を用い、成功文書のrecordをerror座標で消さない。
 
 ## Epoch, readiness and cancellation

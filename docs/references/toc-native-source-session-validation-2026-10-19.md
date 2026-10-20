@@ -80,3 +80,26 @@ entry JSは264,058→265,817 raw bytes（+1,759）。clientとrouter hostから�
 直前の幾何照合が実textと使用字体を検証済みの経路だけ、最終owner/anchor/XY確認後にもfontsがloadedなら同epochの準備を充足する。新しいcache/timerは追加しない。証明不成立とnativeで連結textの準備が残り、verifiedで重複checkが消えることを実呼出しで確認した。Reading対象4件・native 7件・geometry 114件がChromiumで成功し、app/node両typecheckとlintも成功した。独立レビューに未解決P1/P2はない。
 
 build7の最終production回帰は初回frame/native 21成功・BFCache不成立1 skip、tabs 6成功、full Chromiumで実BFCache 1成功だった。app typecheck、対象Prettier、文書spacing policy 4件も成功した。build7は実入力6件すべて成功し、main/header/sidebar earlyのdownは16.7/16.7/33.3msだった。通知→downにlongtaskの重なりはなかった。別profileのmain earlyも成功した。各1runの小標本かつprofile自体の費用もあるため、全体の高速化・入力無回帰・WebKitの解決をこの結果だけから主張しない。最新SHAの既存CI結果で確認する。過去失敗のartifact ZIP取得はredirect先でHTTP 403だったため、取得できたdecoded job logと新しい診断を用いた。証明書回避は行っていない。
+
+## 2026-10-20: 直アクセスhashの停止位置（①のみ）
+
+ユーザーのWindows観察では`/notes/e2e/layout-rich/#11-目的`が固定headerの下へ隠れ、TOCクリックでは見える位置へ止まった。修正対象はこの①のみ。②のhash解除Backは移動前viewportが未確定のため診断・変更せず、③のnative sidebar summaryのreloadちらつきも変更していない。別件scrollbarの`36fbe519`は取り込まず、remoteと一致した検証ブランチ`6292e864`を基点にした。
+
+修正前のこのexecutorで、fresh directはheading上端31.609 CSS px、header下端49px、root padding 48px、heading margin 32pxだった。`window.scrollTo`のstackはReadingの`restore`を示し、`data-router-hash-target=true`とReading settledを確認した。TOC currentは`11-目的`で正しかった。TOCクリックと通常の同文書hashリンクは79.609pxへ止まるため、差はheader用paddingと同じ48pxだった。末尾の`3-まとめ`は3経路とも最大Y=733へclampした。[比較JSON](toc-native-source-session-hash-offset-2026-10-20.json)に実測・経路・試験前提を保存した。ユーザーのLibrary画像をこのexecutorのWindows実測証拠として扱ってはいない。修正後の同じChromium対照ではfresh directの追加scrollTo書込が0件で、正しい79.609pxとcurrentを保持した。
+
+ReadingとTOCが使うCSS読取だけを`src/navigation/heading-scroll-offset.ts`へ共通化した。Readingのhash目標はdocument座標からroot paddingとheading marginの和を引き、既存rangeへclampする。既存TOCの公開parser入口はre-exportで維持した。TOCから後追いscrollは追加せず、CSS、timer、安定化loop、保存candidate優先、native reload/history採用、本人取消の規則は変更していない。
+
+| `#11-目的`の入口               | 修正前heading上端 | 修正後heading上端 | CSS offset |
+| ------------------------------ | ----------------: | ----------------: | ---------: |
+| fresh direct                   |          31.609px |          79.609px |       80px |
+| TOCクリック                    |          79.609px |          79.609px |       80px |
+| 通常の同文書hashリンク         |          79.609px |          79.609px |       80px |
+| 別文書からの通常SPA hashリンク |            未採取 |          79.609px |       80px |
+
+新規E2Eはmotion両設定で4入口と末尾clampを独立に確認する。期待値はproduction helperを呼ばずcomputed CSSと実rect/rangeから算出し、非clampではrect.topとpadding+margin、末尾では実Y=maxYとclamp後rectをassertする。到着後のdesktop/mobile current、aria-current、data-active、is-activeと位置の維持も確認する。末尾では本人が指定したhash holdを単純な上端viewport oracleで否定しない。
+
+修正前の確定した再現試験はBrowser 1失敗・対照4成功（48px差）、E2Eはfresh directのmotion別2失敗・対照10成功だった。試験作成中のclamp oracle、state-onlyの前提、private method呼出、SPA起点のmobile TOC待機は修正し、製品不具合と区別して比較JSONへ記録した。修正後はNode 1,251成功/既存skip 1、SSR 610成功、Chromium Browser 1,044成功、対象production E2E 19成功（新規16・既存3）。app/node typecheck、note link、production/search import boundaryも成功した。続いて保存XY、reload/native対照、取消、短文化clampと既存の初回TOC表示のproduction回帰は33成功・BFCache不成立1 skipだった。
+
+標準`pnpm check`は既存gitignoredの`tmp/onboarding-browser.config.ts`、`tmp/onboarding-dev.config.ts`、`tmp/onboarding-webkit.config.ts`のparser-project lintエラーで停止した。これらを削除・変更せず、当該artifactを除くlintと後続集約検証を実行した。local Firefoxはpage作成時のuid_map EROFS/子process SIGSEGV、WebKitは6共有library不足で起動不可だった。正式試験の成功にもskipにも数えず、network install、host依存追加、証明書・sandbox回避を行わない。最終SHAのclean checkoutと3 engineは既存CIを正本とする。
+
+Windows実機は未確認であり、ユーザーの現行runが合格したという記録ではない。新しいtabで検証previewのfresh hash URLを開き、通常URLからTOCクリック・通常hashリンクとの停止線を比較する。末尾は80px固定整列を要求せず、到達可能な最大Yへ止まることを確認する。reloadは保存/native viewportを尊重する既存動作として別に確認し、②・③の修正完了と解釈しない。上の10/19性能・bundle値は当時のbuildの記録であり、今回のoffset修正後の再測定値として扱わない。

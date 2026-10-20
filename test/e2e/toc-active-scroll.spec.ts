@@ -273,3 +273,142 @@ test.describe('TOC active state stays synchronized with rendered contract', () =
     await expectTocSynchronizedToViewport(page);
   });
 });
+
+const readHashLanding = async (page: Page, headingId: string) =>
+  page.evaluate((id) => {
+    const target = document.getElementById(id);
+    const root = document.scrollingElement;
+    if (!(target instanceof HTMLElement) || !(root instanceof HTMLElement))
+      throw new Error('hash landing fixtureがありません');
+    const top = target.getBoundingClientRect().top;
+    const scrollPaddingTop = Number.parseFloat(
+      getComputedStyle(document.documentElement).scrollPaddingTop,
+    );
+    const scrollMarginTop = Number.parseFloat(getComputedStyle(target).scrollMarginTop);
+    const offset = scrollPaddingTop + scrollMarginTop;
+    const absoluteTop = scrollY + top;
+    const maxY = Math.max(0, root.scrollHeight - root.clientHeight);
+    const idealY = absoluteTop - offset;
+    const link = document.querySelector(
+      `[data-layout-toc-nav] [data-toc-link][data-heading-id="${CSS.escape(id)}"]`,
+    );
+    return {
+      top,
+      y: scrollY,
+      scrollPaddingTop,
+      scrollMarginTop,
+      offset,
+      absoluteTop,
+      maxY,
+      idealY,
+      expectedY: Math.min(maxY, Math.max(0, idealY)),
+      headerBottom: document.querySelector('[data-layout-header]')?.getBoundingClientRect().bottom,
+      readingHashTarget: target.getAttribute('data-router-hash-target'),
+      current: link?.getAttribute('aria-current'),
+      active: link?.getAttribute('data-active'),
+      activeClass: link?.classList.contains('is-active'),
+    };
+  }, headingId);
+
+test.describe('hash見出しの停止位置は入口によらず共通', () => {
+  for (const reducedMotion of ['reduce', 'no-preference'] as const) {
+    test.describe(reducedMotion, () => {
+      test.use({ reducedMotion });
+      for (const entry of ['direct', 'toc', 'hash-link', 'router-link'] as const) {
+        for (const [id, clamped] of [
+          ['11-目的', false],
+          ['3-まとめ', true],
+        ] as const) {
+          test(`${entry}の${id}はpaddingとmarginへ整列し末尾をclampする`, async ({
+            page,
+          }, info) => {
+            await page.goto(
+              entry === 'direct'
+                ? `${layoutRichPath}#${encodeURIComponent(id)}`
+                : entry === 'router-link'
+                  ? sourcePath
+                  : layoutRichPath,
+            );
+            await expect(page.locator('#main-content')).toHaveAttribute(
+              'data-reading-position-status',
+              'settled',
+            );
+            await page.evaluate(() => document.fonts.ready);
+            if (entry === 'router-link') await waitForRouterDocumentHostReady(page);
+            else await waitForTocReady(page);
+            if (entry === 'toc')
+              await page
+                .locator(`[data-layout-toc-nav] [data-toc-link][data-heading-id="${id}"]`)
+                .click();
+            if (entry === 'hash-link')
+              await page.locator(`[id="${id}"] [data-heading-permalink]`).click();
+            if (entry === 'router-link') {
+              await page.evaluate(
+                (url) => {
+                  const anchor = document.createElement('a');
+                  anchor.id = 'ordinary-heading-document-link';
+                  anchor.href = url;
+                  anchor.textContent = '見出しへの通常リンク';
+                  anchor.dataset['linkKind'] = 'internal-document';
+                  anchor.dataset['linkSurface'] = 'prose';
+                  anchor.style.cssText = 'position:fixed;bottom:10px;left:10px;z-index:100';
+                  document.body.append(anchor);
+                },
+                `${layoutRichSpaPath}#${encodeURIComponent(id)}`,
+              );
+              await page.locator('#ordinary-heading-document-link').click();
+            }
+            await expect
+              .poll(() => new URL(page.url()).pathname.replace(/\/+$/u, ''))
+              .toBe(layoutRichSpaPath);
+            await expect.poll(() => new URL(page.url()).hash).toBe(`#${encodeURIComponent(id)}`);
+            await expect(page.locator('#main-content')).toHaveAttribute(
+              'data-reading-position-status',
+              'settled',
+            );
+            // TOCのsmooth scrollも実到達を待つ。期待座標はproduction helperを呼ばずCSSから読む。
+            await expect
+              .poll(async () => {
+                const landing = await readHashLanding(page, id);
+                return Math.abs(landing.y - landing.expectedY);
+              })
+              .toBeLessThanOrEqual(2);
+            const landing = await readHashLanding(page, id);
+            await info.attach(`hash-landing-${entry}-${id}`, {
+              body: JSON.stringify(landing, null, 2),
+              contentType: 'application/json',
+            });
+            expect(landing.scrollPaddingTop).toBeGreaterThan(0);
+            expect(landing.scrollMarginTop).toBeGreaterThan(0);
+            if (entry === 'direct' || entry === 'router-link')
+              expect(landing.readingHashTarget).toBe('true');
+            if (clamped) {
+              expect(landing.idealY).toBeGreaterThan(landing.maxY);
+              expect(Math.abs(landing.y - landing.maxY)).toBeLessThanOrEqual(2);
+              expect(
+                Math.abs(landing.top - (landing.absoluteTop - landing.maxY)),
+              ).toBeLessThanOrEqual(2);
+            } else {
+              expect(landing.idealY).toBeGreaterThan(0);
+              expect(landing.idealY).toBeLessThan(landing.maxY);
+              expect(Math.abs(landing.top - landing.offset)).toBeLessThanOrEqual(2);
+              expect(landing.top).toBeGreaterThan(landing.headerBottom ?? Infinity);
+            }
+            // 末尾clamp時も本人が指定した見出しのholdを保つ。単純な上端oracleへ置き換えない。
+            await expectTocSynchronized(page, id, id === '11-目的' ? '1.1 目的' : '3. まとめ');
+            const after = await readHashLanding(page, id);
+            expect(after.current).toBe('location');
+            expect(after.active).toBe('true');
+            expect(after.activeClass).toBe(true);
+            expect(Math.abs(after.y - landing.y)).toBeLessThanOrEqual(2);
+            expect(Math.abs(after.top - landing.top)).toBeLessThanOrEqual(2);
+            console.log(
+              'hash-heading-offset',
+              JSON.stringify({ entry, id, reducedMotion, landing: after }),
+            );
+          });
+        }
+      }
+    });
+  }
+});

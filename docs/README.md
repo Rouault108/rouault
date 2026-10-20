@@ -71,6 +71,7 @@ Design System patternはUIの見え方と配置判断を扱う。Router、search
 ## Reference
 
 - [TOC native source sessionの検証記録](references/toc-native-source-session-validation-2026-10-19.md)
+- [TOC native hash停止位置の比較](references/toc-native-source-session-hash-offset-2026-10-20.json)
 - [TOC native source sessionの計測](references/toc-native-source-session-metrics-2026-10-19.json)
 - [TOC native source sessionのbundle比較](references/toc-native-source-session-bundle-2026-10-19.json)
 - [TOC初回現在地同期の検証記録](references/toc-current-position-validation-2026-10-18.md)

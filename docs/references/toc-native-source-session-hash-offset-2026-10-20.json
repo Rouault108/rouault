@@ -1,0 +1,637 @@
+{
+  "date": "2026-10-20",
+  "scope": "Issue 1 only: fresh hash landing offset; issues 2/3 and separate scrollbar change excluded",
+  "baselineSha": "6292e864fb3306e0d9e187a1cd457eb18ca335eb",
+  "excludedMainCommit": "36fbe519382a27fbd85bc8e0e0fc6f786814de92",
+  "branch": "verify/toc-native-source-session",
+  "environment": {
+    "OS": "Linux x64 executor; not the user Windows machine",
+    "node": "24.19.0",
+    "repositoryNodePin": "24.14.1",
+    "pnpm": "11.7.0 cached; network disabled for local Corepack",
+    "Playwright": "1.63.0",
+    "browser": "Chromium 153.0.8010.12",
+    "viewport": {
+      "width": 1280,
+      "height": 720
+    },
+    "sourceOfImages": "Local before/after capture only; parent description of user screenshots is context, not an independently verified Windows run"
+  },
+  "executionProof": {
+    "beforeDirectScrollWriter": {
+      "args": [
+        {
+          "left": 0,
+          "top": 415.609375,
+          "behavior": "instant"
+        }
+      ],
+      "stack": "Error\n    at window.scrollTo (<anonymous>:2:140)\n    at gr.restore (http://127.0.0.1:4173/client-assets/router-document-host-BF3mzulX.js:288:10163)"
+    },
+    "beforeReadingStatus": "settled",
+    "beforeHashMarked": "true",
+    "beforeTocCurrent": "11-目的"
+  },
+  "before": [
+    {
+      "id": "11-目的",
+      "entry": "direct",
+      "padding": 48,
+      "margin": 32,
+      "top": 31.609375,
+      "headerBottom": 49,
+      "y": 416,
+      "absolute": 447.609375,
+      "max": 733,
+      "ideal": 367.609375,
+      "expectedY": 367.609375,
+      "reading": "settled",
+      "hashMarked": "true",
+      "active": "11-目的"
+    },
+    {
+      "id": "11-目的",
+      "entry": "toc",
+      "padding": 48,
+      "margin": 32,
+      "top": 79.609375,
+      "headerBottom": 49,
+      "y": 368,
+      "absolute": 447.609375,
+      "max": 733,
+      "ideal": 367.609375,
+      "expectedY": 367.609375,
+      "reading": "settled",
+      "hashMarked": null,
+      "active": "11-目的"
+    },
+    {
+      "id": "11-目的",
+      "entry": "hash-link",
+      "padding": 48,
+      "margin": 32,
+      "top": 79.609375,
+      "headerBottom": 49,
+      "y": 368,
+      "absolute": 447.609375,
+      "max": 733,
+      "ideal": 367.609375,
+      "expectedY": 367.609375,
+      "reading": "settled",
+      "hashMarked": null,
+      "active": "11-目的"
+    },
+    {
+      "id": "3-まとめ",
+      "entry": "direct",
+      "padding": 48,
+      "margin": 32,
+      "top": 515.03125,
+      "headerBottom": 49,
+      "y": 733,
+      "absolute": 1248.03125,
+      "max": 733,
+      "ideal": 1168.03125,
+      "expectedY": 733,
+      "reading": "settled",
+      "hashMarked": "true",
+      "active": "3-まとめ"
+    },
+    {
+      "id": "3-まとめ",
+      "entry": "toc",
+      "padding": 48,
+      "margin": 32,
+      "top": 515.03125,
+      "headerBottom": 49,
+      "y": 733,
+      "absolute": 1248.03125,
+      "max": 733,
+      "ideal": 1168.03125,
+      "expectedY": 733,
+      "reading": "settled",
+      "hashMarked": null,
+      "active": "3-まとめ"
+    },
+    {
+      "id": "3-まとめ",
+      "entry": "hash-link",
+      "padding": 48,
+      "margin": 32,
+      "top": 515.03125,
+      "headerBottom": 49,
+      "y": 733,
+      "absolute": 1248.03125,
+      "max": 733,
+      "ideal": 1168.03125,
+      "expectedY": 733,
+      "reading": "settled",
+      "hashMarked": null,
+      "active": "3-まとめ"
+    }
+  ],
+  "after": [
+    {
+      "entry": "direct",
+      "id": "11-目的",
+      "reducedMotion": "reduce",
+      "landing": {
+        "top": 79.609375,
+        "y": 368,
+        "scrollPaddingTop": 48,
+        "scrollMarginTop": 32,
+        "offset": 80,
+        "absoluteTop": 447.609375,
+        "maxY": 733,
+        "idealY": 367.609375,
+        "expectedY": 367.609375,
+        "headerBottom": 49,
+        "readingHashTarget": "true",
+        "current": "location",
+        "active": "true",
+        "activeClass": true
+      }
+    },
+    {
+      "entry": "direct",
+      "id": "3-まとめ",
+      "reducedMotion": "reduce",
+      "landing": {
+        "top": 515.03125,
+        "y": 733,
+        "scrollPaddingTop": 48,
+        "scrollMarginTop": 32,
+        "offset": 80,
+        "absoluteTop": 1248.03125,
+        "maxY": 733,
+        "idealY": 1168.03125,
+        "expectedY": 733,
+        "headerBottom": 49,
+        "readingHashTarget": "true",
+        "current": "location",
+        "active": "true",
+        "activeClass": true
+      }
+    },
+    {
+      "entry": "toc",
+      "id": "11-目的",
+      "reducedMotion": "reduce",
+      "landing": {
+        "top": 79.609375,
+        "y": 368,
+        "scrollPaddingTop": 48,
+        "scrollMarginTop": 32,
+        "offset": 80,
+        "absoluteTop": 447.609375,
+        "maxY": 733,
+        "idealY": 367.609375,
+        "expectedY": 367.609375,
+        "headerBottom": 49,
+        "readingHashTarget": null,
+        "current": "location",
+        "active": "true",
+        "activeClass": true
+      }
+    },
+    {
+      "entry": "toc",
+      "id": "3-まとめ",
+      "reducedMotion": "reduce",
+      "landing": {
+        "top": 515.03125,
+        "y": 733,
+        "scrollPaddingTop": 48,
+        "scrollMarginTop": 32,
+        "offset": 80,
+        "absoluteTop": 1248.03125,
+        "maxY": 733,
+        "idealY": 1168.03125,
+        "expectedY": 733,
+        "headerBottom": 49,
+        "readingHashTarget": null,
+        "current": "location",
+        "active": "true",
+        "activeClass": true
+      }
+    },
+    {
+      "entry": "hash-link",
+      "id": "11-目的",
+      "reducedMotion": "reduce",
+      "landing": {
+        "top": 79.609375,
+        "y": 368,
+        "scrollPaddingTop": 48,
+        "scrollMarginTop": 32,
+        "offset": 80,
+        "absoluteTop": 447.609375,
+        "maxY": 733,
+        "idealY": 367.609375,
+        "expectedY": 367.609375,
+        "headerBottom": 49,
+        "readingHashTarget": null,
+        "current": "location",
+        "active": "true",
+        "activeClass": true
+      }
+    },
+    {
+      "entry": "hash-link",
+      "id": "3-まとめ",
+      "reducedMotion": "reduce",
+      "landing": {
+        "top": 515.03125,
+        "y": 733,
+        "scrollPaddingTop": 48,
+        "scrollMarginTop": 32,
+        "offset": 80,
+        "absoluteTop": 1248.03125,
+        "maxY": 733,
+        "idealY": 1168.03125,
+        "expectedY": 733,
+        "headerBottom": 49,
+        "readingHashTarget": null,
+        "current": "location",
+        "active": "true",
+        "activeClass": true
+      }
+    },
+    {
+      "entry": "router-link",
+      "id": "11-目的",
+      "reducedMotion": "reduce",
+      "landing": {
+        "top": 79.609375,
+        "y": 368,
+        "scrollPaddingTop": 48,
+        "scrollMarginTop": 32,
+        "offset": 80,
+        "absoluteTop": 447.609375,
+        "maxY": 733,
+        "idealY": 367.609375,
+        "expectedY": 367.609375,
+        "headerBottom": 49,
+        "readingHashTarget": "true",
+        "current": "location",
+        "active": "true",
+        "activeClass": true
+      }
+    },
+    {
+      "entry": "router-link",
+      "id": "3-まとめ",
+      "reducedMotion": "reduce",
+      "landing": {
+        "top": 515.03125,
+        "y": 733,
+        "scrollPaddingTop": 48,
+        "scrollMarginTop": 32,
+        "offset": 80,
+        "absoluteTop": 1248.03125,
+        "maxY": 733,
+        "idealY": 1168.03125,
+        "expectedY": 733,
+        "headerBottom": 49,
+        "readingHashTarget": "true",
+        "current": "location",
+        "active": "true",
+        "activeClass": true
+      }
+    },
+    {
+      "entry": "direct",
+      "id": "11-目的",
+      "reducedMotion": "no-preference",
+      "landing": {
+        "top": 79.609375,
+        "y": 368,
+        "scrollPaddingTop": 48,
+        "scrollMarginTop": 32,
+        "offset": 80,
+        "absoluteTop": 447.609375,
+        "maxY": 733,
+        "idealY": 367.609375,
+        "expectedY": 367.609375,
+        "headerBottom": 49,
+        "readingHashTarget": "true",
+        "current": "location",
+        "active": "true",
+        "activeClass": true
+      }
+    },
+    {
+      "entry": "direct",
+      "id": "3-まとめ",
+      "reducedMotion": "no-preference",
+      "landing": {
+        "top": 515.03125,
+        "y": 733,
+        "scrollPaddingTop": 48,
+        "scrollMarginTop": 32,
+        "offset": 80,
+        "absoluteTop": 1248.03125,
+        "maxY": 733,
+        "idealY": 1168.03125,
+        "expectedY": 733,
+        "headerBottom": 49,
+        "readingHashTarget": "true",
+        "current": "location",
+        "active": "true",
+        "activeClass": true
+      }
+    },
+    {
+      "entry": "toc",
+      "id": "11-目的",
+      "reducedMotion": "no-preference",
+      "landing": {
+        "top": 79.609375,
+        "y": 368,
+        "scrollPaddingTop": 48,
+        "scrollMarginTop": 32,
+        "offset": 80,
+        "absoluteTop": 447.609375,
+        "maxY": 733,
+        "idealY": 367.609375,
+        "expectedY": 367.609375,
+        "headerBottom": 49,
+        "readingHashTarget": null,
+        "current": "location",
+        "active": "true",
+        "activeClass": true
+      }
+    },
+    {
+      "entry": "toc",
+      "id": "3-まとめ",
+      "reducedMotion": "no-preference",
+      "landing": {
+        "top": 515.03125,
+        "y": 733,
+        "scrollPaddingTop": 48,
+        "scrollMarginTop": 32,
+        "offset": 80,
+        "absoluteTop": 1248.03125,
+        "maxY": 733,
+        "idealY": 1168.03125,
+        "expectedY": 733,
+        "headerBottom": 49,
+        "readingHashTarget": null,
+        "current": "location",
+        "active": "true",
+        "activeClass": true
+      }
+    },
+    {
+      "entry": "hash-link",
+      "id": "11-目的",
+      "reducedMotion": "no-preference",
+      "landing": {
+        "top": 79.609375,
+        "y": 368,
+        "scrollPaddingTop": 48,
+        "scrollMarginTop": 32,
+        "offset": 80,
+        "absoluteTop": 447.609375,
+        "maxY": 733,
+        "idealY": 367.609375,
+        "expectedY": 367.609375,
+        "headerBottom": 49,
+        "readingHashTarget": null,
+        "current": "location",
+        "active": "true",
+        "activeClass": true
+      }
+    },
+    {
+      "entry": "hash-link",
+      "id": "3-まとめ",
+      "reducedMotion": "no-preference",
+      "landing": {
+        "top": 515.03125,
+        "y": 733,
+        "scrollPaddingTop": 48,
+        "scrollMarginTop": 32,
+        "offset": 80,
+        "absoluteTop": 1248.03125,
+        "maxY": 733,
+        "idealY": 1168.03125,
+        "expectedY": 733,
+        "headerBottom": 49,
+        "readingHashTarget": null,
+        "current": "location",
+        "active": "true",
+        "activeClass": true
+      }
+    },
+    {
+      "entry": "router-link",
+      "id": "11-目的",
+      "reducedMotion": "no-preference",
+      "landing": {
+        "top": 79.609375,
+        "y": 368,
+        "scrollPaddingTop": 48,
+        "scrollMarginTop": 32,
+        "offset": 80,
+        "absoluteTop": 447.609375,
+        "maxY": 733,
+        "idealY": 367.609375,
+        "expectedY": 367.609375,
+        "headerBottom": 49,
+        "readingHashTarget": "true",
+        "current": "location",
+        "active": "true",
+        "activeClass": true
+      }
+    },
+    {
+      "entry": "router-link",
+      "id": "3-まとめ",
+      "reducedMotion": "no-preference",
+      "landing": {
+        "top": 515.03125,
+        "y": 733,
+        "scrollPaddingTop": 48,
+        "scrollMarginTop": 32,
+        "offset": 80,
+        "absoluteTop": 1248.03125,
+        "maxY": 733,
+        "idealY": 1168.03125,
+        "expectedY": 733,
+        "headerBottom": 49,
+        "readingHashTarget": "true",
+        "current": "location",
+        "active": "true",
+        "activeClass": true
+      }
+    }
+  ],
+  "redGreen": {
+    "browserBefore": {
+      "failed": 1,
+      "passed": 4,
+      "notSelected": 92,
+      "failure": "48 CSS px mismatch in middle heading alignment"
+    },
+    "e2eBefore": {
+      "failed": 2,
+      "passed": 10,
+      "failure": "fresh direct #11-目的 in each motion mode; TOC/native link and end clamp controls pass",
+      "entries": ["direct", "toc", "hash-link"]
+    },
+    "e2eAfter": {
+      "passed": 19,
+      "failed": 0,
+      "skipped": 0,
+      "newCases": 16,
+      "existingCases": 3
+    }
+  },
+  "testDevelopmentNotes": [
+    "Early fixture drafts incorrectly used a simple viewport oracle for explicit end-clamped hash hold and expected a state-only no-hash navigation to reset top; these test setup errors were corrected before the recorded baseline run.",
+    "A new saved-viewport test called a private checkpoint method; typecheck caught it and the final test relies on the real outgoing navigation intent to checkpoint instead.",
+    "The additional router-link control initially waited for a mobile TOC on its source fixture, which has no such capability; it now waits for router readiness and still asserts desktop/mobile current on the destination."
+  ],
+  "contract": "clamp(headingDocumentY - (computedRootScrollPaddingTop + computedHeadingScrollMarginTop), 0, maxRootY). Shared CSS read only; existing saved viewport/native adoption and interruption branches unchanged.",
+  "localAggregate": {
+    "node": {
+      "passed": 1251,
+      "skipped": 1
+    },
+    "ssr": {
+      "passed": 610,
+      "skipped": 0
+    },
+    "chromiumBrowser": {
+      "passed": 1044,
+      "skipped": 0
+    },
+    "typecheckApp": "passed",
+    "typecheckNode": "passed",
+    "noteLinks": "passed",
+    "productionImportBoundary": "passed",
+    "searchImportBoundary": "passed",
+    "standardCheck": "blocked by three pre-existing gitignored tmp/onboarding-*.config.ts parser-project lint errors; files preserved; component checks run independently",
+    "browserEnvironment": "Firefox cannot create page (uid_map EROFS / child SIGSEGV); WebKit host validation missing six shared libraries. Neither counted as passing or skipped formal tests. No install or security override performed.",
+    "targetedHistoryProduction": {
+      "passed": 33,
+      "skipped": 1,
+      "skipReason": "BFCache not established in standard runner; not counted as passing"
+    },
+    "spacingPolicy": {
+      "passed": 4,
+      "skipped": 0
+    }
+  },
+  "remainingManualVerification": [
+    "Fresh direct URL #11-目的 in a new tab of the Windows verification preview; compare against TOC and ordinary hash links.",
+    "At an unclamped heading compare rect.top with computed root padding plus heading margin; use max root scroll at the document end.",
+    "This does not claim the user current run passed and does not diagnose or fix hash removal Back or sidebar reload flash."
+  ],
+  "afterProbe": [
+    {
+      "id": "11-目的",
+      "entry": "direct",
+      "padding": 48,
+      "margin": 32,
+      "top": 79.609375,
+      "headerBottom": 49,
+      "y": 368,
+      "absolute": 447.609375,
+      "max": 733,
+      "ideal": 367.609375,
+      "expectedY": 367.609375,
+      "reading": "settled",
+      "hashMarked": "true",
+      "active": "11-目的",
+      "appScrollToWriteCount": 0
+    },
+    {
+      "id": "11-目的",
+      "entry": "toc",
+      "padding": 48,
+      "margin": 32,
+      "top": 79.609375,
+      "headerBottom": 49,
+      "y": 368,
+      "absolute": 447.609375,
+      "max": 733,
+      "ideal": 367.609375,
+      "expectedY": 367.609375,
+      "reading": "settled",
+      "hashMarked": null,
+      "active": "11-目的",
+      "appScrollToWriteCount": 1
+    },
+    {
+      "id": "11-目的",
+      "entry": "hash-link",
+      "padding": 48,
+      "margin": 32,
+      "top": 79.609375,
+      "headerBottom": 49,
+      "y": 368,
+      "absolute": 447.609375,
+      "max": 733,
+      "ideal": 367.609375,
+      "expectedY": 367.609375,
+      "reading": "settled",
+      "hashMarked": null,
+      "active": "11-目的",
+      "appScrollToWriteCount": 0
+    },
+    {
+      "id": "3-まとめ",
+      "entry": "direct",
+      "padding": 48,
+      "margin": 32,
+      "top": 515.03125,
+      "headerBottom": 49,
+      "y": 733,
+      "absolute": 1248.03125,
+      "max": 733,
+      "ideal": 1168.03125,
+      "expectedY": 733,
+      "reading": "settled",
+      "hashMarked": "true",
+      "active": "3-まとめ",
+      "appScrollToWriteCount": 0
+    },
+    {
+      "id": "3-まとめ",
+      "entry": "toc",
+      "padding": 48,
+      "margin": 32,
+      "top": 515.03125,
+      "headerBottom": 49,
+      "y": 733,
+      "absolute": 1248.03125,
+      "max": 733,
+      "ideal": 1168.03125,
+      "expectedY": 733,
+      "reading": "settled",
+      "hashMarked": null,
+      "active": "3-まとめ",
+      "appScrollToWriteCount": 1
+    },
+    {
+      "id": "3-まとめ",
+      "entry": "hash-link",
+      "padding": 48,
+      "margin": 32,
+      "top": 515.03125,
+      "headerBottom": 49,
+      "y": 733,
+      "absolute": 1248.03125,
+      "max": 733,
+      "ideal": 1168.03125,
+      "expectedY": 733,
+      "reading": "settled",
+      "hashMarked": null,
+      "active": "3-まとめ",
+      "appScrollToWriteCount": 0
+    }
+  ]
+}
