@@ -523,15 +523,17 @@ for (const surface of ['desktop', 'mobile'] as const) {
               ? '.layout-toc-mobile-panel'
               : '.layout-toc',
           );
-          expect(
-            authorDeclarations.some(
-              (rule) =>
-                rule.selector
-                  .split(',')
-                  .map((part) => part.trim())
-                  .includes(selector) && rule.width === 'thin',
-            ),
-          ).toBe(true);
+          // 未対応 property は CSSOM が落とすため、source の保証は SSR に残す。
+          if (support.width)
+            expect(
+              authorDeclarations.some(
+                (rule) =>
+                  rule.selector
+                    .split(',')
+                    .map((part) => part.trim())
+                    .includes(selector) && rule.width === 'thin',
+              ),
+            ).toBe(true);
           expect(
             authorDeclarations.filter((rule) => rule.width !== '' && rule.width !== 'thin'),
           ).toEqual([]);
