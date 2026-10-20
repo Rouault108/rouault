@@ -70,6 +70,31 @@ const sidebarMetrics = async (root: Locator) =>
     };
   });
 
+const displayedSidebarControls = async (root: Locator) =>
+  root.locator('[data-sidebar-nav-control]').evaluateAll((elements) =>
+    elements
+      .filter((element) => {
+        // closed details 内にも rect を返す Chromium で、summary 以外を操作対象へ含めない。
+        for (let ancestor = element.parentElement; ancestor; ancestor = ancestor.parentElement) {
+          if (
+            ancestor instanceof HTMLDetailsElement &&
+            !ancestor.open &&
+            ancestor.querySelector(':scope > summary') !== element
+          )
+            return false;
+        }
+        return (
+          element.getClientRects().length > 0 && getComputedStyle(element).visibility === 'visible'
+        );
+      })
+      .map((element) => ({
+        nodeId: element.closest('[data-node-id]')?.getAttribute('data-node-id'),
+        href: element.getAttribute('href'),
+        tagName: element.tagName,
+        focused: element === document.activeElement,
+      })),
+  );
+
 const sidebarStable = async (root: Locator, atEnd = false): Promise<void> => {
   await expect
     .poll(async () =>
@@ -213,19 +238,20 @@ for (const mode of ['fixed', 'overlay'] as const) {
       await branch.locator(':scope > summary').click();
       await expect(branch).toHaveAttribute('open', '');
       const target = root.locator(`a[href="${targetPath}"]`);
-      expect(
-        await root.locator('[data-sidebar-nav-control]').evaluateAll((elements) =>
-          elements
-            .filter((element) => element.getClientRects().length > 0)
-            .at(-1)
-            ?.getAttribute('href'),
-        ),
-      ).toBe(targetPath);
+      await expect(root.locator('[data-sidebar-nav-branch]')).toHaveCount(17);
+      const displayed = await displayedSidebarControls(root);
+      expect(displayed).toHaveLength(19);
+      expect(displayed.at(-1)?.href).toBe(targetPath);
       await root.evaluate((element) => {
         element.scrollTop = 0;
       });
       await sidebarStable(root);
       const initial = await sidebarMetrics(root);
+      await test.info().attach('overflow-precondition', {
+        body: JSON.stringify({ mode, initial, displayed }),
+        contentType: 'application/json',
+      });
+      console.info('sidebar-scroll-fixture', JSON.stringify({ mode, ...initial }));
       expect(initial.scrollTop).toBe(0);
       expect(initial.scrollHeight).toBeGreaterThan(initial.clientHeight + 1);
       if (input === 'wheel') {
@@ -266,15 +292,10 @@ test('sidebar keyboard movement / roving / details / focus return stay independe
   await expect(root.locator('[data-sidebar-nav-control]').nth(1)).toBeFocused();
   await page.keyboard.press('End');
   await expect(root.locator('[data-sidebar-nav-control][tabindex="0"]')).toBeFocused();
-  expect(
-    await root
-      .locator('[data-sidebar-nav-control]')
-      .evaluateAll(
-        (elements) =>
-          elements.filter((element) => element.getClientRects().length > 0).at(-1) ===
-          document.activeElement,
-      ),
-  ).toBe(true);
+  await expect.poll(async () => (await displayedSidebarControls(root)).at(-1)?.focused).toBe(true);
+  const last = (await displayedSidebarControls(root)).at(-1);
+  expect(last?.tagName).toBe('SUMMARY');
+  expect(last?.nodeId).toMatch(/group-16$/u);
   await expect(root.locator('[data-sidebar-nav-control][tabindex="0"]')).toHaveCount(1);
   await page.keyboard.press('Home');
   await expect(first).toBeFocused();

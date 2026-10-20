@@ -222,6 +222,8 @@ runtime契約:
 - light / dark / `matchMedia`で有効なforced-colorsを記録する。`CSS.supports`は構文対応のみ、computed thin / autoはcascadeの保証でありpaint幅・色・自動非表示の保証ではない。未対応propertyは別記録とし、scroll / link到達検証は省略しない。
 - Windows Edgeの実scrollbar drag、keyboard、200% zoom、themes / forced-colors / OS always-show設定とiPhone Safari touchは別途manual確認の対象でありcloudでは未実施。390px幅のdesktop projectはiPhone / touch検証ではない。
 
+Playwright v1.63.0のFirefox headlessは、[Juggler.js](https://github.com/microsoft/playwright/blob/v1.63.0/browser_patches/firefox/juggler/components/Juggler.js#L101-L105)で[hidden-scrollbars.css](https://github.com/microsoft/playwright/blob/v1.63.0/browser_patches/firefox/juggler/content/hidden-scrollbars.css#L5-L7)をAGENT_SHEETとして登録し、`* { scrollbar-width: none !important; }`を適用する。このrunner version・Firefox・実headless fixture値の3条件が一致する環境だけはcomputed `none`を明示的に検証・記録する。実際に配信されたauthor stylesheetのexact surface ruleがthinであり、該当surfaceに他のwidth / color宣言がないこともCSSOMで確認する。全Firefoxへの例外とせず、他環境のthin mismatchを許容しない。scroll、endpoint、link到達、colorの検証は省略しない。これはheadless harnessの制約であり、通常Firefoxや実OSのpaintの保証ではない。
+
 ## Native Tabs integration
 
 build-time annotationのownerはextract-toc-from-html.ts/prepareTocHtmlである。direct panelのdata-tab-valueを読み、既存scope IDと外側→内側のscopeSelections tupleを維持する。runtimeはreadTabsSelection/selectTabsValueを使う。未enhance scopeは全panel可視として扱い、hash revealは外側からhistoryMode:noneで要求する。起動は要求せずqueueも作らない。data-tabs-enhanced/data-selected-valueのmutationで再評価し、初期化用の選択eventを偽装しない。

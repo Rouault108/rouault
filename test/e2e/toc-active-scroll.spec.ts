@@ -372,6 +372,24 @@ const tocMetrics = async (root: Locator) =>
     };
   });
 
+const servedTocScrollbarDeclarations = async (scrollport: Locator) =>
+  scrollport.evaluate((element) => {
+    const declarations: { selector: string; width: string; color: string }[] = [];
+    const visit = (rules: CSSRuleList): void => {
+      for (const rule of rules) {
+        if (rule instanceof CSSStyleRule && element.matches(rule.selectorText)) {
+          const width = rule.style.getPropertyValue('scrollbar-width');
+          const color = rule.style.getPropertyValue('scrollbar-color');
+          if (width || color) declarations.push({ selector: rule.selectorText, width, color });
+        }
+        if (rule instanceof CSSImportRule && rule.styleSheet) visit(rule.styleSheet.cssRules);
+        else if (rule instanceof CSSGroupingRule) visit(rule.cssRules);
+      }
+    };
+    for (const sheet of document.styleSheets) visit(sheet.cssRules);
+    return declarations;
+  });
+
 const tocStable = async (root: Locator, atEnd = false): Promise<void> => {
   await expect
     .poll(async () =>
@@ -444,6 +462,8 @@ for (const surface of ['desktop', 'mobile'] as const) {
     test(`${surface} native TOC scrollbar computed styles: ${environment}`, async ({
       page,
       browserName,
+      headless,
+      browser,
     }) => {
       await page.emulateMedia({
         colorScheme: environment === 'dark' ? 'dark' : 'light',
@@ -455,10 +475,28 @@ for (const surface of ['desktop', 'mobile'] as const) {
         forcedColors: matchMedia('(forced-colors: active)').matches,
         userAgent: navigator.userAgent,
       }));
+      const playwrightVersion = test.info().config.version;
+      const firefoxHeadlessAgentOverride =
+        browserName === 'firefox' && headless && playwrightVersion === '1.63.0';
       test.info().annotations.push({
         type: 'scrollbar-environment',
-        description: JSON.stringify({ browserName, surface, environment, ...support }),
+        description: JSON.stringify({
+          browserName,
+          browserVersion: browser.version(),
+          headless,
+          playwrightVersion,
+          surface,
+          environment,
+          firefoxHeadlessAgentOverride,
+          ...support,
+        }),
       });
+      if (firefoxHeadlessAgentOverride)
+        test.info().annotations.push({
+          type: 'headless-agent-scrollbar-override',
+          description:
+            'Playwright v1.63.0 Firefox headless registers hidden-scrollbars.css as AGENT_SHEET: * { scrollbar-width: none !important; }. Author thin is verified separately. https://github.com/microsoft/playwright/blob/v1.63.0/browser_patches/firefox/juggler/components/Juggler.js#L101-L105',
+        });
       for (const state of ['normal', 'hover', 'focus-within'] as const) {
         const root = await openTocScrollport(page, surface);
         await page.mouse.move(0, 0);
@@ -479,11 +517,31 @@ for (const surface of ['desktop', 'mobile'] as const) {
           surface === 'mobile' ? [root, page.locator('[data-layout-toc-mobile-nav]')] : [root];
         for (const [index, scrollport] of scrollports.entries()) {
           const metrics = await tocMetrics(scrollport);
+          const authorDeclarations = await servedTocScrollbarDeclarations(scrollport);
+          const selector = await scrollport.evaluate((element) =>
+            element.matches('.layout-toc-mobile-panel')
+              ? '.layout-toc-mobile-panel'
+              : '.layout-toc',
+          );
+          expect(
+            authorDeclarations.some(
+              (rule) =>
+                rule.selector
+                  .split(',')
+                  .map((part) => part.trim())
+                  .includes(selector) && rule.width === 'thin',
+            ),
+          ).toBe(true);
+          expect(
+            authorDeclarations.filter((rule) => rule.width !== '' && rule.width !== 'thin'),
+          ).toEqual([]);
+          expect(authorDeclarations.filter((rule) => rule.color !== '')).toEqual([]);
           await test.info().attach(`${surface}-${environment}-${state}-${index}`, {
-            body: JSON.stringify(metrics, null, 2),
+            body: JSON.stringify({ metrics, authorDeclarations }, null, 2),
             contentType: 'application/json',
           });
-          if (support.width) expect(metrics.scrollbarWidth).toBe('thin');
+          if (support.width)
+            expect(metrics.scrollbarWidth).toBe(firefoxHeadlessAgentOverride ? 'none' : 'thin');
           if (support.color) expect(metrics.scrollbarColor).toBe('auto');
           expect(metrics.overflowY).toBe('auto');
         }

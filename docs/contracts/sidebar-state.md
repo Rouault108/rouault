@@ -74,3 +74,6 @@ canonical snapshotはtransaction内だけで生成し、runtime expanded state /
 - E2EはChromium desktop projectのfixed / overlayで長いnavのoverflowとwheel / scrollTopの独立した末尾到達、clip ancestor内の全操作面とhit test、navigationを検証する。短いnavは非overflowを検証する。keyboard focus / branch開閉 / return focusとfocus ringは独立したcaseとする。
 - `CSS.supports`は構文対応、computed styleはcascadeの検証に限る。light / dark / 実際に`matchMedia`で有効なforced-colorsを記録する。paint幅・色・自動非表示はUA / OSが所有する。
 - Windows Edgeの実scrollbar drag、keyboard、200% zoom、theme / forced-colors / OS always-show設定とiPhone Safari touchはcloud E2Eの保証外であり、別途manual確認を要する。狭幅desktop projectをiPhone / touch検証と扱わない。
+
+- `sidebar-scroll/group-02`〜`group-15`の補助fixtureは`chromeProfile: reader`を明示する。`kind: testing`の既定plain profileはsidebar projectionから除外されるため、reader指定で既存16 group fixture本来のoverflowを成立させる。本文やgeometry用CSSは増やさない。480px高の長いcaseは16 groupとそのwrapper branch（計17 branch）、Group01 / Group16 open時の19操作対象を前提として固定し、overflow不足をskipしない。
+- 表示中の操作対象はclosed `details`のsummary以外の子孫を除外する。`getClientRects()`だけではclosed details内のtargetを末尾に数えるChromiumがあるため、keyboard / endpointの双方でnative disclosure stateを確認する。
