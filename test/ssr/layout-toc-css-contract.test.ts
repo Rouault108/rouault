@@ -8,6 +8,8 @@ import {
   findLastDeclarationRuleOrderForSelector,
   hasDeclarationForAllSelectors,
   hasDeclarationForSelector,
+  hasRuleContainingSelectorFragment,
+  listDeclarationsForSelectorContaining,
   hasDeclarationValueIncluding,
   hasDeclarationValueIncludingForAllSelectors,
   hasDeclarationValueNotIncludingForAllSelectors,
@@ -37,6 +39,43 @@ const currentTocSurfaceSelectors = [
 ] as const;
 
 describe('layout toc css contract', () => {
+  it('desktop TOC は overflow / gutter を保ち native thin scrollbar の色を UA に委ねること', () => {
+    for (const [property, value] of [
+      ['scrollbar-width', 'thin'],
+      ['overflow-y', 'auto'],
+      ['scrollbar-gutter', 'stable'],
+      ['overscroll-behavior', 'contain'],
+    ] as const) {
+      expect(
+        hasDeclarationForSelector(layoutTocCss, '.layout-toc', property, value, { scope: 'base' }),
+      ).toBe(true);
+    }
+    expect(
+      lacksDeclarationPropertyForAllSelectors(
+        layoutTocCss,
+        ['.layout-toc', '.layout-toc-mobile-panel'],
+        'scrollbar-color',
+        { scope: 'any' },
+      ),
+    ).toBe(true);
+    for (const selector of [
+      '.layout-toc:hover',
+      '.layout-toc:focus-within',
+      '.layout-toc-mobile-panel:hover',
+      '.layout-toc-mobile-panel:focus-within',
+    ]) {
+      expect(lacksRuleForSelector(layoutTocCss, selector, { scope: 'any' })).toBe(true);
+    }
+    expect(
+      listDeclarationsForSelectorContaining(layoutTocCss, '.layout-toc', { scope: 'any' }).filter(
+        ({ property, value }) => property === 'scrollbar-width' && value === 'none',
+      ),
+    ).toEqual([]);
+    expect(
+      hasRuleContainingSelectorFragment(layoutTocCss, '::-webkit-scrollbar', { scope: 'any' }),
+    ).toBe(false);
+  });
+
   it('disposed mobile panel state is hidden by the shared CSS artifact', () => {
     expect(TOC_MOBILE_PANEL_SELECTOR).toBe('[data-layout-toc-mobile-panel]');
     expect(

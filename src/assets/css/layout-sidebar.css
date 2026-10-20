@@ -319,6 +319,7 @@
   max-block-size: var(--layout-sticky-max-block-size, calc(100dvh - var(--header-height)));
   transform: translateY(calc(-1 * var(--layout-sticky-footer-offset, 0px)));
   overflow-y: auto;
+  scrollbar-width: thin;
 }
 [data-sidebar-enhancement-state='active'] [data-layout-sidebar-root][data-mode='overlay'] {
   position: fixed;
@@ -327,6 +328,7 @@
   inset-inline-start: 0;
   inline-size: min(var(--sidebar-width, 280px), 90vw);
   overflow-y: auto;
+  scrollbar-width: thin;
   background: var(--bg-default);
   visibility: visible;
 }

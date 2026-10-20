@@ -1,4 +1,4 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Page, type Locator } from '@playwright/test';
 
 import { e2eNoteFixtures } from './support/note-fixtures.js';
 
@@ -273,3 +273,291 @@ test.describe('TOC active state stays synchronized with rendered contract', () =
     await expectTocSynchronizedToViewport(page);
   });
 });
+
+const expectTocSurface = async (target: Locator, focusRing = false): Promise<void> => {
+  const violations = await target.evaluate((element, includeRing) => {
+    const rect = element.getBoundingClientRect();
+    const style = getComputedStyle(element);
+    const ring = includeRing
+      ? Math.max(0, parseFloat(style.outlineWidth) + parseFloat(style.outlineOffset))
+      : 0;
+    const box = {
+      left: rect.left - ring,
+      right: rect.right + ring,
+      top: rect.top - ring,
+      bottom: rect.bottom + ring,
+    };
+    const failures: string[] = [];
+    const check = (
+      name: string,
+      left: number,
+      right: number,
+      top: number,
+      bottom: number,
+      x = true,
+      y = true,
+    ) => {
+      if (x && (box.left < left - 1 || box.right > right + 1))
+        failures.push(`${name}: horizontal clipping`);
+      if (y && (box.top < top - 1 || box.bottom > bottom + 1))
+        failures.push(`${name}: vertical clipping`);
+    };
+    check('viewport', 0, innerWidth, 0, innerHeight);
+    for (let ancestor = element.parentElement; ancestor; ancestor = ancestor.parentElement) {
+      const css = getComputedStyle(ancestor);
+      const clips = (overflow: string) => /^(auto|scroll|hidden|clip)$/.test(overflow);
+      const bounds = ancestor.getBoundingClientRect();
+      const left = bounds.left + ancestor.clientLeft;
+      const top = bounds.top + ancestor.clientTop;
+      check(
+        ancestor.tagName,
+        left,
+        left + ancestor.clientWidth,
+        top,
+        top + ancestor.clientHeight,
+        clips(css.overflowX),
+        clips(css.overflowY),
+      );
+    }
+    for (const x of [rect.left + 3, (rect.left + rect.right) / 2, rect.right - 3]) {
+      for (const y of [rect.top + 3, (rect.top + rect.bottom) / 2, rect.bottom - 3]) {
+        const hit = document.elementFromPoint(x, y);
+        if (!hit || !element.contains(hit)) failures.push(`occluded at ${x},${y}`);
+      }
+    }
+    return failures;
+  }, focusRing);
+  expect(violations).toEqual([]);
+};
+
+const tocLongPath = e2eNoteFixtures.tocReadableLongHeading.directPath;
+const tocViewports = {
+  desktop: { width: 1280, height: 480 },
+  mobile: { width: 390, height: 480 },
+} as const;
+type TocSurface = keyof typeof tocViewports;
+
+const openTocScrollport = async (
+  page: Page,
+  surface: TocSurface,
+  long = true,
+): Promise<Locator> => {
+  await page.setViewportSize(tocViewports[surface]);
+  await page.goto(long ? tocLongPath : layoutRichPath);
+  await waitForTocSettled(page);
+  if (surface === 'mobile') {
+    await page.locator('[data-toc-trigger]').click();
+    await expect(page.locator('[data-layout-toc-mobile-panel]')).toBeVisible();
+  }
+  return page.locator(
+    surface === 'desktop' ? '[data-layout-toc-nav]' : '[data-layout-toc-mobile-panel]',
+  );
+};
+
+const tocMetrics = async (root: Locator) =>
+  root.evaluate((element) => {
+    const style = getComputedStyle(element);
+    return {
+      scrollHeight: element.scrollHeight,
+      clientHeight: element.clientHeight,
+      scrollTop: element.scrollTop,
+      overflowY: style.overflowY,
+      scrollbarWidth: style.getPropertyValue('scrollbar-width'),
+      scrollbarColor: style.getPropertyValue('scrollbar-color'),
+      scrollbarGutter: style.scrollbarGutter,
+      currentId:
+        document
+          .querySelector('[data-layout-toc-nav] [aria-current="location"]')
+          ?.getAttribute('data-heading-id') ?? null,
+    };
+  });
+
+const tocStable = async (root: Locator, atEnd = false): Promise<void> => {
+  await expect
+    .poll(async () =>
+      root.evaluate(async (element, endpoint) => {
+        const read = () =>
+          JSON.stringify([
+            element.scrollHeight,
+            element.clientHeight,
+            element.scrollTop,
+            document
+              .querySelector('[data-layout-toc-nav] [aria-current="location"]')
+              ?.getAttribute('data-heading-id'),
+          ]);
+        let previous = read();
+        for (let frame = 0; frame < 4; frame += 1) {
+          await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+          const next = read();
+          if (next !== previous) return false;
+          previous = next;
+        }
+        return (
+          !endpoint ||
+          Math.abs(element.scrollHeight - element.clientHeight - element.scrollTop) <= 1
+        );
+      }, atEnd),
+    )
+    .toBe(true);
+};
+
+const scrollTocToEnd = async (
+  page: Page,
+  root: Locator,
+  input: 'wheel' | 'scrollTop',
+): Promise<void> => {
+  if (input === 'scrollTop')
+    await root.evaluate((element) => {
+      element.scrollTop = element.scrollHeight;
+    });
+  else {
+    const box = await root.boundingBox();
+    if (!box) throw new Error('TOC has no scrollport rectangle');
+    await page.mouse.move(box.x + box.width / 2, box.y + Math.min(80, box.height / 2));
+    await page.mouse.wheel(0, (await tocMetrics(root)).scrollHeight);
+  }
+  await tocStable(root, true);
+};
+
+for (const surface of ['desktop', 'mobile'] as const) {
+  for (const environment of ['light', 'dark', 'forced-colors'] as const) {
+    test(`${surface} native TOC scrollbar computed styles: ${environment}`, async ({
+      page,
+      browserName,
+    }) => {
+      await page.emulateMedia({
+        colorScheme: environment === 'dark' ? 'dark' : 'light',
+        forcedColors: environment === 'forced-colors' ? 'active' : 'none',
+      });
+      const support = await page.evaluate(() => ({
+        width: CSS.supports('scrollbar-width', 'thin'),
+        color: CSS.supports('scrollbar-color', 'auto'),
+        forcedColors: matchMedia('(forced-colors: active)').matches,
+        userAgent: navigator.userAgent,
+      }));
+      test
+        .info()
+        .annotations.push({
+          type: 'scrollbar-environment',
+          description: JSON.stringify({ browserName, surface, environment, ...support }),
+        });
+      for (const state of ['normal', 'hover', 'focus-within'] as const) {
+        const root = await openTocScrollport(page, surface);
+        await page.mouse.move(0, 0);
+        await page.evaluate(() => {
+          if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
+        });
+        if (state === 'hover') {
+          const box = await root.boundingBox();
+          if (!box) throw new Error('TOC has no scrollport rectangle');
+          await page.mouse.move(box.x + 20, box.y + 20);
+        }
+        if (state === 'focus-within') await root.locator('[data-toc-link]').first().focus();
+        expect(await root.evaluate((element) => element.matches(':hover'))).toBe(state === 'hover');
+        expect(await root.evaluate((element) => element.matches(':focus-within'))).toBe(
+          state === 'focus-within',
+        );
+        const scrollports =
+          surface === 'mobile' ? [root, page.locator('[data-layout-toc-mobile-nav]')] : [root];
+        for (const [index, scrollport] of scrollports.entries()) {
+          const metrics = await tocMetrics(scrollport);
+          await test
+            .info()
+            .attach(`${surface}-${environment}-${state}-${index}`, {
+              body: JSON.stringify(metrics, null, 2),
+              contentType: 'application/json',
+            });
+          if (support.width) expect(metrics.scrollbarWidth).toBe('thin');
+          if (support.color) expect(metrics.scrollbarColor).toBe('auto');
+          expect(metrics.overflowY).toBe('auto');
+        }
+      }
+    });
+  }
+
+  for (const input of ['wheel', 'scrollTop'] as const) {
+    test(`${surface} TOC endpoint is fully reachable by ${input} before link activation`, async ({
+      page,
+    }) => {
+      const root = await openTocScrollport(page, surface);
+      const nav = surface === 'mobile' ? page.locator('[data-layout-toc-mobile-nav]') : root;
+      const target = nav.locator('[data-toc-link]').last();
+      const headingId = await target.getAttribute('data-heading-id');
+      expect(headingId).toBeTruthy();
+      await root.evaluate((element) => {
+        element.scrollTop = 0;
+      });
+      if (surface === 'mobile')
+        await nav.evaluate((element) => {
+          element.scrollTop = 0;
+        });
+      await tocStable(root);
+      const initial = await tocMetrics(root);
+      expect(initial.scrollTop).toBe(0);
+      expect(initial.scrollHeight).toBeGreaterThan(initial.clientHeight + 1);
+      await scrollTocToEnd(page, root, input);
+      if (surface === 'mobile') {
+        const inner = await tocMetrics(nav);
+        await test
+          .info()
+          .attach('mobile-inner', { body: JSON.stringify(inner), contentType: 'application/json' });
+        if (inner.scrollHeight > inner.clientHeight + 1) {
+          await scrollTocToEnd(page, nav, input);
+          await tocStable(root, true);
+        }
+      }
+      await test
+        .info()
+        .attach('endpoint', {
+          body: JSON.stringify(await tocMetrics(root)),
+          contentType: 'application/json',
+        });
+      await expectTocSurface(target);
+      await target.click();
+      await expect
+        .poll(() => decodeURIComponent(new URL(page.url()).hash.slice(1)))
+        .toBe(headingId);
+      await expect.poll(async () => (await readTocSyncState(page)).desktopActiveId).toBe(headingId);
+      await expect.poll(async () => (await readTocSyncState(page)).mobileActiveId).toBe(headingId);
+      if (surface === 'mobile') {
+        await expect(root).toBeHidden();
+        await expect(page.locator('[data-toc-trigger]')).toBeFocused();
+      }
+    });
+  }
+
+  test(`${surface} short TOC does not overflow`, async ({ page }) => {
+    const root = await openTocScrollport(page, surface, false);
+    await tocStable(root);
+    const scrollports =
+      surface === 'mobile' ? [root, page.locator('[data-layout-toc-mobile-nav]')] : [root];
+    for (const [index, scrollport] of scrollports.entries()) {
+      const metrics = await tocMetrics(scrollport);
+      await test
+        .info()
+        .attach(`short-${index}`, {
+          body: JSON.stringify(metrics),
+          contentType: 'application/json',
+        });
+      expect(metrics.scrollHeight).toBeLessThanOrEqual(metrics.clientHeight + 1);
+    }
+  });
+
+  test(`${surface} TOC keyboard focus ring fits independently of endpoint arrival`, async ({
+    page,
+  }) => {
+    const root = await openTocScrollport(page, surface, false);
+    const first = root.locator('[data-toc-link]').first();
+    await first.focus();
+    await page.keyboard.press('Tab');
+    const focused = root.locator('[data-toc-link]:focus-visible');
+    await expect(focused).toHaveCount(1);
+    await expect(focused).toHaveCSS('outline-style', 'solid');
+    await expectTocSurface(focused, true);
+    if (surface === 'mobile') {
+      await page.keyboard.press('Escape');
+      await expect(root).toBeHidden();
+      await expect(page.locator('[data-toc-trigger]')).toBeFocused();
+    }
+  });
+}

@@ -57,9 +57,20 @@ canonical snapshotはtransaction内だけで生成し、runtime expanded state /
 
 初期化失敗、abort、unexpected disconnectではlistener / observer / subscriptionを解除し、共有state属性を除去する。header readiness喪失はnative fallbackへ収束する。schedulerがactivation timingを所有し、componentによる自己起動を追加しない。
 
-## 7. Verification
+## 7. Native scrollbar
+
+`scrollbar-width: thin`は`[data-sidebar-enhancement-state='active'] [data-layout-sidebar-root][data-mode='fixed']`と`[data-sidebar-enhancement-state='active'] [data-layout-sidebar-root][data-mode='overlay']`のbase ruleだけへ指定する。共通root、inner nav、inactive state、No-JS fallbackへ広げない。色はUAに委ね、transparent / noneやWebKit scrollbar paintingで隠さない。
+
+寸法、overflow、gutter、padding、overscroll、DOM、ARIA、JavaScript、link / current / focus装飾は維持する。本文、table、code、search等は対象外。既存keyboardのArrow / Endは`preventScroll: true`でfocusとroving tabindexを更新するため、Endによる自動scroll到達は保証しない。
+
+## 8. Verification
 
 - Node / SSR: native nav invariant、root cardinality、projection、hydration budget、SSR target
 - Browser: `layout-sidebar-enhancer.browser.test.ts`、controller、shell mutation、native keyboard / persistence
 - E2E: `sidebar-pre-hydration-leakage.spec.ts`、`sidebar-scroll.spec.ts`、`header-layout-contract.spec.ts`、`header-shell-integration.spec.ts`、`header-no-js.spec.ts`
 - UI CheckはPhase3まで比較用のmeta / smoke ownerとして維持する。
+
+- SSRはexact selectorのbase thin指定と、全media scopeでの色指定・非表示scrollbar・WebKit paintingの不在を固定する。
+- E2EはChromium desktop projectのfixed / overlayで長いnavのoverflowとwheel / scrollTopの独立した末尾到達、clip ancestor内の全操作面とhit test、navigationを検証する。短いnavは非overflowを検証する。keyboard focus / branch開閉 / return focusとfocus ringは独立したcaseとする。
+- `CSS.supports`は構文対応、computed styleはcascadeの検証に限る。light / dark / 実際に`matchMedia`で有効なforced-colorsを記録する。paint幅・色・自動非表示はUA / OSが所有する。
+- Windows Edgeの実scrollbar drag、keyboard、200% zoom、theme / forced-colors / OS always-show設定とiPhone Safari touchはcloud E2Eの保証外であり、別途manual確認を要する。狭幅desktop projectをiPhone / touch検証と扱わない。
