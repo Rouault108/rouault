@@ -32,10 +32,12 @@ export const readContentInputs = (): ContentInput[] => {
         if (lstatSync(directory).isSymbolicLink())
           throw new Error('[content] symlink is forbidden');
         for (const entry of entries) {
+          // 旧globのdot:falseは階層全体、ignore:**/_*はfile名だけへ適用される。
+          if (entry.name.startsWith('.')) continue;
           const sourceFilePath = path.join(directory, entry.name);
           if (entry.isSymbolicLink()) throw new Error('[content] symlink is forbidden');
           if (entry.isDirectory()) walk(sourceFilePath);
-          else if (entry.isFile() && entry.name.endsWith('.md')) {
+          else if (entry.isFile() && !entry.name.startsWith('_') && entry.name.endsWith('.md')) {
             const sourceRelativePath = path
               .relative(root, sourceFilePath)
               .split(path.sep)

@@ -4,11 +4,13 @@
 
 `build/content/content-schema.ts`がnotes/memosのmetadata検証と出力型、`content-input.ts`と`content-compiler.ts`が入力読込とMarkdown/HTML変換、`generate-content.ts`が公開noteのリンク検証と保存を所有する。CLIの`codegen:content`、`validate:note-links`、Eleventyのbeforeは同じ`generateContent()`をawaitする。Veliteへの依存は持たない。
 
+memosのsourcePathはnested `index.md`を含む元のsource identityを保持し、canonical URLの末尾index除去と混同しない。
+
 JSONの保存先は引き続き`.velite/notes.json`と`.velite/memos.json`。同期loader、記事単位のJSON形式、後段の目次・サイドバー・検索生成を維持する。JSON配列順はsource path順に固定し、記事identityや画面の並び順の正本にはしない。memos fixtureの採用条件と検索非掲載を維持する。
 
 ## 生成順序
 
-1. 対象Markdown本文、識別子、metadataを一度取得し、metadataを検証する。下書きも変換対象に含む。
+1. 対象Markdown本文、識別子、metadataを一度取得し、metadataを検証する。旧globの採用条件を維持し、先頭underscoreのfileと、dot始まりのfile/directoryを読込前に除外する。underscore始まりのdirectory配下は従来どおり採用する。下書きも変換対象に含む。
 2. 検証済みmetadataと既存route関数からproduction/fixtureの分類情報を一度作る。ファイル存在・大小文字・symlink・route衝突検査は維持する。
 3. 同じ入力と分類情報を記法policy、リンクカード、相対リンク、preview-sandbox、HTML注釈・契約検証へ渡す。注入情報をfallbackの分類処理より先に参照する。
 4. include展開 → 純粋コメント除去・生HTML検査 → directive変換 → URL/ソース位置コピー → カード化・URL書換えの順で処理する。本文やincludeを検証だけのために再読込・再展開しない。include先のサンプルは展開時に読む。展開元refを実行内のリンク情報へ保持する。

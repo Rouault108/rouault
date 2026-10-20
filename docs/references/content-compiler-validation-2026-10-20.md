@@ -67,3 +67,14 @@ canonical JSONのSHA-256（field名とidentityで整列）:
 開始SHAの既存CIは[39183736938](https://github.com/Rouault108/rouault/actions/runs/39183736938)がsuccessだった。今回の最終SHAの結果とは区別する。
 
 残る手動確認は、Windowsでの実watchとファイル置換の実機確認。Linuxでの保存故障・回復は確認済み。すべての記事追加/削除の自動反映、設定依存の完全自動検知、同一出力先の複数プロセス並行実行は設計上の保証外であり、合格を主張しない。
+
+## 完了前の追加指摘と修正
+
+nested index memoと入力除外の2件は、追補前のコードで実際に再現した。`test/node/content-migration-regressions.test.ts`の修正前実行は2件とも失敗した。
+
+- `content/memos/foo/index.md`が`content/memos/foo.md`へ変わっていた。source identityは元の`.md`付きpathを保持する契約なので、memoの`sourcePath`とHTML正規化namespaceには元のsource labelを使うよう修正した。JSON → memo identity → 実テンプレートのcontext lookupまでを回帰テストで固定した。
+- 旧[Velite 0.3.1 resolve](https://github.com/zce/velite/blob/v0.3.1/src/build.ts)のglob引数を、保持されていたfast-glob 3.3.3で実行した。`onlyFiles: true`と`ignore: ['**/_*']`では、先頭underscoreの**ファイル**は除外されるが、先頭underscoreの**ディレクトリ配下**は採用される。dot:falseは隠しファイルと隠しディレクトリの両方を除外する。[実測fixtureと結果](content-compiler-exclusion-reference-2026-10-20.json)を保存した。この区別をreaderへ反映し、除外fileの不正metadataはYAML読込前に除外するよう修正した。notes/memosそれぞれで、除外対象に壊れたYAMLがあっても入力読込が成功し、underscore directory配下や途中にunderscoreがある通常名は採用することを確認した。
+
+修正後の重点Nodeは21件すべて成功。lintとNode型検査も成功。作業ツリーを隔離コピーした実Eleventyビルド（exit 0、73ページ）でも、nested index memoの元identityがJSONに保存され、`dist/memos/verify-nested/index.html`へ本文が生成されることを確認した。同じ実ビルドに追加したunderscore fileと隠しdirectoryの不正metadataはJSONに採用されなかった。実コンテンツは変更していない。
+
+追補前SHA `bd6811aeab1801c9718d02909efcaca26bc5659d`の[CI 39350760540](https://github.com/Rouault108/rouault/actions/runs/39350760540)は、後続修正が必要になったため中止した。lint・型検査・Node・SSR・browser・build-productionはsuccessだったが、E2Eはcancelled、ci-requiredはその取消しを受けてfailureである。このrunを全体合格とは扱わない。追補後の最終SHAについて、同じ既存CIを改めて実行する。

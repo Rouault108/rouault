@@ -127,12 +127,12 @@ export const compileContentInput = async (
     data: { rouaultPolicyContext: policy, rouaultContentContext: context },
   };
   const tree = await processor.run(processor.parse(file), file);
-  // indexのnamespaceは既存JSONと同様に末尾/indexを除く。
+  // notesのnamespaceだけは既存JSONと同様に末尾/indexを除く。memosのidentityは保持する。
   const namespace = input.sourceLabel.replace(/\.md$/u, '').replace(/\/index$/u, '');
   const staticHtml = normalizeRouaultStaticSurfaceHtml(
     toHtml(tree as Parameters<typeof toHtml>[0]),
     {
-      namespace: isNote ? namespace : `${namespace}.md`,
+      namespace: isNote ? namespace : input.sourceLabel,
       previewProfile: resolveNotePreviewProfile(kind),
       documentUrl: context.currentUrl,
     },
@@ -148,7 +148,7 @@ export const compileContentInput = async (
     return {
       memo: {
         title: metadata.title,
-        sourcePath: `${namespace}.md`,
+        sourcePath: input.sourceLabel,
         license: 'CC BY 4.0',
         ...(metadata.date ? { date: metadata.date } : {}),
         ...(metadata.updated ? { updated: metadata.updated } : {}),
