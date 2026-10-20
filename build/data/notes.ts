@@ -7,11 +7,6 @@ import type { NavigationDirectoryPresentationMap } from '../../shared/navigation
 import { resolveSidebarRoot } from '../../build/navigation/resolve-sidebar-root.js';
 import { prepareTocHtml, type TocHeading } from '../../build/content/extract-toc-from-html.js';
 import { validateNoteContentContracts } from '../../build/content/note-content-contracts.js';
-import {
-  resolveDevelopmentSiteUrlContext,
-  resolveProductionSiteUrlContext,
-} from '../site/site-url-context.js';
-import { resolveNoteLinkClassificationContext } from '../content/resolve-note-current-url.js';
 import { resolveCoverAsset, type ResolvedImageAsset } from '../../build/media/image-resolver.js';
 import { isIconName, type IconName } from '../../shared/icons/icon-paths.js';
 import type { NoteStatus } from '../../src/types/article-status.js';
@@ -336,9 +331,6 @@ export const buildNotesCollection = (
   const configCache = new Map<string, NoteDirectoryConfig | null>();
   const fileExistenceCache = new Map<string, boolean>();
   const sourceRoots = options.sourceRoots ?? {};
-  const siteUrlContext = process.env['ROUAULT_SITE_ORIGIN']
-    ? resolveProductionSiteUrlContext()
-    : resolveDevelopmentSiteUrlContext();
 
   const resolveSourceRootPath = (note: SourceNote): string => {
     const normalizedSourceRoot = normalizeNoteSourceRoot(note.sourceRoot);
@@ -468,22 +460,15 @@ export const buildNotesCollection = (
       const kind = normalizeNoteContentKind(note.kind);
       const chromeProfile = resolveEffectiveNoteChromeProfile(kind, note.chromeProfile);
       const testingArea = normalizeTestingArea(note.testingArea);
-      const noteWithoutVeliteToc: SourceNote = { ...note };
-      delete noteWithoutVeliteToc['toc'];
-      delete noteWithoutVeliteToc['tocCapabilitiesOverride'];
+      const noteWithoutGeneratedToc: SourceNote = { ...note };
+      delete noteWithoutGeneratedToc['toc'];
+      delete noteWithoutGeneratedToc['tocCapabilitiesOverride'];
 
       const preparedToc = prepareTocHtml(typeof note.content === 'string' ? note.content : '');
-      const noteLinkContext = resolveNoteLinkClassificationContext({
-        sourceFilePath: `${normalizeNoteSourceRoot(note.sourceRoot) ?? 'content/notes'}/${sourceSlug}.md`,
-        siteUrlContext,
-      });
       validateNoteContentContracts({
         kind,
         html: preparedToc.html,
         sourceLabel: `${sourceSlug}:post-prepare-toc`,
-        siteUrlContext,
-        currentUrl: noteLinkContext.currentUrl,
-        routeClassificationMode: noteLinkContext.routeClassificationMode,
         validateLinkContracts: false,
         ...(testingArea !== undefined ? { testingArea } : {}),
       });
@@ -524,7 +509,7 @@ export const buildNotesCollection = (
         inferTocCapabilities(preparedToc.headings, chromePolicy);
 
       return {
-        ...noteWithoutVeliteToc,
+        ...noteWithoutGeneratedToc,
         ...(typeof note.content === 'string' ? { content: preparedToc.html } : {}),
         kind,
         chromeProfile,

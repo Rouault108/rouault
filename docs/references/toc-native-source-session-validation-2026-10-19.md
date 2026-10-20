@@ -103,3 +103,13 @@ ReadingとTOCが使うCSS読取だけを`src/navigation/heading-scroll-offset.ts
 標準`pnpm check`は既存gitignoredの`tmp/onboarding-browser.config.ts`、`tmp/onboarding-dev.config.ts`、`tmp/onboarding-webkit.config.ts`のparser-project lintエラーで停止した。これらを削除・変更せず、当該artifactを除くlintと後続集約検証を実行した。local Firefoxはpage作成時のuid_map EROFS/子process SIGSEGV、WebKitは6共有library不足で起動不可だった。正式試験の成功にもskipにも数えず、network install、host依存追加、証明書・sandbox回避を行わない。最終SHAのclean checkoutと3 engineは既存CIを正本とする。
 
 Windows実機は未確認であり、ユーザーの現行runが合格したという記録ではない。新しいtabで検証previewのfresh hash URLを開き、通常URLからTOCクリック・通常hashリンクとの停止線を比較する。末尾は80px固定整列を要求せず、到達可能な最大Yへ止まることを確認する。reloadは保存/native viewportを尊重する既存動作として別に確認し、②・③の修正完了と解釈しない。上の10/19性能・bundle値は当時のbuildの記録であり、今回のoffset修正後の再測定値として扱わない。
+
+## 2026-10-20: 承認後のmain統合準備
+
+ユーザーのmain反映承認後、検証済み`b4fab915`のブランチへ最新mainの`36fbe519`をmergeする。mainを古いbranch lineageへ戻さず、共通コンパイラへの移行、memo identity/入力除外の互換修正、native scrollbarとその検証を保持する。②のBack挙動と③のsidebar summaryちらつきの追加実装は含めない。
+
+競合は2件で、`docs/README.md`のReference一覧は双方の参照を連結し、`test/e2e/toc-active-scroll.spec.ts`はmainの完全なscrollbar試験blockと検証ブランチの完全なhash停止位置試験blockを両方残した。mainのLocator/Page importを採用し、試験条件、threshold、skip、retryは変更しない。`docs/contracts/toc.md`は自動mergeで双方の契約を保持した。新しい動作判断を要する競合はなかった。
+
+統合treeのpackage/lock、CI設定、共通コンパイラ・build/scripts、sidebar/TOC CSSはmainと同一、native TOCとReadingのruntime sourceは`b4fab915`と同一であることをdiffで確認した。localのfrozen offline依存同期はworkspace外の既定store pathで失敗し、workspace storeを指定した試行も`rehype-raw@7.0.0`のcache不足で失敗した。後者はoffline指定でもpnpmがregistry metadata照合を試みたため、完全offlineだったとは記録しない。追加のinstallや依存宣言・lock変更は行わず、local typecheck/新コンパイラ試験のmodule欠落と製品の検証失敗を区別する。可能なlocal検査を行い、統合したexact SHAのclean checkoutを既存CIで検証してからmainをfast-forwardする。
+
+Windows実機のfresh hash、履歴位置、scrollbar paint/drag・zoom/forced-colors確認は引き続き未実施であり、本統合やcloud CIから実機合格を推定しない。

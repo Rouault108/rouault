@@ -19,6 +19,7 @@ export interface MdastNode {
   alt?: string | null;
   children?: MdastNode[];
   data?: MdastNodeData;
+  rouaultExpansionSource?: { kind: 'example-include-expanded'; ref: string };
   rouaultDirective?: RouaultDirectiveState;
   rouaultCodeBlockPayload?: unknown;
   rouaultImagePayload?: unknown;

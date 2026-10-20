@@ -1,3 +1,4 @@
+import { getInjectedContentContext } from '../../../content/content-build-context.js';
 import {
   resolveDevelopmentSiteUrlContext,
   resolveProductionSiteUrlContext,
@@ -17,6 +18,8 @@ export interface NoteDirectiveUrlPolicyContext {
 export const createNoteDirectiveUrlPolicyContext = (
   file?: VFileLike,
 ): NoteDirectiveUrlPolicyContext => {
+  const injected = getInjectedContentContext(file);
+  if (injected) return injected;
   const siteUrlContext = process.env['ROUAULT_SITE_ORIGIN']
     ? resolveProductionSiteUrlContext()
     : resolveDevelopmentSiteUrlContext();

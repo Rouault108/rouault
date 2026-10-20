@@ -8,8 +8,12 @@ import type { UserConfig } from '@11ty/eleventy';
 import { parse, type DefaultTreeAdapterMap } from 'parse5';
 import { describe, expect, it, vi } from 'vitest';
 
+vi.mock('../../build/content/generate-content.js', () => ({
+  generateContent: vi.fn(async () => ({ contexts: new Map() })),
+}));
+
 type GlobalData = () => unknown;
-type EleventyHook = () => unknown | Promise<unknown>;
+type EleventyHook = (event?: object) => unknown | Promise<unknown>;
 interface EleventyConfigModule {
   default: (config: UserConfig) => unknown;
 }
@@ -37,6 +41,7 @@ const createConfigCapture = () => {
   const passthroughCopies: Record<string, string>[] = [];
   const globalData = new Map<string, GlobalData>();
   const afterHooks: EleventyHook[] = [];
+  const beforeHooks: EleventyHook[] = [];
 
   const config = {
     addExtension() {
@@ -50,6 +55,7 @@ const createConfigCapture = () => {
     },
     addLayoutAlias: noop,
     on(eventName: string, callback: EleventyHook) {
+      if (eventName === 'eleventy.before') beforeHooks.push(callback);
       if (eventName === 'eleventy.after') {
         afterHooks.push(callback);
       }
@@ -59,6 +65,7 @@ const createConfigCapture = () => {
 
   return {
     afterHooks,
+    beforeHooks,
     config,
     globalData,
     passthroughCopies,
@@ -151,15 +158,14 @@ describe('eleventy config', () => {
     45_000,
   );
 
-  it('開発時の Velite は Eleventy 側の watch に委譲し、内部 watch を起動しないこと', () => {
-    const configPath = new URL('../../eleventy.config.ts', import.meta.url);
-    const source = readFileSync(configPath, 'utf8');
-
-    expect(source).toContain('watch: false,');
-    expect(source).not.toContain('watch: true,');
-    expect(source).toContain(
-      '開発時の再実行は Eleventy 側の watch と eleventy.before に委譲する。',
-    );
+  it('共通生成入口をawaitする既存watchを使い、独自watcherを追加しないこと', () => {
+    const source = readFileSync(new URL('../../eleventy.config.ts', import.meta.url), 'utf8');
+    expect(source).toContain("eleventyConfig.on('eleventy.before', lifecycle.before)");
+    expect(source).toContain("eleventyConfig.on('eleventy.after', lifecycle.after)");
+    expect(source).toContain('await generateContent()');
+    expect(source).not.toContain("from 'velite'");
+    expect(source).not.toContain('beforeWatch');
+    expect(source).not.toContain('Continuing in development');
   });
 
   it('tagPages グローバルデータを遅延 import で登録できること', async () => {
@@ -332,13 +338,15 @@ describe('eleventy config', () => {
       await mkdir(distDir, { recursive: true });
 
       try {
-        const { config, afterHooks } = createConfigCapture();
+        const { config, beforeHooks, afterHooks } = createConfigCapture();
         const moduleUrl = new URL('../../eleventy.config.ts', import.meta.url).href;
         const { default: configureEleventy } = (await import(moduleUrl)) as EleventyConfigModule;
         configureEleventy(config as unknown as UserConfig);
 
         expect(afterHooks).toHaveLength(1);
-        await afterHooks[0]?.();
+        const event = {};
+        await beforeHooks[0]?.(event);
+        await afterHooks[0]?.(event);
 
         expect(existsSync(path.join(distDir, '_redirects'))).toBe(true);
         expect(existsSync(path.join(distDir, '_headers'))).toBe(true);

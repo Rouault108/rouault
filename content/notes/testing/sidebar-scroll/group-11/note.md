@@ -4,6 +4,7 @@ description: 'サイドバーのスクロール検証用ノート 11'
 date: 2026-03-14
 kind: 'testing'
 testingArea: 'interactive'
+chromeProfile: 'reader'
 genre:
   - testing
   - e2e

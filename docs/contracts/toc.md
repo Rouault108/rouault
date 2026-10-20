@@ -106,7 +106,13 @@ TOCの現在地表示は、支援技術向けには`aria-current="location"`、�
 - TOC linkはnavigation surfaceとして扱い、通常・hover・focus・currentのいずれでも下線を出さない
 - density tierは`--toc-item-*` token recipeを切り替えるだけで、見出しID、active state、URLを変更しない
 
-### 4.5 Label wrapping
+### 4.5 Native scrollbar
+
+`.layout-toc`と`.layout-toc-mobile-panel`のbase ruleは`scrollbar-width: thin`を指定する。scrollbar-colorをauthor側で指定せず、normal / hover / focus-withinを通してUAの色制御を維持する。transparent / noneやWebKit scrollbar paintingで隠さない。ancestorにもscrollbar-color指定を置かない。link固有のhover / focus-visible / current装飾とは独立した契約とする。
+
+既存寸法、overflow、desktopの`scrollbar-gutter: stable`、padding、overscroll、DOM、ARIA、JavaScriptを維持する。page、table、code、search等のscroll surfaceは対象外。mobileではouter panelとinner `.layout-toc`を別々に測定し、実際のclip ancestorを両方考慮する。innerのoverflow有無だけから構造不良と判断しない。
+
+### 4.6 Label wrapping
 
 TOC labelは、階層だけを理由に1行省略してはならない。`data-heading-depth`は構造情報であり、indentや検証用のhookとして残すが、`white-space: nowrap`、`text-overflow: ellipsis`、`line-clamp: unset`の根拠にしてはならない。
 
@@ -209,6 +215,14 @@ runtime契約:
 - mobile panelがheaderの直下から開くこと
 - close後にtriggerへfocus returnできること
 - density tierがCSS structureとbrowser behaviorの両方で固定されていること
+
+- scrollbar SSRはexact selectorのbase thinと全media scopeのcolor指定 / 非表示 / WebKit paintingの不在、既存overflow / gutterを固定する。
+- scrollbar E2Eは既存Chromium / Firefox / WebKit desktop projectsで実行する。長いfixtureのoverflowと独立したwheel / scrollTop末尾到達、全操作面のclip / occlusion、到達後のhash / current / mobile close / focus returnを検証する。短いfixtureは非overflowを検証する。
+- current更新はlabelの高さを変え得るため、current ID、scrollHeight、clientHeight、scrollTopがrendering frame間で安定してから末尾距離1 CSS px以内を判定し、geometry測定前にendpointをfocus / hover / clickして自動scrollを起こさない。
+- light / dark / `matchMedia`で有効なforced-colorsを記録する。`CSS.supports`は構文対応のみ、computed thin / autoはcascadeの保証でありpaint幅・色・自動非表示の保証ではない。未対応propertyは別記録とし、scroll / link到達検証は省略しない。
+- Windows Edgeの実scrollbar drag、keyboard、200% zoom、themes / forced-colors / OS always-show設定とiPhone Safari touchは別途manual確認の対象でありcloudでは未実施。390px幅のdesktop projectはiPhone / touch検証ではない。
+
+Playwright v1.63.0のFirefox headlessは、[Juggler.js](https://github.com/microsoft/playwright/blob/v1.63.0/browser_patches/firefox/juggler/components/Juggler.js#L101-L105)で[hidden-scrollbars.css](https://github.com/microsoft/playwright/blob/v1.63.0/browser_patches/firefox/juggler/content/hidden-scrollbars.css#L5-L7)をAGENT_SHEETとして登録し、`* { scrollbar-width: none !important; }`を適用する。このrunner version・Firefox・実headless fixture値の3条件が一致する環境だけはcomputed `none`を明示的に検証・記録する。実際に配信されたauthor stylesheetのexact surface ruleがthinであり、該当surfaceに他のwidth / color宣言がないこともCSSOMで確認する。全Firefoxへの例外とせず、他環境のthin mismatchを許容しない。scroll、endpoint、link到達、colorの検証は省略しない。これはheadless harnessの制約であり、通常Firefoxや実OSのpaintの保証ではない。
 
 ## Native Tabs integration
 

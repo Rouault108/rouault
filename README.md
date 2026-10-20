@@ -3,7 +3,7 @@
 Rouaultは個人的なノートを静かに読むためのWebアプリケーションです。  
 一般的なドキュメントサイトやナレッジベースではなく、Markdownで蓄積した内容を**落ち着いて通読すること**を優先して設計しています。
 
-現行実装は、Eleventyによる静的生成を基盤とし、文書の意味構造を表す静的HTMLと、必要な箇所だけに操作機能を加える軽量なJavaScript処理（plain enhancer）、MiniSearchとSuzumeを使うWorker検索、VeliteとMarkdown変換パイプラインによるコンテンツ管理を組み合わせています。
+現行実装は、Eleventyによる静的生成を基盤とし、文書の意味構造を表す静的HTMLと、必要な箇所だけに操作機能を加える軽量なJavaScript処理（plain enhancer）、MiniSearchとSuzumeを使うWorker検索、共通コンパイラとMarkdown変換パイプラインによるコンテンツ管理を組み合わせています。
 
 ## このリポジトリの正本
 
@@ -38,7 +38,7 @@ Catalog fallbackは、JavaScriptの実行中に字句検索（lexical / Worker�
 - UI: 文書の意味構造を表す静的HTMLを基本とし、必要な対話部分にplain enhancerを使用
 - 言語: TypeScript
 - ビルド時SSR: Eleventyと、ノートを標準のHTML要素へ変換する処理（native note lowering）
-- コンテンツ処理: Velite + Markdown変換パイプライン
+- コンテンツ処理: 共通コンパイラ + Markdown変換パイプライン
 - 検索: MiniSearch / Suzume（Worker）、障害時のみCatalog fallback
 - コードハイライト: Shiki
 - 数式: KaTeX
@@ -79,7 +79,7 @@ Catalog fallbackは、JavaScriptの実行中に字句検索（lexical / Worker�
 ビルド時の処理入口:
 
 - `eleventy.config.ts`: 静的ページ生成と開発サーバーの設定
-- `velite.config.ts`: コンテンツのスキーマとMarkdown変換パイプライン
+- `build/content/`: コンテンツのスキーマ、共通コンパイラ、JSON生成入口
 - `build/rehype/native-note-lowering.ts`: ノートのUIを標準のHTML要素による静的HTMLへ変換するビルド時の処理
 
 クライアント / アプリ入口:

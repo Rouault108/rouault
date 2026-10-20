@@ -1,4 +1,5 @@
 import path from 'node:path';
+import type { SearchAvailability } from './search-availability.js';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import type { Connect } from 'vite';
 import { createStaticDirectoryMiddleware } from './dev-static-directory.js';
@@ -9,7 +10,9 @@ import type { SiteUrlContext } from '../../shared/site/site-url-context.js';
 import { resolveSearchCatalogUrl } from '../../shared/search/search-artifact-url.js';
 
 export interface DevelopmentSearchArtifactMiddlewareOptions {
+  readonly outputDirectory?: string;
   readonly siteUrlContext: SiteUrlContext;
+  readonly availability: Pick<SearchAvailability, 'isAvailable'>;
   readonly loadNotes: () => readonly SourceNote[];
 }
 
@@ -23,7 +26,7 @@ export const createDevelopmentSearchArtifactMiddleware = (
   const searchCatalogPathname = resolveSearchCatalogUrl(options.siteUrlContext);
   const lexicalAssets = createStaticDirectoryMiddleware(
     `${options.siteUrlContext.basePath}/search/`,
-    path.resolve('dist/search'),
+    path.join(options.outputDirectory ?? path.resolve('dist'), 'search'),
   );
 
   return async (
@@ -49,7 +52,34 @@ export const createDevelopmentSearchArtifactMiddleware = (
       return;
     }
 
-    if (requestUrl.pathname === searchCatalogPathname) {
+    let pathname: string;
+    try {
+      pathname = decodeURIComponent(requestUrl.pathname);
+    } catch {
+      next();
+      return;
+    }
+    const isCatalog = pathname === searchCatalogPathname;
+    const searchPrefix = `${options.siteUrlContext.basePath}/search/`;
+    const isSearchData =
+      pathname.startsWith(searchPrefix) &&
+      pathname !== searchPrefix &&
+      pathname !== `${searchPrefix}index.html`;
+    if (!isCatalog && !isSearchData) {
+      next();
+      return;
+    }
+    const unavailable = (): void => {
+      response.statusCode = 503;
+      sendNoStore(response);
+      response.end();
+    };
+    if (!options.availability.isAvailable()) {
+      unavailable();
+      return;
+    }
+
+    if (isCatalog) {
       response.statusCode = 200;
       response.setHeader('Content-Type', 'application/json; charset=utf-8');
       sendNoStore(response);
@@ -57,13 +87,17 @@ export const createDevelopmentSearchArtifactMiddleware = (
         response.end();
         return;
       }
-      response.end(renderSearchCatalogArtifact(options.loadNotes()));
+      try {
+        response.end(renderSearchCatalogArtifact(options.loadNotes()));
+      } catch {
+        unavailable();
+      }
       return;
     }
 
-    if (requestUrl.pathname.startsWith(`${options.siteUrlContext.basePath}/search/`)) {
+    if (isSearchData) {
       sendNoStore(response);
-      lexicalAssets(request, response, next);
+      lexicalAssets(request, response, unavailable);
       return;
     }
     next();

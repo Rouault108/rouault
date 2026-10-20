@@ -1,0 +1,42 @@
+{
+  "root": "/tmp/rouault-content-watch-JOSSxh",
+  "events": [
+    {
+      "check": "initial metadata failure exits; restart required",
+      "result": "passed"
+    },
+    {
+      "check": "restart after initial failure; middleware preserves initial success",
+      "result": "passed"
+    },
+    {
+      "check": "running watch metadata failure keeps process alive and data at 503/no-store",
+      "result": "passed"
+    },
+    {
+      "check": "corrected article recovers through watch without restart",
+      "result": "passed"
+    },
+    {
+      "check": "html fault keeps search unavailable and corrected watch recovers",
+      "result": "passed"
+    },
+    {
+      "check": "static fault keeps search unavailable and corrected watch recovers",
+      "result": "passed"
+    },
+    {
+      "check": "search fault keeps search unavailable and corrected watch recovers",
+      "result": "passed"
+    },
+    {
+      "check": "consecutive edits are serialized and latest processed input reaches JSON and HTML",
+      "result": "passed",
+      "detail": "max active generation=1"
+    },
+    {
+      "check": "stop, edit implementation, restart uses new compiler for full generation",
+      "result": "passed"
+    }
+  ]
+}

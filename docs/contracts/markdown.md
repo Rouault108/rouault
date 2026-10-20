@@ -272,26 +272,31 @@ Code Preview profileの解決は`note-content-contracts.ts`で一度行い、`re
 
 ### Build-time
 
-- 実装上のsource of truthは`velite.config.ts`におけるプラグイン順序である。
+- 実装上のsource of truthは`build/content/content-compiler.ts`におけるプラグイン順序である。
 - Markdown transform pipelineは次の順序で成立する。
   1. `remarkMath`
   2. `remarkGfm`
   3. `remarkExpandExampleIncludes`
-  4. `remarkDisallowRawHtml`
-  5. `remarkRouaultDirectives`
-  6. `remarkLinkCards`
-  7. `remark-rehype`
-  8. `rehypeKatex`
-  9. `rehypeRouaultComponents`
-  10. `rehypeHeadingIds`
-  11. `rehypePreviewSandbox`
-  12. `rehypeShikiCodeBlocks`
-  13. `rehypeStaticCodeGroups`
-  14. `rehypeResolveNoteSourceLinks`
-  15. `rehypeAnnotateLinkKinds`
-  16. `rehypeInlineCodeTranslateNo`
-  17. `rehypeOrderedListContracts`
-  18. `rehypeDisallowDangerousProps`
+  4. `remarkRemovePureComments`
+  5. `remarkDisallowRawHtml`
+  6. `remarkRouaultDirectives`
+  7. `remarkCollectSourceLinks`
+  8. `remarkLinkCards`
+  9. `remarkRehype`
+  10. `rehypeCodeMeta`
+  11. `rehypeRaw`
+  12. `rehypeKatex`
+  13. `rehypeRouaultComponents`
+  14. `rehypeHeadingIds`
+  15. `rehypePreviewSandbox`
+  16. `rehypeShikiCodeBlocks`
+  17. `rehypeStaticCodeGroups`
+  18. `rehypeResolveNoteSourceLinks`
+  19. `rehypeAnnotateLinkKinds`
+  20. `rehypeInlineCodeTranslateNo`
+  21. `rehypeOrderedListContracts`
+  22. `rehypeDisallowDangerousProps`
+- `remarkCollectSourceLinks`はinclude展開済み・directive変換済みの木からURL属性とソース位置をコピーする。リンクカード化やURL書換えより前に収集し、検証のための本文再解析・include再展開を行わない。純粋なHTMLコメントだけを除去し、コメントと生HTMLが混在するnodeは拒否する。
 - Parser / transformer / adapterがMarkdownを最終DOMへ正規化する。
 - authoring grammarに関わる意味論変更は、remark層の正本と実装順序の双方を整合させる。
 - 出力DOMに関わる意味論変更は、rehype層の正本と実装順序の双方を整合させる。

@@ -29,6 +29,7 @@
 - `docs/contracts/sidebar-state.md`
 - `docs/contracts/note-navigation.md`
 - `docs/contracts/content-collections.md`
+- `docs/contracts/content-generation.md`
 - `docs/contracts/memo-metadata.md`
 - `docs/contracts/note-metadata.md`
 - `docs/contracts/reading-chrome.md`
@@ -74,6 +75,8 @@ Design System patternはUIの見え方と配置判断を扱う。Router、search
 - [TOC native hash停止位置の比較](references/toc-native-source-session-hash-offset-2026-10-20.json)
 - [TOC native source sessionの計測](references/toc-native-source-session-metrics-2026-10-19.json)
 - [TOC native source sessionのbundle比較](references/toc-native-source-session-bundle-2026-10-19.json)
+- [共通コンパイラ移行の検証記録](references/content-compiler-validation-2026-10-20.md)
+
 - [TOC初回現在地同期の検証記録](references/toc-current-position-validation-2026-10-18.md)
 
 - `docs/references/navigation-envelope-schema.md`
@@ -91,6 +94,7 @@ Design System patternはUIの見え方と配置判断を扱う。Router、search
 - `docs/guides/content-config.md`
 - `docs/guides/corpus.md`
 - `docs/guides/japanese-writing-style.md`
+- [コンテンツ生成の運用・検証](guides/operations/content-generation.md)
 - `docs/guides/operations/`
 
 ## Architecture

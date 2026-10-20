@@ -1,3 +1,4 @@
+import type { ContentRouteRegistry } from '../content/content-route-registry.js';
 import path from 'node:path';
 import { lstatSync, existsSync } from 'node:fs';
 import {
@@ -10,7 +11,7 @@ import { resolveContentSourceLocation } from '../content/content-collections.js'
 import { buildPublicationRouteRegistry } from '../content/publication-snapshot.js';
 export const resolveContentSourceLink = (
   input: ResolveNoteSourceLinkInput,
-  options: ResolveNoteSourceLinkOptions = {},
+  options: ResolveNoteSourceLinkOptions & { publicationRegistry?: ContentRouteRegistry } = {},
 ) => {
   if (options.sourceRootPaths) return resolveNoteSourceLink(input, options);
   const location = resolveContentSourceLocation(input.sourceFilePath);
@@ -29,9 +30,12 @@ export const resolveContentSourceLink = (
     if (!existsSync(current) || lstatSync(current).isSymbolicLink())
       throw new Error('[links] missing or unsafe target');
   }
-  const route = buildPublicationRouteRegistry({
-    fixtureOnly: location.sourceRoot.startsWith('test/fixtures/'),
-  }).get({ collectionId: location.collection.id, sourceRelativePath: relative });
+  const route = (
+    options.publicationRegistry ??
+    buildPublicationRouteRegistry({
+      fixtureOnly: location.sourceRoot.startsWith('test/fixtures/'),
+    })
+  ).get({ collectionId: location.collection.id, sourceRelativePath: relative });
   return {
     kind: 'resolved' as const,
     href: `${route.canonicalPathname}${parsed.search}${parsed.hash}`,

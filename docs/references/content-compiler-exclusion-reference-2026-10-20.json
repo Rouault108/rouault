@@ -1,0 +1,31 @@
+{
+  "veliteVersion": "0.3.1",
+  "fastGlobVersion": "3.3.3",
+  "options": {
+    "absolute": true,
+    "onlyFiles": true,
+    "ignore": ["**/_*"],
+    "dot": "default false"
+  },
+  "candidates": [
+    "visible.md",
+    "_private.md",
+    "_draft.md",
+    ".hidden.md",
+    "_private/child.md",
+    ".hidden/child.md",
+    "normal/visible.md",
+    "normal/_private.md",
+    "normal/.hidden.md",
+    "normal/_private/child.md",
+    "normal/.hidden/child.md",
+    "normal_name/visible_file.md"
+  ],
+  "adopted": [
+    "content/notes/_private/child.md",
+    "content/notes/normal/_private/child.md",
+    "content/notes/normal/visible.md",
+    "content/notes/normal_name/visible_file.md",
+    "content/notes/visible.md"
+  ]
+}

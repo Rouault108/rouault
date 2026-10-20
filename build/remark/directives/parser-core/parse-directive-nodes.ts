@@ -21,6 +21,10 @@ const toParsedDirectiveNode = (
   attrs: Record<string, string>,
 ): MdastNode => ({
   type: getDirectiveDescriptor(marker.name).nodeType,
+  ...(marker.node.position ? { position: marker.node.position } : {}),
+  ...(marker.node.rouaultExpansionSource
+    ? { rouaultExpansionSource: marker.node.rouaultExpansionSource }
+    : {}),
   rouaultDirective: {
     name: marker.name,
     rawAttributes: attrs,

@@ -3,7 +3,12 @@ import { copyFile, readFile, writeFile } from 'node:fs/promises';
 import type { UserConfig } from '@11ty/eleventy';
 import EleventyVitePlugin from '@11ty/eleventy-plugin-vite';
 import type { Connect, ViteDevServer } from 'vite';
-import { build } from 'velite';
+import type { ContentDocumentContext } from './build/content/content-build-context.js';
+import { generateContent } from './build/content/generate-content.js';
+import {
+  createContentBuildLifecycle,
+  developmentSearchAvailability,
+} from './build/dev/search-availability.js';
 
 import { loadMemosData } from './build/data/memos.js';
 import { loadNotesData } from './src/data/notes.js';
@@ -26,35 +31,7 @@ import {
   resolveDevelopmentSiteUrlContext,
   resolveProductionSiteUrlContext,
 } from './build/site/site-url-context.js';
-import { validateNoteSourceLinks } from './build/content/validate-note-source-links.js';
 import { resolveTrailingSlashRewrite } from './shared/navigation/trailing-slash-rewrite.js';
-
-const formatErrorForConsole = (error: unknown): string => {
-  if (error instanceof Error) {
-    return error.stack ?? `${error.name}: ${error.message}`;
-  }
-
-  if (typeof error === 'string') {
-    return error;
-  }
-
-  try {
-    return JSON.stringify(error);
-  } catch {
-    return String(error);
-  }
-};
-
-const ensureVeliteBuild = async (isServing: boolean): Promise<void> => {
-  await build({
-    strict: true,
-    clean: !isServing,
-    // Velite 0.3.1 は watch 時に root 全体を再帰監視するため、
-    // root='.' では node_modules 配下まで監視して EMFILE を起こしやすい。
-    // 開発時の再実行は Eleventy 側の watch と eleventy.before に委譲する。
-    watch: false,
-  });
-};
 
 const registerTrailingSlashRewrite = (server: ViteDevServer): void => {
   const middleware: Connect.NextHandleFunction = (req, _res, next) => {
@@ -134,6 +111,7 @@ const registerDevelopmentSearchArtifacts = (server: ViteDevServer): void => {
     createDevelopmentSearchArtifactMiddleware({
       siteUrlContext: resolveDevelopmentSiteUrlContext(),
       loadNotes: () => loadNotesData(),
+      availability: developmentSearchAvailability,
     }),
   );
 };
@@ -151,10 +129,12 @@ const copyStaticHostingArtifacts = async (): Promise<void> => {
 };
 
 /**
- * Velite と Vite を組み合わせた 11ty の設定。
+ * 共通コンテンツ生成入口とViteを利用する11ty設定。
  */
 export default function configureEleventy(eleventyConfig: UserConfig) {
   const isServing = process.argv.includes('--serve');
+  let contentBuildContexts = new Map<string, ContentDocumentContext>();
+  eleventyConfig.addGlobalData('contentBuildContexts', () => contentBuildContexts);
 
   eleventyConfig.addExtension('11ty.ts', {
     key: '11ty.js',
@@ -216,27 +196,22 @@ export default function configureEleventy(eleventyConfig: UserConfig) {
   eleventyConfig.addLayoutAlias('base', 'BaseLayout.11ty.ts');
   eleventyConfig.addLayoutAlias('note', 'NoteLayout.11ty.ts');
 
-  eleventyConfig.on('eleventy.before', async () => {
-    try {
-      await ensureVeliteBuild(isServing);
-      await validateNoteSourceLinks();
-    } catch (error: unknown) {
-      console.error(`❌ Content validation failed:\n${formatErrorForConsole(error)}`);
-
-      if (!isServing) {
-        console.error('Exiting due to build failure in production mode.');
-        process.exit(1);
-      }
-
-      console.warn('⚠️  Continuing in development mode despite errors.');
-    }
+  const lifecycle = createContentBuildLifecycle({
+    availability: developmentSearchAvailability,
+    generateContent: async () => {
+      contentBuildContexts = new Map();
+      const generated = await generateContent();
+      contentBuildContexts = generated.contexts;
+      return generated;
+    },
+    copyStaticArtifacts: copyStaticHostingArtifacts,
+    emitSearch: async () => {
+      if (isServing)
+        await emitLexicalSite({ notes: loadNotesData(), outputDir: path.resolve('dist') });
+    },
   });
-
-  eleventyConfig.on('eleventy.after', async () => {
-    await copyStaticHostingArtifacts();
-    if (isServing)
-      await emitLexicalSite({ notes: loadNotesData(), outputDir: path.resolve('dist') });
-  });
+  eleventyConfig.on('eleventy.before', lifecycle.before);
+  eleventyConfig.on('eleventy.after', lifecycle.after);
 
   if (isServing) {
     eleventyConfig.addPlugin(EleventyVitePlugin, {

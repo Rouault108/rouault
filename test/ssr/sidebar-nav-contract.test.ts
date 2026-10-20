@@ -9,6 +9,9 @@ import type { SidebarNavRow } from '../../shared/navigation/navigation-types.js'
 import { expectCssExcludes, expectCssIncludes } from './css-contract-test-helpers.js';
 import {
   hasAllDeclarationValuesIncludingForSelectorContaining,
+  hasDeclarationForSelector,
+  lacksDeclarationPropertyForSelector,
+  hasRuleContainingSelectorFragment,
   hasDeclarationForSelectorContaining,
   hasNoDeclarationValueIncludingForSelectorContaining,
   hasOnlyAllowedDeclarationValuesForSelectorContaining,
@@ -86,6 +89,42 @@ const forbiddenFragments = [
 ] as const;
 
 describe('sidebar nav explicit contract', () => {
+  it('active fixed / overlay root だけが native thin scrollbar を指定すること', () => {
+    const modes = ['fixed', 'overlay'] as const;
+    for (const mode of modes) {
+      const selector = `[data-sidebar-enhancement-state='active'] [data-layout-sidebar-root][data-mode='${mode}']`;
+      expect(
+        hasDeclarationForSelector(mainCss, selector, 'scrollbar-width', 'thin', { scope: 'base' }),
+      ).toBe(true);
+      expect(
+        hasDeclarationForSelector(mainCss, selector, 'overflow-y', 'auto', { scope: 'base' }),
+      ).toBe(true);
+    }
+    expect(
+      listDeclarationsForSelectorContaining(mainCss, '', { scope: 'any' })
+        .filter(({ property }) => property === 'scrollbar-width')
+        .map(({ selector, value }) => ({ selector: selector.replace(/\s+/gu, ' '), value })),
+    ).toEqual(
+      modes.map((mode) => ({
+        selector: `[data-sidebar-enhancement-state='active'] [data-layout-sidebar-root][data-mode='${mode}']`,
+        value: 'thin',
+      })),
+    );
+    for (const selector of ['[data-layout-sidebar-root]', '[data-sidebar-nav]']) {
+      expect(
+        lacksDeclarationPropertyForSelector(mainCss, selector, 'scrollbar-width', { scope: 'any' }),
+      ).toBe(true);
+      expect(
+        lacksDeclarationPropertyForSelectorContaining(mainCss, selector, 'scrollbar-color', {
+          scope: 'any',
+        }),
+      ).toBe(true);
+    }
+    expect(
+      hasRuleContainingSelectorFragment(mainCss, '::-webkit-scrollbar', { scope: 'any' }),
+    ).toBe(false);
+  });
+
   it('renderer が leaf / branch の両方に explicit metadata を付与すること', () => {
     const rows: readonly SidebarNavRow[] = [
       {

@@ -3,7 +3,7 @@
 ## 1. Status
 
 - Type: Normative
-- Source of truth: Markdown source frontmatter, Velite schema, metadata validators, authoring commands
+- Source of truth: Markdown source frontmatter, content schema, metadata validators, authoring commands
 - Applies to: `content/notes/**/*.md` note frontmatter and authoring-time source mutation
 - Non-goals: Permanent URL hash修正、既存content migration、projection/search/layout表示仕様変更
 

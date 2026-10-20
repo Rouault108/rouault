@@ -470,7 +470,7 @@ describe('filterPublicNotes', () => {
     ]);
   });
 
-  it('Velite が index.md を "fixture" として返しても directory-index に復元する', async () => {
+  it('生成処理が index.md を "fixture" として返しても directory-index に復元する', async () => {
     const contentRoot = await createContentRoot();
 
     await mkdir(path.join(contentRoot, 'fixture'), { recursive: true });

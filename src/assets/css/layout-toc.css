@@ -7,7 +7,6 @@
   padding: var(--space-3, 12px) var(--space-2, 8px);
   scrollbar-gutter: stable;
   scrollbar-width: thin;
-  scrollbar-color: transparent transparent;
 }
 
 .layout-toc-col[data-density-tier='compact'] .layout-toc,
@@ -30,13 +29,6 @@
 
 [data-layout-toc-mobile-static-nav] {
   display: none;
-}
-
-.layout-toc:hover,
-.layout-toc:focus-within,
-.layout-toc-mobile-panel:hover,
-.layout-toc-mobile-panel:focus-within {
-  scrollbar-color: var(--scrollbar-thumb, var(--fg-control-affordance, oklch(60% 0 0))) transparent;
 }
 
 .layout-toc__list {
@@ -232,6 +224,7 @@ layout-toc-controller {
   padding: var(--space-2, 8px) max(var(--space-3, 12px), env(safe-area-inset-right))
     var(--space-6, 24px) max(var(--space-3, 12px), env(safe-area-inset-left));
   overflow-y: auto;
+  scrollbar-width: thin;
   overscroll-behavior: contain;
 }
 

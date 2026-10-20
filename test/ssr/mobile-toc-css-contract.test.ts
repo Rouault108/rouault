@@ -8,13 +8,48 @@ import {
   TOC_MOBILE_PANEL_SELECTOR,
   TOC_MOBILE_PANEL_STYLING_SELECTOR,
 } from '../../src/toc/toc-mobile-panel-dom-css-contract.js';
-import { hasDeclarationForSelectorInMedia } from './support/css-contract.js';
+import {
+  hasDeclarationForSelector,
+  hasDeclarationForSelectorInMedia,
+  lacksDeclarationPropertyForSelector,
+} from './support/css-contract.js';
 
 const mainCss = readFileSync(resolve(process.cwd(), 'src/assets/css/main.css'), 'utf8');
 const noteShellCss = readFileSync(resolve(process.cwd(), 'src/assets/css/note-shell.css'), 'utf8');
 const layoutTocCss = readFileSync(resolve(process.cwd(), 'src/assets/css/layout-toc.css'), 'utf8');
 
 describe('mobile toc css contract', () => {
+  it('outer mobile panel は geometry を変えず native thin scrollbar を指定すること', () => {
+    for (const [property, value] of [
+      ['scrollbar-width', 'thin'],
+      ['overflow-y', 'auto'],
+      ['overscroll-behavior', 'contain'],
+      ['max-block-size', 'min(70vh, calc(100dvh - var(--header-height)))'],
+    ] as const) {
+      expect(
+        hasDeclarationForSelector(layoutTocCss, '.layout-toc-mobile-panel', property, value, {
+          scope: 'base',
+        }),
+      ).toBe(true);
+    }
+    expect(
+      lacksDeclarationPropertyForSelector(
+        layoutTocCss,
+        '.layout-toc-mobile-panel',
+        'scrollbar-color',
+        { scope: 'any' },
+      ),
+    ).toBe(true);
+    expect(
+      lacksDeclarationPropertyForSelector(
+        layoutTocCss,
+        '.layout-toc-mobile-panel',
+        'scrollbar-gutter',
+        { scope: 'any' },
+      ),
+    ).toBe(true);
+  });
+
   it('mobile panel contract points at the shared layout toc CSS artifact', () => {
     expect(TOC_MOBILE_PANEL_SELECTOR).toBe('[data-layout-toc-mobile-panel]');
     expect(TOC_MOBILE_PANEL_STYLING_SELECTOR).toBe('.layout-toc-mobile-panel');

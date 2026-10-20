@@ -75,6 +75,20 @@ export const expandDirectiveParagraph = (node: MdastNode, file?: VFileLike): Mda
 
   const result: MdastNode[] = [];
   let paragraphLines: string[] = [];
+  let paragraphStart = 0;
+  const sourceAt = (lineIndex: number) => ({
+    ...(node.position?.start?.line !== undefined
+      ? {
+          position: {
+            start: {
+              line: node.position.start.line + lineIndex,
+              column: lineIndex === 0 ? (node.position.start.column ?? 1) : 1,
+            },
+          },
+        }
+      : {}),
+    ...(node.rouaultExpansionSource ? { rouaultExpansionSource: node.rouaultExpansionSource } : {}),
+  });
 
   const flushParagraph = (): void => {
     if (paragraphLines.length === 0) {
@@ -83,12 +97,13 @@ export const expandDirectiveParagraph = (node: MdastNode, file?: VFileLike): Mda
 
     result.push({
       type: 'paragraph',
+      ...sourceAt(paragraphStart),
       children: [{ type: 'text', value: paragraphLines.join('\n') }],
     });
     paragraphLines = [];
   };
 
-  for (const line of lines) {
+  for (const [lineIndex, line] of lines.entries()) {
     const trimmed = line.trim();
     if (trimmed.length === 0) {
       flushParagraph();
@@ -99,11 +114,13 @@ export const expandDirectiveParagraph = (node: MdastNode, file?: VFileLike): Mda
       flushParagraph();
       result.push({
         type: 'paragraph',
+        ...sourceAt(lineIndex),
         children: [{ type: 'text', value: trimmed }],
       });
       continue;
     }
 
+    if (paragraphLines.length === 0) paragraphStart = lineIndex;
     paragraphLines.push(line);
   }
 

@@ -4,20 +4,6 @@ import { describe, expect, it } from 'vitest';
 
 const projectRoot = process.cwd();
 
-const extractPluginOrder = (source: string, key: 'remarkPlugins' | 'rehypePlugins'): string[] => {
-  const pattern = new RegExp(`${key}: \\[(.*?)\\n\\s*\\],`, 'su');
-  const matched = pattern.exec(source);
-  if (!matched?.[1]) {
-    return [];
-  }
-
-  return matched[1]
-    .split('\n')
-    .map((line) => line.trim())
-    .filter((line) => line.length > 0)
-    .map((line) => line.replace(/,$/u, ''));
-};
-
 const extractDocumentedPluginOrder = (section: string): string[] => {
   const pluginOrderLinePattern = /^\d+\.\s+`([^`]+)`$/u;
 
@@ -38,37 +24,16 @@ const extractDocumentedPluginOrder = (section: string): string[] => {
 };
 
 describe('markdown plugin order', () => {
-  it('velite.config.ts の plugin 順序が snapshot と一致すること', () => {
-    const source = readFileSync(path.resolve(projectRoot, 'velite.config.ts'), 'utf8');
-
-    expect({
-      remark: extractPluginOrder(source, 'remarkPlugins'),
-      rehype: extractPluginOrder(source, 'rehypePlugins'),
-    }).toMatchInlineSnapshot(`
-      {
-        "rehype": [
-          "rehypeKatex",
-          "rehypeRouaultComponents",
-          "rehypeHeadingIds",
-          "rehypePreviewSandbox",
-          "rehypeShikiCodeBlocks",
-          "rehypeStaticCodeGroups",
-          "rehypeResolveNoteSourceLinks",
-          "rehypeAnnotateLinkKinds(resolveBuildLinkAnnotationOptions())",
-          "rehypeInlineCodeTranslateNo",
-          "rehypeOrderedListContracts",
-          "rehypeDisallowDangerousProps",
-        ],
-        "remark": [
-          "remarkMath",
-          "[remarkGfm, { singleTilde: false }]",
-          "remarkExpandExampleIncludes",
-          "remarkDisallowRawHtml",
-          "remarkRouaultDirectives",
-          "remarkLinkCards",
-        ],
-      }
-    `);
+  it('コンパイラのplugin順序が文書と一致すること', () => {
+    const source = readFileSync(
+      path.resolve(projectRoot, 'build/content/content-compiler.ts'),
+      'utf8',
+    );
+    const doc = readFileSync(path.resolve(projectRoot, 'docs/contracts/markdown.md'), 'utf8');
+    const section = doc.split('### Build-time')[1]?.split('### SSR')[0] ?? '';
+    const documented = extractDocumentedPluginOrder(section);
+    const actual = [...source.matchAll(/\.use\((\w+)/gu)].map((match) => match[1]);
+    expect(actual).toEqual(['remarkParse', ...documented]);
   });
 
   it('Markdown Contract の plugin 順序記述が契約上の順序と一致すること', () => {
@@ -80,17 +45,21 @@ describe('markdown plugin order', () => {
       throw new Error('Markdown Contract の Build-time section が見つかりません');
     }
 
-    expect(section).toContain('velite.config.ts');
+    expect(section).toContain('build/content/content-compiler.ts');
     expect(section).toContain('Markdown transform pipeline');
     expect(section).toContain('rehypeResolveNoteSourceLinks');
     expect(extractDocumentedPluginOrder(section)).toEqual([
       'remarkMath',
       'remarkGfm',
       'remarkExpandExampleIncludes',
+      'remarkRemovePureComments',
       'remarkDisallowRawHtml',
       'remarkRouaultDirectives',
+      'remarkCollectSourceLinks',
       'remarkLinkCards',
-      'remark-rehype',
+      'remarkRehype',
+      'rehypeCodeMeta',
+      'rehypeRaw',
       'rehypeKatex',
       'rehypeRouaultComponents',
       'rehypeHeadingIds',

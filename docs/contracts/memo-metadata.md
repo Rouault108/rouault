@@ -1,6 +1,6 @@
 # メモmetadata
 
-`content/memos/**/*.md`の公開frontmatterは非空の`title`、任意のISO `date` / `updated`、`license: CC BY 4.0`だけを許可する。本文はMarkdown bodyであり、frontmatterに`content`を書かない。Velite内部のslug/content処理を著者用metadataとして公開しない。
+`content/memos/**/*.md`の公開frontmatterは非空の`title`、任意のISO `date` / `updated`、`license: CC BY 4.0`だけを許可する。本文はMarkdown bodyであり、frontmatterに`content`を書かない。生成処理内部のslug/content処理を著者用metadataとして公開しない。
 
 `publish`、aliases、tags、genre、private source SHA、repository URL、vault絶対path、任意keyを転記しない。Noteのkind/status/config/stampは適用しない。入力の承認はMetis側の手動importerが所有する。
 
