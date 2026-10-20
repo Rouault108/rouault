@@ -1,3 +1,4 @@
+import { getInjectedContentContext } from '../content/content-build-context.js';
 import { resolveContentSourceLocation } from '../content/content-collections.js';
 import { resolveContentSourceLink } from '../markdown/content-source-link-resolver.js';
 import { isRawNotesAbsoluteHref } from '../markdown/note-source-link-resolver.js';
@@ -23,6 +24,7 @@ const toResolveOptions = (sourceRootPaths: Partial<Record<NoteSourceRoot, string
 export function rehypeResolveNoteSourceLinks(options: RehypeResolveNoteSourceLinksOptions = {}) {
   return (tree: unknown, file?: VFileLike): void => {
     const sourceFilePath = getSourcePath(file);
+    const context = getInjectedContentContext(file);
 
     const visit = (node: unknown): void => {
       if (!node || typeof node !== 'object') {
@@ -44,7 +46,10 @@ export function rehypeResolveNoteSourceLinks(options: RehypeResolveNoteSourceLin
           }
           const resolved = resolveContentSourceLink(
             { href, sourceFilePath },
-            toResolveOptions(options.sourceRootPaths),
+            {
+              ...toResolveOptions(options.sourceRootPaths),
+              ...(context ? { publicationRegistry: context.publicationRegistry } : {}),
+            },
           );
           if (resolved.kind === 'resolved') {
             current.properties ??= {};

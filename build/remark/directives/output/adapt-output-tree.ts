@@ -26,6 +26,9 @@ export const adaptOutputTree = (node: MdastNode, file?: VFileLike): MdastNode =>
     return {
       type: node.type,
       ...(node.position ? { position: node.position } : {}),
+      ...(node.rouaultExpansionSource
+        ? { rouaultExpansionSource: node.rouaultExpansionSource }
+        : {}),
       data: {
         hName: binding.hName,
         ...(binding.hProperties ? { hProperties: binding.hProperties } : {}),

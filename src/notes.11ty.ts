@@ -1,8 +1,9 @@
+import type { ContentDocumentContext } from '../build/content/content-build-context.js';
 /**
  * ノートページ生成テンプレート。
  *
  * Eleventy の pagination 機能を使い、
- * Velite が生成した各ノートにつき1つの HTML ページを出力する。
+ * 共通生成入口が生成した各ノートにつき1つの HTML ページを出力する。
  */
 
 import {
@@ -19,6 +20,7 @@ interface NoteEntry extends IntrinsicNote {
 }
 
 interface NotePageData {
+  contentBuildContexts?: ReadonlyMap<string, ContentDocumentContext>;
   note?: NoteEntry;
   notes?: NoteEntry[];
   notePage?: NotePageProjection;
@@ -50,7 +52,13 @@ export class NotePages {
             notes: Array.isArray(data.notes) ? data.notes : [],
           });
 
+          const linkContext = data.contentBuildContexts?.get(
+            `${note.sourceRoot ?? 'content/notes'}/${note.rawSlug}.md`,
+          );
+          if (data.contentBuildContexts && !linkContext)
+            throw new Error('[content] missing current note context');
           return buildNotePageProjection({
+            ...(linkContext ? { linkContext } : {}),
             note,
             navigation,
           });

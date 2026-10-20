@@ -1,3 +1,4 @@
+import { getInjectedContentContext } from '../content/content-build-context.js';
 import path from 'node:path';
 import { readFileSync, statSync } from 'node:fs';
 import { isLocalContentAssetPath, resolveLinkCardImage } from '../media/image-resolver.js';
@@ -36,7 +37,7 @@ interface MdastNode {
 interface VFileMessageLike {
   reason?: string;
   message?: string;
-  fatal?: boolean | null;
+  fatal?: boolean | null | undefined;
 }
 
 interface VFileLike {
@@ -110,6 +111,8 @@ const getMeaningfulChildren = (node: MdastNode): MdastNode[] =>
   Array.isArray(node.children) ? node.children.filter((child) => !isWhitespaceText(child)) : [];
 
 const createLinkCardPolicyContext = (file?: VFileLike): LinkCardUrlPolicyContext => {
+  const injected = getInjectedContentContext(file);
+  if (injected) return injected;
   const siteUrlContext = process.env['ROUAULT_SITE_ORIGIN']
     ? resolveProductionSiteUrlContext()
     : resolveDevelopmentSiteUrlContext();

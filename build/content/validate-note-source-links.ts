@@ -1,13 +1,10 @@
 import { createHash } from 'node:crypto';
-import { existsSync, readFileSync } from 'node:fs';
-import path from 'node:path';
 
 import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
 import remarkParse from 'remark-parse';
 import { unified } from 'unified';
 
-import { loadNotesData, type IntrinsicNote } from '../data/notes.js';
 import {
   isRawNotesAbsoluteHref,
   parseRawHref,
@@ -94,7 +91,6 @@ export interface CollectNoteSourceLinksOptions {
 }
 
 export interface ValidateNoteSourceLinksOptions {
-  notes?: readonly IntrinsicNote[];
   sourceRootPaths?: Partial<Record<NoteSourceRoot, string>>;
 }
 
@@ -194,6 +190,16 @@ export async function collectNoteSourceLinksFromMarkdown(
   remarkDisallowRawHtml()(tree, file);
   remarkRouaultDirectives()(tree, file);
 
+  return collectNoteSourceLinksFromTree(tree, options);
+}
+
+export function collectNoteSourceLinksFromTree(
+  tree: MdastNode,
+  options: Pick<
+    CollectNoteSourceLinksOptions,
+    'sourceFilePath' | 'sourceFileDisplayPath' | 'bodyStartLine'
+  >,
+): CollectedMarkdownUrl[] {
   const definitions = new Map<string, MdastNode>();
   walk(tree, (node) => {
     if (node.type === 'definition') {
@@ -215,6 +221,7 @@ export async function collectNoteSourceLinksFromMarkdown(
         sourceFilePath: options.sourceFilePath,
         sourceFileDisplayPath: options.sourceFileDisplayPath,
         position: toPosition(node, options.bodyStartLine),
+        ...(node.rouaultExpansionSource ? { expansionSource: { ...node.rouaultExpansionSource } } : {}),
       });
       return;
     }
@@ -231,6 +238,7 @@ export async function collectNoteSourceLinksFromMarkdown(
           sourceFilePath: options.sourceFilePath,
           sourceFileDisplayPath: options.sourceFileDisplayPath,
           position: toPosition(node, options.bodyStartLine),
+        ...(node.rouaultExpansionSource ? { expansionSource: { ...node.rouaultExpansionSource } } : {}),
           definitionPosition: toPosition(definition, options.bodyStartLine),
           definitionIdentifier: identifier,
         });
@@ -254,6 +262,7 @@ export async function collectNoteSourceLinksFromMarkdown(
         sourceFilePath: options.sourceFilePath,
         sourceFileDisplayPath: options.sourceFileDisplayPath,
         position: toPosition(node, options.bodyStartLine),
+        ...(node.rouaultExpansionSource ? { expansionSource: { ...node.rouaultExpansionSource } } : {}),
         directiveName,
         directiveAttributeName: attributeName,
         directiveUrlPolicy,
@@ -324,65 +333,4 @@ export function validateCollectedNoteSourceLinks(
 ): void {
   validateCollectedAuthoringLinks(links, options);
   validateCollectedRouteReachability(links, routePermalinks, options);
-}
-
-const sourceRootPathsForValidation = (
-  sourceRootPaths?: Partial<Record<NoteSourceRoot, string>>,
-): Partial<Record<NoteSourceRoot, string>> =>
-  sourceRootPaths ?? {
-    'content/notes': path.resolve(process.cwd(), 'content/notes'),
-    'test/fixtures/content/notes': path.resolve(process.cwd(), 'test/fixtures/content/notes'),
-  };
-
-const sourcePathForNote = (
-  note: IntrinsicNote,
-  sourceRootPaths: Partial<Record<NoteSourceRoot, string>>,
-): { sourceFilePath: string; sourceFileDisplayPath: string } => {
-  if (!note.sourceRoot) {
-    throw new Error(
-      `[markdown] note.sourceRoot is required for note source link validation: ${note.rawSlug}`,
-    );
-  }
-  const rootPath = sourceRootPaths[note.sourceRoot];
-  if (!rootPath) {
-    throw new Error(
-      `[markdown] sourceRootPaths is missing "${note.sourceRoot}" for ${note.rawSlug}`,
-    );
-  }
-  return {
-    sourceFilePath: path.join(rootPath, `${note.rawSlug}.md`),
-    sourceFileDisplayPath: `${note.sourceRoot}/${note.rawSlug}.md`,
-  };
-};
-
-export async function validateNoteSourceLinks(
-  options: ValidateNoteSourceLinksOptions = {},
-): Promise<void> {
-  if (!options.notes) {
-    const velitePath = path.resolve(process.cwd(), '.velite', 'notes.json');
-    if (!existsSync(velitePath)) {
-      throw new Error(
-        'Missing .velite/notes.json.\nRun `pnpm run codegen:content` before validate:note-links.',
-      );
-    }
-  }
-
-  const notes = options.notes ?? loadNotesData();
-  const publicNotes = notes.filter((note) => note.status !== 'draft');
-  const routePermalinks = new Set(publicNotes.map((note) => note.permalink));
-  const sourceRootPaths = sourceRootPathsForValidation(options.sourceRootPaths);
-
-  for (const note of publicNotes) {
-    const { sourceFilePath, sourceFileDisplayPath } = sourcePathForNote(note, sourceRootPaths);
-    const raw = readFileSync(sourceFilePath, 'utf8');
-    const stripped = stripYamlFrontmatter(raw);
-    const links = await collectNoteSourceLinksFromMarkdown({
-      body: stripped.body,
-      bodyStartLine: stripped.bodyStartLine,
-      frontmatter: stripped.frontmatter,
-      sourceFilePath,
-      sourceFileDisplayPath,
-    });
-    validateCollectedNoteSourceLinks(links, routePermalinks, { sourceRootPaths });
-  }
 }

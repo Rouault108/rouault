@@ -1,3 +1,4 @@
+import type { NoteDirectiveUrlPolicyContext } from '../remark/directives/policy/directive-url-policy-context.js';
 import type { MemoRecord } from '../data/memos.js';
 import { contentIdentityDomKey } from '../content/content-record.js';
 import { buildReadingPageProjection } from './reading-page-projection.js';
@@ -9,14 +10,22 @@ import {
 import type { BreadcrumbItem } from '../../shared/navigation/navigation-types.js';
 export const MEMO_RIGHTS_NOTICE =
   'メモ本文は CC BY 4.0。第三者の画像・引用等は、各権利者の条件に従います。';
-export const buildMemoPageProjection = (memo: MemoRecord, memos: readonly MemoRecord[]) => {
-  const siteUrlContext = process.env['ROUAULT_SITE_ORIGIN']
-    ? resolveProductionSiteUrlContext()
-    : resolveDevelopmentSiteUrlContext();
-  const linkContext = resolveNoteLinkClassificationContext({
-    sourceFilePath: `${memo.sourceRoot}/${memo.identity.sourceRelativePath}`,
-    siteUrlContext,
-  });
+export const buildMemoPageProjection = (
+  memo: MemoRecord,
+  memos: readonly MemoRecord[],
+  context?: NoteDirectiveUrlPolicyContext,
+) => {
+  const siteUrlContext =
+    context?.siteUrlContext ??
+    (process.env['ROUAULT_SITE_ORIGIN']
+      ? resolveProductionSiteUrlContext()
+      : resolveDevelopmentSiteUrlContext());
+  const linkContext =
+    context ??
+    resolveNoteLinkClassificationContext({
+      sourceFilePath: `${memo.sourceRoot}/${memo.identity.sourceRelativePath}`,
+      siteUrlContext,
+    });
   const reading = buildReadingPageProjection({
     identityKey: contentIdentityDomKey(memo.identity),
     canonicalPathname: memo.canonicalPathname,

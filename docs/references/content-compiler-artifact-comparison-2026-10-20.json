@@ -1,0 +1,520 @@
+{
+  "collections": [
+    {
+      "name": "notes",
+      "before": 55,
+      "after": 55,
+      "equal": true,
+      "arrayOrderEqual": false,
+      "beforeSha256": "e65baa06fa8864b435b5740aba685e8835b4bccc66c987dc570170692df52149",
+      "afterSha256": "e65baa06fa8864b435b5740aba685e8835b4bccc66c987dc570170692df52149"
+    },
+    {
+      "name": "memos",
+      "before": 3,
+      "after": 3,
+      "equal": true,
+      "arrayOrderEqual": true,
+      "beforeSha256": "3373c0dbe93d1838489667517468a0b8e7ace94a1524872442e0cefba36c855e",
+      "afterSha256": "3373c0dbe93d1838489667517468a0b8e7ace94a1524872442e0cefba36c855e"
+    }
+  ],
+  "html": [
+    {
+      "file": "404.html",
+      "equal": true,
+      "beforeSha256": "70e8f05fcccc728f647b4f9851ee5207b8fe2a4f6167400b5b575aaf63d494dc",
+      "afterSha256": "70e8f05fcccc728f647b4f9851ee5207b8fe2a4f6167400b5b575aaf63d494dc"
+    },
+    {
+      "file": "about/index.html",
+      "equal": true,
+      "beforeSha256": "d0f0aecdf66406a25a5b0a78759e27c4bc8e83a964c4238b2fdaa1904aeae30c",
+      "afterSha256": "d0f0aecdf66406a25a5b0a78759e27c4bc8e83a964c4238b2fdaa1904aeae30c"
+    },
+    {
+      "file": "corpora/index.html",
+      "equal": true,
+      "beforeSha256": "693911f8b787873207cfefdc2f817ac2920e02e6559ef917b8b0c40a973ed46b",
+      "afterSha256": "693911f8b787873207cfefdc2f817ac2920e02e6559ef917b8b0c40a973ed46b"
+    },
+    {
+      "file": "corpora/library/index.html",
+      "equal": true,
+      "beforeSha256": "2c6624555410d8f9b4352c54083e2ccdb8560658830885c3be4897a6516d7ce8",
+      "afterSha256": "2c6624555410d8f9b4352c54083e2ccdb8560658830885c3be4897a6516d7ce8"
+    },
+    {
+      "file": "corpora/program/index.html",
+      "equal": true,
+      "beforeSha256": "6367ce86c122093941a3822d827ef4b97bc27784363b9a1bf57324561a71e5d0",
+      "afterSha256": "6367ce86c122093941a3822d827ef4b97bc27784363b9a1bf57324561a71e5d0"
+    },
+    {
+      "file": "index.html",
+      "equal": true,
+      "beforeSha256": "0ad0fda68741dd363e562e6b5149723241d93ea7d8ce90d0f0b26bdf6a31b0e9",
+      "afterSha256": "0ad0fda68741dd363e562e6b5149723241d93ea7d8ce90d0f0b26bdf6a31b0e9"
+    },
+    {
+      "file": "memos/2026/GoFデザインパターン全23種と現代Javaでの使い方/index.html",
+      "equal": true,
+      "beforeSha256": "5bda481801652a08aa95bc1fe66583c7d78343f8a14308042ba21e45aca5a6e4",
+      "afterSha256": "5bda481801652a08aa95bc1fe66583c7d78343f8a14308042ba21e45aca5a6e4"
+    },
+    {
+      "file": "memos/2026/Visual Studio よく使うコマンドとショートカット/index.html",
+      "equal": true,
+      "beforeSha256": "4d7f19db466dbc220535a3964f55823762909902afbf0f12a52c2f6f38f11a7f",
+      "afterSha256": "4d7f19db466dbc220535a3964f55823762909902afbf0f12a52c2f6f38f11a7f"
+    },
+    {
+      "file": "memos/2026/データ加工に使う製品・ライブラリの全体像/index.html",
+      "equal": true,
+      "beforeSha256": "d664e116dbb350d2a1791861e9fc975659f1b3e5c5cdb9b31110293fffbe16ed",
+      "afterSha256": "d664e116dbb350d2a1791861e9fc975659f1b3e5c5cdb9b31110293fffbe16ed"
+    },
+    {
+      "file": "memos/index.html",
+      "equal": true,
+      "beforeSha256": "c860e26328f4ed47d08a6417b3bf094ab1731f3f009e33860541b6bb2002f730",
+      "afterSha256": "c860e26328f4ed47d08a6417b3bf094ab1731f3f009e33860541b6bb2002f730"
+    },
+    {
+      "file": "notes/e2e/article-header-link-decoration/index.html",
+      "equal": true,
+      "beforeSha256": "1796f287261b062690f650c5f6deaa9c3257b9cf5efc5fdc407dde41535db6ea",
+      "afterSha256": "1796f287261b062690f650c5f6deaa9c3257b9cf5efc5fdc407dde41535db6ea"
+    },
+    {
+      "file": "notes/e2e/article-header-static-layout/extraordinarily-long-intermediate-breadcrumb-label-for-mobile-overflow-verification/very-long-breadcrumb-label/index.html",
+      "equal": true,
+      "beforeSha256": "222a666d3e584774cbf71c51de329ab700d8c43161faadfc73f01043da194979",
+      "afterSha256": "222a666d3e584774cbf71c51de329ab700d8c43161faadfc73f01043da194979"
+    },
+    {
+      "file": "notes/e2e/footnote-endnotes-layout/index.html",
+      "equal": true,
+      "beforeSha256": "c614fa76f66feadb2ffc1072b5355cc7b667ac67f7c25e1db1ee6490b483acff",
+      "afterSha256": "c614fa76f66feadb2ffc1072b5355cc7b667ac67f7c25e1db1ee6490b483acff"
+    },
+    {
+      "file": "notes/e2e/footnote-long-url/index.html",
+      "equal": true,
+      "beforeSha256": "f82eb99b451fc41de0be944b825369d73b4cadf5efb3a8e17c3a32e9f3131e99",
+      "afterSha256": "f82eb99b451fc41de0be944b825369d73b4cadf5efb3a8e17c3a32e9f3131e99"
+    },
+    {
+      "file": "notes/e2e/layout-rich/index.html",
+      "equal": true,
+      "beforeSha256": "43d2fb9bbebd7f4c7da96d8fd202fa669b8053c3d96d1372889c2ce88aa97a5f",
+      "afterSha256": "43d2fb9bbebd7f4c7da96d8fd202fa669b8053c3d96d1372889c2ce88aa97a5f"
+    },
+    {
+      "file": "notes/library/collection/ちくま学芸文庫/index.html",
+      "equal": true,
+      "beforeSha256": "0a9e58974aa97beb37ee1c17078ee5190199885d4c00bdc89147d0735e2ac315",
+      "afterSha256": "0a9e58974aa97beb37ee1c17078ee5190199885d4c00bdc89147d0735e2ac315"
+    },
+    {
+      "file": "notes/library/collection/ちくま文庫/index.html",
+      "equal": true,
+      "beforeSha256": "62574ca1423947e202ce4aad6b6ed8e5dce5f9f082e07b2cd59d194125d523c7",
+      "afterSha256": "62574ca1423947e202ce4aad6b6ed8e5dce5f9f082e07b2cd59d194125d523c7"
+    },
+    {
+      "file": "notes/library/collection/ちくま新書/index.html",
+      "equal": true,
+      "beforeSha256": "be8df75114d4326493313172aade6959b44ac5a8ea68f46a0b5d1053d05bed81",
+      "afterSha256": "be8df75114d4326493313172aade6959b44ac5a8ea68f46a0b5d1053d05bed81"
+    },
+    {
+      "file": "notes/library/collection/中公文庫/index.html",
+      "equal": true,
+      "beforeSha256": "2fb061e1a1222abd4060aaecb01321781d36d6318379ec33605eec047e9b7f95",
+      "afterSha256": "2fb061e1a1222abd4060aaecb01321781d36d6318379ec33605eec047e9b7f95"
+    },
+    {
+      "file": "notes/library/collection/中公新書/index.html",
+      "equal": true,
+      "beforeSha256": "34fe804e0e1d87988dad2b35f7ef080b39d299655ade61c81e1f625bb01bed24",
+      "afterSha256": "34fe804e0e1d87988dad2b35f7ef080b39d299655ade61c81e1f625bb01bed24"
+    },
+    {
+      "file": "notes/library/collection/岩波ジュニア新書/index.html",
+      "equal": true,
+      "beforeSha256": "e04f3c3d47f763e99309147c5b1633960eb2dc4bf3ecc0c09a8e3534d22523e7",
+      "afterSha256": "e04f3c3d47f763e99309147c5b1633960eb2dc4bf3ecc0c09a8e3534d22523e7"
+    },
+    {
+      "file": "notes/library/collection/岩波文庫/index.html",
+      "equal": true,
+      "beforeSha256": "e1bfc36ea95baabb4fecfb618619a955944aba6c767b469dc5c799a823e0688e",
+      "afterSha256": "e1bfc36ea95baabb4fecfb618619a955944aba6c767b469dc5c799a823e0688e"
+    },
+    {
+      "file": "notes/library/collection/岩波新書/index.html",
+      "equal": true,
+      "beforeSha256": "ce4d7e3d54199426ca5c63eb205e3eeac0e12cf16509040ec7e5f94ce15bb347",
+      "afterSha256": "ce4d7e3d54199426ca5c63eb205e3eeac0e12cf16509040ec7e5f94ce15bb347"
+    },
+    {
+      "file": "notes/library/collection/岩波現代全書/index.html",
+      "equal": true,
+      "beforeSha256": "b32e244dd52d2eb3078dbf25099c9998fa7f4a57d9ead6705646f904b126908d",
+      "afterSha256": "b32e244dd52d2eb3078dbf25099c9998fa7f4a57d9ead6705646f904b126908d"
+    },
+    {
+      "file": "notes/library/collection/岩波現代文庫/index.html",
+      "equal": true,
+      "beforeSha256": "f0c19d9f0a1a04a6c1524f1d1bb543903a9690ab40e5e43f341b461bdd26ba6a",
+      "afterSha256": "f0c19d9f0a1a04a6c1524f1d1bb543903a9690ab40e5e43f341b461bdd26ba6a"
+    },
+    {
+      "file": "notes/library/collection/平凡社ライブラリー/index.html",
+      "equal": true,
+      "beforeSha256": "1785f29eb6f1db66d039310239cda89fa8c2dea0fe2bb88ab705bfc5b11a7e7d",
+      "afterSha256": "1785f29eb6f1db66d039310239cda89fa8c2dea0fe2bb88ab705bfc5b11a7e7d"
+    },
+    {
+      "file": "notes/library/collection/文庫クセジュ/index.html",
+      "equal": true,
+      "beforeSha256": "d9fd5991815991c2be1292489c19ab7d9a155169e29415d9f42e09d0f2305e12",
+      "afterSha256": "d9fd5991815991c2be1292489c19ab7d9a155169e29415d9f42e09d0f2305e12"
+    },
+    {
+      "file": "notes/library/collection/河出文庫/index.html",
+      "equal": true,
+      "beforeSha256": "8dc6a39ebcd0b6b877b7f57d2a006ed6d0ea659df9aef33f2889d54434a8811a",
+      "afterSha256": "8dc6a39ebcd0b6b877b7f57d2a006ed6d0ea659df9aef33f2889d54434a8811a"
+    },
+    {
+      "file": "notes/library/collection/計算機科学・ソフトウェア開発関連書籍/index.html",
+      "equal": true,
+      "beforeSha256": "7b48ee45f35ea9f4985c4a9b4ab33ec4bcddac091d96800553be947c0e9aa6c9",
+      "afterSha256": "7b48ee45f35ea9f4985c4a9b4ab33ec4bcddac091d96800553be947c0e9aa6c9"
+    },
+    {
+      "file": "notes/library/collection/講談社学術文庫/index.html",
+      "equal": true,
+      "beforeSha256": "9884638f7602da432967a4e2d5aa0bc691c49f199540553a05f9966fa8398267",
+      "afterSha256": "9884638f7602da432967a4e2d5aa0bc691c49f199540553a05f9966fa8398267"
+    },
+    {
+      "file": "notes/library/collection/講談社文芸文庫/index.html",
+      "equal": true,
+      "beforeSha256": "c055f82c294b0609b38fae142088fe15365cc6e2f9a2bbee1b73b140ef9203f8",
+      "afterSha256": "c055f82c294b0609b38fae142088fe15365cc6e2f9a2bbee1b73b140ef9203f8"
+    },
+    {
+      "file": "notes/library/collection/講談社現代新書/index.html",
+      "equal": true,
+      "beforeSha256": "971b9bc77c678f7df8370a88acf5ad7686e4647dab030a4a1d6bccf785b67625",
+      "afterSha256": "971b9bc77c678f7df8370a88acf5ad7686e4647dab030a4a1d6bccf785b67625"
+    },
+    {
+      "file": "notes/program/csharp/declarations-modifiers-members/index.html",
+      "equal": true,
+      "beforeSha256": "1aa08e475bcae7c0a82a2101f848211861682c7c12e35cb26e9f032f3203970f",
+      "afterSha256": "1aa08e475bcae7c0a82a2101f848211861682c7c12e35cb26e9f032f3203970f"
+    },
+    {
+      "file": "notes/program/csharp/index.html",
+      "equal": true,
+      "beforeSha256": "b6c2c0fc00cc6d5b2dd77c50c3cdb5d1cc1da6cf6b10c0d3bc8efde6b5a99a22",
+      "afterSha256": "b6c2c0fc00cc6d5b2dd77c50c3cdb5d1cc1da6cf6b10c0d3bc8efde6b5a99a22"
+    },
+    {
+      "file": "notes/program/csharp/language-version-build-context-compatibility/index.html",
+      "equal": true,
+      "beforeSha256": "45af188db1c59692556fdac81fafd0dfab50985f2050741790da14ed5711b550",
+      "afterSha256": "45af188db1c59692556fdac81fafd0dfab50985f2050741790da14ed5711b550"
+    },
+    {
+      "file": "notes/program/csharp/source-code-to-execution/index.html",
+      "equal": true,
+      "beforeSha256": "61517026aa1213ed83cbf346b0585ef7c8acd36f2dbf0cdbc5818fb0800b6def",
+      "afterSha256": "61517026aa1213ed83cbf346b0585ef7c8acd36f2dbf0cdbc5818fb0800b6def"
+    },
+    {
+      "file": "notes/program/csharp/types-overview/index.html",
+      "equal": true,
+      "beforeSha256": "5263da416b99f4ba7694090dd154ad9e489d80ed33259f72141671f66e3aa18c",
+      "afterSha256": "5263da416b99f4ba7694090dd154ad9e489d80ed33259f72141671f66e3aa18c"
+    },
+    {
+      "file": "notes/program/csharp/value-types/index.html",
+      "equal": true,
+      "beforeSha256": "fca39c0fe2e530152dc623441ab362dfda5e98e01e63920f00bab9496176d04f",
+      "afterSha256": "fca39c0fe2e530152dc623441ab362dfda5e98e01e63920f00bab9496176d04f"
+    },
+    {
+      "file": "notes/program/csharp/what-is-csharp/index.html",
+      "equal": true,
+      "beforeSha256": "1d611a4a9ad48c2fb4e1f5316ba05400916d2a074ccadabe44a6bcadc35a0500",
+      "afterSha256": "1d611a4a9ad48c2fb4e1f5316ba05400916d2a074ccadabe44a6bcadc35a0500"
+    },
+    {
+      "file": "notes/testing/code/index.html",
+      "equal": true,
+      "beforeSha256": "23f46fcbb7582d6a4a9f3bb502b0bfdb3c5a2f4e0029ec66ced5aa3e46082b82",
+      "afterSha256": "23f46fcbb7582d6a4a9f3bb502b0bfdb3c5a2f4e0029ec66ced5aa3e46082b82"
+    },
+    {
+      "file": "notes/testing/index.html",
+      "equal": true,
+      "beforeSha256": "22e4f551d1b9e6a47fdc78ca420ec9b2b037ac48aa43908a9ced352816443f36",
+      "afterSha256": "22e4f551d1b9e6a47fdc78ca420ec9b2b037ac48aa43908a9ced352816443f36"
+    },
+    {
+      "file": "notes/testing/interactive/index.html",
+      "equal": true,
+      "beforeSha256": "44e6bc724804a78ef82f3081db233372fa29b637e02027dcf74aceca7e6e0818",
+      "afterSha256": "44e6bc724804a78ef82f3081db233372fa29b637e02027dcf74aceca7e6e0818"
+    },
+    {
+      "file": "notes/testing/markdown-basic/index.html",
+      "equal": true,
+      "beforeSha256": "b9ac7776be050afff3052ea4e794a378b0ba41da2e19ec10a97f6616abdadbf9",
+      "afterSha256": "b9ac7776be050afff3052ea4e794a378b0ba41da2e19ec10a97f6616abdadbf9"
+    },
+    {
+      "file": "notes/testing/media/index.html",
+      "equal": true,
+      "beforeSha256": "4133be7666bb2b0802c230e52bcb582790560e342c15a879cda28ae0c7774cc8",
+      "afterSha256": "4133be7666bb2b0802c230e52bcb582790560e342c15a879cda28ae0c7774cc8"
+    },
+    {
+      "file": "notes/testing/reader-basic/index.html",
+      "equal": true,
+      "beforeSha256": "ca56bf48cf6e15edd1d929b75e7657ea3a19f726e838d871e056461e03261c8e",
+      "afterSha256": "ca56bf48cf6e15edd1d929b75e7657ea3a19f726e838d871e056461e03261c8e"
+    },
+    {
+      "file": "notes/testing/sandbox/index.html",
+      "equal": true,
+      "beforeSha256": "b0c534a191c32587a494876645e0acc55d35c9eae6e97c41594b09a55806d88e",
+      "afterSha256": "b0c534a191c32587a494876645e0acc55d35c9eae6e97c41594b09a55806d88e"
+    },
+    {
+      "file": "notes/testing/sidebar-scroll/group-01/source/index.html",
+      "equal": true,
+      "beforeSha256": "7f7ac070b42c5af737089f238f287432b4059521005396148ab5181632e05464",
+      "afterSha256": "7f7ac070b42c5af737089f238f287432b4059521005396148ab5181632e05464"
+    },
+    {
+      "file": "notes/testing/sidebar-scroll/group-02/note/index.html",
+      "equal": true,
+      "beforeSha256": "58e1997169884ca377d1843c7df9315cc5bc7af3c6790d8076f6e7f66d0a63ea",
+      "afterSha256": "58e1997169884ca377d1843c7df9315cc5bc7af3c6790d8076f6e7f66d0a63ea"
+    },
+    {
+      "file": "notes/testing/sidebar-scroll/group-03/note/index.html",
+      "equal": true,
+      "beforeSha256": "36dbc6759c8c0ce6868f8bda43a621b67e6b4ff4fb557106213436b56fae5c70",
+      "afterSha256": "36dbc6759c8c0ce6868f8bda43a621b67e6b4ff4fb557106213436b56fae5c70"
+    },
+    {
+      "file": "notes/testing/sidebar-scroll/group-04/note/index.html",
+      "equal": true,
+      "beforeSha256": "18c4ca614b0c705144a5d183942ef016358bc9e58c456cd6d915f63210a4eec7",
+      "afterSha256": "18c4ca614b0c705144a5d183942ef016358bc9e58c456cd6d915f63210a4eec7"
+    },
+    {
+      "file": "notes/testing/sidebar-scroll/group-05/note/index.html",
+      "equal": true,
+      "beforeSha256": "c4d4768fade7dcb4fdbbda76b33c9671c4afd69d3559e825bf3e5b9d5bf1f9d9",
+      "afterSha256": "c4d4768fade7dcb4fdbbda76b33c9671c4afd69d3559e825bf3e5b9d5bf1f9d9"
+    },
+    {
+      "file": "notes/testing/sidebar-scroll/group-06/note/index.html",
+      "equal": true,
+      "beforeSha256": "333abddf9a1348834144b4cda1a266379c5d4c47bd315d3e83dd99694df5b391",
+      "afterSha256": "333abddf9a1348834144b4cda1a266379c5d4c47bd315d3e83dd99694df5b391"
+    },
+    {
+      "file": "notes/testing/sidebar-scroll/group-07/note/index.html",
+      "equal": true,
+      "beforeSha256": "48e4a278e9e451fcdc3e6db9bb15d661a23d974450f8a6f871a785c778ac3a17",
+      "afterSha256": "48e4a278e9e451fcdc3e6db9bb15d661a23d974450f8a6f871a785c778ac3a17"
+    },
+    {
+      "file": "notes/testing/sidebar-scroll/group-08/note/index.html",
+      "equal": true,
+      "beforeSha256": "21ad81a93ce2d61cfc381068995100d2992084ef31509903b2e423f84bf89926",
+      "afterSha256": "21ad81a93ce2d61cfc381068995100d2992084ef31509903b2e423f84bf89926"
+    },
+    {
+      "file": "notes/testing/sidebar-scroll/group-09/note/index.html",
+      "equal": true,
+      "beforeSha256": "c52632f160299e1c43dc65676bea068d23831922c9281abb511c0580262de2a8",
+      "afterSha256": "c52632f160299e1c43dc65676bea068d23831922c9281abb511c0580262de2a8"
+    },
+    {
+      "file": "notes/testing/sidebar-scroll/group-10/note/index.html",
+      "equal": true,
+      "beforeSha256": "cf48b4470453c01284bcf6fd40c3eb1307cefc0aabd8dcd01851586cf63c3751",
+      "afterSha256": "cf48b4470453c01284bcf6fd40c3eb1307cefc0aabd8dcd01851586cf63c3751"
+    },
+    {
+      "file": "notes/testing/sidebar-scroll/group-11/note/index.html",
+      "equal": true,
+      "beforeSha256": "9f3f907038832bea7c2cc5c3ce8d1c43df9283db833bb797d334e97113297ea9",
+      "afterSha256": "9f3f907038832bea7c2cc5c3ce8d1c43df9283db833bb797d334e97113297ea9"
+    },
+    {
+      "file": "notes/testing/sidebar-scroll/group-12/note/index.html",
+      "equal": true,
+      "beforeSha256": "5b18229b7ad8ac823eb80801c9612d26a3d0a16624fa0ce0ef905fc899cf0a19",
+      "afterSha256": "5b18229b7ad8ac823eb80801c9612d26a3d0a16624fa0ce0ef905fc899cf0a19"
+    },
+    {
+      "file": "notes/testing/sidebar-scroll/group-13/note/index.html",
+      "equal": true,
+      "beforeSha256": "0d8412dbc92a515898627c29bd3b4f6152b7f0cf627b0e05147c9d99854657b8",
+      "afterSha256": "0d8412dbc92a515898627c29bd3b4f6152b7f0cf627b0e05147c9d99854657b8"
+    },
+    {
+      "file": "notes/testing/sidebar-scroll/group-14/note/index.html",
+      "equal": true,
+      "beforeSha256": "46865e4c6dd7e1c2f1272e80acd1e072292489decf5e3a6e5eb1e32bbec141d9",
+      "afterSha256": "46865e4c6dd7e1c2f1272e80acd1e072292489decf5e3a6e5eb1e32bbec141d9"
+    },
+    {
+      "file": "notes/testing/sidebar-scroll/group-15/note/index.html",
+      "equal": true,
+      "beforeSha256": "f899b6103ac3e80d341b43e2ce088c49e27b47cff032fa4f695cf75895ac5158",
+      "afterSha256": "f899b6103ac3e80d341b43e2ce088c49e27b47cff032fa4f695cf75895ac5158"
+    },
+    {
+      "file": "notes/testing/sidebar-scroll/group-16/target/index.html",
+      "equal": true,
+      "beforeSha256": "4f84afaa6aea56a291ed16cf9411821882d5c63f0bb29072764a4552a5ebf1eb",
+      "afterSha256": "4f84afaa6aea56a291ed16cf9411821882d5c63f0bb29072764a4552a5ebf1eb"
+    },
+    {
+      "file": "notes/testing/toc-absent/index.html",
+      "equal": true,
+      "beforeSha256": "c640ac0ce64f6580f4be11233ee9534033e8df7728b590f3347764e81c19d1d2",
+      "afterSha256": "c640ac0ce64f6580f4be11233ee9534033e8df7728b590f3347764e81c19d1d2"
+    },
+    {
+      "file": "notes/testing/toc-readable-long-heading/index.html",
+      "equal": true,
+      "beforeSha256": "7838a1459eed6a2ac79e9d04df1aeb1717ad64817ac5bd26904db1c36a94c4bc",
+      "afterSha256": "7838a1459eed6a2ac79e9d04df1aeb1717ad64817ac5bd26904db1c36a94c4bc"
+    },
+    {
+      "file": "notes/testing/toc-static-present/index.html",
+      "equal": true,
+      "beforeSha256": "f1a40f6ca3da54bb4cd9cea58422c43327e8353c7daf7f743a1405f6450be126",
+      "afterSha256": "f1a40f6ca3da54bb4cd9cea58422c43327e8353c7daf7f743a1405f6450be126"
+    },
+    {
+      "file": "search/index.html",
+      "equal": true,
+      "beforeSha256": "8a5100108520624b0d999a2169348fc2bd739d5018a799ddf3262236b3a58204",
+      "afterSha256": "8a5100108520624b0d999a2169348fc2bd739d5018a799ddf3262236b3a58204"
+    },
+    {
+      "file": "tags/Bunko/index.html",
+      "equal": true,
+      "beforeSha256": "2b970cfd18a7c2b308fdb13fecb650c4cdd7d60e6ac2bf07a6b3e57fd210bf9c",
+      "afterSha256": "2b970cfd18a7c2b308fdb13fecb650c4cdd7d60e6ac2bf07a6b3e57fd210bf9c"
+    },
+    {
+      "file": "tags/C#/index.html",
+      "equal": true,
+      "beforeSha256": "9728f9b86cf23ba44a5c69c11e00a64fec9c446a772c43549e6964540a85ec1c",
+      "afterSha256": "9728f9b86cf23ba44a5c69c11e00a64fec9c446a772c43549e6964540a85ec1c"
+    },
+    {
+      "file": "tags/Collection/index.html",
+      "equal": true,
+      "beforeSha256": "2521a532fb3728bec20b55c57ebc83f67b1f95e975fd6709f2df380d1f5aff4a",
+      "afterSha256": "2521a532fb3728bec20b55c57ebc83f67b1f95e975fd6709f2df380d1f5aff4a"
+    },
+    {
+      "file": "tags/Programming/index.html",
+      "equal": true,
+      "beforeSha256": "cc290ac268072b0097eb573fe24fc691c4ad51c8f6761992f67b43179a479dff",
+      "afterSha256": "cc290ac268072b0097eb573fe24fc691c4ad51c8f6761992f67b43179a479dff"
+    },
+    {
+      "file": "tags/Shinsho/index.html",
+      "equal": true,
+      "beforeSha256": "53bea521c26c0e2c70dfe279f5f4fb0123e6b9f44d03e8cbe6c48923553ff061",
+      "afterSha256": "53bea521c26c0e2c70dfe279f5f4fb0123e6b9f44d03e8cbe6c48923553ff061"
+    },
+    {
+      "file": "tags/Zensho/index.html",
+      "equal": true,
+      "beforeSha256": "e18fede3022774132d4d92baec94073fe35c7125a4158b0eb163cb891b6ae378",
+      "afterSha256": "e18fede3022774132d4d92baec94073fe35c7125a4158b0eb163cb891b6ae378"
+    }
+  ],
+  "search": [
+    {
+      "file": "search/document.6e95b3c4f76451708f3ae60a551d241efec53fb0112c0364f68642c4000f6525.json",
+      "equal": true,
+      "beforeSha256": "6e95b3c4f76451708f3ae60a551d241efec53fb0112c0364f68642c4000f6525",
+      "afterSha256": "6e95b3c4f76451708f3ae60a551d241efec53fb0112c0364f68642c4000f6525"
+    },
+    {
+      "file": "search/index.html",
+      "equal": true,
+      "beforeSha256": "8a5100108520624b0d999a2169348fc2bd739d5018a799ddf3262236b3a58204",
+      "afterSha256": "8a5100108520624b0d999a2169348fc2bd739d5018a799ddf3262236b3a58204"
+    },
+    {
+      "file": "search/manifest.json",
+      "equal": true,
+      "beforeSha256": "b64b68c99ce06240979497a15467e9a556009e0d82d56224b0ab89b1935cbf16",
+      "afterSha256": "b64b68c99ce06240979497a15467e9a556009e0d82d56224b0ab89b1935cbf16"
+    },
+    {
+      "file": "search/minisearch-LICENSE.70d37354d6395629fb99edb28cb37a5d356ffa24a48cd02a5def5b83a300a899.txt",
+      "equal": true,
+      "beforeSha256": "70d37354d6395629fb99edb28cb37a5d356ffa24a48cd02a5def5b83a300a899",
+      "afterSha256": "70d37354d6395629fb99edb28cb37a5d356ffa24a48cd02a5def5b83a300a899"
+    },
+    {
+      "file": "search/passage.2ba9c3880e30b80daf53c9ec036d7567610a08b2d8314d7e54a199e5141e2d91.json",
+      "equal": true,
+      "beforeSha256": "2ba9c3880e30b80daf53c9ec036d7567610a08b2d8314d7e54a199e5141e2d91",
+      "afterSha256": "2ba9c3880e30b80daf53c9ec036d7567610a08b2d8314d7e54a199e5141e2d91"
+    },
+    {
+      "file": "search/provider-config.ba6712f0da9761f52471c630d80c4c53b001481fc835591d799e48404a0dbf57.json",
+      "equal": true,
+      "beforeSha256": "ba6712f0da9761f52471c630d80c4c53b001481fc835591d799e48404a0dbf57",
+      "afterSha256": "ba6712f0da9761f52471c630d80c4c53b001481fc835591d799e48404a0dbf57"
+    },
+    {
+      "file": "search/store.adc2761cf7ef82ba6cc18090d0a1b2fbba45ddec243e4b8e6c05eb4cb6544630.json",
+      "equal": true,
+      "beforeSha256": "adc2761cf7ef82ba6cc18090d0a1b2fbba45ddec243e4b8e6c05eb4cb6544630",
+      "afterSha256": "adc2761cf7ef82ba6cc18090d0a1b2fbba45ddec243e4b8e6c05eb4cb6544630"
+    },
+    {
+      "file": "search/suzume-LICENSE.92feba5fcc55baef5c05b4e36a0112104b018345ed577a253c1de8a1773559d1.txt",
+      "equal": true,
+      "beforeSha256": "92feba5fcc55baef5c05b4e36a0112104b018345ed577a253c1de8a1773559d1",
+      "afterSha256": "92feba5fcc55baef5c05b4e36a0112104b018345ed577a253c1de8a1773559d1"
+    },
+    {
+      "file": "search/suzume.f0ee2d14fcbbb0559c3246263aa907987012a1ff45939484ee6b79bae1821baf.wasm",
+      "equal": true,
+      "beforeSha256": "f0ee2d14fcbbb0559c3246263aa907987012a1ff45939484ee6b79bae1821baf",
+      "afterSha256": "f0ee2d14fcbbb0559c3246263aa907987012a1ff45939484ee6b79bae1821baf"
+    },
+    {
+      "file": "search-catalog.json",
+      "equal": true,
+      "beforeSha256": "ed3b72adb41a4f6017124d39b81d9948c4855e4a1b0f553eeb604b4072897ad5",
+      "afterSha256": "ed3b72adb41a4f6017124d39b81d9948c4855e4a1b0f553eeb604b4072897ad5"
+    }
+  ],
+  "added": [],
+  "removed": []
+}

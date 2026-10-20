@@ -4,7 +4,7 @@
 
 identityはcollection IDとcollection-relativeな`.md`付きpathの二要素。文字列keyは`contentIdentityKey`が作るJSON配列である。source pathの移動はidentityの変更として扱う。
 
-routeの唯一の所有者は`content-route-registry.ts`。公開採用は`publication-snapshot.ts`が所有し、Velite、link lowering、route scanner、Eleventyは同じ登録とroute関数を消費する。notesのdraftは採用しない。memosにはNote metadata/config/stampを適用しない。
+routeの唯一の所有者は`content-route-registry.ts`。公開採用は`publication-snapshot.ts`と共通生成入口の検証済み入力を用い、共通生成入口、link lowering、route scanner、Eleventyは同じ登録とroute関数を消費する。notesのdraftは採用しない。memosにはNote metadata/config/stampを適用しない。
 
 本文のcanonicalはslashless、directory indexは末尾`/index`を除く。root index、leaf/indexの同一URL、大小文字・Unicode NFCで同一になるpath、symlink、範囲外pathを拒否する。memosのleafと配下本文は同居できる。notesの階層制約は既存note navigation契約を維持する。
 
@@ -16,9 +16,9 @@ root consumerの移行区分は次のとおり。
 
 | consumer                                                                                             | 採用範囲とowner                                                      |
 | ---------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------- |
-| Velite、source/current URL、link lowering、document route manifest、Eleventy本文                     | 登録されたnotes/memos。collection configとroute registryを消費       |
+| 共通生成入口、source/current URL、link lowering、document route manifest、Eleventy本文               | 登録されたnotes/memos。collection configとroute registryを消費       |
 | notes loader、note navigation/config、note stamp、通常search/home/tags/corpora、note source link検査 | notesだけ。`content/notes/`とnotes用fixtureへ限定                    |
 | 画像build                                                                                            | 両集合の公開採用済み本文だけ。画像の既存`content/_assets/`経路を維持 |
 | examples展開、link card cache、font/client/media生成                                                 | 文書集合から独立した既存所有者を維持                                 |
 
-旧rootの全notes本文55件とconfig6件をbyte単位で保存し、URL変更の許可集合を空とする。合成memos fixtureはnotesのfixture schemaや通常探索面へ登録しない。Veliteのschema/変換errorはstrict buildで停止し、文書の黙示的な欠落を成功と扱わない。
+旧rootの全notes本文55件とconfig6件をbyte単位で保存し、URL変更の許可集合を空とする。合成memos fixtureはnotesのfixture schemaや通常探索面へ登録しない。共通生成入口のschema/変換errorはstrict buildで停止し、文書の黙示的な欠落を成功と扱わない。

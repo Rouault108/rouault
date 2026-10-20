@@ -119,7 +119,7 @@ static-firstはbuild-time static artifactsを公開コンテンツ・URL・主�
 - 検索: MiniSearch / Suzume（Worker）、障害時のみCatalog fallback
 - コードハイライト: Shiki
 - 数式: KaTeX
-- コンテンツ処理: Velite + Markdown変換パイプライン
+- コンテンツ処理: 共通コンパイラ + Markdown変換パイプライン
 - テスト: Vitest（Node / SSR / Browser Mode）/ Playwright
 
 ### 実行環境

@@ -1,3 +1,4 @@
+import { getInjectedContentContext } from '../content/content-build-context.js';
 import { resolveNoteLinkClassificationContext } from '../content/resolve-note-current-url.js';
 import { resolveNoteSourcePathFromVFile } from '../content/note-source-vfile.js';
 import {
@@ -199,6 +200,8 @@ const resolveCodeGroupLabel = (previewNode: HastNode, sandboxNode: HastNode): st
 const createPreviewSandboxHtmlSnippetLinkContext = (
   file?: VFileLike,
 ): PreviewSandboxHtmlSnippetLinkContext => {
+  const injected = getInjectedContentContext(file);
+  if (injected) return injected;
   const siteUrlContext = process.env['ROUAULT_SITE_ORIGIN']
     ? resolveProductionSiteUrlContext()
     : resolveDevelopmentSiteUrlContext();

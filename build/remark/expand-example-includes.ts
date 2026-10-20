@@ -114,6 +114,8 @@ const expandNodes = async (
   const parser = await loadMarkdownParser();
 
   for (const node of nodes) {
+    const ref = stack.at(-1);
+    if (ref) node.rouaultExpansionSource = { kind: 'example-include-expanded', ref };
     const includeRef = parseExampleRef(node, file);
     if (includeRef) {
       if (stack.includes(includeRef)) {

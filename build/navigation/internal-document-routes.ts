@@ -256,9 +256,10 @@ const getSurfaceVisibleNoteRoutes = (
       })[surface],
   );
 
-const buildContentDerivedRoutes = (
+export const buildContentDerivedRoutes = (
   routeSetKind: ContentRouteSetKind,
   noteRoutes: readonly NoteRouteSeed[],
+  memoRoutes?: readonly string[],
 ): ContentDerivedInternalDocumentRoutes => {
   const corpusRoutes = [
     ...new Set(
@@ -284,13 +285,14 @@ const buildContentDerivedRoutes = (
   const routeSet = createInternalDocumentRouteSet([
     ...staticRoutes,
     ...noteRoutes.map((note) => note.permalink),
-    ...[
-      ...buildPublicationRouteRegistry({
-        fixtureOnly: routeSetKind === 'fixture',
-      }).byPathname.values(),
-    ]
-      .filter((route) => route.identity.collectionId === 'memos')
-      .map((route) => route.canonicalPathname),
+    ...(memoRoutes ??
+      [
+        ...buildPublicationRouteRegistry({
+          fixtureOnly: routeSetKind === 'fixture',
+        }).byPathname.values(),
+      ]
+        .filter((route) => route.identity.collectionId === 'memos')
+        .map((route) => route.canonicalPathname)),
     ...corpusRoutes,
     ...tagRoutes,
   ]);

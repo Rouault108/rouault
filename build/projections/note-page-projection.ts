@@ -27,6 +27,7 @@ import {
   resolveDevelopmentSiteUrlContext,
   resolveProductionSiteUrlContext,
 } from '../site/site-url-context.js';
+import type { NoteDirectiveUrlPolicyContext } from '../remark/directives/policy/directive-url-policy-context.js';
 import { resolveNoteLinkClassificationContext } from '../content/resolve-note-current-url.js';
 import { validateSidebarNavHtmlInvariant } from '../navigation/sidebar-nav-html-invariant.js';
 import {
@@ -41,6 +42,7 @@ export type NotePageTocHeading = TocHeading;
 
 export interface NotePageProjectionInput {
   note: IntrinsicNote;
+  linkContext?: NoteDirectiveUrlPolicyContext;
   navigation: NoteNavigationModel;
 }
 
@@ -183,13 +185,17 @@ export function buildNotePageProjection(input: NotePageProjectionInput): NotePag
   const slug = typeof input.note.slug === 'string' ? input.note.slug : '';
   const genres = shouldRenderArticleHeaderTags(input.note) ? normalizeGenres(input.note.genre) : [];
   const contentHtml = typeof input.note.content === 'string' ? input.note.content : '';
-  const siteUrlContext = process.env['ROUAULT_SITE_ORIGIN']
-    ? resolveProductionSiteUrlContext()
-    : resolveDevelopmentSiteUrlContext();
-  const noteLinkContext = resolveNoteLinkClassificationContext({
-    sourceFilePath: `${input.note.sourceRoot ?? 'content/notes'}/${slug}.md`,
-    siteUrlContext,
-  });
+  const siteUrlContext =
+    input.linkContext?.siteUrlContext ??
+    (process.env['ROUAULT_SITE_ORIGIN']
+      ? resolveProductionSiteUrlContext()
+      : resolveDevelopmentSiteUrlContext());
+  const noteLinkContext =
+    input.linkContext ??
+    resolveNoteLinkClassificationContext({
+      sourceFilePath: `${input.note.sourceRoot ?? 'content/notes'}/${slug}.md`,
+      siteUrlContext,
+    });
   const reading = buildReadingPageProjection({
     validateContent: () => {
       validateNoteContentContracts({

@@ -1,7 +1,7 @@
-import { validateNoteSourceLinks } from '../build/content/validate-note-source-links.js';
+import { generateContent } from '../build/content/generate-content.js';
 
 try {
-  await validateNoteSourceLinks();
+  await generateContent();
 } catch (error) {
   console.error(error instanceof Error ? (error.stack ?? error.message) : String(error));
   process.exitCode = 1;
