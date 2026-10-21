@@ -829,4 +829,18 @@ describe('plain sidebar shell lifecycle', () => {
     required(shell.querySelector<HTMLElement>('[data-external-focus]')).focus();
     expect(helper.checkVisibility()).toBe(false);
   });
+  it('header handoff keeps runtime state provisional through the pre-publication microtask', async () => {
+    const root = fixture();
+    start(root);
+    const button = required(shell.querySelector<HTMLElement>('[data-layout-sidebar-toggle]'));
+    layoutSidebarController.open(undefined, button);
+    const previous = layoutSidebarController.readRuntimeSnapshot();
+    const header = required(shell.querySelector('header'));
+    const finish = beforeSidebarShellMutation(header, true);
+    header.replaceWith(header.cloneNode(true));
+    finish();
+    await Promise.resolve();
+    expect(state()).toBe('staged');
+    expect(layoutSidebarController.readRuntimeSnapshot()).toEqual(previous);
+  });
 });

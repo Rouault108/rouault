@@ -395,6 +395,8 @@ export const enhanceLayoutSidebar = (root: HTMLElement, signal: AbortSignal): vo
   const beforeMutation = (handoff: boolean, preservePlacement: boolean): (() => void) => {
     const receipt = capture();
     mutationDepth++;
+    // 世代publish前のmicrotaskも旧proofで確定fallbackへ進めず、raw sessionを保持する。
+    if (handoff) validated = false;
     // headerだけを交換する文書commitでは、後続の選択属性patchが照合する
     // fixed placementとnav実体をここで壊さない。focus receiptは交換前に保持する。
     if (!preservePlacement) {
