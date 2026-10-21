@@ -44,6 +44,7 @@ import { TocNavigationController } from '../../src/toc/toc-navigation-controller
 import { resolveTocScrollMetrics } from '../../src/toc/toc-scroll-contract.js';
 import type { TocActiveTracker } from '../../src/toc/toc-active-tracker.js';
 import { Router } from '../../src/router/router.js';
+import { RouterDocumentHostPostRenderController } from '../../src/components/app/controllers/router-document-host-post-render-controller.js';
 import { ReadingPositionController } from '../../src/components/app/controllers/reading-position-controller.js';
 import { RouterDocumentHost } from '../../src/components/app/router-document-host.js';
 import {
@@ -773,11 +774,11 @@ describe('検証済み履歴経路の表示状態', () => {
     },
   );
 
-  it.each(['visible', 'hidden', 'missing-receipt', 'wrong-receipt'] as const)(
+  it.each(['visible', 'verified-only', 'hidden', 'missing-receipt', 'wrong-receipt'] as const)(
     '%s完了時の先行復元を区別し、不適格でも候補を保全して通常settledへ渡す',
     async (condition) => {
       const visibility = condition === 'hidden' ? 'hidden' : 'visible';
-      const early = condition === 'visible';
+      const early = condition === 'visible' || condition === 'verified-only';
       const target = '/notes/testing/toc-readable-long-heading';
       const previous = '/notes/testing/reader-basic';
       history.replaceState(baselineState, '', target);
@@ -845,7 +846,8 @@ describe('検証済み履歴経路の表示状態', () => {
       };
       ready(readContentContext()?.contentEpoch ?? -1, 'settled');
       const errors = vi.fn();
-      reader = new ReadingPositionController(errors);
+      const notifications = vi.fn();
+      reader = new ReadingPositionController(errors, notifications);
       reader.start(content);
       await expect.poll(() => content.dataset['readingPositionStatus']).toBe('settled');
       validated(target);
@@ -904,6 +906,7 @@ describe('検証済み履歴経路の表示状態', () => {
         stateOnly: false,
         commitTiming: 'synchronous',
       });
+      notifications.mockClear();
       reader.schedule({
         intent,
         root: content,
@@ -912,11 +915,12 @@ describe('検証済み履歴経路の表示状態', () => {
         stateOnly: false,
         error: false,
         shellCommitId: 0,
-        prepaintGeometryReady: true,
+        prepaintGeometryReady: condition !== 'verified-only',
         ...(condition === 'missing-receipt' ? {} : { receipt }),
       });
 
-      expect(content.dataset['readingPositionPrepaint']).toBe(early ? 'applied' : 'unavailable');
+      expect(content.dataset['readingPositionPrepaint']).toBe(condition === 'visible' ? 'applied' : 'unavailable');
+      expect(notifications).toHaveBeenCalledTimes(early ? 1 : 0);
       expect(scroll).toHaveBeenCalledTimes(early ? 1 : 0);
       expect(animate).toHaveBeenCalledTimes(early ? 1 : 0);
       expect(Math.abs(scrollY - (early ? 650 : 200))).toBeLessThanOrEqual(2);
@@ -1968,6 +1972,12 @@ describe('同期受理した履歴本文のraw XY先行適用', () => {
     'hidden',
     'clamp',
     'hash',
+    'hash-existing',
+    'already-aligned',
+    'notify-shift',
+    'notify-range',
+    'notify-owner-loss',
+    'notify-throw',
     'state-only',
     'error',
     'interrupted',
@@ -1987,14 +1997,27 @@ describe('同期受理した履歴本文のraw XY先行適用', () => {
         ? '<section data-hydration-key="unknown"><p>字体・幾何の演出証明を持たない本文</p></section>'
         : `<div data-table-root><table><tbody>${Array.from({ length: rows }, (_, row) => `<tr><td>行${row}</td><td>全文を維持</td></tr>`).join('')}</tbody></table></div>`;
     content.innerHTML = savedHtml;
-    if (condition === 'hash') {
+    if (condition === 'hash' || condition === 'hash-existing') {
       history.replaceState(history.state, '', readAddress() + '#saved-heading');
       initializeContentContext(content);
       adoptContentBinding(readAddress());
     }
+    if (condition === 'hash-existing') content.insertAdjacentHTML('afterbegin', '<h2 id="saved-heading">stale hash at top</h2>');
     const savedUrl = readAddress();
     const errors = vi.fn();
-    reader = new ReadingPositionController(errors);
+    let observe = false;
+    const notifications = vi.fn(() => {
+      if (!observe || notifications.mock.calls.length > 1) return;
+      if (condition === 'notify-shift') window.scrollTo({ left: 80, top: 500, behavior: 'instant' });
+      if (condition === 'notify-range') content.style.height = '7000px';
+      if (condition === 'notify-owner-loss') {
+        beginNavigationIntent('navigation', savedUrl);
+        content.dataset['readingPositionStatus'] = 'new-owner';
+        content.dataset['readingPositionPrepaint'] = 'new-owner';
+      }
+      if (condition === 'notify-throw') throw new Error('TOC observer failure');
+    });
+    reader = new ReadingPositionController(errors, notifications);
     reader.start(content);
     await expect.poll(() => content.dataset['readingPositionStatus']).toBe('settled');
     window.scrollTo({ left: 80, top: 650, behavior: 'instant' });
@@ -2022,6 +2045,7 @@ describe('同期受理した履歴本文のraw XY先行適用', () => {
     const intent = beginNavigationIntent('traverse', savedUrl);
     const epoch = beginContentMutation(content);
     content.innerHTML = savedHtml;
+    if (condition === 'hash-existing') content.insertAdjacentHTML('afterbegin', '<h2 id="saved-heading">stale hash at top</h2>');
     adoptContentBinding(savedUrl);
     setContentReadiness({
       contentEpoch: epoch,
@@ -2055,6 +2079,12 @@ describe('同期受理した履歴本文のraw XY先行適用', () => {
       ...(condition === 'async-commit' ? {} : { commitTiming: 'synchronous' as const }),
     };
     const receipt = condition === 'mutable-receipt' ? receiptValue : Object.freeze(receiptValue);
+    if (condition === 'already-aligned') window.scrollTo({ left: 80, top: 650, behavior: 'instant' });
+    notifications.mockClear();
+    observe = true;
+    const reads = vi.spyOn(ReadingPositionStore.prototype, 'read');
+    const qualified = reader.qualifyPrepaintHistoryCandidate(content, intent, receipt);
+    expect(reads).not.toHaveBeenCalled();
     const scroll = vi.spyOn(window, 'scrollTo');
     const focus = vi.spyOn(HTMLElement.prototype, 'focus');
     const animate = vi.spyOn(content, 'animate');
@@ -2068,10 +2098,20 @@ describe('同期受理した履歴本文のraw XY先行適用', () => {
       shellCommitId: 0,
       prepaintGeometryReady: condition !== 'geometry-not-prepared',
       ...(condition === 'missing-receipt' ? {} : { receipt }),
+      ...(qualified ? { prepaintCandidate: qualified } : {}),
     });
-    const early = condition === 'table' || condition === 'unknown-surface';
-    expect(scroll).toHaveBeenCalledTimes(early ? 1 : 0);
+    const arrived = ['table', 'unknown-surface', 'hash', 'hash-existing', 'already-aligned', 'notify-shift', 'notify-range', 'notify-owner-loss', 'notify-throw'].includes(condition);
+    const early = arrived && !condition.startsWith('notify-');
+    expect(reads).not.toHaveBeenCalled();
+    expect(scroll).toHaveBeenCalledTimes(condition === 'already-aligned' ? 0 : condition === 'notify-shift' ? 2 : arrived ? 1 : 0);
     expect(content.dataset['readingPositionPrepaint'] === 'applied').toBe(early);
+    if (condition === 'notify-owner-loss') {
+      expect(content.dataset['readingPositionStatus']).toBe('new-owner');
+      expect(content.dataset['readingPositionPrepaint']).toBe('new-owner');
+      await frame();
+      expect(content.dataset['readingPositionStatus']).toBe('new-owner');
+      return;
+    }
     expect(animate).not.toHaveBeenCalled();
     expect(focus).not.toHaveBeenCalled();
     if (early) {
@@ -2079,7 +2119,7 @@ describe('同期受理した履歴本文のraw XY先行適用', () => {
       expect(Math.abs(scrollY - 650)).toBeLessThanOrEqual(2);
       expect(content.dataset['historyPresentationEligibility']).toBe('unavailable');
     }
-    if (early || condition === 'missing-receipt' || condition === 'async-commit') {
+    if (arrived || condition === 'missing-receipt' || condition === 'async-commit') {
       expect(reader).toMatchObject({
         candidate: { url: savedUrl, x: 80, y: 650 },
         restoring: true,
@@ -2100,9 +2140,10 @@ describe('同期受理した履歴本文のraw XY先行適用', () => {
       expect(Math.abs(scrollX - 80)).toBeLessThanOrEqual(2);
       expect(Math.abs(scrollY - 650)).toBeLessThanOrEqual(2);
       expect(reader).toMatchObject({ candidate: null, restoring: false });
-      expect(scroll).toHaveBeenCalledTimes(1);
+      if (condition.startsWith('notify-')) expect(notifications.mock.calls.length).toBeGreaterThanOrEqual(2);
+      else expect(scroll).toHaveBeenCalledTimes(condition === 'already-aligned' ? 0 : 1);
     }
-    expect(errors).not.toHaveBeenCalled();
+    expect(errors).toHaveBeenCalledTimes(condition === 'notify-throw' ? 1 : 0);
   });
 });
 
@@ -2212,5 +2253,98 @@ describe('明示hashの停止位置とCSS offset', () => {
     });
     await expect.poll(() => content.dataset['readingPositionStatus']).toBe('settled');
     expect(Math.abs(scrollY - 650)).toBeLessThanOrEqual(2);
+  });
+});
+
+
+describe('post-commit geometry/focus ownership before schedule', () => {
+  it.each(['hash', 'hashless-without-candidate', 'hash-without-candidate', 'geometry-failure', 'cleanup-failure', 'focus-owner-loss', 'geometry-owner-loss', 'cleanup-owner-loss'] as const)('%s preserves the accepted body and the current job', async (condition) => {
+    await setup();
+    if (!root) throw new Error('root');
+    const content = root;
+    content.id = 'main-content';
+    const hasHash = condition !== 'hashless-without-candidate';
+    const savedUrl = originalUrl.split('#')[0] + (hasHash ? '#missing-heading' : '');
+    history.replaceState(baselineState, '', savedUrl);
+    adoptContentBinding(savedUrl);
+    const html = '<div data-table-root="true" id="Static-ID" style="width:120px;overflow:auto"><table style="width:360px;min-width:360px"><tbody>' + Array.from({length:30}, () => '<tr><td>本文</td></tr>').join('') + '</tbody></table></div>';
+    content.innerHTML = html;
+    const controller = new RouterDocumentHostPostRenderController(() => {});
+    try {
+      controller.initialize(content.parentElement ?? document.body);
+      await expect.poll(() => content.dataset['readingPositionStatus']).toBe('settled');
+      window.scrollTo({left:0,top:650,behavior:'instant'});
+      await frame();
+      window.dispatchEvent(new Event('scroll'));
+      const savedState: unknown = history.state;
+      const previous = '/notes/other-page';
+      const leaving = beginNavigationIntent('navigation', previous);
+      let epoch = beginContentMutation(content);
+      writeHistoryEntry({mode:'push',owner:'router',url:previous});
+      content.innerHTML = '<p>other page</p>';
+      adoptContentBinding(previous);
+      setContentReadiness({contentEpoch:epoch,root:content,shellCommitId:0,status:'settled',started:true});
+      const post = controller.createPostCommitController(content.parentElement ?? document.body);
+      post.run({outlet:content,previousUrl:savedUrl,url:previous,isInitial:false,stateOnly:false,renderedKind:'page',intent:leaving});
+      await expect.poll(() => content.dataset['readingPositionStatus']).toBe('settled');
+      history.replaceState(savedState, '', savedUrl);
+      const reads = vi.spyOn(ReadingPositionStore.prototype,'read');
+      if (condition.endsWith('without-candidate')) reads.mockReturnValue(null);
+      const intent = beginNavigationIntent('traverse',savedUrl);
+      expect(reads).toHaveBeenCalledOnce();
+      reads.mockClear();
+      epoch = beginContentMutation(content);
+      content.innerHTML = html;
+      adoptContentBinding(savedUrl);
+      setContentReadiness({contentEpoch:epoch,root:content,shellCommitId:0,status:'pending',started:true});
+      window.scrollTo({left:0,top:200,behavior:'instant'});
+      const receipt = Object.freeze({commitId:1,intentId:intent.intentId,entryId:readHistoryEntry()?.id ?? null,url:savedUrl,root:content,contentEpoch:epoch,shellCommitId:0,stateOnly:false,commitTiming:'synchronous' as const});
+      const context = {outlet:content,previousUrl:previous,url:savedUrl,isInitial:false,stateOnly:false,renderedKind:'page' as const,intent,receipt};
+      if (condition.startsWith('cleanup-')) {
+        post.run(context);
+        window.scrollTo({left:0,top:200,behavior:'instant'});
+        const abort = AbortController.prototype.abort;
+        vi.spyOn(AbortController.prototype,'abort').mockImplementationOnce(function(this: AbortController) {
+          abort.call(this);
+          if (condition === 'cleanup-owner-loss') {
+            beginNavigationIntent('navigation',savedUrl);
+            content.dataset['readingPositionStatus'] = 'new-owner';
+          }
+          throw new Error('previous cleanup failed');
+        });
+      }
+      const table = content.querySelector<HTMLElement>('[data-table-root]');
+      if (!table) throw new Error('table');
+      if (condition.startsWith('geometry-')) Object.defineProperty(table,'clientWidth',{configurable:true,get() {
+        if (condition === 'geometry-owner-loss') {
+          beginNavigationIntent('navigation',savedUrl);
+          content.dataset['readingPositionStatus'] = 'new-owner';
+          return 120;
+        }
+        throw new Error('geometry unavailable');
+      }});
+      if (condition === 'focus-owner-loss') vi.spyOn(content,'focus').mockImplementation(() => {
+        beginNavigationIntent('navigation',savedUrl);
+        content.dataset['readingPositionStatus'] = 'new-owner';
+      });
+      const schedule = vi.spyOn(ReadingPositionController.prototype,'schedule');
+      expect(() => post.run(context)).not.toThrow();
+      expect(reads).not.toHaveBeenCalled();
+      expect(content.querySelector('table')).not.toBeNull();
+      if (condition.endsWith('owner-loss')) {
+        expect(schedule).not.toHaveBeenCalled();
+        expect(content.dataset['readingPositionStatus']).toBe('new-owner');
+        return;
+      }
+      expect(schedule).toHaveBeenCalledOnce();
+      expect(!!table.previousElementSibling?.matches('[data-table-scroll-rail]')).toBe(condition === 'hash' || condition === 'hashless-without-candidate');
+      expect(content.dataset['readingPositionPrepaint']).toBe(condition === 'hash' ? 'applied' : 'unavailable');
+      if (condition === 'hash') expect(Math.abs(scrollY-650)).toBeLessThanOrEqual(2);
+      setContentReadiness({contentEpoch:epoch,root:content,shellCommitId:0,status:'settled',started:true});
+      await expect.poll(() => content.dataset['readingPositionStatus']).toBe('settled');
+      expect(Math.abs(scrollY-(condition.endsWith('without-candidate') ? 0 : 650))).toBeLessThanOrEqual(2);
+    } finally {
+      controller.dispose();
+    }
   });
 });

@@ -3,6 +3,7 @@ import {
   observeNativeTocPosition,
   syncAcceptedTocPosition,
 } from '../../../toc/toc-source-session.js';
+import { readAddress } from '../../../navigation/history-entry.js';
 import { readCurrentShellCommitId } from '../shell/app-shell-lifecycle.js';
 import { FocusManager } from '../../../router/focus-manager.js';
 import type { PostCommitController } from '../../../router/router.js';
@@ -33,6 +34,7 @@ export class RouterDocumentHostPostRenderController {
       observeNativeTocPosition(observation);
     },
   );
+  private disposed = false;
   private tablePreparation: AbortController | null = null;
   private readonly stopTablePreparation = subscribeContentContext((reason) => {
     // before-mutationの離脱座標保存より後に、旧本文の準備と操作購読を解放する。
@@ -47,6 +49,7 @@ export class RouterDocumentHostPostRenderController {
   ) {}
 
   dispose(): void {
+    this.disposed = true;
     if (this.clearTimer !== null) {
       window.clearTimeout(this.clearTimer);
       this.clearTimer = null;
@@ -57,8 +60,9 @@ export class RouterDocumentHostPostRenderController {
   }
 
   private clearTablePreparation(): void {
-    this.tablePreparation?.abort();
+    const previous = this.tablePreparation;
     this.tablePreparation = null;
+    previous?.abort();
   }
 
   terminal(committed: boolean, intentId: number): void {
@@ -75,41 +79,74 @@ export class RouterDocumentHostPostRenderController {
     return {
       run: (context) => {
         const root = hostElement.querySelector(MAIN_CONTENT_SELECTOR);
-        let prepaintGeometryReady = false;
+        if (!(root instanceof HTMLElement)) return;
         const receipt = context.receipt;
+        const content = readContentContext();
+        const epoch = content?.contentEpoch;
+        const shellCommitId = readCurrentShellCommitId();
+        const ownsRun = (): boolean => {
+          const current = readContentContext();
+          return (
+            !this.disposed &&
+            !context.intent.signal.aborted &&
+            root.isConnected &&
+            current?.root === root &&
+            current.contentEpoch === epoch &&
+            current.intent?.intentId === context.intent.intentId &&
+            !current.mutation &&
+            !current.recoveryRequired &&
+            readCurrentShellCommitId() === shellCommitId &&
+            readAddress() === context.url &&
+            (context.stateOnly ||
+              !receipt ||
+              ownsAcceptedHistoryCommit(root, context.intent, receipt))
+          );
+        };
+        if (!ownsRun()) return;
+        let prepaintGeometryReady = false;
+        const prepaintCandidate = receipt
+          ? this.reading.qualifyPrepaintHistoryCandidate(root, context.intent, receipt)
+          : null;
         if (
-          root instanceof HTMLElement &&
-          receipt?.commitTiming === 'synchronous' &&
-          context.intent.cause === 'traverse' &&
-          !context.stateOnly &&
+          receipt &&
           context.renderedKind === 'page' &&
-          !receipt.url.includes('#') &&
-          ownsAcceptedHistoryCommit(root, context.intent, receipt)
+          !context.stateOnly &&
+          this.reading.ownsPrepaintHistoryCommit(root, context.intent, receipt) &&
+          (!receipt.url.includes('#') || prepaintCandidate)
         ) {
-          this.clearTablePreparation();
-          const preparation = new AbortController();
-          this.tablePreparation = preparation;
-          const isCurrent = (): boolean => {
-            const current = readContentContext();
-            return (
-              !preparation.signal.aborted &&
-              root.isConnected &&
-              root.ownerDocument === document &&
-              document.getElementById('main-content') === root &&
-              current?.root === root &&
-              current.contentEpoch === receipt.contentEpoch &&
-              !current.mutation &&
-              !current.recoveryRequired &&
-              readCurrentShellCommitId() === receipt.shellCommitId
-            );
-          };
-          // 操作有効化を待たず、位置に影響する既知railだけをfocus/scrollより先に準備する。
-          prepaintGeometryReady = prepareTableGeometry(root, {
-            isCurrent,
-            canPrepare: () => ownsAcceptedHistoryCommit(root, context.intent, receipt),
-            signal: preparation.signal,
-          });
+          let preparation: AbortController | null = null;
+          const ownsCommit = (): boolean =>
+            ownsRun() && this.reading.ownsPrepaintHistoryCommit(root, context.intent, receipt);
+          try {
+            // abort/cleanupも再入し得るため、準備全体と同じ例外境界で扱う。
+            this.clearTablePreparation();
+            if (!ownsCommit()) return;
+            preparation = new AbortController();
+            this.tablePreparation = preparation;
+            const owner = preparation;
+            const isCurrent = (): boolean =>
+              !owner.signal.aborted && this.tablePreparation === owner && ownsCommit();
+            prepaintGeometryReady = prepareTableGeometry(root, {
+              isCurrent,
+              canPrepare: isCurrent,
+              signal: preparation.signal,
+            });
+            if (!ownsCommit()) return;
+          } catch {
+            // 新ownerへ移った場合には、その準備や受理済み本文へ触れない。
+            if (!ownsCommit()) return;
+            if (preparation && this.tablePreparation === preparation) {
+              this.tablePreparation = null;
+              try {
+                preparation.abort();
+              } catch {
+                /* 位置候補は遅延復元へ残す。 */
+              }
+            }
+            prepaintGeometryReady = false;
+          }
         }
+        if (!ownsRun()) return;
         if (context.stateOnly) dispatchPrimaryTabUrlStateChange(context.previousUrl, context.url);
         else {
           this.setAnnouncement('ページが読み込まれました');
@@ -126,18 +163,20 @@ export class RouterDocumentHostPostRenderController {
           )
             this.focusManager.focusMainContent(main);
         }
-        if (root instanceof HTMLElement)
-          this.reading.schedule({
-            intent: context.intent,
-            root,
-            url: window.location.pathname + window.location.search + window.location.hash,
-            stateOnly: context.stateOnly,
-            error: context.renderedKind === 'error' || context.renderedKind === 'not-found',
-            shellCommitId: readCurrentShellCommitId(),
-            previousUrl: context.previousUrl,
-            prepaintGeometryReady,
-            ...(context.receipt ? { receipt: context.receipt } : {}),
-          });
+        // preventScroll focusも同期navigationを起こせる。旧scheduleは新jobを取消すので呼ばない。
+        if (!ownsRun()) return;
+        this.reading.schedule({
+          intent: context.intent,
+          root,
+          url: window.location.pathname + window.location.search + window.location.hash,
+          stateOnly: context.stateOnly,
+          error: context.renderedKind === 'error' || context.renderedKind === 'not-found',
+          shellCommitId: readCurrentShellCommitId(),
+          previousUrl: context.previousUrl,
+          prepaintGeometryReady,
+          ...(prepaintCandidate ? { prepaintCandidate } : {}),
+          ...(context.receipt ? { receipt: context.receipt } : {}),
+        });
       },
     };
   }

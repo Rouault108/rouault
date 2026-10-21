@@ -60,6 +60,12 @@ interface ScrollJob {
   candidate: ReadingPosition | null;
   url: string;
 }
+interface PositionEvidence {
+  readonly x: number;
+  readonly y: number;
+  readonly rangeX: number;
+  readonly rangeY: number;
+}
 export interface AcceptedReadingPosition {
   readonly root: HTMLElement;
   readonly intent: NavigationIntent;
@@ -397,6 +403,36 @@ export class ReadingPositionController {
     return this.interruptedIntent !== intent.intentId;
   }
 
+  ownsPrepaintHistoryCommit(
+    root: HTMLElement,
+    intent: NavigationIntent,
+    receipt: NavigationCommitReceipt,
+  ): boolean {
+    return (
+      !this.disposed &&
+      this.shouldFocus(intent) &&
+      intent.cause === 'traverse' &&
+      receipt.commitTiming === 'synchronous' &&
+      document.visibilityState === 'visible' &&
+      ownsAcceptedHistoryCommit(root, intent, receipt)
+    );
+  }
+
+  qualifyPrepaintHistoryCandidate(
+    root: HTMLElement,
+    intent: NavigationIntent,
+    receipt: NavigationCommitReceipt,
+  ): ReadingPosition | null {
+    // schedule前のrenderedIdは離脱元を指す。現在entryと元receiptだけで照合する。
+    const entryId = readHistoryEntry()?.id;
+    return this.ownsPrepaintHistoryCommit(root, intent, receipt) &&
+      entryId === receipt.entryId &&
+      this.candidateId === entryId &&
+      validateReadingPosition(this.candidate, receipt.url)
+      ? this.candidate
+      : null;
+  }
+
   schedule(options: {
     intent: NavigationIntent;
     root: HTMLElement;
@@ -407,6 +443,7 @@ export class ReadingPositionController {
     previousUrl?: string;
     receipt?: NavigationCommitReceipt;
     prepaintGeometryReady?: boolean;
+    prepaintCandidate?: ReadingPosition;
   }): void {
     if (this.disposed || options.intent.signal.aborted) return;
     this.cancel();
@@ -448,7 +485,9 @@ export class ReadingPositionController {
       candidate: options.error
         ? null
         : this.candidateId === this.renderedId
-          ? this.candidate
+          ? options.prepaintCandidate?.url === options.url
+            ? options.prepaintCandidate
+            : this.candidate
           : null,
     };
     this.job = job;
@@ -549,10 +588,19 @@ export class ReadingPositionController {
     job.controller.signal.addEventListener('abort', abortReady, { once: true });
     const readyTimer = window.setTimeout(abortReady, 5000);
     try {
-      const rawApplied = this.restoreRawHistoryBeforePaint(job);
-      let notified = rawApplied;
-      if (rawApplied) this.positionAccepted(job);
-      this.restoreVerifiedHistoryBeforePaint(job, rawApplied);
+      const rawArrival = this.restoreRawHistoryBeforePaint(job);
+      if (!this.current(job)) return;
+      let accepted = rawArrival ? this.acceptPosition(job, rawArrival, null) : null;
+      if (!this.current(job)) return;
+      if (
+        rawArrival &&
+        accepted &&
+        job.receipt &&
+        this.ownsPrepaintHistoryCommit(job.root, job.intent, job.receipt)
+      )
+        job.root.dataset['readingPositionPrepaint'] = 'applied';
+      accepted = this.restoreVerifiedHistoryBeforePaint(job, accepted);
+      if (!this.current(job)) return;
       // 履歴成功・binding採用後の既知の先頭だけを描画待ちより前に適用する。
       // 完了判定と取消は、このjobの準備後の安定化まで引き続き所有する。
       const binding = readContentContext()?.displayedBinding;
@@ -568,8 +616,10 @@ export class ReadingPositionController {
       ) {
         window.scrollTo({ left: 0, top: 0, behavior: 'instant' });
         if (Math.abs(scrollX) <= 2 && Math.abs(scrollY) <= 2) {
-          this.positionAccepted(job);
-          notified = true;
+          const range = this.range();
+          const target = { x: 0, y: 0, rangeX: range.x, rangeY: range.y };
+          accepted = this.acceptPosition(job, target, accepted);
+          if (!this.current(job)) return;
         }
       }
       const readiness = await waitForContentReadiness(job.epoch, readinessController.signal);
@@ -626,6 +676,13 @@ export class ReadingPositionController {
             ? stable + 1
             : 0;
         previous = values.join(':');
+        if (accepted && !this.evidenceMatches(job, target, range, accepted)) {
+          accepted = null;
+          if (job.root.dataset['readingPositionPrepaint'] === 'applied')
+            job.root.dataset['readingPositionPrepaint'] = 'unavailable';
+          this.cancelJobPresentation(job, 'accepted-position-invalidated');
+          if (!this.current(job)) return;
+        }
         if (!pending || expired()) {
           const corrected =
             Math.abs(window.scrollX - target.x) > 2 || Math.abs(window.scrollY - target.y) > 2;
@@ -635,20 +692,24 @@ export class ReadingPositionController {
             window.scrollTo({ left: target.x, top: target.y, behavior: 'instant' });
           }
           if (
-            (!notified || corrected) &&
+            (!accepted || corrected || !this.evidenceMatches(job, target, range, accepted)) &&
             Math.abs(scrollX - target.x) <= 2 &&
             Math.abs(scrollY - target.y) <= 2
           ) {
-            this.positionAccepted(job);
-            notified = true;
+            const evidence = { x: target.x, y: target.y, rangeX: range.x, rangeY: range.y };
+            accepted = this.acceptPosition(job, evidence, accepted);
             if (!this.current(job)) return;
             const after = this.range();
             if (
               Math.abs(scrollX - target.x) > 2 ||
               Math.abs(scrollY - target.y) > 2 ||
               Math.abs(after.x - range.x) > 2 ||
-              Math.abs(after.y - range.y) > 2
+              Math.abs(after.y - range.y) > 2 ||
+              !accepted
             ) {
+              accepted = null;
+              if (this.current(job) && job.root.dataset['readingPositionPrepaint'] === 'applied')
+                job.root.dataset['readingPositionPrepaint'] = 'unavailable';
               stable = 0;
               previous = '';
               // TOCの巻き戻しが位置を動かしても、完了扱いにせず同じReading jobで補正する。
@@ -666,13 +727,12 @@ export class ReadingPositionController {
       job.controller.signal.removeEventListener('abort', abortReady);
     }
   }
-  private restoreRawHistoryBeforePaint(job: ScrollJob): boolean {
-    const outcome = (status: 'applied' | 'unavailable' | 'skipped'): boolean => {
-      if (this.job === job) job.root.dataset['readingPositionPrepaint'] = status;
-      return status === 'applied';
+  private restoreRawHistoryBeforePaint(job: ScrollJob): PositionEvidence | null {
+    const outcome = (status: 'unavailable' | 'skipped'): null => {
+      if (this.current(job)) job.root.dataset['readingPositionPrepaint'] = status;
+      return null;
     };
-    if (job.intent.cause !== 'traverse' || job.stateOnly || job.error || job.url.includes('#'))
-      return outcome('skipped');
+    if (job.intent.cause !== 'traverse' || job.stateOnly || job.error) return outcome('skipped');
     outcome('unavailable');
     const receipt = job.receipt;
     const candidate = validateReadingPosition(job.candidate, job.url);
@@ -685,18 +745,18 @@ export class ReadingPositionController {
       !this.presentationCurrent(job) ||
       !ownsAcceptedHistoryCommit(job.root, job.intent, receipt)
     )
-      return false;
+      return null;
     try {
       const range = this.range();
       const target = clampReadingPosition(candidate, range.x, range.y);
       // 仮clampを最初の位置が復元済みという証明にせず、通常jobへ候補を残す。
-      if (target.x !== candidate.x || target.y !== candidate.y) return false;
+      if (target.x !== candidate.x || target.y !== candidate.y) return null;
       this.cancelJobPresentation(job, 'raw-position-apply');
       if (
         !this.presentationCurrent(job) ||
         !ownsAcceptedHistoryCommit(job.root, job.intent, receipt)
       )
-        return false;
+        return null;
       if (Math.abs(scrollX - target.x) > 2 || Math.abs(scrollY - target.y) > 2)
         window.scrollTo({ left: target.x, top: target.y, behavior: 'instant' });
       if (
@@ -705,28 +765,34 @@ export class ReadingPositionController {
         Math.abs(scrollX - target.x) > 2 ||
         Math.abs(scrollY - target.y) > 2
       )
-        return false;
-      return outcome('applied');
+        return null;
+      const after = this.range();
+      if (Math.abs(after.x - range.x) > 2 || Math.abs(after.y - range.y) > 2) return null;
+      return { x: target.x, y: target.y, rangeX: after.x, rangeY: after.y };
     } catch {
       // 先行適用の失敗はcandidateや通常のsettled復元を失わせない。
-      return false;
+      return null;
     }
   }
-  private restoreVerifiedHistoryBeforePaint(job: ScrollJob, rawApplied: boolean): void {
+  private restoreVerifiedHistoryBeforePaint(
+    job: ScrollJob,
+    accepted: PositionEvidence | null,
+  ): PositionEvidence | null {
     // URLや移動方向で選別せず、復帰先entry自身の保存時の証跡と新DOMを照合する。
-    if (job.intent.cause !== 'traverse') return;
+    if (!this.current(job)) return null;
+    if (job.intent.cause !== 'traverse') return accepted;
     const outcome = (status: PresentationEligibility): void => {
       job.presentation = status;
       job.root.dataset['historyPresentationEligibility'] = status;
     };
     if (job.stateOnly || job.error) {
       outcome('skipped');
-      return;
+      return accepted;
     }
     outcome('unavailable');
-    if (!job.candidate || !job.entryId) return;
+    if (!job.candidate || !job.entryId) return accepted;
     try {
-      if (document.visibilityState !== 'visible') return;
+      if (document.visibilityState !== 'visible') return accepted;
       const checkpoint = this.geometry.get(job.entryId);
       const receipt = job.receipt;
       // 受理証明は後からcurrentを読んで組み直さず、commit時の固定世代を使う。
@@ -747,36 +813,41 @@ export class ReadingPositionController {
         !this.presentationCurrent(job) ||
         !matchesHistoryGeometry(job.root, checkpoint, this.verifiedLayout)
       )
-        return;
+        return accepted;
       this.cancelJobPresentation(job, 'verified-position-apply');
-      if (!this.presentationCurrent(job)) return;
+      if (!this.presentationCurrent(job)) return accepted;
       const corrected =
         Math.abs(scrollX - job.candidate.x) > 2 || Math.abs(scrollY - job.candidate.y) > 2;
       if (corrected)
         window.scrollTo({ left: job.candidate.x, top: job.candidate.y, behavior: 'instant' });
-      if (
-        (!rawApplied || corrected) &&
-        Math.abs(scrollX - job.candidate.x) <= 2 &&
-        Math.abs(scrollY - job.candidate.y) <= 2
-      )
-        this.positionAccepted(job);
+      const range = this.range();
+      const evidence = { x: job.candidate.x, y: job.candidate.y, rangeX: range.x, rangeY: range.y };
+      accepted = this.acceptPosition(job, evidence, accepted);
+      if (!this.current(job)) return null;
       const anchor = readHistoryGeometryAnchor(job.root, checkpoint);
       if (
         !this.presentationCurrent(job) ||
+        !accepted ||
         !anchor ||
         !job.root.contains(anchor) ||
         Math.abs(scrollX - job.candidate.x) > 2 ||
         Math.abs(scrollY - job.candidate.y) > 2 ||
         Math.abs(anchor.getBoundingClientRect().top - (checkpoint.anchorY - job.candidate.y)) > 2
       )
-        return;
+        return accepted;
+      if (
+        !this.presentationCurrent(job) ||
+        !ownsAcceptedHistoryCommit(job.root, job.intent, receipt) ||
+        !this.evidenceMatches(job, job.candidate, this.range(), accepted)
+      )
+        return accepted;
       // 同epochの実textと使用字体は幾何照合で読込済みと確認しており、保存開始時に再準備しない。
       if (job.root.ownerDocument.fonts.status === 'loaded') this.fontPreparationEpoch = job.epoch;
       outcome('ready');
       // UA効果とapp効果は重ねない。情報未提供でも座標の先行適用は妨げない。
       const visual = this.traverseVisual;
       if (visual?.entryId !== job.entryId || visual.url !== job.url || visual.active !== false)
-        return;
+        return accepted;
       this.presentation.start({
         root: job.root,
         anchor,
@@ -788,13 +859,15 @@ export class ReadingPositionController {
       });
     } catch {
       this.cancelJobPresentation(job, 'presentation-unavailable');
-      if (this.job === job) outcome('unavailable');
+      if (this.current(job)) outcome('unavailable');
     }
+    return accepted;
   }
   private presentationCurrent(job: ScrollJob): boolean {
     const context = readContentContext();
     return (
       this.current(job) &&
+      this.shouldFocus(job.intent) &&
       context?.root === job.root &&
       !context.mutation &&
       context.displayedBinding.entryId === job.entryId &&
@@ -804,14 +877,44 @@ export class ReadingPositionController {
       readHistoryEntry()?.id === job.entryId
     );
   }
-  private positionAccepted(job: ScrollJob): void {
-    if (!this.current(job)) return;
+  private evidenceMatches(
+    job: ScrollJob,
+    target: { x: number; y: number },
+    range: { x: number; y: number },
+    evidence: PositionEvidence,
+  ): boolean {
+    return (
+      this.current(job) &&
+      Math.abs(target.x - evidence.x) <= 2 &&
+      Math.abs(target.y - evidence.y) <= 2 &&
+      Math.abs(range.x - evidence.rangeX) <= 2 &&
+      Math.abs(range.y - evidence.rangeY) <= 2 &&
+      Math.abs(scrollX - target.x) <= 2 &&
+      Math.abs(scrollY - target.y) <= 2
+    );
+  }
+
+  private acceptPosition(
+    job: ScrollJob,
+    target: PositionEvidence,
+    previous: PositionEvidence | null,
+  ): PositionEvidence | null {
+    const range = this.range();
+    if (!this.evidenceMatches(job, target, range, target)) return null;
+    if (previous && this.evidenceMatches(job, target, range, previous)) return previous;
+    if (!this.positionAccepted(job) || !this.current(job)) return null;
+    const after = this.range();
+    return this.evidenceMatches(job, target, after, target) ? target : null;
+  }
+
+  private positionAccepted(job: ScrollJob): boolean {
+    if (!this.current(job)) return false;
     if (!job.receipt && job.intent.cause === 'initial')
       this.observeNativePosition(job.root, job.intent, 'initial-fragment', 'accepted');
     else this.positionSequence += 1;
     const sequence = this.positionSequence;
     const isCurrent = (): boolean => sequence === this.positionSequence && this.current(job);
-    this.notifyPositionObserver(() => {
+    return this.notifyPositionObserver(() => {
       this.onPositionAccepted({
         root: job.root,
         intent: job.intent,
@@ -874,15 +977,17 @@ export class ReadingPositionController {
     // TOCの検証・巻戻しで実位置が変わっても、nativeへ独自補正せず実座標を採り直す。
     if (phase === 'accepted' && isCurrent()) this.sampleCurrent();
   }
-  private notifyPositionObserver(notify: () => void): void {
+  private notifyPositionObserver(notify: () => void): boolean {
     try {
       notify();
+      return true;
     } catch (error) {
       try {
         this.reportError(error);
       } catch {
         /* 観測先と診断先の例外を位置jobへ戻さない。 */
       }
+      return false;
     }
   }
   private cancelPresentation(reason: string): void {

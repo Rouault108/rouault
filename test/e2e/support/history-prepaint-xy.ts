@@ -1,4 +1,5 @@
 import { expect, test, type Page, type TestInfo } from '@playwright/test';
+import sharp from 'sharp';
 import { resolveRouterArtifactPathname } from '../../../shared/navigation/router-artifact-path.js';
 
 const notes = {
@@ -280,6 +281,137 @@ const finish = async (page: Page, saved: Point, info: TestInfo, name: string): P
 
 export const registerHistoryPrepaintXYTests = (): void => {
   test.describe('履歴entryのprepaint rawXY（案A）', () => {
+    test('hash full Backの最初のdestination compositor frameを保存位置と比較する', async ({
+      page,
+      browserName,
+    }, info) => {
+      test.skip(browserName !== 'chromium', 'CDP compositor capture is available only in Chromium');
+      const target = `/notes/library/collection/${encodeURIComponent('計算機科学・ソフトウェア開発関連書籍')}#c-net-visual-basic`;
+      await page.goto(target);
+      await ready(page);
+      await page.evaluate(async () => {
+        await document.fonts.ready;
+        const scrolling = document.scrollingElement;
+        if (!scrolling) throw new Error('scrolling element');
+        window.scrollTo({
+          top: Math.round((scrolling.scrollHeight - scrolling.clientHeight) * 0.55),
+          behavior: 'instant',
+        });
+      });
+      await page.waitForTimeout(120);
+      const saved = await page.evaluate(() => {
+        const article = document.querySelector('main article');
+        const rect = article?.getBoundingClientRect();
+        const entry: unknown = history.state?.__rouaultHistoryEntry?.id;
+        if (!rect || typeof entry !== 'string') throw new Error('article/entry');
+        return {
+          x: scrollX,
+          y: scrollY,
+          entry,
+          crop: {
+            left: Math.max(0, Math.ceil(rect.left + 24)),
+            top: 160,
+            width: Math.floor(Math.min(rect.width - 48, innerWidth - Math.max(0, rect.left + 24))),
+            height: innerHeight - 190,
+          },
+        };
+      });
+      const correct = await page.screenshot();
+      await page.evaluate(() => scrollTo({ top: 0, behavior: 'instant' }));
+      const top = await page.screenshot();
+      await page.evaluate(({ x, y }) => scrollTo({ left: x, top: y, behavior: 'instant' }), saved);
+      await page.waitForTimeout(80);
+      await page.evaluate((target) => {
+        const link = Array.from(
+          document.querySelectorAll<HTMLAnchorElement>('aside[data-layout-sidebar-root] a[href]'),
+        ).find(
+          (link) =>
+            decodeURI(new URL(link.href).pathname).replace(/\/$/u, '') ===
+            decodeURI(target).replace(/\/$/u, ''),
+        );
+        if (!link) throw new Error('sidebar destination link');
+        link.click();
+      }, notes.chikuma);
+      await ready(page);
+      await page.evaluate(() => document.fonts.ready.then(() => undefined));
+      const source = await page.screenshot();
+      const session = await page.context().newCDPSession(page);
+      const frames: { data: Buffer; timestamp: number | undefined }[] = [];
+      session.on('Page.screencastFrame', (frame) => {
+        frames.push({
+          data: Buffer.from(frame.data, 'base64'),
+          timestamp: frame.metadata.timestamp,
+        });
+        void session.send('Page.screencastFrameAck', { sessionId: frame.sessionId });
+      });
+      try {
+        await session.send('Page.startScreencast', { format: 'png', everyNthFrame: 1 });
+        await page.evaluate(() => history.back());
+        await page.waitForFunction(
+          (entry) =>
+            history.state?.__rouaultHistoryEntry?.id === entry &&
+            document.querySelector<HTMLElement>('main#main-content')?.dataset[
+              'readingPositionStatus'
+            ] === 'settled',
+          saved.entry,
+        );
+        await page.waitForTimeout(120);
+        await session.send('Page.stopScreencast');
+      } finally {
+        await session.detach();
+      }
+      const pixels = (data: Buffer) =>
+        sharp(data).extract(saved.crop).removeAlpha().raw().toBuffer();
+      const references = await Promise.all([correct, top, source].map(pixels));
+      const difference = (left: Buffer, right: Buffer): number => {
+        if (left.length !== right.length) throw new Error('frame dimensions changed');
+        let sum = 0;
+        for (let index = 0; index < left.length; index++)
+          sum += Math.abs((left[index] ?? 0) - (right[index] ?? 0));
+        return sum / left.length;
+      };
+      const measured = await Promise.all(
+        frames.map(async (frame, index) => {
+          const data = await pixels(frame.data);
+          return {
+            index,
+            timestamp: frame.timestamp,
+            saved: difference(data, references[0] ?? Buffer.alloc(0)),
+            top: difference(data, references[1] ?? Buffer.alloc(0)),
+            source: difference(data, references[2] ?? Buffer.alloc(0)),
+          };
+        }),
+      );
+      const destination = measured.filter(
+        (frame) => Math.min(frame.saved, frame.top) < frame.source,
+      );
+      await info.attach('compositor-frame-classification', {
+        body: JSON.stringify(
+          {
+            kind: 'captured-Chromium-compositor-frames-not-exhaustive-OS-presentations',
+            saved,
+            measured,
+            destination,
+          },
+          null,
+          2,
+        ),
+        contentType: 'application/json',
+      });
+      const first = destination[0];
+      expect(first, 'a captured destination frame is required').toBeDefined();
+      if (!first) return;
+      const frame = frames[first.index];
+      if (frame)
+        await info.attach('first-captured-destination', {
+          body: frame.data,
+          contentType: 'image/png',
+        });
+      expect(first.saved).toBeLessThan(first.top);
+      expect(first.saved).toBeLessThan(2);
+      expect(Math.abs((await page.evaluate(() => scrollY)) - saved.y)).toBeLessThanOrEqual(2);
+    });
+
     for (const mode of ['normal', 'unsupported', 'reduced-motion'] as const)
       test(`実岩波↔ちくまのBack/Forwardは最初の新本文から保存XYと同じ可視行: ${mode}`, async ({
         page,

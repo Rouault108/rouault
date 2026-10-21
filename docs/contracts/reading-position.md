@@ -63,11 +63,11 @@ A1通常/hash移動、A2entry座標復元、A3同URLの別entry、A4state/native
 
 ### 履歴表示の共通判定
 
-保存したraw XYの先行適用と、以下の演出判定は別契約とする。正常なhashなしfull traverseでは、受理済みreceiptが本文・shellの同期prepared commitを事前に保証し、built-in hostの同期post-commitから呼ばれた場合だけ、既知table railの幾何準備、preventScroll focus、Readingによる保存XYの適用と実XY/rangeの確認を最初のreadiness待機より前に行う。entry/exact URL/intent/root/epoch/shell/bindingの一致、abortと本人介入、mutation/recoveryの抑止を適用前後で照合する。位置のwriterは同じReading jobだけとし、clampや未成立時も保存candidateを失わず既存の通常復元を継続する。
+保存したraw XYの先行適用と、以下の演出判定は別契約とする。正常な同期full traverseでは、受理済みreceiptが本文・shellの同期prepared commitを事前に保証し、built-in hostの同期post-commitから呼ばれた場合だけ、既知table railの幾何準備、preventScroll focus、Readingによる保存XYの適用と実XY/rangeの確認を最初のreadiness待機より前に行う。entry/exact URL/intent/root/epoch/shell/bindingの一致、abortと本人介入、mutation/recoveryの抑止を適用前後で照合する。位置のwriterは同じReading jobだけとし、clampや未成立時も保存candidateを失わず既存の通常復元を継続する。
 
 `data-reading-position-prepaint=applied`は現在DOMで保存XYへ到達したことだけを示す。過去と同じ行の画面位置、後発font/image/任意hydrationによるshift皆無、fadeのreadyを意味しない。raw XYに全表の内容・全font・全行geometryの同一性証明を要求しない。表は幾何準備と操作有効化を分け、準備した同じrailを後のactivationが採用する。main/tableは通常表示と操作を保ち、準備だけのrailは操作面として公開しない。一般のhydration完了・fonts.ready・Animation finishedを同期区間で待たない。8msや16ms以内、native layout途中の中断は保証しない。
 
-通常移動、hash、state-only、error/not-found、初期/reload、native/BFCache、未知または非同期adapterの経路はこの先行処理の対象外とし、既存の規則を維持する。描画前保証は事後のPromise判定から推定しない。対象のproduction prepared commitとhost処理の同期性を契約として明示し、詳細は[Router Contract](router.md#commit-acceptance-and-recovery)に従う。
+通常移動、保存candidateのないhash、state-only、error/not-found、初期/reload、native/BFCache、未知または非同期adapterの経路はこの先行処理の対象外とし、既存の規則を維持する。描画前保証は事後のPromise判定から推定しない。対象のproduction prepared commitとhost処理の同期性を契約として明示し、詳細は[Router Contract](router.md#commit-acceptance-and-recovery)に従う。
 
 全ページのBack/Forwardを候補にし、ページ名・URL prefix・移動方向によるallowlistを持たない。候補になることと、演出が実際に適用されることは異なる。正常な別文書traverseの復帰先entry自身について、保存時の検証済みshell profileと現在のprofile、exact URL・entry ID・本文版・使用字体・viewport・main/本文要素/読書アンカー/rangeの実幾何を照合する。離脱元と復帰先でsidebar、TOC、本文幅が変わっても、復帰先の保存時配置が再現されていればよい。hash/queryを含むfull traverseも保存座標優先とし、URLからそれらを捨てない。
 
@@ -108,3 +108,14 @@ sidebarの実体保持は[Sidebar State Contract](sidebar-state.md#6-transaction
 ## Native位置の観測通知
 
 Readingはnative初期分類と実位置採用を分けてPostRenderへ通知する。通知先の例外は位置処理から隔離し、nativeにcommit receiptを捏造しない。pagehideで位置sequenceと旧load/rAFを失効させ、pageshowは新たに観測する。TOCの検証やrollbackでXYが変わった場合も独自scrollを追加せず、実座標を採り直す。TOCの表示成否と位置復元結果は別に扱う。詳細は[TOC source session ADR](../adr/toc-source-session-native-observation.md)。
+
+
+### hashを持つ同期full traversalの先行復元
+
+traverse intentで既存のfrozen-or-store選択を一度だけ実行する。schedule前の読取専用qualificationは、現在のhistory entryと元receiptのentry・exact URL、candidateIdと候補の妥当性を使う。離脱元のrenderedIdを使わず、storeを再読込しない。hashの新しい表幾何準備には妥当なcandidateが必要であり、従来のhashなし準備はcandidateなしでも継続する。raw XYの先行適用にはどちらもcandidateが必要となる。
+
+同期区間は、candidate照合→操作を有効化しない表幾何準備→preventScroll focus→owner再照合→range確認→2 CSS px外の場合だけ保存XY適用→TOC通知→owner・XY・range再照合の順とする。hashが古い・存在しない場合も保存XYを優先する。この区間へawait・rAF・timer・新しいloopを追加しない。focus等から同期navigationが起きたら、新ownerを取消し得るscheduleへ進まない。
+
+raw座標への到着（既に整列済みも含む）、TOC通知後に受理した位置、演出用の検証済みgeometryは別々に扱う。appliedと通知済みの証拠は通知後のXY/range照合を通った時だけ確定する。同ownerの座標/range変化やTOC例外は証拠を失効させ、最後に有効だった受理位置を使って通常補正時の再通知を判断する。raw失敗だけでは独立したgeometry検証経路の通知・成功を消さない。ownerを失った場合は新rootのstatusを変更しない。
+
+表幾何準備・前の準備のabort・cleanupを同じ例外境界に置く。同ownerの失敗では受理済み本文とcandidateを保全して既存のreadiness/最大5秒の安定化へ渡す。owner喪失後は新ownerの準備を後始末しない。仮clampをraw成功とせず、初期load・reload・state-only・BFCache・通常link・errorは従来の位置規則を維持する。本人介入と既存deadlineの意味は変更しない。
