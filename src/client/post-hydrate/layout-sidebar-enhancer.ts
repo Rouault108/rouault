@@ -243,6 +243,7 @@ export const enhanceLayoutSidebar = (root: HTMLElement, signal: AbortSignal): vo
       const snapshot = layoutSidebarController.getSnapshot(sidebarId);
       const surface = root.querySelector('[data-layout-sidebar-surface]');
       const nav = surface?.querySelector<HTMLElement>('nav[data-sidebar-nav]') ?? null;
+      const helper = root.querySelector<HTMLElement>('[data-layout-sidebar-main-link]');
       const current = (): boolean => {
         const latest = layoutSidebarController.getSnapshot(sidebarId);
         return (
@@ -254,6 +255,7 @@ export const enhanceLayoutSidebar = (root: HTMLElement, signal: AbortSignal): vo
           eligiblePort(port) &&
           root.querySelector('[data-layout-sidebar-surface]') === surface &&
           root.querySelector('nav[data-sidebar-nav]') === nav &&
+          root.querySelector('[data-layout-sidebar-main-link]') === helper &&
           !!nav &&
           latest.mode === snapshot.mode &&
           latest.state === snapshot.state
@@ -307,7 +309,22 @@ export const enhanceLayoutSidebar = (root: HTMLElement, signal: AbortSignal): vo
         root.setAttribute('data-mode', snapshot.mode);
         root.setAttribute('data-state', snapshot.state);
         root.inert = false;
-        moveRoot(overlay, receipt);
+        // :focusの静的guardでlinkを維持したまま、可視asideへ先にfocusを渡す。
+        // reparentでlinkのfocusが失われるより前に済ませる。
+        if (
+          snapshot.state === 'expanded' &&
+          helper &&
+          document.activeElement === helper &&
+          !focus(root)
+        ) {
+          settleFallback(receipt);
+          return;
+        }
+        if (!current()) {
+          settleFallback(capture(port));
+          return;
+        }
+        moveRoot(overlay, capture(port));
         root.inert = snapshot.state === 'collapsed';
       } else {
         // 消えるheader buttonからの復帰先を先に可視・操作可にする。

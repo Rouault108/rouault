@@ -251,4 +251,35 @@ test.describe('sidebar static baseline', () => {
     await expect(root.locator('nav')).toBeVisible();
     await expect(page.locator('#main-content')).toBeFocused();
   });
+  test('active overlay omits the baseline helper and fallback fragment leaves no backdrop', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto(layoutRichPath);
+    const root = page.locator(rootSelector);
+    await expect(page.locator('[data-sidebar-enhancement-state]')).toHaveAttribute(
+      'data-sidebar-enhancement-state',
+      'active',
+    );
+    await page.locator('[data-layout-sidebar-toggle]').click();
+    await expect(root).toHaveAttribute('data-state', 'expanded');
+    const helper = root.locator('[data-layout-sidebar-main-link]');
+    await expect(helper).toBeHidden();
+    await page.evaluate(() =>
+      document
+        .querySelector('[data-app-shell-root]')
+        ?.removeAttribute('data-layout-header-enhancer-state'),
+    );
+    await expect(page.locator('[data-sidebar-enhancement-state]')).toHaveAttribute(
+      'data-sidebar-enhancement-state',
+      'fallback',
+    );
+    await expect(helper).toBeVisible();
+    await helper.focus();
+    await helper.press('Enter');
+    await expect(page).toHaveURL(/#main-content$/u);
+    await expect(page.locator('#main-content')).toBeFocused();
+    await expect(page.locator('[data-layout-sidebar-backdrop]')).toBeHidden();
+    expect(await page.evaluate(() => scrollY)).toBeGreaterThan(0);
+  });
 });

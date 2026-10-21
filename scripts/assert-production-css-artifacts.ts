@@ -63,12 +63,6 @@ const REQUIRED_MEDIA_RULES = [
     declarations: [{ property: 'grid-template-columns', value: '0px minmax(0, 1fr)' }],
   },
   {
-    params: '(width >= 1024px)',
-    selector:
-      "header[data-layout-header][data-note-layout='true'][data-sidebar-enabled='true'] .sidebar-toggle",
-    declarations: [{ property: 'display', value: 'none' }],
-  },
-  {
     params: '(width < 640px)',
     selector: ".layout-toc-col[data-toc-hydration='hydrated'] [data-layout-toc-nav]",
     declarations: [{ property: 'display', value: 'none' }],
@@ -143,7 +137,8 @@ const expectMediaRuleHasDeclarations = (css: string, contract: ExpectedMediaRule
   });
 
   const found = rules.some(
-    (rule) => ruleHasSelector(rule, contract.selector) && ruleHasDeclarations(rule, contract.declarations),
+    (rule) =>
+      ruleHasSelector(rule, contract.selector) && ruleHasDeclarations(rule, contract.declarations),
   );
   if (!found) {
     throw new Error(
@@ -293,6 +288,39 @@ export const assertProductionCssArtifacts = async (
   for (const contract of REQUIRED_MEDIA_RULES) {
     expectMediaRuleHasDeclarations(reachableCss, contract);
   }
+  // 幅だけでfocus中の操作口を消さず、header ownerのhiddenに従う成果物を要求する。
+  expectRuleHasDeclarations(
+    reachableCss,
+    (selector) =>
+      normalizeSelector(selector).includes(
+        'header[data-layout-header] [data-layout-sidebar-toggle][hidden]',
+      ),
+    [{ property: 'display', value: 'none' }],
+    'header-owned sidebar trigger visibility contract',
+  );
+  expectRuleHasDeclarations(
+    reachableCss,
+    (selector) =>
+      normalizeSelector(selector).includes(
+        '[data-sidebar-enhancement-state=active] [data-layout-sidebar-root][data-mode=overlay] [data-layout-sidebar-main-link]:not(:focus)',
+      ),
+    [{ property: 'display', value: 'none' }],
+    'active overlay baseline-helper exclusion contract',
+  );
+  postcss.parse(reachableCss).walkRules((rule) => {
+    if (
+      (ruleHasSelector(
+        rule,
+        "header[data-layout-header][data-note-layout='true'][data-sidebar-enabled='true'] .sidebar-toggle",
+      ) ||
+        ruleHasSelector(
+          rule,
+          "header[data-layout-header][data-sidebar-mode='fixed'] .sidebar-toggle",
+        )) &&
+      ruleHasDeclarations(rule, [{ property: 'display', value: 'none' }])
+    )
+      throw new Error('sidebar trigger visibility bypasses the synchronous header owner');
+  });
   if (reachableCss.includes('--toc-item-inactive-upper-max-lines')) {
     throw new Error('deprecated TOC token was found in production HTML reachable CSS assets');
   }

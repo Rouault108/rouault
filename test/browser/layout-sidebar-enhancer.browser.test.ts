@@ -1,6 +1,7 @@
 import { beforeSidebarShellMutation } from '../../src/components/layout/sidebar-presentation-coordination.js';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { userEvent } from 'vitest/browser';
+import { page, userEvent } from 'vitest/browser';
+import { ensureMainCssLoaded } from './helpers/load-main-css.js';
 import { enhanceLayoutHeader } from '../../src/client/post-hydrate/layout-header-enhancer.js';
 import { enhanceLayoutSidebar } from '../../src/client/post-hydrate/layout-sidebar-enhancer.js';
 import { layoutSidebarController } from '../../src/components/layout/layout-sidebar-controller.js';
@@ -697,4 +698,55 @@ describe('plain sidebar shell lifecycle', () => {
     expect(state()).toBe('active');
     expect(document.activeElement).toBe(shell.querySelector('[data-layout-sidebar-toggle]'));
   });
+  it('active overlay omits the helper and fallback retains its native fragment destination', async () => {
+    await page.viewport(390, 844);
+    await ensureMainCssLoaded();
+    const root = fixture();
+    const main = document.createElement('main');
+    main.id = 'main-content';
+    main.tabIndex = -1;
+    main.textContent = 'Main destination';
+    shell.append(main);
+    start(root);
+    const button = required(shell.querySelector<HTMLElement>('[data-layout-sidebar-toggle]'));
+    await userEvent.click(button);
+    const helper = required(root.querySelector<HTMLElement>('[data-layout-sidebar-main-link]'));
+    expect(helper.checkVisibility()).toBe(false);
+    shell.removeAttribute('data-layout-header-enhancer-state');
+    await waitForCondition(() => state() === 'fallback', 'native helper fallback');
+    expect(helper.checkVisibility()).toBe(true);
+    await userEvent.click(helper);
+    expect(document.activeElement).toBe(main);
+    expect(
+      required(shell.querySelector<HTMLElement>('[data-layout-sidebar-backdrop]')).hidden,
+    ).toBe(true);
+  });
+
+  for (const rejected of [false, true]) {
+    it(`expanded-overlay helper focus handoff ${rejected ? 'failure falls back' : 'succeeds before hiding'}`, async () => {
+      await ensureMainCssLoaded();
+      const root = fixture();
+      root.setAttribute('presentation', 'fixed');
+      start(root);
+      layoutSidebarController.setOverlayStateWithoutPersisting(undefined, 'expanded');
+      const helper = required(root.querySelector<HTMLElement>('[data-layout-sidebar-main-link]'));
+      helper.focus();
+      const original = root.focus.bind(root);
+      const visibleBeforeMoves: boolean[] = [];
+      vi.spyOn(root, 'focus').mockImplementation((options) => {
+        visibleBeforeMoves.push(helper.checkVisibility());
+        if (!rejected) original(options);
+      });
+      layoutSidebarController.setViewportMode(undefined, 'overlay');
+      expect(visibleBeforeMoves[0]).toBe(true);
+      expect(root.inert).toBe(false);
+      expect(state()).toBe(rejected ? 'fallback' : 'active');
+      expect(document.activeElement).toBe(rejected ? helper : root);
+      expect(helper.checkVisibility()).toBe(rejected);
+      if (rejected)
+        expect(
+          required(shell.querySelector<HTMLElement>('[data-layout-sidebar-backdrop]')).hidden,
+        ).toBe(true);
+    });
+  }
 });
