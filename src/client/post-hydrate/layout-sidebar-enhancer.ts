@@ -281,7 +281,14 @@ export const enhanceLayoutSidebar = (root: HTMLElement, signal: AbortSignal): vo
           return;
         }
         const returnTarget = snapshot.returnFocusTarget;
-        if (closing && usable(returnTarget) && !root.contains(returnTarget)) {
+        if (
+          closing &&
+          usable(returnTarget) &&
+          (returnTarget.tabIndex >= 0 ||
+            returnTarget.hasAttribute('tabindex') ||
+            returnTarget.isContentEditable) &&
+          !root.contains(returnTarget)
+        ) {
           if (!focus(returnTarget)) {
             settleFallback(receipt);
             return;
@@ -450,7 +457,22 @@ export const enhanceLayoutSidebar = (root: HTMLElement, signal: AbortSignal): vo
   };
   signal.addEventListener('abort', cleanup, { once: true });
   try {
-    if (root.contains(document.activeElement)) engaged.add(generation);
+    // module開始前のnative操作はlistenerで観測できないため、SSRの初期展開と照合する。
+    let changedBeforeActivation = false;
+    try {
+      const initial: unknown = JSON.parse(root.getAttribute('initial-expanded-ids') ?? '[]');
+      changedBeforeActivation =
+        !Array.isArray(initial) ||
+        initial.some((id: unknown) => typeof id !== 'string') ||
+        [...root.querySelectorAll<HTMLDetailsElement>('[data-sidebar-nav-branch]')].some(
+          (branch) =>
+            branch.open !==
+            initial.includes(branch.parentElement?.getAttribute('data-node-id') ?? ''),
+        );
+    } catch {
+      changedBeforeActivation = true;
+    }
+    if (changedBeforeActivation || root.contains(document.activeElement)) engaged.add(generation);
     disconnectOwner = connectSidebarPresentationOwner(shell, {
       refresh: reconcile,
       beforeMutation,

@@ -35,7 +35,12 @@ test.describe('sidebar static baseline', () => {
       await expect(nav).toBeVisible();
       await expect(page.locator('[data-layout-sidebar-toggle]')).toBeHidden();
       if (interaction === 'branch') {
-        const branch = root.locator('details[data-sidebar-nav-branch][open]').first();
+        const branches = root.locator('details[data-sidebar-nav-branch]');
+        const index = await branches.evaluateAll((items) =>
+          items.findIndex((item) => item.hasAttribute('open')),
+        );
+        expect(index).toBeGreaterThanOrEqual(0);
+        const branch = branches.nth(index);
         const control = branch.locator(':scope > summary');
         await control.click();
         await expect(branch).not.toHaveAttribute('open');
@@ -211,4 +216,39 @@ test.describe('sidebar static baseline', () => {
       await expect(root).not.toHaveAttribute('inert');
     });
   }
+  test('branch operation before the JS entry starts survives after focus leaves the sidebar', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    let release = (): void => {
+      /* route保持の初期化後に置き換える。 */
+    };
+    const gate = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    await page.route('**/client-assets/client-*.js', async (route) => {
+      await gate;
+      await route.continue();
+    });
+    await page.goto(layoutRichPath, { waitUntil: 'commit' });
+    const root = page.locator(rootSelector);
+    const branches = root.locator('details[data-sidebar-nav-branch]');
+    await expect(branches.first()).toBeAttached();
+    const index = await branches.evaluateAll((items) =>
+      items.findIndex((item) => item.hasAttribute('open')),
+    );
+    expect(index).toBeGreaterThanOrEqual(0);
+    const branch = branches.nth(index);
+    await branch.locator(':scope > summary').click();
+    await expect(branch).not.toHaveAttribute('open');
+    await page.locator('#main-content').focus();
+    release();
+    await expect(page.locator('[data-sidebar-enhancement-state]')).toHaveAttribute(
+      'data-sidebar-enhancement-state',
+      'fallback',
+    );
+    await expect(branch).not.toHaveAttribute('open');
+    await expect(root.locator('nav')).toBeVisible();
+    await expect(page.locator('#main-content')).toBeFocused();
+  });
 });

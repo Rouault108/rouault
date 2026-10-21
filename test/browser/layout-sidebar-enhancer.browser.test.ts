@@ -662,4 +662,39 @@ describe('plain sidebar shell lifecycle', () => {
     finish();
     expect(root.getAttribute('data-mode')).toBe('fixed');
   });
+  it('pre-module branch changes survive stored defaults even after focus left the sidebar', () => {
+    const root = fixture();
+    required(root.querySelector<HTMLDetailsElement>('[data-sidebar-nav-branch]')).open = false;
+    localStorage.setItem(treeKey, JSON.stringify({ expandedIds: ['branch'] }));
+    start(root);
+    expect(required(root.querySelector<HTMLDetailsElement>('[data-sidebar-nav-branch]')).open).toBe(
+      false,
+    );
+    expect(state()).toBe('fallback');
+  });
+
+  it('header-first rollback retirement preserves the provisional runtime descriptor', () => {
+    const root = fixture();
+    start(root);
+    layoutSidebarController.open(
+      undefined,
+      required(shell.querySelector<HTMLElement>('[data-layout-sidebar-toggle]')),
+    );
+    const previous = layoutSidebarController.readRuntimeSnapshot();
+    event('app-shell:rollback-start', { failedShellCommitId: 1, previousShellCommitId: 0 });
+    expect(state()).toBe('staged');
+    expect(layoutSidebarController.readRuntimeSnapshot()).toEqual(previous);
+  });
+
+  it('a connected non-focusable return target is treated as invalid during close', () => {
+    const root = fixture();
+    start(root);
+    const invalid = document.createElement('div');
+    shell.append(invalid);
+    layoutSidebarController.open(undefined, invalid);
+    required(root.querySelector<HTMLElement>('[data-layout-sidebar-main-link]')).focus();
+    layoutSidebarController.close(undefined);
+    expect(state()).toBe('active');
+    expect(document.activeElement).toBe(shell.querySelector('[data-layout-sidebar-toggle]'));
+  });
 });

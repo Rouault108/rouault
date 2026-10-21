@@ -21,6 +21,7 @@ import {
   HEADER_READY_COMMIT_ID,
 } from '../../../shared/navigation/sidebar-enhancement-contract.js';
 import { readCurrentShellCommitId } from '../../components/app/shell/app-shell-lifecycle.js';
+import type { AppShellRollbackStartDetail } from '../../components/app/shell/app-shell-events.js';
 import {
   beforeSidebarShellMutation,
   connectSidebarHeaderPort,
@@ -219,9 +220,22 @@ export const enhanceLayoutHeader = (root: ParentNode, signal: AbortSignal): void
     for (const eventName of APP_SHELL_SYNC_EVENTS) {
       document.addEventListener(
         eventName,
-        () => {
+        (event: Event) => {
           if (eventName === 'app-shell:rollback-start') {
-            sidebarSyncController?.abort();
+            const detail = (event as CustomEvent<AppShellRollbackStartDetail>).detail;
+            const current = readCurrentShellCommitId();
+            if (
+              detail.failedShellCommitId !== current &&
+              !(detail.previousShellCommitId === current && detail.failedShellCommitId > current)
+            )
+              return;
+            const header = document.querySelector(HEADER_SELECTOR);
+            const finish = header ? beforeSidebarShellMutation(header) : null;
+            try {
+              sidebarSyncController?.abort();
+            } finally {
+              finish?.();
+            }
             return;
           }
           syncThemeHeader(document);
