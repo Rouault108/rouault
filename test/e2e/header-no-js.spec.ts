@@ -44,6 +44,8 @@ test.describe('header no-JS', () => {
     await expect(
       page.locator('header[data-layout-header] [data-layout-sidebar-toggle]'),
     ).toBeHidden();
+    await expect(page.locator('[data-layout-sidebar-main-link]')).toBeHidden();
+    await expect(page.locator('[data-layout-sidebar-root] nav')).toBeVisible();
   });
 
   test('検索リンクは JS 無効時も検索ページへ通常遷移すること', async ({ page }) => {

@@ -298,11 +298,16 @@
   display: block;
   padding: var(--space-3) var(--space-4);
 }
-/* overlayでは本文導線を追加せず、移動前のfocusだけ同期handoffまで保持する。 */
+/* 狭幅baselineだけへ導線を出し、既存focusは同期handoffまで保持する。 */
 [data-sidebar-enhancement-state='active']
-  [data-layout-sidebar-root][data-mode='overlay']
+  [data-layout-sidebar-root]
   [data-layout-sidebar-main-link]:not(:focus) {
   display: none;
+}
+@media (width >= 1024px) {
+  [data-layout-sidebar-main-link]:not(:focus) {
+    display: none;
+  }
 }
 [data-layout-sidebar-root]:focus,
 [data-layout-sidebar-main-link]:focus-visible {

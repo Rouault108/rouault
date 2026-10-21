@@ -48,6 +48,11 @@ interface ExpectedMediaRule {
 
 const REQUIRED_MEDIA_RULES = [
   {
+    params: '(width >= 1024px)',
+    selector: '[data-layout-sidebar-main-link]:not(:focus)',
+    declarations: [{ property: 'display', value: 'none' }],
+  },
+  {
     params: '(width < 1024px)',
     selector: "router-document-host[data-sidebar-presence='present']",
     declarations: [
@@ -302,10 +307,10 @@ export const assertProductionCssArtifacts = async (
     reachableCss,
     (selector) =>
       normalizeSelector(selector).includes(
-        '[data-sidebar-enhancement-state=active] [data-layout-sidebar-root][data-mode=overlay] [data-layout-sidebar-main-link]:not(:focus)',
+        '[data-sidebar-enhancement-state=active] [data-layout-sidebar-root] [data-layout-sidebar-main-link]:not(:focus)',
       ),
     [{ property: 'display', value: 'none' }],
-    'active overlay baseline-helper exclusion contract',
+    'active sidebar baseline-helper exclusion contract',
   );
   postcss.parse(reachableCss).walkRules((rule) => {
     if (

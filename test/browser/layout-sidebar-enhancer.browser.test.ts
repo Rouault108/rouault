@@ -64,6 +64,23 @@ const start = (root: HTMLElement): void => {
   validate();
 };
 
+// 狭幅nativeで取得したfocusが次generationの固定表示まで残る例外を作る。
+const startWithNativeHelperFocus = async (root: HTMLElement): Promise<HTMLElement> => {
+  await page.viewport(390, 844);
+  await ensureMainCssLoaded();
+  root.setAttribute('presentation', 'fixed');
+  const helper = required(root.querySelector<HTMLElement>('[data-layout-sidebar-main-link]'));
+  helper.focus();
+  start(root);
+  expect(state()).toBe('fallback');
+  commitShellGeneration(1);
+  event('app-shell:committed', { shellCommitId: 1 });
+  validate(1);
+  expect(state()).toBe('active');
+  expect(document.activeElement).toBe(helper);
+  return helper;
+};
+
 afterEach(() => {
   vi.restoreAllMocks();
   abort?.abort();
@@ -407,10 +424,11 @@ describe('plain sidebar shell lifecycle', () => {
     expect(branch.open).toBe(true);
   });
   for (const target of ['aside', 'nav', 'helper'] as const) {
-    it(`fixed to collapsed overlay moves ${target} focus before hiding`, () => {
+    it(`fixed to collapsed overlay moves ${target} focus before hiding`, async () => {
       const root = fixture();
       root.setAttribute('presentation', 'fixed');
-      start(root);
+      if (target === 'helper') await startWithNativeHelperFocus(root);
+      else start(root);
       const focused =
         target === 'aside'
           ? root
@@ -457,7 +475,7 @@ describe('plain sidebar shell lifecycle', () => {
       const external = required(shell.querySelector<HTMLElement>('[data-external-focus]'));
       const invalid = document.createElement('button');
       layoutSidebarController.open(undefined, descriptor === 'invalid' ? invalid : undefined);
-      required(root.querySelector<HTMLElement>('[data-layout-sidebar-main-link]')).focus();
+      required(root.querySelector<HTMLElement>('[data-sidebar-nav-control]')).focus();
       layoutSidebarController.close(undefined);
       expect(document.activeElement).toBe(shell.querySelector('[data-layout-sidebar-toggle]'));
       expect(layoutSidebarController.readRuntimeSnapshot().returnFocusDescriptor).toBeNull();
@@ -583,10 +601,13 @@ describe('plain sidebar shell lifecycle', () => {
   });
 
   for (const target of ['aside', 'nav', 'helper', 'header', 'external', 'body'] as const) {
-    it(`cleanup preserves or repairs ${target} focus without an initial body focus grab`, () => {
+    it(`cleanup preserves or repairs ${target} focus without an initial body focus grab`, async () => {
       const root = fixture();
-      start(root);
-      layoutSidebarController.open(undefined);
+      if (target === 'helper') await startWithNativeHelperFocus(root);
+      else {
+        start(root);
+        layoutSidebarController.open(undefined);
+      }
       const element =
         target === 'aside'
           ? root
@@ -617,8 +638,11 @@ describe('plain sidebar shell lifecycle', () => {
   for (const target of ['aside', 'nav', 'helper', 'header'] as const) {
     it(`readiness loss preserves or repairs ${target} ownership before retiring the trigger`, async () => {
       const root = fixture();
-      start(root);
-      layoutSidebarController.open(undefined);
+      if (target === 'helper') await startWithNativeHelperFocus(root);
+      else {
+        start(root);
+        layoutSidebarController.open(undefined);
+      }
       const element =
         target === 'aside'
           ? root
@@ -647,7 +671,7 @@ describe('plain sidebar shell lifecycle', () => {
     start(root);
     const external = required(shell.querySelector<HTMLElement>('[data-external-focus]'));
     layoutSidebarController.open(undefined, external);
-    required(root.querySelector<HTMLElement>('[data-layout-sidebar-main-link]')).focus();
+    required(root.querySelector<HTMLElement>('[data-sidebar-nav-control]')).focus();
     layoutSidebarController.close(undefined);
     expect(document.activeElement).toBe(external);
     expect(layoutSidebarController.readRuntimeSnapshot().returnFocusDescriptor).toBeNull();
@@ -693,7 +717,7 @@ describe('plain sidebar shell lifecycle', () => {
     const invalid = document.createElement('div');
     shell.append(invalid);
     layoutSidebarController.open(undefined, invalid);
-    required(root.querySelector<HTMLElement>('[data-layout-sidebar-main-link]')).focus();
+    required(root.querySelector<HTMLElement>('[data-sidebar-nav-control]')).focus();
     layoutSidebarController.close(undefined);
     expect(state()).toBe('active');
     expect(document.activeElement).toBe(shell.querySelector('[data-layout-sidebar-toggle]'));
@@ -726,11 +750,8 @@ describe('plain sidebar shell lifecycle', () => {
     it(`expanded-overlay helper focus handoff ${rejected ? 'failure falls back' : 'succeeds before hiding'}`, async () => {
       await ensureMainCssLoaded();
       const root = fixture();
-      root.setAttribute('presentation', 'fixed');
-      start(root);
+      const helper = await startWithNativeHelperFocus(root);
       layoutSidebarController.setOverlayStateWithoutPersisting(undefined, 'expanded');
-      const helper = required(root.querySelector<HTMLElement>('[data-layout-sidebar-main-link]'));
-      helper.focus();
       const original = root.focus.bind(root);
       const visibleBeforeMoves: boolean[] = [];
       vi.spyOn(root, 'focus').mockImplementation((options) => {
@@ -787,5 +808,25 @@ describe('plain sidebar shell lifecycle', () => {
     await waitForCondition(() => state() === null, 'focused disconnect cleanup');
     expect(button.hidden).toBe(true);
     expect(document.activeElement).not.toBe(root);
+  });
+  it('helper is normally limited to narrow baseline while existing focus survives widening', async () => {
+    await ensureMainCssLoaded();
+    await page.viewport(1440, 900);
+    const root = fixture();
+    root.setAttribute('presentation', 'fixed');
+    const helper = required(root.querySelector<HTMLElement>('[data-layout-sidebar-main-link]'));
+    expect(helper.checkVisibility()).toBe(false);
+    start(root);
+    expect(state()).toBe('active');
+    expect(helper.checkVisibility()).toBe(false);
+    abort.abort();
+    await page.viewport(390, 844);
+    expect(helper.checkVisibility()).toBe(true);
+    helper.focus();
+    await page.viewport(1440, 900);
+    expect(helper.checkVisibility()).toBe(true);
+    expect(document.activeElement).toBe(helper);
+    required(shell.querySelector<HTMLElement>('[data-external-focus]')).focus();
+    expect(helper.checkVisibility()).toBe(false);
   });
 });

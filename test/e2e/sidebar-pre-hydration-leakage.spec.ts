@@ -132,6 +132,8 @@ test.describe('sidebar static baseline', () => {
             'active',
           );
         await expect(root).toHaveAttribute('tabindex', '-1');
+        if (width >= 1024)
+          await expect(root.locator('[data-layout-sidebar-main-link]')).toBeHidden();
         const frames = await page.evaluate(
           () =>
             Reflect.get(window, 'sidebarBaselineFrames') as {
@@ -158,13 +160,16 @@ test.describe('sidebar static baseline', () => {
     const context = await browser.newContext({
       baseURL: baseURL ?? 'http://127.0.0.1:4173',
       javaScriptEnabled: false,
-      viewport: { width: 390, height: 844 },
+      viewport: { width: 1440, height: 844 },
     });
     try {
       const page = await context.newPage();
       await page.goto(layoutRichPath);
       const root = page.locator(rootSelector);
       const helper = root.locator('[data-layout-sidebar-main-link]');
+      await expect(helper).toBeHidden();
+      await expect(root.locator('nav')).toBeVisible();
+      await page.setViewportSize({ width: 390, height: 844 });
       await helper.focus();
       for (const width of [390, 1023, 1024, 1440, 390]) {
         await page.setViewportSize({ width, height: 844 });
@@ -191,6 +196,42 @@ test.describe('sidebar static baseline', () => {
     test(`actual CSS keeps ${target} focus safe across the fixed/overlay boundary`, async ({
       page,
     }) => {
+      if (target === 'helper') {
+        await page.setViewportSize({ width: 390, height: 844 });
+        await page.addInitScript(() => {
+          const dispatch = document.dispatchEvent.bind(document);
+          let held: Event | null = null;
+          document.dispatchEvent = (event: Event): boolean => {
+            if (event.type === 'app-shell:validated') {
+              held = event;
+              return true;
+            }
+            return dispatch(event);
+          };
+          Object.assign(window, {
+            releaseSidebarValidation: () => {
+              if (held) dispatch(held);
+            },
+          });
+        });
+        await page.goto(layoutRichPath);
+        const helper = page.locator('[data-layout-sidebar-main-link]');
+        await helper.focus();
+        for (const width of [1023, 1024, 1440, 390]) {
+          await page.setViewportSize({ width, height: 844 });
+          await expect(helper).toBeVisible();
+          await expect(helper).toBeFocused();
+        }
+        await page.evaluate(() => {
+          (Reflect.get(window, 'releaseSidebarValidation') as () => void)();
+        });
+        await expect(page.locator('[data-sidebar-enhancement-state]')).toHaveAttribute(
+          'data-sidebar-enhancement-state',
+          'fallback',
+        );
+        await expect(helper).toBeFocused();
+        return;
+      }
       await page.setViewportSize({ width: 1440, height: 900 });
       await page.goto(layoutRichPath);
       await expect(page.locator('[data-sidebar-enhancement-state]')).toHaveAttribute(
@@ -199,11 +240,7 @@ test.describe('sidebar static baseline', () => {
       );
       const root = page.locator(rootSelector);
       const focused =
-        target === 'aside'
-          ? root
-          : target === 'helper'
-            ? root.locator('[data-layout-sidebar-main-link]')
-            : root.locator('[data-sidebar-nav-control]').first();
+        target === 'aside' ? root : root.locator('[data-sidebar-nav-control]').first();
       await focused.focus();
       const button = page.locator('[data-layout-sidebar-toggle]');
       await page.setViewportSize({ width: 1023, height: 900 });
