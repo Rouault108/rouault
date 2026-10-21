@@ -361,18 +361,22 @@ export const enhanceLayoutSidebar = (root: HTMLElement, signal: AbortSignal): vo
       reconcile();
     });
   };
-  const beforeMutation = (handoff: boolean): (() => void) => {
+  const beforeMutation = (handoff: boolean, preservePlacement: boolean): (() => void) => {
     const receipt = capture();
     mutationDepth++;
-    if (!reconciling) {
-      reconciling = true;
-      try {
-        publish('staged');
-        quiesce(receipt, handoff);
-      } finally {
-        reconciling = false;
-      }
-    } else queueReconcile();
+    // headerだけを交換する文書commitでは、後続の選択属性patchが照合する
+    // fixed placementとnav実体をここで壊さない。focus receiptは交換前に保持する。
+    if (!preservePlacement) {
+      if (!reconciling) {
+        reconciling = true;
+        try {
+          publish('staged');
+          quiesce(receipt, handoff);
+        } finally {
+          reconciling = false;
+        }
+      } else queueReconcile();
+    }
     return () => {
       mutationDepth--;
       if (!handoff) {

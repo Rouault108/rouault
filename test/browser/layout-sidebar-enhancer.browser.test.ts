@@ -1,3 +1,4 @@
+import { beforeSidebarShellMutation } from '../../src/components/layout/sidebar-presentation-coordination.js';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { userEvent } from 'vitest/browser';
 import { enhanceLayoutHeader } from '../../src/client/post-hydrate/layout-header-enhancer.js';
@@ -649,5 +650,16 @@ describe('plain sidebar shell lifecycle', () => {
     layoutSidebarController.close(undefined);
     expect(document.activeElement).toBe(external);
     expect(layoutSidebarController.readRuntimeSnapshot().returnFocusDescriptor).toBeNull();
+  });
+  it('header-only navigation handoff preserves the fixed placement required by selection patches', () => {
+    const root = fixture();
+    root.setAttribute('presentation', 'fixed');
+    start(root);
+    const nav = root.querySelector('nav');
+    const finish = beforeSidebarShellMutation(required(shell.querySelector('header')), true);
+    expect(root.getAttribute('data-mode')).toBe('fixed');
+    expect(root.querySelector('nav')).toBe(nav);
+    finish();
+    expect(root.getAttribute('data-mode')).toBe('fixed');
   });
 });

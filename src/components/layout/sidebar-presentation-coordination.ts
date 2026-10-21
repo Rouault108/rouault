@@ -17,7 +17,7 @@ export interface SidebarHeaderPort {
 
 export interface SidebarPresentationOwner {
   refresh(): void;
-  beforeMutation(handoff: boolean): () => void;
+  beforeMutation(handoff: boolean, preservePlacement: boolean): () => void;
   retireHeader(port: SidebarHeaderPort, clear: () => void): void;
 }
 
@@ -71,7 +71,11 @@ export const connectSidebarHeaderPort = (
 export const beforeSidebarShellMutation = (element: Element, handoff = false): (() => void) => {
   const shell = element.closest('[data-app-shell-root]');
   return (
-    (shell ? bindings.get(shell)?.owner?.beforeMutation(handoff) : undefined) ??
+    (shell
+      ? bindings
+          .get(shell)
+          ?.owner?.beforeMutation(handoff, handoff && element.matches('header[data-layout-header]'))
+      : undefined) ??
     (() => {
       /* 未enhanceの静的surfaceは処理不要。 */
     })
