@@ -749,4 +749,43 @@ describe('plain sidebar shell lifecycle', () => {
         ).toBe(true);
     });
   }
+  it('preparation rejects changed header button cardinality before hiding the sidebar', () => {
+    const root = fixture();
+    root.setAttribute('presentation', 'fixed');
+    start(root);
+    root.focus();
+    const button = required(shell.querySelector<HTMLElement>('[data-layout-sidebar-toggle]'));
+    button.addEventListener('focus', () => button.after(button.cloneNode(true)), { once: true });
+    layoutSidebarController.setViewportMode(undefined, 'overlay');
+    expect(state()).toBe('fallback');
+    expect(root.inert).toBe(false);
+    expect(document.activeElement).toBe(root);
+  });
+
+  it('preparation rejects a replaced surface without rolling back its new content', () => {
+    const root = fixture();
+    root.setAttribute('presentation', 'fixed');
+    start(root);
+    root.focus();
+    const button = required(shell.querySelector<HTMLElement>('[data-layout-sidebar-toggle]'));
+    const surface = required(root.querySelector<HTMLElement>('[data-layout-sidebar-surface]'));
+    const next = surface.cloneNode(true) as HTMLElement;
+    button.addEventListener('focus', () => surface.replaceWith(next), { once: true });
+    layoutSidebarController.setViewportMode(undefined, 'overlay');
+    expect(state()).toBe('fallback');
+    expect(root.inert).toBe(false);
+    expect(root.querySelector('[data-layout-sidebar-surface]')).toBe(next);
+    expect(document.activeElement).toBe(root);
+  });
+
+  it('disconnected ownership hides its trigger without reclaiming focus into the detached sidebar', async () => {
+    const root = fixture();
+    start(root);
+    const button = required(shell.querySelector<HTMLElement>('[data-layout-sidebar-toggle]'));
+    button.focus();
+    root.remove();
+    await waitForCondition(() => state() === null, 'focused disconnect cleanup');
+    expect(button.hidden).toBe(true);
+    expect(document.activeElement).not.toBe(root);
+  });
 });

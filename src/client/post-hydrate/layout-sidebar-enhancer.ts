@@ -123,6 +123,8 @@ export const enhanceLayoutSidebar = (root: HTMLElement, signal: AbortSignal): vo
     root.isConnected &&
     !root.hidden &&
     root.closest(APP_SHELL_ROOT_SELECTOR) === shell &&
+    shell.querySelector('aside[data-layout-sidebar-root]') === root &&
+    shell.querySelectorAll('aside[data-layout-sidebar-root]').length === 1 &&
     root.getAttribute('sidebar-id') === sidebarId;
   const repair = (receipt: FocusReceipt): void => {
     if (!receipt.owned || !sameOwner(receipt)) return;
@@ -185,7 +187,7 @@ export const enhanceLayoutSidebar = (root: HTMLElement, signal: AbortSignal): vo
       mode: layoutSidebarController.getSnapshot(sidebarId).mode,
       state: 'expanded',
       active: false,
-      triggerVisible: document.activeElement === port.button,
+      triggerVisible: !handoff && document.activeElement === port.button,
     });
   };
   const persist = (): void => {
@@ -213,6 +215,11 @@ export const enhanceLayoutSidebar = (root: HTMLElement, signal: AbortSignal): vo
     port.generation === generation &&
     port.sidebarId === sidebarId &&
     port.header.isConnected &&
+    port.header.getAttribute('data-sidebar-id') === sidebarId &&
+    port.header.querySelectorAll('[data-layout-sidebar-toggle]').length === (port.button ? 1 : 0) &&
+    port.header.querySelector('[data-layout-sidebar-toggle]') === port.button &&
+    (!port.button ||
+      (port.button.isConnected && port.button.getAttribute('data-sidebar-id') === sidebarId)) &&
     port.header.closest(APP_SHELL_ROOT_SELECTOR) === shell &&
     shell.querySelector('header[data-layout-header]') === port.header &&
     shell.getAttribute(HEADER_ENHANCER_STATE) === 'ready' &&
