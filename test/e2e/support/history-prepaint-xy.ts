@@ -281,6 +281,154 @@ const finish = async (page: Page, saved: Point, info: TestInfo, name: string): P
 
 export const registerHistoryPrepaintXYTests = (): void => {
   test.describe('履歴entryのprepaint rawXY（案A）', () => {
+    test('同一ページのtop→TOC→Backはhashを除去してtopへ戻る', async ({ page }) => {
+      const target = `/notes/library/collection/${encodeURIComponent('計算機科学・ソフトウェア開発関連書籍')}`;
+      await page.goto(target);
+      await ready(page);
+      await page.evaluate(async () => {
+        await document.fonts.ready;
+        scrollTo({ top: 0, behavior: 'instant' });
+      });
+      const entry: unknown = await page.evaluate(() => history.state?.__rouaultHistoryEntry?.id);
+      await page.locator('[data-layout-toc-nav] a[href="#c-net-visual-basic"]').first().click();
+      await expect.poll(() => page.evaluate(() => location.hash)).toBe('#c-net-visual-basic');
+      await expect.poll(() => page.evaluate(() => scrollY)).toBeGreaterThan(100);
+      await page.goBack();
+      await ready(page);
+      expect(await page.evaluate(() => location.hash)).toBe('');
+      expect(await page.evaluate(() => history.state?.__rouaultHistoryEntry?.id)).toBe(entry);
+      expect(Math.abs(await page.evaluate(() => scrollY))).toBeLessThanOrEqual(2);
+    });
+
+    for (const viewport of [
+      { width: 1365, height: 768 },
+      { width: 1280, height: 720 },
+    ]) {
+      test.describe(`actual HTTP warm-cache reload ${viewport.width}x${viewport.height}`, () => {
+        test.use({ viewport });
+        for (const position of ['hash', 'middle', 'end'] as const) {
+          test(`new-to-new reload preserves ${position} reading position`, async ({
+            page,
+          }, info) => {
+            const target = `/notes/library/collection/${encodeURIComponent('計算機科学・ソフトウェア開発関連書籍')}#c-net-visual-basic`;
+            const response = await page.goto(target);
+            if (!response) throw new Error('initial HTTP response');
+            const staticIds = await page.evaluate(
+              (html) => {
+                const document = new DOMParser().parseFromString(html, 'text/html');
+                const wrappers = [...document.querySelectorAll('div[data-table-root="true"]')];
+                return wrappers.map((wrapper) => ({
+                  id: wrapper.id,
+                  count: [...document.querySelectorAll('[id]')].filter(
+                    (element) => element.id === wrapper.id,
+                  ).length,
+                }));
+              },
+              await response.text(),
+            );
+            expect(staticIds.length).toBeGreaterThan(1);
+            expect(staticIds.every(({ id, count }) => id.length > 0 && count === 1)).toBe(true);
+            const settle = async () => {
+              await ready(page);
+              await page.evaluate(() => document.fonts.ready.then(() => undefined));
+              let previous = '';
+              let stable = 0;
+              for (let sample = 0; sample < 40; sample++) {
+                const point = await page.evaluate(() =>
+                  [
+                    scrollX,
+                    scrollY,
+                    document.scrollingElement?.scrollHeight,
+                    document.fonts.status,
+                  ].join(':'),
+                );
+                stable = point === previous ? stable + 1 : 0;
+                if (stable >= 5) return;
+                previous = point;
+                await page.waitForTimeout(50);
+              }
+              throw new Error('reading position did not settle');
+            };
+            const measure = () =>
+              page.evaluate(() => ({
+                x: scrollX,
+                y: scrollY,
+                range: document.scrollingElement
+                  ? document.scrollingElement.scrollHeight - document.scrollingElement.clientHeight
+                  : 0,
+                viewport: [innerWidth, innerHeight],
+                zoom: visualViewport?.scale,
+                font: getComputedStyle(document.querySelector('main') ?? document.body).font,
+                fonts: document.fonts.status,
+                hash: location.hash,
+              }));
+            await settle();
+            if (position !== 'hash')
+              await page.evaluate((position) => {
+                const scrolling = document.scrollingElement;
+                if (!scrolling) throw new Error('scrolling element');
+                scrollTo({
+                  top: Math.round(
+                    (scrolling.scrollHeight - scrolling.clientHeight) *
+                      (position === 'middle' ? 0.55 : 0.9),
+                  ),
+                  behavior: 'instant',
+                });
+              }, position);
+            await settle();
+            const before = await measure();
+            await page.reload();
+            await settle();
+            const after = await measure();
+            const cached = await page.evaluate(() =>
+              performance
+                .getEntriesByType('resource')
+                .filter(
+                  (resource) =>
+                    resource instanceof PerformanceResourceTiming &&
+                    new URL(resource.name).origin === location.origin &&
+                    /\.js(?:\?|$)/u.test(resource.name) &&
+                    resource.encodedBodySize > resource.transferSize,
+                )
+                .map((resource) => ({
+                  name: resource.name,
+                  transferSize:
+                    resource instanceof PerformanceResourceTiming ? resource.transferSize : null,
+                })),
+            );
+            await info.attach('warm-cache-reload', {
+              body: JSON.stringify(
+                {
+                  kind: 'actual-HTTP-new-to-new-no-interception-baseline-not-proven',
+                  position,
+                  before,
+                  after,
+                  cached,
+                  staticIds,
+                },
+                null,
+                2,
+              ),
+              contentType: 'application/json',
+            });
+            expect(
+              cached.length,
+              'HTTP cache or revalidation evidence is required',
+            ).toBeGreaterThan(0);
+            expect(before.fonts).toBe('loaded');
+            expect(after.fonts).toBe('loaded');
+            expect(after.font).toBe(before.font);
+            expect(after.zoom).toBe(before.zoom);
+            expect(after.viewport).toEqual(before.viewport);
+            expect(after.hash).toBe(before.hash);
+            expect(Math.abs(after.range - before.range)).toBeLessThanOrEqual(2);
+            expect(Math.abs(after.x - before.x)).toBeLessThanOrEqual(2);
+            expect(Math.abs(after.y - before.y)).toBeLessThanOrEqual(2);
+          });
+        }
+      });
+    }
+
     test('hash full Backの最初のdestination compositor frameを保存位置と比較する', async ({
       page,
       browserName,
