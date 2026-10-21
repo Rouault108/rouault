@@ -120,21 +120,24 @@ export class RouterDocumentHostPostRenderController {
           try {
             // abort/cleanupも再入し得るため、準備全体と同じ例外境界で扱う。
             this.clearTablePreparation();
-            if (!ownsCommit()) return;
-            preparation = new AbortController();
-            this.tablePreparation = preparation;
-            const owner = preparation;
-            const isCurrent = (): boolean =>
-              !owner.signal.aborted && this.tablePreparation === owner && ownsCommit();
-            prepaintGeometryReady = prepareTableGeometry(root, {
-              isCurrent,
-              canPrepare: isCurrent,
-              signal: preparation.signal,
-            });
-            if (!ownsCommit()) return;
+            if (!ownsRun()) return;
+            if (ownsCommit()) {
+              preparation = new AbortController();
+              this.tablePreparation = preparation;
+              const owner = preparation;
+              const isCurrent = (): boolean =>
+                !owner.signal.aborted && this.tablePreparation === owner && ownsCommit();
+              prepaintGeometryReady = prepareTableGeometry(root, {
+                isCurrent,
+                canPrepare: isCurrent,
+                signal: preparation.signal,
+              });
+            }
+            if (!ownsRun()) return;
+            prepaintGeometryReady = prepaintGeometryReady && ownsCommit();
           } catch {
             // 新ownerへ移った場合には、その準備や受理済み本文へ触れない。
-            if (!ownsCommit()) return;
+            if (!ownsRun()) return;
             if (preparation && this.tablePreparation === preparation) {
               this.tablePreparation = null;
               try {

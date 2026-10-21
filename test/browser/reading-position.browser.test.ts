@@ -2258,7 +2258,7 @@ describe('明示hashの停止位置とCSS offset', () => {
 
 
 describe('post-commit geometry/focus ownership before schedule', () => {
-  it.each(['hash', 'hashless-without-candidate', 'hash-without-candidate', 'geometry-failure', 'cleanup-failure', 'focus-owner-loss', 'geometry-owner-loss', 'cleanup-owner-loss'] as const)('%s preserves the accepted body and the current job', async (condition) => {
+  it.each(['hash', 'hashless-without-candidate', 'hash-without-candidate', 'geometry-failure', 'geometry-hidden', 'cleanup-hidden', 'cleanup-failure', 'focus-owner-loss', 'geometry-owner-loss', 'cleanup-owner-loss'] as const)('%s preserves the accepted body and the current job', async (condition) => {
     await setup();
     if (!root) throw new Error('root');
     const content = root;
@@ -2269,7 +2269,7 @@ describe('post-commit geometry/focus ownership before schedule', () => {
     adoptContentBinding(savedUrl);
     const html = '<div data-table-root="true" id="Static-ID" style="width:120px;overflow:auto"><table style="width:360px;min-width:360px"><tbody>' + Array.from({length:30}, () => '<tr><td>本文</td></tr>').join('') + '</tbody></table></div>';
     content.innerHTML = html;
-    const controller = new RouterDocumentHostPostRenderController(() => {});
+    const controller = new RouterDocumentHostPostRenderController(() => { /* 通知文字列はこのowner検証の対象外。 */ });
     try {
       controller.initialize(content.parentElement ?? document.body);
       await expect.poll(() => content.dataset['readingPositionStatus']).toBe('settled');
@@ -2310,6 +2310,10 @@ describe('post-commit geometry/focus ownership before schedule', () => {
             beginNavigationIntent('navigation',savedUrl);
             content.dataset['readingPositionStatus'] = 'new-owner';
           }
+          if (condition === 'cleanup-hidden') {
+            vi.spyOn(document, 'visibilityState', 'get').mockReturnValue('hidden');
+            return;
+          }
           throw new Error('previous cleanup failed');
         });
       }
@@ -2319,6 +2323,10 @@ describe('post-commit geometry/focus ownership before schedule', () => {
         if (condition === 'geometry-owner-loss') {
           beginNavigationIntent('navigation',savedUrl);
           content.dataset['readingPositionStatus'] = 'new-owner';
+          return 120;
+        }
+        if (condition === 'geometry-hidden') {
+          vi.spyOn(document, 'visibilityState', 'get').mockReturnValue('hidden');
           return 120;
         }
         throw new Error('geometry unavailable');
@@ -2340,6 +2348,7 @@ describe('post-commit geometry/focus ownership before schedule', () => {
       expect(!!table.previousElementSibling?.matches('[data-table-scroll-rail]')).toBe(condition === 'hash' || condition === 'hashless-without-candidate');
       expect(content.dataset['readingPositionPrepaint']).toBe(condition === 'hash' ? 'applied' : 'unavailable');
       if (condition === 'hash') expect(Math.abs(scrollY-650)).toBeLessThanOrEqual(2);
+      vi.spyOn(document, 'visibilityState', 'get').mockReturnValue('visible');
       setContentReadiness({contentEpoch:epoch,root:content,shellCommitId:0,status:'settled',started:true});
       await expect.poll(() => content.dataset['readingPositionStatus']).toBe('settled');
       expect(Math.abs(scrollY-(condition.endsWith('without-candidate') ? 0 : 650))).toBeLessThanOrEqual(2);
