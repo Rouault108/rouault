@@ -1,8 +1,10 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { userEvent } from 'vitest/browser';
+import { enhanceLayoutHeader } from '../../src/client/post-hydrate/layout-header-enhancer.js';
 import { enhanceLayoutSidebar } from '../../src/client/post-hydrate/layout-sidebar-enhancer.js';
 import { layoutSidebarController } from '../../src/components/layout/layout-sidebar-controller.js';
 import {
+  applyPayloadShellSnapshot,
   createLayoutSidebarShellAdapter,
   readSidebarShellSnapshot,
 } from '../../src/components/app/shell/layout-sidebar-shell-adapter.js';
@@ -48,14 +50,14 @@ const fixture = (present = true): HTMLElement => {
   abort = new AbortController();
   shell = document.createElement('div');
   shell.setAttribute('data-app-shell-root', '');
-  shell.innerHTML = `<header data-layout-header><button data-layout-sidebar-toggle data-sidebar-id="note-primary">Toggle</button></header><div data-app-shell-sidebar-host ${present ? '' : 'hidden'}><aside data-layout-sidebar-root ${present ? '' : 'hidden'} sidebar-id="note-primary" state-scope-id="note-navigation" selected-id="leaf" initial-expanded-ids='["branch"]' topology-revision="test" presentation="overlay"><details open data-layout-sidebar-disclosure><summary data-layout-sidebar-static-trigger>Navigation</summary><div data-layout-sidebar-surface>${present ? navHtml : ''}</div></details></aside></div><div data-app-shell-sidebar-overlay-layer><div data-layout-sidebar-backdrop hidden></div></div><button data-external-focus>Outside</button>`;
+  shell.innerHTML = `<header data-layout-header data-sidebar-id="note-primary" data-sidebar-enabled="true"><button data-layout-sidebar-toggle data-sidebar-id="note-primary">Toggle</button></header><div data-app-shell-sidebar-host ${present ? '' : 'hidden'}><aside data-layout-sidebar-root tabindex="-1" aria-label="Navigation" ${present ? '' : 'hidden'} sidebar-id="note-primary" state-scope-id="note-navigation" selected-id="leaf" initial-expanded-ids='["branch"]' topology-revision="test" presentation="overlay"><a data-layout-sidebar-main-link href="#main-content" data-link-kind="internal-fragment" data-link-surface="structural">Main</a><div data-layout-sidebar-surface>${present ? navHtml : ''}</div></aside></div><div data-app-shell-sidebar-overlay-layer><div data-layout-sidebar-backdrop hidden></div></div><button data-external-focus>Outside</button>`;
   document.body.append(shell);
   const root = shell.querySelector<HTMLElement>('[data-layout-sidebar-root]');
   if (!root) throw new Error('missing fixture root');
   return root;
 };
 const start = (root: HTMLElement): void => {
-  ready();
+  enhanceLayoutHeader(document, abort.signal);
   enhanceLayoutSidebar(root, abort.signal);
   validate();
 };
@@ -104,19 +106,17 @@ describe('plain sidebar shell lifecycle', () => {
     expect(root.querySelectorAll('nav')).toHaveLength(0);
   });
 
-  it('pre-active native close remains fallback even after reopen and readiness recovery', async () => {
+  it('pre-active branch interaction remains fallback after readiness recovery', async () => {
     const root = fixture();
-    const disclosure = required(
-      root.querySelector<HTMLDetailsElement>('[data-layout-sidebar-disclosure]'),
-    );
-    disclosure.open = false;
-    start(root);
+    enhanceLayoutHeader(document, abort.signal);
+    enhanceLayoutSidebar(root, abort.signal);
+    await userEvent.click(required(root.querySelector('summary[data-sidebar-nav-control]')));
+    validate();
     expect(state()).toBe('fallback');
-    await userEvent.click(required(root.querySelector('[data-layout-sidebar-static-trigger]')));
-    expect(disclosure.open).toBe(true);
     ready();
     await Promise.resolve();
     expect(state()).toBe('fallback');
+    expect(root.inert).toBe(false);
   });
 
   it('staging restores native Tab order without collapsing raw overlay state or clearing focus descriptor', () => {
@@ -331,9 +331,7 @@ describe('plain sidebar shell lifecycle', () => {
     expect(shell.hasAttribute('data-sidebar-enhancement-shell-commit-id')).toBe(false);
     expect(root.inert).toBe(false);
     expect(root.querySelectorAll('[tabindex]')).toHaveLength(0);
-    expect(
-      required(root.querySelector<HTMLElement>('[data-layout-sidebar-static-trigger]')).hidden,
-    ).toBe(false);
+    expect(root.querySelector('[data-layout-sidebar-main-link]')).not.toBeNull();
   });
 
   it('unexpected root disconnect cleans up shared state and subscriptions', async () => {
@@ -405,5 +403,251 @@ describe('plain sidebar shell lifecycle', () => {
     expect(branch.open).toBe(false);
     await userEvent.keyboard('{ArrowRight}');
     expect(branch.open).toBe(true);
+  });
+  for (const target of ['aside', 'nav', 'helper'] as const) {
+    it(`fixed to collapsed overlay moves ${target} focus before hiding`, () => {
+      const root = fixture();
+      root.setAttribute('presentation', 'fixed');
+      start(root);
+      const focused =
+        target === 'aside'
+          ? root
+          : required(
+              root.querySelector<HTMLElement>(
+                target === 'nav' ? '[data-sidebar-nav-control]' : '[data-layout-sidebar-main-link]',
+              ),
+            );
+      focused.focus();
+      const button = required(shell.querySelector<HTMLElement>('[data-layout-sidebar-toggle]'));
+      let preparedBeforeHidden = false;
+      button.addEventListener('focus', () => {
+        preparedBeforeHidden = !root.inert && !button.hidden;
+      });
+      layoutSidebarController.setViewportMode(undefined, 'overlay');
+      expect(preparedBeforeHidden).toBe(true);
+      expect(document.activeElement).toBe(button);
+      expect(root.inert).toBe(true);
+      expect(button.getAttribute('aria-expanded')).toBe('false');
+      expect(state()).toBe('active');
+    });
+  }
+
+  it('overlay to fixed exposes aside before returning focus and hiding the header button', () => {
+    const root = fixture();
+    start(root);
+    const button = required(shell.querySelector<HTMLElement>('[data-layout-sidebar-toggle]'));
+    button.focus();
+    let visibleAtFocus = false;
+    root.addEventListener('focus', () => {
+      visibleAtFocus = !root.inert && !button.hidden;
+    });
+    layoutSidebarController.setViewportMode(undefined, 'fixed');
+    expect(visibleAtFocus).toBe(true);
+    expect(document.activeElement).toBe(root);
+    expect(button.hidden).toBe(true);
+    expect(root.inert).toBe(false);
+  });
+
+  for (const descriptor of ['null', 'invalid'] as const) {
+    it(`close with ${descriptor} return target protects owned focus without stealing external focus`, () => {
+      const root = fixture();
+      start(root);
+      const external = required(shell.querySelector<HTMLElement>('[data-external-focus]'));
+      const invalid = document.createElement('button');
+      layoutSidebarController.open(undefined, descriptor === 'invalid' ? invalid : undefined);
+      required(root.querySelector<HTMLElement>('[data-layout-sidebar-main-link]')).focus();
+      layoutSidebarController.close(undefined);
+      expect(document.activeElement).toBe(shell.querySelector('[data-layout-sidebar-toggle]'));
+      expect(layoutSidebarController.readRuntimeSnapshot().returnFocusDescriptor).toBeNull();
+      layoutSidebarController.open(undefined);
+      external.focus();
+      layoutSidebarController.close(undefined);
+      expect(document.activeElement).toBe(external);
+    });
+  }
+
+  it('mandatory header focus failure leaves the native sidebar visible without storage writes', () => {
+    const root = fixture();
+    root.setAttribute('presentation', 'fixed');
+    start(root);
+    root.focus();
+    const button = required(shell.querySelector<HTMLElement>('[data-layout-sidebar-toggle]'));
+    vi.spyOn(button, 'focus').mockImplementation(() => {
+      /* focusの不受理を注入する。 */
+    });
+    const stored = localStorage.getItem('rouault.note-sidebar.overlay-state');
+    layoutSidebarController.setViewportMode(undefined, 'overlay');
+    expect(state()).toBe('fallback');
+    expect(root.inert).toBe(false);
+    expect(root.hasAttribute('data-mode')).toBe(false);
+    expect(document.activeElement).toBe(root);
+    expect(localStorage.getItem('rouault.note-sidebar.overlay-state')).toBe(stored);
+  });
+
+  it('focus reentry cancels a stale mode request and protects the prepared button focus', async () => {
+    const root = fixture();
+    root.setAttribute('presentation', 'fixed');
+    start(root);
+    root.focus();
+    const button = required(shell.querySelector<HTMLElement>('[data-layout-sidebar-toggle]'));
+    button.addEventListener(
+      'focus',
+      () => layoutSidebarController.setViewportMode(undefined, 'fixed'),
+      { once: true },
+    );
+    layoutSidebarController.setViewportMode(undefined, 'overlay');
+    await Promise.resolve();
+    expect(root.inert).toBe(false);
+    expect(document.activeElement).toBe(root);
+    expect(state()).toBe('fallback');
+    expect(button.hidden).toBe(true);
+  });
+
+  for (const headerFirst of [true, false]) {
+    it(`header registration order ${String(headerFirst)} cannot hide an owned focus early`, () => {
+      const root = fixture();
+      root.setAttribute('presentation', 'fixed');
+      if (headerFirst) enhanceLayoutHeader(document, abort.signal);
+      enhanceLayoutSidebar(root, abort.signal);
+      if (!headerFirst) enhanceLayoutHeader(document, abort.signal);
+      validate();
+      root.focus();
+      layoutSidebarController.setViewportMode(undefined, 'overlay');
+      expect(state()).toBe('active');
+      expect(document.activeElement).toBe(shell.querySelector('[data-layout-sidebar-toggle]'));
+      expect(root.inert).toBe(true);
+    });
+  }
+
+  it('same-generation header reinitialization protects retiring trigger focus', async () => {
+    const root = fixture();
+    start(root);
+    required(shell.querySelector<HTMLElement>('[data-layout-sidebar-toggle]')).focus();
+    enhanceLayoutHeader(document, abort.signal);
+    await Promise.resolve();
+    expect(document.activeElement).toBe(root);
+    expect(state()).toBe('fallback');
+    expect(root.inert).toBe(false);
+    expect(required(shell.querySelector<HTMLElement>('[data-layout-sidebar-toggle]')).hidden).toBe(
+      true,
+    );
+  });
+
+  it('header retirement during focus preparation cancels hiding synchronously', async () => {
+    const root = fixture();
+    root.setAttribute('presentation', 'fixed');
+    const headerAbort = new AbortController();
+    enhanceLayoutHeader(document, headerAbort.signal);
+    enhanceLayoutSidebar(root, abort.signal);
+    validate();
+    root.focus();
+    const button = required(shell.querySelector<HTMLElement>('[data-layout-sidebar-toggle]'));
+    button.addEventListener('focus', () => headerAbort.abort(), { once: true });
+    layoutSidebarController.setViewportMode(undefined, 'overlay');
+    await Promise.resolve();
+    expect(document.activeElement).toBe(root);
+    expect(root.inert).toBe(false);
+    expect(state()).toBe('fallback');
+    expect(button.hidden).toBe(true);
+  });
+
+  it('surface replacement repairs captured owned focus and retains the auxiliary link through rollback', async () => {
+    const root = fixture();
+    start(root);
+    layoutSidebarController.open(undefined);
+    const link = root.querySelector('[data-layout-sidebar-main-link]');
+    const old = required(root.querySelector<HTMLElement>('[data-sidebar-nav-control]'));
+    old.focus();
+    applyPayloadShellSnapshot(
+      { headerHtml: '', sidebarProjection: projection, footerCopyrightText: '' },
+      null,
+      null,
+      root,
+    );
+    expect(old.isConnected).toBe(false);
+    expect(document.activeElement).toBe(root);
+    expect(root.querySelector('[data-layout-sidebar-main-link]')).toBe(link);
+    await Promise.resolve();
+    expect(state()).toBe('fallback');
+    const mutation = createLayoutSidebarShellAdapter().prepare({
+      shell: { headerHtml: '', sidebarProjection: null },
+      navigationUrl: '/',
+      shellCommitId: 1,
+    });
+    mutation.commit();
+    mutation.rollback();
+    expect(root.querySelector('[data-layout-sidebar-main-link]')).toBe(link);
+    expect(root.querySelectorAll('nav')).toHaveLength(1);
+  });
+
+  for (const target of ['aside', 'nav', 'helper', 'header', 'external', 'body'] as const) {
+    it(`cleanup preserves or repairs ${target} focus without an initial body focus grab`, () => {
+      const root = fixture();
+      start(root);
+      layoutSidebarController.open(undefined);
+      const element =
+        target === 'aside'
+          ? root
+          : target === 'body'
+            ? document.body
+            : required(
+                shell.querySelector<HTMLElement>(
+                  target === 'nav'
+                    ? '[data-sidebar-nav-control]'
+                    : target === 'helper'
+                      ? '[data-layout-sidebar-main-link]'
+                      : target === 'header'
+                        ? '[data-layout-sidebar-toggle]'
+                        : '[data-external-focus]',
+                ),
+              );
+      if (target !== 'body') element.focus();
+      else {
+        required(shell.querySelector<HTMLElement>('[data-external-focus]')).focus();
+        (document.activeElement as HTMLElement).blur();
+      }
+      abort.abort();
+      expect(root.inert).toBe(false);
+      expect(document.activeElement).toBe(target === 'header' ? root : element);
+      expect(state()).toBeNull();
+    });
+  }
+  for (const target of ['aside', 'nav', 'helper', 'header'] as const) {
+    it(`readiness loss preserves or repairs ${target} ownership before retiring the trigger`, async () => {
+      const root = fixture();
+      start(root);
+      layoutSidebarController.open(undefined);
+      const element =
+        target === 'aside'
+          ? root
+          : required(
+              shell.querySelector<HTMLElement>(
+                target === 'nav'
+                  ? '[data-sidebar-nav-control]'
+                  : target === 'helper'
+                    ? '[data-layout-sidebar-main-link]'
+                    : '[data-layout-sidebar-toggle]',
+              ),
+            );
+      element.focus();
+      shell.removeAttribute('data-layout-header-enhancer-state');
+      await waitForCondition(() => state() === 'fallback', 'readiness loss settles');
+      expect(root.inert).toBe(false);
+      expect(document.activeElement).toBe(target === 'header' ? root : element);
+      expect(
+        required(shell.querySelector<HTMLElement>('[data-layout-sidebar-toggle]')).hidden,
+      ).toBe(true);
+    });
+  }
+
+  it('normal close returns to a valid external descriptor before clearing it', () => {
+    const root = fixture();
+    start(root);
+    const external = required(shell.querySelector<HTMLElement>('[data-external-focus]'));
+    layoutSidebarController.open(undefined, external);
+    required(root.querySelector<HTMLElement>('[data-layout-sidebar-main-link]')).focus();
+    layoutSidebarController.close(undefined);
+    expect(document.activeElement).toBe(external);
+    expect(layoutSidebarController.readRuntimeSnapshot().returnFocusDescriptor).toBeNull();
   });
 });

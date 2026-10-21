@@ -562,14 +562,6 @@ describe('static CSS contracts', () => {
         value: 'none',
       },
       {
-        file: 'layout-header.css',
-        params: '(width >= 1024px)',
-        selector:
-          "header[data-layout-header][data-note-layout='true'][data-sidebar-enabled='true'] .sidebar-toggle",
-        property: 'display',
-        value: 'none',
-      },
-      {
         file: 'layout-toc.css',
         params: '(width < 640px)',
         selector: ".layout-toc-col[data-toc-hydration='hydrated'] [data-layout-toc-nav]",
@@ -881,11 +873,9 @@ describe('static CSS contracts', () => {
     expect(css).not.toContain(deprecatedSearchTriggerSelector);
 
     expectRuleToDeclare(css, 'header[data-layout-header] .toc-trigger', ['display: none']);
-    expectRuleToDeclare(
-      css,
-      "header[data-layout-header][data-sidebar-mode='fixed'] .sidebar-toggle",
-      ['display: none'],
-    );
+    expectRuleToDeclare(css, 'header[data-layout-header] [data-layout-sidebar-toggle][hidden]', [
+      'display: none !important',
+    ]);
 
     expectRuleToDeclare(css, 'header[data-layout-header] .search-trigger', [
       'inline-size: auto',
@@ -1150,12 +1140,14 @@ describe('static CSS contracts', () => {
       ['display: none'],
     );
 
-    const desktopVisibility = atRuleBlock(css, '@media (width >= 1024px)');
-    expectRuleToDeclare(
-      desktopVisibility,
-      "header[data-layout-header][data-note-layout='true'][data-sidebar-enabled='true'] .sidebar-toggle",
-      ['display: none'],
-    );
+    // focus退避より先に幅だけで操作口を消さず、header ownerのhiddenへ従う。
+    expect(
+      declarationValuesForSelector(
+        css,
+        "header[data-layout-header][data-note-layout='true'][data-sidebar-enabled='true'] .sidebar-toggle",
+        'display',
+      ),
+    ).toHaveLength(0);
 
     const containerVisibilityContracts = [
       {

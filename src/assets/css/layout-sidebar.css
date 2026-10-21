@@ -282,8 +282,7 @@
 
 [data-layout-sidebar-root][hidden],
 [data-app-shell-sidebar-host][hidden],
-[data-layout-sidebar-backdrop][hidden],
-[data-layout-sidebar-static-trigger][hidden] {
+[data-layout-sidebar-backdrop][hidden] {
   display: none !important;
 }
 [data-layout-sidebar-root] {
@@ -295,9 +294,14 @@
 :where([data-layout-sidebar-root] *) {
   transition-property: none;
 }
-[data-layout-sidebar-static-trigger] {
+[data-layout-sidebar-main-link] {
+  display: block;
   padding: var(--space-3) var(--space-4);
-  cursor: pointer;
+}
+[data-layout-sidebar-root]:focus,
+[data-layout-sidebar-main-link]:focus-visible {
+  outline: var(--focus-ring-width, 2px) solid var(--focus-ring-color, var(--primary));
+  outline-offset: calc(-1 * var(--focus-ring-offset, 2px));
 }
 [data-layout-sidebar-heading] {
   padding: var(--space-3) var(--space-4);

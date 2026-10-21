@@ -25,15 +25,19 @@ import {
   roveLayoutSidebarNav,
 } from '../../components/layout/sidebar-native-navigation.js';
 import { SidebarDisclosureOrigin } from '../../components/layout/sidebar-disclosure-origin.js';
+import type { SidebarMode, SidebarState } from '../../../shared/navigation/sidebar-presentation.js';
+import {
+  connectSidebarPresentationOwner,
+  readSidebarHeaderPort,
+  type SidebarHeaderPort,
+} from '../../components/layout/sidebar-presentation-coordination.js';
 
 export const enhanceLayoutSidebar = (root: HTMLElement, signal: AbortSignal): void => {
   const shell = root.closest<HTMLElement>(APP_SHELL_ROOT_SELECTOR);
   const host = shell?.querySelector<HTMLElement>('[data-app-shell-sidebar-host]');
   const overlay = shell?.querySelector<HTMLElement>('[data-app-shell-sidebar-overlay-layer]');
   const backdrop = overlay?.querySelector<HTMLElement>('[data-layout-sidebar-backdrop]');
-  const disclosure = root.querySelector<HTMLDetailsElement>('[data-layout-sidebar-disclosure]');
-  const summary = root.querySelector<HTMLElement>('[data-layout-sidebar-static-trigger]');
-  if (signal.aborted || !shell || !host || !overlay || !backdrop || !disclosure || !summary) return;
+  if (signal.aborted || !shell || !host || !overlay || !backdrop) return;
   const listeners = new AbortController();
   const origin = new SidebarDisclosureOrigin();
   let generation = readCurrentShellCommitId();
@@ -43,7 +47,6 @@ export const enhanceLayoutSidebar = (root: HTMLElement, signal: AbortSignal): vo
   let unsubscribe: (() => void) | null = null;
   let sidebarId = root.getAttribute('sidebar-id') ?? 'note-primary';
   let scopeId = root.getAttribute('state-scope-id') ?? 'note-navigation';
-  let previousOverlayState = 'collapsed';
   let restored = false;
   let queued = false;
   const engaged = new Set<number>();
@@ -64,6 +67,77 @@ export const enhanceLayoutSidebar = (root: HTMLElement, signal: AbortSignal): vo
     shell.setAttribute(SIDEBAR_ENHANCEMENT_COMMIT_ID, String(generation));
     shell.setAttribute(SIDEBAR_ENHANCEMENT_STATE, next);
   };
+  interface FocusReceipt {
+    readonly element: HTMLElement | null;
+    readonly owned: boolean;
+    readonly header: boolean;
+    readonly sidebarId: string;
+    readonly generation: number;
+  }
+  let effectiveMode: SidebarMode | null = null;
+  let effectiveState: SidebarState | null = null;
+  let maintainingFocus = 0;
+  let mutationDepth = 0;
+  let cleanupPending = false;
+  let disconnectOwner: (() => void) | null = null;
+  const pendingRepairs: FocusReceipt[] = [];
+  const retiring: { receipt: FocusReceipt; clear: () => void }[] = [];
+  const capture = (port = readSidebarHeaderPort(shell)): FocusReceipt => {
+    const element = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    return {
+      element,
+      owned: element !== null && (root.contains(element) || element === port?.button),
+      header: element !== null && element === port?.button,
+      sidebarId,
+      generation,
+    };
+  };
+  const usable = (element: HTMLElement | null): element is HTMLElement => {
+    if (!element?.isConnected || !element.checkVisibility() || element.closest('[inert]'))
+      return false;
+    if (element.matches(':disabled, [aria-disabled="true"]')) return false;
+    for (let parent = element.parentElement; parent; parent = parent.parentElement)
+      if (
+        parent instanceof HTMLDetailsElement &&
+        !parent.open &&
+        !parent.querySelector(':scope > summary')?.contains(element)
+      )
+        return false;
+    return true;
+  };
+  const focus = (element: HTMLElement): boolean => {
+    maintainingFocus++;
+    try {
+      element.focus({ preventScroll: true });
+      return document.activeElement === element && usable(element);
+    } catch {
+      return false;
+    } finally {
+      maintainingFocus--;
+    }
+  };
+  const sameOwner = (receipt: FocusReceipt): boolean =>
+    receipt.sidebarId === sidebarId &&
+    receipt.generation === generation &&
+    generation === readCurrentShellCommitId() &&
+    root.isConnected &&
+    !root.hidden &&
+    root.closest(APP_SHELL_ROOT_SELECTOR) === shell &&
+    root.getAttribute('sidebar-id') === sidebarId;
+  const repair = (receipt: FocusReceipt): void => {
+    if (!receipt.owned || !sameOwner(receipt)) return;
+    const current = document.activeElement;
+    if (current === receipt.element && usable(receipt.element) && !receipt.header) return;
+    // 新しい外部focusやページ側の引渡し先を、古いreceiptで取り戻さない。
+    if (
+      current instanceof HTMLElement &&
+      current !== document.body &&
+      current !== receipt.element &&
+      usable(current)
+    )
+      return;
+    if (focus(root)) engaged.add(generation);
+  };
   const controls = (): HTMLElement[] => visibleLayoutSidebarControls(root);
   const rove = (target?: HTMLElement): void => {
     roveLayoutSidebarNav(root, target);
@@ -79,17 +153,22 @@ export const enhanceLayoutSidebar = (root: HTMLElement, signal: AbortSignal): vo
       layoutSidebarController.close(sidebarId);
     },
     onActiveChange() {
-      /* nav owner自身がroving stateを反映する。 */
+      /* nav ownerがroving stateを反映する。 */
     },
   });
-  const moveRoot = (destination: HTMLElement): void => {
+  const moveRoot = (destination: HTMLElement, receipt: FocusReceipt): void => {
     if (root.parentElement === destination) return;
-    const focused = root.contains(document.activeElement) ? document.activeElement : null;
     destination.append(root);
-    if (focused instanceof HTMLElement && focused.checkVisibility())
-      focused.focus({ preventScroll: true });
+    if (
+      receipt.owned &&
+      receipt.element &&
+      root.contains(receipt.element) &&
+      usable(receipt.element) &&
+      document.activeElement === document.body
+    )
+      focus(receipt.element);
   };
-  const quiesce = (): void => {
+  const quiesce = (receipt = capture(), handoff = false): void => {
     navInteraction.disconnect();
     detachSticky?.();
     detachSticky = null;
@@ -97,8 +176,17 @@ export const enhanceLayoutSidebar = (root: HTMLElement, signal: AbortSignal): vo
     root.inert = false;
     root.removeAttribute('data-mode');
     root.removeAttribute('data-state');
-    summary.hidden = false;
-    if (root.isConnected) moveRoot(host);
+    if (root.isConnected) moveRoot(host, receipt);
+    if (!handoff) repair(receipt);
+    effectiveMode = null;
+    effectiveState = null;
+    const port = readSidebarHeaderPort(shell);
+    port?.render({
+      mode: layoutSidebarController.getSnapshot(sidebarId).mode,
+      state: 'expanded',
+      active: false,
+      triggerVisible: document.activeElement === port.button,
+    });
   };
   const persist = (): void => {
     const expandedIds = [
@@ -110,115 +198,197 @@ export const enhanceLayoutSidebar = (root: HTMLElement, signal: AbortSignal): vo
     else
       writeLayoutSidebarTreeState(storage, { expandedIds }, { sidebarId, stateScopeId: scopeId });
   };
-  const prepareVisual = (): void => {
-    const snapshot = layoutSidebarController.getSnapshot(sidebarId);
-    const runtime = layoutSidebarController.readRuntimeSnapshot(sidebarId);
-    if (runtime.returnFocusDescriptor !== null && snapshot.returnFocusTarget === null) {
+  const settleFallback = (receipt: FocusReceipt, provisional = false): void => {
+    publish(provisional ? 'staged' : root.hidden ? 'dormant' : 'fallback');
+    quiesce(receipt, root.hidden);
+    if (provisional) return;
+    if (layoutSidebarController.readRuntimeSnapshot(sidebarId).overlayState !== 'collapsed')
       layoutSidebarController.setOverlayStateWithoutPersisting(sidebarId, 'collapsed');
-      layoutSidebarController.clearReturnFocusDescriptor(sidebarId);
-    }
-    const current = layoutSidebarController.getSnapshot(sidebarId);
-    summary.hidden = true;
-    root.setAttribute('data-mode', current.mode);
-    root.setAttribute('data-state', current.state);
-    const destination = current.mode === 'overlay' ? overlay : host;
-    moveRoot(destination);
-    if (current.mode === 'fixed' && detachSticky === null)
-      detachSticky = attachStickyFooterBoundary(host, { minWidth: 640 });
-    if (current.mode !== 'fixed') {
-      detachSticky?.();
-      detachSticky = null;
-    }
-    root.inert = current.mode === 'overlay' && current.state === 'collapsed';
-    backdrop.hidden = current.mode !== 'overlay' || current.state !== 'expanded';
-    navInteraction.connect(root.querySelector('nav[data-sidebar-nav]'));
-    rove();
-    previousOverlayState = layoutSidebarController.readRuntimeSnapshot(sidebarId).overlayState;
+    fallbackOverrides.add(generation);
+    if (!restored) layoutSidebarController.clearReturnFocusDescriptor(sidebarId);
   };
+  const eligiblePort = (port: SidebarHeaderPort | undefined): port is SidebarHeaderPort =>
+    !!port &&
+    port === readSidebarHeaderPort(shell) &&
+    port.generation === generation &&
+    port.sidebarId === sidebarId &&
+    port.header.isConnected &&
+    port.header.closest(APP_SHELL_ROOT_SELECTOR) === shell &&
+    shell.querySelector('header[data-layout-header]') === port.header &&
+    shell.getAttribute(HEADER_ENHANCER_STATE) === 'ready' &&
+    shell.getAttribute(HEADER_READY_COMMIT_ID) === String(generation);
   const reconcile = (): void => {
-    if (
-      reconciling ||
-      listeners.signal.aborted ||
-      !validated ||
-      generation !== readCurrentShellCommitId()
-    )
+    if (listeners.signal.aborted || !root.isConnected) return;
+    if (reconciling) {
+      queueReconcile();
       return;
+    }
     reconciling = true;
+    const receipt =
+      retiring.find((item) => item.receipt.owned)?.receipt ??
+      pendingRepairs.find((item) => item.owned) ??
+      capture();
+    pendingRepairs.length = 0;
     try {
-      if (root.hidden) {
-        publish('dormant');
-        quiesce();
-        layoutSidebarController.setOverlayStateWithoutPersisting(sidebarId, 'collapsed');
-        fallbackOverrides.add(generation);
-        if (!restored) layoutSidebarController.clearReturnFocusDescriptor(sidebarId);
+      if (generation !== readCurrentShellCommitId()) return;
+      const port = readSidebarHeaderPort(shell);
+      if (!validated || mutationDepth > 0) {
+        settleFallback(receipt, true);
         return;
       }
-      const ready =
-        shell.getAttribute(HEADER_ENHANCER_STATE) === 'ready' &&
-        shell.getAttribute(HEADER_READY_COMMIT_ID) === String(generation);
-      if (!ready || !disclosure.open || engaged.has(generation)) {
-        const wasActive = state === 'active';
-        const previousFocus = document.activeElement;
-        publish('fallback');
-        quiesce();
-        if (wasActive) {
-          origin.write(disclosure, true, generation, false);
-          if (
-            previousFocus instanceof HTMLElement &&
-            (previousFocus.matches('[data-layout-sidebar-toggle]') ||
-              (root.contains(previousFocus) && !previousFocus.checkVisibility()))
-          ) {
-            summary.focus({ preventScroll: true });
-            engaged.add(generation);
+      if (root.hidden || !eligiblePort(port) || engaged.has(generation) || retiring.length > 0) {
+        settleFallback(receipt);
+        return;
+      }
+      const snapshot = layoutSidebarController.getSnapshot(sidebarId);
+      const surface = root.querySelector('[data-layout-sidebar-surface]');
+      const nav = surface?.querySelector<HTMLElement>('nav[data-sidebar-nav]') ?? null;
+      const current = (): boolean => {
+        const latest = layoutSidebarController.getSnapshot(sidebarId);
+        return (
+          !signal.aborted &&
+          !listeners.signal.aborted &&
+          mutationDepth === 0 &&
+          validated &&
+          sameOwner(receipt) &&
+          eligiblePort(port) &&
+          root.querySelector('[data-layout-sidebar-surface]') === surface &&
+          root.querySelector('nav[data-sidebar-nav]') === nav &&
+          !!nav &&
+          latest.mode === snapshot.mode &&
+          latest.state === snapshot.state
+        );
+      };
+      if (!current()) {
+        settleFallback(receipt);
+        return;
+      }
+      const closing =
+        effectiveMode === 'overlay' &&
+        effectiveState === 'expanded' &&
+        snapshot.mode === 'overlay' &&
+        snapshot.state === 'collapsed';
+      const opening =
+        effectiveState === 'collapsed' &&
+        snapshot.mode === 'overlay' &&
+        snapshot.state === 'expanded';
+      if (snapshot.mode === 'overlay') {
+        // 隠す前に、header ownerが実際にfocus可能な操作口を同期準備する。
+        port.render({ ...snapshot, active: true, triggerVisible: true });
+        const button = port.button;
+        if (!button || !usable(button) || !current()) {
+          settleFallback(receipt);
+          return;
+        }
+        const returnTarget = snapshot.returnFocusTarget;
+        if (closing && usable(returnTarget) && !root.contains(returnTarget)) {
+          if (!focus(returnTarget)) {
+            settleFallback(receipt);
+            return;
           }
         }
-        layoutSidebarController.setOverlayStateWithoutPersisting(sidebarId, 'collapsed');
-        fallbackOverrides.add(generation);
-        if (!restored) layoutSidebarController.clearReturnFocusDescriptor(sidebarId);
+        if (snapshot.state === 'collapsed' && root.contains(document.activeElement)) {
+          if (!focus(button)) {
+            settleFallback(receipt);
+            return;
+          }
+        }
+        if (!current()) {
+          settleFallback(capture(port));
+          return;
+        }
+        root.setAttribute('data-mode', snapshot.mode);
+        root.setAttribute('data-state', snapshot.state);
+        root.inert = false;
+        moveRoot(overlay, receipt);
+        root.inert = snapshot.state === 'collapsed';
+      } else {
+        // 消えるheader buttonからの復帰先を先に可視・操作可にする。
+        root.inert = false;
+        root.setAttribute('data-mode', 'fixed');
+        root.setAttribute('data-state', 'expanded');
+        moveRoot(host, receipt);
+        if (document.activeElement === port.button && !focus(root)) {
+          settleFallback(capture(port));
+          return;
+        }
+        if (!current()) {
+          settleFallback(capture(port));
+          return;
+        }
+        port.render({ ...snapshot, active: true, triggerVisible: false });
+      }
+      if (!current()) {
+        settleFallback(capture(port));
         return;
       }
-      prepareVisual();
+      if (snapshot.mode === 'fixed' && detachSticky === null)
+        detachSticky = attachStickyFooterBoundary(host, { minWidth: 640 });
+      if (snapshot.mode !== 'fixed') {
+        detachSticky?.();
+        detachSticky = null;
+      }
+      backdrop.hidden = snapshot.mode !== 'overlay' || snapshot.state !== 'expanded';
+      navInteraction.connect(nav);
+      rove(
+        document.activeElement instanceof HTMLElement && root.contains(document.activeElement)
+          ? document.activeElement
+          : undefined,
+      );
       publish('active');
+      effectiveMode = snapshot.mode;
+      effectiveState = snapshot.state;
+      if (opening && snapshot.returnFocusTarget && !root.contains(document.activeElement))
+        focus(controls()[0] ?? root);
+      if (closing) layoutSidebarController.clearReturnFocusDescriptor(sidebarId);
+    } catch {
+      // 操作口の準備やfocusが例外でもnative surfaceを隠したままにしない。
+      settleFallback(capture());
     } finally {
+      for (const item of retiring.splice(0)) {
+        repair(item.receipt);
+        item.clear();
+      }
       reconciling = false;
+      if (cleanupPending) cleanup();
     }
   };
   const queueReconcile = (): void => {
-    if (queued) return;
+    if (queued || listeners.signal.aborted) return;
     queued = true;
     queueMicrotask(() => {
       queued = false;
       reconcile();
     });
   };
+  const beforeMutation = (handoff: boolean): (() => void) => {
+    const receipt = capture();
+    mutationDepth++;
+    if (!reconciling) {
+      reconciling = true;
+      try {
+        publish('staged');
+        quiesce(receipt, handoff);
+      } finally {
+        reconciling = false;
+      }
+    } else queueReconcile();
+    return () => {
+      mutationDepth--;
+      if (!handoff) {
+        if (reconciling) pendingRepairs.push(receipt);
+        else repair(receipt);
+      }
+      queueReconcile();
+    };
+  };
   const bind = (): void => {
     sidebarId = root.getAttribute('sidebar-id') ?? 'note-primary';
     scopeId = root.getAttribute('state-scope-id') ?? 'note-navigation';
     const previousSubscription = unsubscribe;
     unsubscribe = layoutSidebarController.subscribe(sidebarId, () => {
-      if (state !== 'active' || reconciling) return;
-      const snapshot = layoutSidebarController.getSnapshot(sidebarId);
-      const overlayState = layoutSidebarController.readRuntimeSnapshot(sidebarId).overlayState;
-      const opening =
-        snapshot.mode === 'overlay' &&
-        previousOverlayState === 'collapsed' &&
-        overlayState === 'expanded';
-      const closing =
-        snapshot.mode === 'overlay' &&
-        previousOverlayState === 'expanded' &&
-        overlayState === 'collapsed';
-      const returnTarget = snapshot.returnFocusTarget;
-      reconciling = true;
-      try {
-        prepareVisual();
-      } finally {
-        reconciling = false;
-      }
-      if (opening && returnTarget) controls()[0]?.focus({ preventScroll: true });
-      if (closing) {
-        returnTarget?.focus({ preventScroll: true });
-        layoutSidebarController.clearReturnFocusDescriptor(sidebarId);
-      }
+      if (!validated || state !== 'active') return;
+      reconcile();
     });
     previousSubscription?.();
     const presentation = root.getAttribute('presentation');
@@ -243,11 +413,12 @@ export const enhanceLayoutSidebar = (root: HTMLElement, signal: AbortSignal): vo
     }
   };
   const stage = (id: number): void => {
+    const receipt = capture();
     generation = id;
     validated = false;
     publish('staged');
     origin.clear();
-    quiesce();
+    quiesce(receipt, true);
   };
   const observer = new MutationObserver(queueReconcile);
   const connectionObserver = new MutationObserver(() => {
@@ -255,25 +426,19 @@ export const enhanceLayoutSidebar = (root: HTMLElement, signal: AbortSignal): vo
   });
   const cleanup = (): void => {
     if (listeners.signal.aborted) return;
-    const wasActive = state === 'active';
-    const previousFocus = document.activeElement;
-    publish('fallback');
-    quiesce();
-    if (wasActive) {
-      origin.write(disclosure, true, generation, false);
-      if (
-        root.isConnected &&
-        previousFocus instanceof HTMLElement &&
-        (previousFocus.matches('[data-layout-sidebar-toggle]') ||
-          (root.contains(previousFocus) && !previousFocus.checkVisibility()))
-      ) {
-        summary.focus({ preventScroll: true });
-      }
+    if (reconciling) {
+      cleanupPending = true;
+      return;
     }
+    cleanupPending = false;
+    const receipt = capture();
+    publish('fallback');
+    quiesce(receipt, !root.isConnected || root.hidden);
     listeners.abort();
     observer.disconnect();
     connectionObserver.disconnect();
     unsubscribe?.();
+    disconnectOwner?.();
     origin.clear();
     pending.clear();
     shell.removeAttribute(SIDEBAR_ENHANCEMENT_STATE);
@@ -281,7 +446,15 @@ export const enhanceLayoutSidebar = (root: HTMLElement, signal: AbortSignal): vo
   };
   signal.addEventListener('abort', cleanup, { once: true });
   try {
-    if (!disclosure.open || root.contains(document.activeElement)) engaged.add(generation);
+    if (root.contains(document.activeElement)) engaged.add(generation);
+    disconnectOwner = connectSidebarPresentationOwner(shell, {
+      refresh: reconcile,
+      beforeMutation,
+      retireHeader(port, clear) {
+        retiring.push({ receipt: capture(port), clear });
+        reconcile();
+      },
+    });
     bind();
     observer.observe(shell, {
       attributes: true,
@@ -384,8 +557,9 @@ export const enhanceLayoutSidebar = (root: HTMLElement, signal: AbortSignal): vo
     root.addEventListener(
       'focusin',
       (event) => {
-        if (state !== 'active') engaged.add(generation);
+        if (state !== 'active' && maintainingFocus === 0) engaged.add(generation);
         else if (
+          state === 'active' &&
           event.target instanceof HTMLElement &&
           event.target.matches('[data-sidebar-nav-control]')
         )

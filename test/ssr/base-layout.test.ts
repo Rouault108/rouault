@@ -326,7 +326,16 @@ describe('BaseLayout', () => {
     expect(rendered).toContain('data-toc-trigger-reserved="false"');
     expect(rendered).toContain('initial-expanded-ids="[]"');
     expect(rendered).toContain('topology-revision="reader-note-topology"');
-    expect(rendered).toContain('<nav data-sidebar-nav');
+    expect(rendered.match(/<nav data-sidebar-nav/gu)).toHaveLength(1);
+    expect(rendered).not.toContain('data-layout-sidebar-disclosure');
+    expect(rendered).not.toContain('data-layout-sidebar-static-trigger');
+    expect(rendered).toContain('aria-label="ナビゲーション" tabindex="-1"');
+    expect(rendered).toContain(
+      '<a data-layout-sidebar-main-link href="#main-content" data-link-kind="internal-fragment" data-link-surface="structural">本文へ</a>',
+    );
+    expect(rendered.indexOf('data-layout-sidebar-main-link')).toBeLessThan(
+      rendered.indexOf('data-layout-sidebar-surface'),
+    );
     expect(rendered).toContain('href="/notes/reader-note"');
     expect(rendered).toContain('data-link-kind="internal-document"');
     expect(rendered).toContain('data-link-surface="navigation"');
@@ -601,7 +610,7 @@ describe('BaseLayout', () => {
     expect(rendered).toContain('data-sidebar-presence="absent"');
     expect(rendered).toContain('data-app-shell-sidebar-host\n        hidden');
     expect(rendered).toContain(
-      '<aside data-layout-sidebar-root aria-label="ナビゲーション"\n          hidden',
+      '<aside data-layout-sidebar-root aria-label="ナビゲーション" tabindex="-1"\n          hidden',
     );
     expect(rendered.match(/<main id="main-content" tabindex="-1">/g)?.length ?? 0).to.equal(1);
     expect(rendered.match(/data-app-shell-sidebar-overlay-layer/g)?.length ?? 0).to.equal(1);

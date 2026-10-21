@@ -1,3 +1,4 @@
+import { beforeSidebarShellMutation } from '../../layout/sidebar-presentation-coordination.js';
 import { STATIC_HEADER_ROOT_SELECTOR } from '../../../../shared/navigation/static-header-contract.js';
 import { validateStaticHeaderDomTree } from './static-header-dom-validator.js';
 import { THEME_UI_OPTIONS } from '../../../theme/theme-ui-options.js';
@@ -95,7 +96,12 @@ export const prepareStaticHeaderMutation = (headerHtml: string): PreparedStaticH
 
   return {
     commit(): undefined {
-      currentHeader.replaceWith(nextHeader);
+      const finish = beforeSidebarShellMutation(currentHeader, true);
+      try {
+        currentHeader.replaceWith(nextHeader);
+      } finally {
+        finish();
+      }
     },
     rollback() {
       const previousHeader = parseAndValidateStaticHeaderHtml(previousHeaderHtml, document);
@@ -103,7 +109,12 @@ export const prepareStaticHeaderMutation = (headerHtml: string): PreparedStaticH
       if (!(current instanceof HTMLElement)) {
         throw new Error(`current ${STATIC_HEADER_ROOT_SELECTOR} is required for rollback.`);
       }
-      current.replaceWith(previousHeader);
+      const finish = beforeSidebarShellMutation(current);
+      try {
+        current.replaceWith(previousHeader);
+      } finally {
+        finish();
+      }
     },
   };
 };

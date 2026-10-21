@@ -8,6 +8,7 @@ import type {
 import { createCanonicalAbsentRuntimeSidebarProjection } from '../../../../shared/navigation/sidebar-shell-projection-contract.js';
 import { validateRuntimeSidebarProjection } from '../../../../shared/navigation/navigation-shell-validator.js';
 import { layoutSidebarController } from '../../layout/layout-sidebar-controller.js';
+import { beforeSidebarShellMutation } from '../../layout/sidebar-presentation-coordination.js';
 import { prepareSidebarTraverseSelectionPatch } from './sidebar-traverse-selection-patch.js';
 import { LAYOUT_SIDEBAR_ROOT_SELECTOR } from '../../../../shared/navigation/sidebar-enhancement-contract.js';
 
@@ -71,6 +72,7 @@ export const readSidebarShellSnapshot = (root: Element): RuntimeSidebarShellSnap
 const prepareProjection = (
   snapshot: RuntimeSidebarShellSnapshot | null,
   root: HTMLElement,
+  handoff = false,
 ): (() => undefined) => {
   const validated = validateRuntimeSidebarProjection(
     snapshot ?? createCanonicalAbsentRuntimeSidebarProjection(),
@@ -94,25 +96,31 @@ const prepareProjection = (
   const host = root.ownerDocument.querySelector<HTMLElement>('[data-app-shell-sidebar-host]');
   if (!surface || !host) throw new Error('sidebar shell structure is missing');
   return () => {
-    // 検証・detached parse後だけlive DOMを変更し、controller stateはvalidationまで保留する。
-    if (root.parentElement !== host) host.append(root);
-    surface.replaceChildren(content);
-    for (const name of ATTRIBUTES) root.removeAttribute(name);
-    root.setAttribute('sidebar-id', validated.sidebarId);
-    root.setAttribute('state-scope-id', validated.stateScopeId);
-    root.setAttribute('presentation', validated.presentation);
-    root.setAttribute('fixed-breakpoint', String(validated.fixedBreakpoint));
-    if (validated.present) {
-      root.setAttribute('initial-expanded-ids', JSON.stringify(validated.initialExpandedIds));
-      root.setAttribute('topology-revision', validated.topologyRevision);
-      if (validated.selectedId !== null) root.setAttribute('selected-id', validated.selectedId);
-      if (validated.heading !== null) root.setAttribute('heading', validated.heading);
+    // 交換・移動・hiddenより前に、旧surfaceとheader上のfocusを所有者へ渡す。
+    const finish = beforeSidebarShellMutation(root, handoff);
+    try {
+      // 検証・detached parse後だけlive DOMを変更し、controller stateはvalidationまで保留する。
+      if (root.parentElement !== host) host.append(root);
+      surface.replaceChildren(content);
+      for (const name of ATTRIBUTES) root.removeAttribute(name);
+      root.setAttribute('sidebar-id', validated.sidebarId);
+      root.setAttribute('state-scope-id', validated.stateScopeId);
+      root.setAttribute('presentation', validated.presentation);
+      root.setAttribute('fixed-breakpoint', String(validated.fixedBreakpoint));
+      if (validated.present) {
+        root.setAttribute('initial-expanded-ids', JSON.stringify(validated.initialExpandedIds));
+        root.setAttribute('topology-revision', validated.topologyRevision);
+        if (validated.selectedId !== null) root.setAttribute('selected-id', validated.selectedId);
+        if (validated.heading !== null) root.setAttribute('heading', validated.heading);
+      }
+      root.hidden = !validated.present;
+      host.hidden = !validated.present;
+      root.ownerDocument
+        .querySelector('router-document-host')
+        ?.setAttribute('data-sidebar-presence', validated.present ? 'present' : 'absent');
+    } finally {
+      finish();
     }
-    root.hidden = !validated.present;
-    host.hidden = !validated.present;
-    root.ownerDocument
-      .querySelector('router-document-host')
-      ?.setAttribute('data-sidebar-presence', validated.present ? 'present' : 'absent');
   };
 };
 
@@ -150,7 +158,7 @@ export const createLayoutSidebarShellAdapter = () => ({
       next,
       readCurrentSnapshot: () => readSidebarShellSnapshot(root),
     });
-    const commit = prepareProjection(update.shell.sidebarProjection, root);
+    const commit = prepareProjection(update.shell.sidebarProjection, root, true);
     const rollback = prepareProjection(previous, root);
     return {
       commitTiming: 'synchronous',

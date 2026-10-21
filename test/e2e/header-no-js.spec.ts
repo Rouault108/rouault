@@ -8,7 +8,7 @@ const layoutRich = e2eNoteFixtures.layoutRich;
 test.describe('header no-JS', () => {
   test.use({ javaScriptEnabled: false });
 
-  test('narrow note page は hidden header trigger と操作可能なnative summaryを持つこと', async ({
+  test('narrow note page は hidden header trigger と可視の本文リンクを持つこと', async ({
     page,
   }) => {
     await page.setViewportSize({ width: 1023, height: 760 });
@@ -17,12 +17,22 @@ test.describe('header no-JS', () => {
     await expect(
       page.locator('header[data-layout-header] [data-layout-sidebar-toggle]'),
     ).toBeHidden();
-    const summary = page.locator('[data-layout-sidebar-static-trigger]');
-    await expect(summary).toBeVisible();
-    await summary.press('Enter');
-    await expect(page.locator('[data-layout-sidebar-root] nav')).toBeHidden();
-    await summary.press('Space');
+    const helper = page.locator('[data-layout-sidebar-main-link]');
+    await expect(helper).toBeVisible();
+    await expect(helper).toHaveAttribute('href', '#main-content');
     await expect(page.locator('[data-layout-sidebar-root] nav')).toBeVisible();
+    await expect(page.locator('[data-layout-sidebar-disclosure]')).toHaveCount(0);
+  });
+
+  test('本文リンクはnative fragmentで本文へscrollしkeyboard focusを渡すこと', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto(layoutRich.directPath);
+    const helper = page.locator('[data-layout-sidebar-main-link]');
+    await helper.focus();
+    await helper.press('Enter');
+    await expect(page).toHaveURL(/#main-content$/u);
+    expect(await page.evaluate(() => window.scrollY)).toBeGreaterThan(0);
+    await expect(page.locator('#main-content')).toBeFocused();
   });
 
   test('desktop note page は hydration 前の静的 CSS で sidebar toggle を隠すこと', async ({

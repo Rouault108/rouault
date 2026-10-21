@@ -346,7 +346,7 @@ export class BaseLayout {
         data-app-shell-sidebar-host
         ${sidebarPresence === 'absent' ? 'hidden' : ''}
       >
-          <aside data-layout-sidebar-root aria-label="ナビゲーション"
+          <aside data-layout-sidebar-root aria-label="ナビゲーション" tabindex="-1"
           ${sidebarPresence === 'absent' ? 'hidden' : ''}
           ${
             data.notePage?.showSidebar && data.notePage.sidebar
@@ -361,10 +361,10 @@ export class BaseLayout {
                   { name: 'data-hydration-trigger', value: 'initial' },
                 ])
           }
-          ><details open data-layout-sidebar-disclosure>
-            <summary data-layout-sidebar-static-trigger>ナビゲーション</summary>
+          >
+            <a data-layout-sidebar-main-link href="#main-content" data-link-kind="internal-fragment" data-link-surface="structural">本文へ</a>
             <div data-layout-sidebar-surface>${data.notePage?.showSidebar && data.notePage.sidebar ? `${data.notePage.sidebar.heading ? `<header data-layout-sidebar-heading>${escapeHtmlText(data.notePage.sidebar.heading)}</header>` : ''}${data.notePage.sidebar.navHtml}` : ''}</div>
-          </details></aside>
+          </aside>
         </div>
       <main id="${MAIN_CONTENT_ID}" tabindex="-1">
         ${data.content}

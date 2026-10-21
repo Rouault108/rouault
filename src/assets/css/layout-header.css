@@ -205,10 +205,6 @@ header[data-layout-header] .toc-trigger {
   display: none;
 }
 
-header[data-layout-header][data-sidebar-mode='fixed'] .sidebar-toggle {
-  display: none;
-}
-
 /* Overlay open は sidebar surface を前面に出すための stacking state に限る。 */
 header[data-layout-header][data-overlay-sidebar-open='true'] {
   z-index: var(--z-non-modal-panel, var(--z-modal, 300));
@@ -525,12 +521,6 @@ header[data-layout-header] .corpus-trigger-text {
   }
 }
 
-@media (width >= 1024px) {
-  header[data-layout-header][data-note-layout='true'][data-sidebar-enabled='true'] .sidebar-toggle {
-    display: none;
-  }
-}
-
 @media (forced-colors: active) {
   header[data-layout-header] {
     background: Canvas;
@@ -610,8 +600,7 @@ header[data-layout-header] .corpus-trigger-text {
   }
 }
 
-/* observer反映前も非active triggerをfocus orderへ公開しない。 */
-header[data-layout-header] [data-layout-sidebar-toggle][hidden],
-.app-shell-root:not([data-sidebar-enhancement-state='active']) [data-layout-sidebar-toggle] {
+/* 同期準備中の操作口もheader ownerのhiddenだけで制御する。 */
+header[data-layout-header] [data-layout-sidebar-toggle][hidden] {
   display: none !important;
 }

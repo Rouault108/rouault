@@ -150,9 +150,8 @@ beforeEach(async () => {
       data-sidebar-enhancement-state="active" data-sidebar-enhancement-shell-commit-id="0"
       sidebar-id="${sidebarId}" state-scope-id="${stateScopeId}" selected-id="${sourceId}"
       initial-expanded-ids='["branch"]' topology-revision="selection-tree-v1" fixed-breakpoint="1024" presentation="auto">
-      <details data-layout-sidebar-disclosure open><summary>Navigation</summary>
+      <a data-layout-sidebar-main-link href="#main-content">Main</a>
         <div data-layout-sidebar-surface>${initial.navHtml}</div>
-      </details>
     </aside></div>
     <main id="main-content"><h1>Reader Basic</h1></main>
   </div>`);

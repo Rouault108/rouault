@@ -8,7 +8,6 @@ import {
 } from '../../theme/theme-manager.js';
 import { THEME_UI_OPTIONS } from '../../theme/theme-ui-options.js';
 import { layoutSidebarController } from '../../components/layout/layout-sidebar-controller.js';
-import type { LayoutSidebarControllerSnapshot } from '../../components/layout/layout-sidebar-controller.js';
 import { enhanceLayoutHeaderTocBridge, toggleHeaderTocPanel } from './layout-header-toc-bridge.js';
 import { createStaticHeaderMenuController } from './static-header-menu-controller.js';
 import {
@@ -20,10 +19,14 @@ import { APP_SHELL_ROOT_SELECTOR } from '../../../shared/app-shell/app-shell-roo
 import {
   HEADER_ENHANCER_STATE,
   HEADER_READY_COMMIT_ID,
-  SIDEBAR_ENHANCEMENT_STATE,
-  SIDEBAR_ENHANCEMENT_COMMIT_ID,
 } from '../../../shared/navigation/sidebar-enhancement-contract.js';
 import { readCurrentShellCommitId } from '../../components/app/shell/app-shell-lifecycle.js';
+import {
+  beforeSidebarShellMutation,
+  connectSidebarHeaderPort,
+  readSidebarHeaderPort,
+  type SidebarHeaderDisplay,
+} from '../../components/layout/sidebar-presentation-coordination.js';
 
 const HEADER_SELECTOR = 'header[data-layout-header]';
 const SIDEBAR_TOGGLE_OPEN_LABEL = 'サイドバーを開く';
@@ -73,88 +76,52 @@ const syncThemeHeader = (root: ParentNode, preference = readAppliedThemePreferen
   }
 };
 
-const syncSidebarHeader = (
-  header: HTMLElement,
-  snapshot: LayoutSidebarControllerSnapshot,
-): void => {
-  const overlaySidebarOpen = snapshot.mode === 'overlay' && snapshot.state === 'expanded';
-  const sidebarExpanded = snapshot.state === 'expanded';
-  header.setAttribute('data-sidebar-mode', snapshot.mode);
-  header.setAttribute('data-sidebar-state', snapshot.state);
-  header.setAttribute('data-overlay-sidebar-open', overlaySidebarOpen ? 'true' : 'false');
-
-  const sidebarButton = header.querySelector<HTMLElement>('[data-layout-sidebar-toggle]');
-  if (sidebarButton === null) {
-    return;
-  }
-
-  const shell = header.closest(APP_SHELL_ROOT_SELECTOR);
-  const generation = String(readCurrentShellCommitId());
-  sidebarButton.hidden = !(
-    shell?.getAttribute(HEADER_ENHANCER_STATE) === 'ready' &&
-    shell.getAttribute(HEADER_READY_COMMIT_ID) === generation &&
-    shell.getAttribute(SIDEBAR_ENHANCEMENT_STATE) === 'active' &&
-    shell.getAttribute(SIDEBAR_ENHANCEMENT_COMMIT_ID) === generation &&
-    shell.querySelector('aside[data-layout-sidebar-root]:not([hidden])') !== null &&
-    header.getAttribute('data-sidebar-enabled') === 'true' &&
-    snapshot.mode === 'overlay'
-  );
-
-  sidebarButton.setAttribute('aria-expanded', sidebarExpanded ? 'true' : 'false');
-  sidebarButton.setAttribute(
-    'aria-label',
-    sidebarExpanded ? SIDEBAR_TOGGLE_CLOSE_LABEL : SIDEBAR_TOGGLE_OPEN_LABEL,
-  );
-};
-
 const syncSidebarHeaders = (root: ParentNode, signal: AbortSignal): void => {
   const shell = document.querySelector<HTMLElement>(APP_SHELL_ROOT_SELECTOR);
   if (!shell || signal.aborted) return;
-  const clear = (): void => {
-    shell.removeAttribute(HEADER_ENHANCER_STATE);
-    shell.removeAttribute(HEADER_READY_COMMIT_ID);
-    for (const button of shell.querySelectorAll<HTMLElement>('[data-layout-sidebar-toggle]'))
-      button.hidden = true;
-  };
-  clear();
   const headers = root.querySelectorAll<HTMLElement>(HEADER_SELECTOR);
   if (headers.length !== 1) return;
-  for (const header of root.querySelectorAll<HTMLElement>(HEADER_SELECTOR)) {
-    const sidebarId = header.getAttribute('data-sidebar-id') ?? '';
-    if (sidebarId.trim().length === 0) {
-      continue;
-    }
-    const triggers = header.querySelectorAll('[data-layout-sidebar-toggle]');
-    if (triggers.length !== (header.getAttribute('data-sidebar-enabled') === 'true' ? 1 : 0))
-      return;
-    const observer = new MutationObserver(() => {
-      syncSidebarHeader(header, layoutSidebarController.getSnapshot(sidebarId));
-    });
-    observer.observe(shell, {
-      attributes: true,
-      attributeFilter: [SIDEBAR_ENHANCEMENT_STATE, SIDEBAR_ENHANCEMENT_COMMIT_ID],
-    });
-
-    let unsubscribe: (() => void) | null = null;
-    const cleanup = (): void => {
-      clear();
-      observer.disconnect();
-      unsubscribe?.();
-    };
-    signal.addEventListener('abort', cleanup, { once: true });
-    try {
-      unsubscribe = layoutSidebarController.subscribe(sidebarId, (snapshot) => {
-        syncSidebarHeader(header, snapshot);
-      });
-
-      shell.setAttribute(HEADER_READY_COMMIT_ID, String(readCurrentShellCommitId()));
-      shell.setAttribute(HEADER_ENHANCER_STATE, 'ready');
-      syncSidebarHeader(header, layoutSidebarController.getSnapshot(sidebarId));
-    } catch (error) {
-      cleanup();
-      throw error;
-    }
-  }
+  const header = headers[0];
+  if (!header) return;
+  const sidebarId = header.getAttribute('data-sidebar-id') ?? '';
+  if (!sidebarId.trim()) return;
+  const buttons = header.querySelectorAll<HTMLButtonElement>('[data-layout-sidebar-toggle]');
+  if (buttons.length !== (header.getAttribute('data-sidebar-enabled') === 'true' ? 1 : 0)) return;
+  const button = buttons[0] ?? null;
+  const render = (display: SidebarHeaderDisplay): void => {
+    header.setAttribute('data-sidebar-mode', display.mode);
+    header.setAttribute('data-sidebar-state', display.state);
+    header.setAttribute(
+      'data-overlay-sidebar-open',
+      String(display.active && display.mode === 'overlay' && display.state === 'expanded'),
+    );
+    if (!button) return;
+    button.hidden = !display.triggerVisible;
+    button.setAttribute('aria-expanded', String(display.state === 'expanded'));
+    button.setAttribute(
+      'aria-label',
+      display.state === 'expanded' ? SIDEBAR_TOGGLE_CLOSE_LABEL : SIDEBAR_TOGGLE_OPEN_LABEL,
+    );
+  };
+  const finish = beforeSidebarShellMutation(header);
+  shell.setAttribute(HEADER_READY_COMMIT_ID, String(readCurrentShellCommitId()));
+  shell.setAttribute(HEADER_ENHANCER_STATE, 'ready');
+  const disconnect = connectSidebarHeaderPort(
+    shell,
+    { header, button, sidebarId, generation: readCurrentShellCommitId(), render },
+    () => {
+      // 新しいheaderのreadinessを古いcleanupで消さない。
+      if (!readSidebarHeaderPort(shell)) {
+        shell.removeAttribute(HEADER_ENHANCER_STATE);
+        shell.removeAttribute(HEADER_READY_COMMIT_ID);
+      }
+      render({ mode: 'overlay', state: 'expanded', active: false, triggerVisible: false });
+    },
+  );
+  finish();
+  signal.addEventListener('abort', disconnect, { once: true });
+  const interrupted = (): boolean => signal.aborted;
+  if (interrupted()) disconnect();
 };
 
 export const enhanceLayoutHeader = (root: ParentNode, signal: AbortSignal): void => {
