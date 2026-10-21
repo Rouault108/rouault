@@ -114,3 +114,10 @@ Phase1の`data-overflow`、`data-fade-left`、`data-fade-right`は引き続きru
 G-TABLE-TOP-RAIL-ELIGIBLE-ONLY-001は通過可とする。Markdown authoring API、`column-widths`構文、SSR table出力構造、routing、URL契約は変更しない。
 
 ただし、eligibilityを満たさない横溢れ表ではruntime DOM、Tab順序、`role="region"`露出、rail用`aria-controls`生成条件が変わるため、単なるnon-breaking additive changeとして扱わない。eligible overflow表では既存のARIA、Tab順序、scroll同期、runtime idを削除しない契約を維持する。
+
+
+## 初期HTMLのwrapper ID
+
+native lowering後の最終sweepで、短い表・非overflow表・hiddenな通常DOMのtab内を含む全canonical wrapperへIDを付ける。既存IDは大文字小文字を含めて保全し、著者のtable/heading IDを移動・複製しない。本文の既存IDを先に収集して重複を拒否し、未採番wrapperだけをdocument namespace・table kind・文書順で決定的に採番する。template内容は別scopeとする。再正規化は冪等であり、viewport/font/tab状態や文書のbuild順へ依存しない。本文への表の挿入・並べ替えを越えた生成IDの永続性は保証しない。
+
+production最終HTMLではwrapper IDの一意性をpage frameを含む全ページで検証し、衝突はbuild errorとする。ここでの再採番は行わない。同版のinitial HTMLとrouter bodyは同じ正規化結果を使う。runtimeは既存IDを採用し、cleanup後も保全する。reloadのnative位置採用方針は変更しない。

@@ -2189,3 +2189,34 @@ describe('rehypeRouaultComponents', () => {
     );
   });
 });
+
+
+describe('initial HTML table wrapper IDs', () => {
+  const table = '<table id="Authored-Table"><tbody><tr><td>short</td></tr></tbody></table>';
+  const ids = (html: string): string[] => [...html.matchAll(/<div data-table-root="true"[^>]* id="([^"]+)"/gu)].map((match) => match[1] ?? '');
+  it('covers plain, already canonical and hidden normal-DOM tables after lowering, deterministically', () => {
+    const input = `<h2 id="Heading-ID">heading</h2>${table}<div hidden>${table.replace('Authored-Table', 'Other-Table')}</div><div data-table-root="true" id="Keep-Case"><table></table></div><div data-table-root="true"><table></table></div>`;
+    const options = { namespace: 'stable/document' };
+    const once = normalizeRouaultStaticSurfaceHtml(input, options) ?? '';
+    normalizeRouaultStaticSurfaceHtml('<table></table>', { namespace: 'other/document' });
+    expect(normalizeRouaultStaticSurfaceHtml(input, options)).toBe(once);
+    expect(normalizeRouaultStaticSurfaceHtml(once, options)).toBe(once);
+    expect(ids(once)).toHaveLength(4);
+    expect(new Set(ids(once)).size).toBe(4);
+    expect(ids(once)).toContain('Keep-Case');
+    expect(once).toContain('<table id="Authored-Table">');
+    expect(once).toContain('<h2 id="Heading-ID">');
+  });
+  it('avoids existing body IDs and rejects duplicate IDs without sanitizing existing wrapper IDs', () => {
+    const generated = ids(normalizeRouaultStaticSurfaceHtml('<table></table>', { namespace: 'collision' }) ?? '')[0];
+    const result = normalizeRouaultStaticSurfaceHtml(`<h2 id="${generated}">heading</h2><table></table>`, { namespace: 'collision' }) ?? '';
+    expect(ids(result)[0]).not.toBe(generated);
+    expect(result).toContain(`<h2 id="${generated}">`);
+    expect(() => normalizeRouaultStaticSurfaceHtml('<h2 id="Exact-ID"></h2><div data-table-root="true" id="Exact-ID"><table></table></div>')).toThrow('duplicate id "Exact-ID"');
+  });
+  it('keeps inert template contents in their own scope', () => {
+    const result = normalizeRouaultStaticSurfaceHtml('<h2 id="Same-ID"></h2><template><div data-table-root="true" id="Same-ID"><table></table></div></template><table></table>') ?? '';
+    expect(result).toContain('<template><div data-table-root="true" id="Same-ID">');
+    expect(ids(result)).toHaveLength(2);
+  });
+});

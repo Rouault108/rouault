@@ -202,6 +202,32 @@ const assertAppShellRootContract = (options: {
   }
 };
 
+const assertTableRootIds = (document: Parse5Node, repoPath: string): void => {
+  const ids = new Map<string, number>();
+  const wrappers: Parse5Element[] = [];
+  const visit = (node: Parse5Node): void => {
+    if (isElementNode(node)) {
+      const id = node.attrs.find((attribute) => attribute.name === 'id')?.value;
+      if (id) ids.set(id, (ids.get(id) ?? 0) + 1);
+      if (
+        node.tagName === 'div' &&
+        node.attrs.some((attribute) => attribute.name === 'data-table-root' && attribute.value === 'true')
+      ) wrappers.push(node);
+    }
+    // parse5のtemplate.contentは通常documentとは別scopeのまま扱う。
+    for (const child of getChildNodes(node)) visit(child);
+  };
+  visit(document);
+  for (const wrapper of wrappers) {
+    const id = wrapper.attrs.find((attribute) => attribute.name === 'id')?.value;
+    if (!id || ids.get(id) !== 1) {
+      throw new Error(
+        `[production-html-contracts] ${repoPath} table wrapper id "${id ?? ''}" must be nonempty and unique across the entire page.`,
+      );
+    }
+  }
+};
+
 export const assertProductionHtmlContracts = async (
   options: AssertProductionHtmlContractsOptions = {},
 ): Promise<ProductionHtmlContractResult> => {
@@ -221,6 +247,7 @@ export const assertProductionHtmlContracts = async (
     const html = await readFile(htmlFile, 'utf8');
     const document = parse5.parse(html);
 
+    assertTableRootIds(document, toRepoPath(repoRoot, htmlFile));
     assertNoFinalSourceMarkerAttributes({
       repoRoot,
       htmlFile,

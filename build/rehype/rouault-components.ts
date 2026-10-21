@@ -2003,8 +2003,8 @@ const collectDocumentIds = (
   ids = new Map<string, HastNode>(),
 ): Map<string, HastNode> => {
   if (isElement(node)) {
-    const id = getPropertyString(node.properties, 'id');
-    if (id) {
+    const id = node.properties?.['id'];
+    if (typeof id === 'string' && id.length > 0) {
       if (ids.has(id)) {
         throw new Error(`[markdown] duplicate id "${id}" is not allowed`);
       }
@@ -2759,6 +2759,22 @@ const normalizeRouaultStaticSurfacesTree = (
   visit(tree);
 };
 
+// lowering後に全wrapperを走査し、表示状態や変換の早期returnに依存させない。
+const assignStaticTableRootIds = (root: HastNode, idContext: StaticRenderIdContext): void => {
+  const ids = collectDocumentIds(root);
+  const visit = (node: HastNode): void => {
+    if (isStaticTableRoot(node) && !node.properties?.['id']) {
+      let id = idContext.nextId('table-root');
+      while (ids.has(id)) id = idContext.nextId('table-root');
+      node.properties = { ...node.properties, id };
+      ids.set(id, node);
+    }
+    // template.contentは別のID scopeであり、通常DOMの採番へ混ぜない。
+    for (const child of node.children ?? []) visit(child);
+  };
+  visit(root);
+};
+
 export const normalizeRouaultStaticSurfaceHtml = (
   html: string | undefined,
   options: {
@@ -2790,6 +2806,7 @@ export const normalizeRouaultStaticSurfaceHtml = (
     );
   normalizeRouaultStaticSurfacesTree(root, idContext);
   lowerNativeNoteTree(root, { ...options, idContext });
+  assignStaticTableRootIds(root, idContext);
 
   return toHtml(root as Parameters<typeof toHtml>[0]);
 };

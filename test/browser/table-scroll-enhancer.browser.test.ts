@@ -1086,6 +1086,7 @@ describe('table railの同期準備と後続activation', () => {
     expect(prepareTableGeometry(root, { isCurrent: () => true, signal: controller.signal })).toBe(
       false,
     );
+    root.id = 'Static-Rollback-ID';
     Object.defineProperty(root, 'clientWidth', {
       configurable: true,
       get() {
@@ -1094,5 +1095,29 @@ describe('table railの同期準備と後続activation', () => {
     });
     expect(prepareTableGeometry(root, { isCurrent: () => true })).toBe(false);
     expect(getRail(root)).toBeNull();
+    expect(root.id).toBe('Static-Rollback-ID');
+  });
+});
+
+
+describe('static wrapper ID lifecycle', () => {
+  it('preserves initial IDs across preparation abort, activation cleanup and reinitialization', async () => {
+    const root = createEligibleTableFixture();
+    root.id = 'Static-Table-ID';
+    const first = new AbortController();
+    expect(prepareTableGeometry(root, { isCurrent: () => true, signal: first.signal })).toBe(true);
+    expect(getRail(root)?.getAttribute('aria-controls')).toBe(root.id);
+    first.abort();
+    expect(getRail(root)).toBeNull();
+    expect(root.id).toBe('Static-Table-ID');
+    const second = new AbortController();
+    enhanceTableScroll(root, second.signal);
+    await nextFrame();
+    expect(getRail(root)?.getAttribute('aria-controls')).toBe('Static-Table-ID');
+    second.abort();
+    expect(getRail(root)).toBeNull();
+    expect(root.id).toBe('Static-Table-ID');
+    enhanceTableScroll(root);
+    expect(root.id).toBe('Static-Table-ID');
   });
 });

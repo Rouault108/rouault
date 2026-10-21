@@ -1,4 +1,5 @@
 export type StaticRenderIdKind =
+  | 'table-root'
   | 'tabs-tab'
   | 'tabs-panel'
   | 'command-menu'
