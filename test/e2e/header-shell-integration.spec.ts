@@ -259,9 +259,7 @@ test.describe('header shell integration', () => {
         ?.removeAttribute('data-selected');
     });
 
-    await page.evaluate(() => {
-      document.dispatchEvent(new CustomEvent('app-shell:committed'));
-    });
+    await navigateWithRouterDocumentHost(page, sidebarScrollTarget.normalizedPath);
 
     await expect(header).toHaveAttribute('data-sidebar-mode', 'overlay');
     await expect(header).toHaveAttribute('data-sidebar-state', 'expanded');

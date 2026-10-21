@@ -553,6 +553,29 @@ describe('plain sidebar shell lifecycle', () => {
     );
   });
 
+  it('detached header retirement freezes its committed state while the live header updates', () => {
+    const root = fixture();
+    start(root);
+    const oldHeader = required(shell.querySelector<HTMLElement>('[data-layout-header]'));
+    const previous = { ...oldHeader.dataset };
+    oldHeader.replaceWith(oldHeader.cloneNode(true));
+    const finish = beforeSidebarShellMutation(root, true);
+    finish();
+    enhanceLayoutHeader(document, abort.signal);
+    commitShellGeneration(1);
+    event('app-shell:committed', { shellCommitId: 1 });
+    validate(1);
+    layoutSidebarController.open('note-primary');
+    expect(
+      required(shell.querySelector('[data-layout-header]')).getAttribute('data-sidebar-state'),
+    ).toBe('expanded');
+    expect(oldHeader.isConnected).toBe(false);
+    expect({ ...oldHeader.dataset }).toEqual(previous);
+    expect(
+      required(oldHeader.querySelector<HTMLButtonElement>('[data-layout-sidebar-toggle]')).hidden,
+    ).toBe(true);
+  });
+
   it('header retirement during focus preparation cancels hiding synchronously', async () => {
     const root = fixture();
     root.setAttribute('presentation', 'fixed');

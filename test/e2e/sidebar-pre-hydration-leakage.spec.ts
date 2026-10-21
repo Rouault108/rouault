@@ -317,6 +317,6 @@ test.describe('sidebar static baseline', () => {
     await expect(page).toHaveURL(/#main-content$/u);
     await expect(page.locator('#main-content')).toBeFocused();
     await expect(page.locator('[data-layout-sidebar-backdrop]')).toBeHidden();
-    expect(await page.evaluate(() => scrollY)).toBeGreaterThan(0);
+    await expect.poll(() => page.evaluate(() => scrollY)).toBeGreaterThan(0);
   });
 });

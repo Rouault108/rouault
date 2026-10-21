@@ -90,6 +90,7 @@ const syncSidebarHeaders = (root: ParentNode, signal: AbortSignal): void => {
   if (buttons.length !== (header.getAttribute('data-sidebar-enabled') === 'true' ? 1 : 0)) return;
   const button = buttons[0] ?? null;
   const render = (display: SidebarHeaderDisplay): void => {
+    if (!header.isConnected) return;
     header.setAttribute('data-sidebar-mode', display.mode);
     header.setAttribute('data-sidebar-state', display.state);
     header.setAttribute(
@@ -116,7 +117,12 @@ const syncSidebarHeaders = (root: ParentNode, signal: AbortSignal): void => {
         shell.removeAttribute(HEADER_ENHANCER_STATE);
         shell.removeAttribute(HEADER_READY_COMMIT_ID);
       }
-      render({ mode: 'overlay', state: 'expanded', active: false, triggerVisible: false });
+      if (header.isConnected) {
+        render({ mode: 'overlay', state: 'expanded', active: false, triggerVisible: false });
+      } else if (button) {
+        // 退役したheaderの確定済み表示stateへ後続cleanupを書き込まない。
+        button.hidden = true;
+      }
     },
   );
   finish();

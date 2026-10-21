@@ -31,8 +31,8 @@ test.describe('header no-JS', () => {
     await helper.focus();
     await helper.press('Enter');
     await expect(page).toHaveURL(/#main-content$/u);
-    expect(await page.evaluate(() => window.scrollY)).toBeGreaterThan(0);
     await expect(page.locator('#main-content')).toBeFocused();
+    await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(0);
   });
 
   test('desktop note page は hydration 前の静的 CSS で sidebar toggle を隠すこと', async ({
