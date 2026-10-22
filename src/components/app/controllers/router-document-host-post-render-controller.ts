@@ -81,6 +81,8 @@ export class RouterDocumentHostPostRenderController {
         const root = hostElement.querySelector(MAIN_CONTENT_SELECTOR);
         if (!(root instanceof HTMLElement)) return;
         const receipt = context.receipt;
+        // routerの正規化URLではなく、受理時のexact addressを全再照合で固定する。
+        const expectedAddress = receipt?.url ?? context.intent.target.url;
         const content = readContentContext();
         const epoch = content?.contentEpoch;
         const shellCommitId = readCurrentShellCommitId();
@@ -96,7 +98,7 @@ export class RouterDocumentHostPostRenderController {
             !current.mutation &&
             !current.recoveryRequired &&
             readCurrentShellCommitId() === shellCommitId &&
-            readAddress() === context.url &&
+            readAddress() === expectedAddress &&
             (context.stateOnly ||
               !receipt ||
               ownsAcceptedHistoryCommit(root, context.intent, receipt))

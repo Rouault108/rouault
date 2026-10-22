@@ -2258,56 +2258,121 @@ describe('明示hashの停止位置とCSS offset', () => {
 
 
 describe('post-commit geometry/focus ownership before schedule', () => {
-  it.each(['hash', 'hashless-without-candidate', 'hash-without-candidate', 'geometry-failure', 'geometry-hidden', 'cleanup-hidden', 'cleanup-failure', 'focus-owner-loss', 'geometry-owner-loss', 'cleanup-owner-loss'] as const)('%s preserves the accepted body and the current job', async (condition) => {
+  it.each([
+    'hash',
+    'hashless-without-candidate',
+    'hash-without-candidate',
+    'geometry-failure',
+    'geometry-hidden',
+    'cleanup-hidden',
+    'cleanup-failure',
+    'focus-owner-loss',
+    'geometry-owner-loss',
+    'cleanup-owner-loss',
+    'slash-normalized-context',
+    'url-change-before-run',
+    'focus-url-change',
+    'geometry-url-change',
+    'stale-receipt-url',
+  ] as const)('%s preserves the accepted body and the current job', async (condition) => {
     await setup();
     if (!root) throw new Error('root');
     const content = root;
     content.id = 'main-content';
     const hasHash = condition !== 'hashless-without-candidate';
-    const savedUrl = originalUrl.split('#')[0] + (hasHash ? '#missing-heading' : '');
+    const savedUrl =
+      (condition === 'slash-normalized-context'
+        ? '/notes/post-commit/'
+        : originalUrl.split('#')[0]) + (hasHash ? '#missing-heading' : '');
     history.replaceState(baselineState, '', savedUrl);
     adoptContentBinding(savedUrl);
-    const html = '<div data-table-root="true" id="Static-ID" style="width:120px;overflow:auto"><table style="width:360px;min-width:360px"><tbody>' + Array.from({length:30}, () => '<tr><td>本文</td></tr>').join('') + '</tbody></table></div>';
+    const html =
+      '<div data-table-root="true" id="Static-ID" style="width:120px;overflow:auto"><table style="width:360px;min-width:360px"><tbody>' +
+      Array.from({ length: 30 }, () => '<tr><td>本文</td></tr>').join('') +
+      '</tbody></table></div>';
     content.innerHTML = html;
-    const controller = new RouterDocumentHostPostRenderController(() => { /* 通知文字列はこのowner検証の対象外。 */ });
+    const controller = new RouterDocumentHostPostRenderController(() => {
+      /* 通知文字列はこのowner検証の対象外。 */
+    });
     try {
       controller.initialize(content.parentElement ?? document.body);
       await expect.poll(() => content.dataset['readingPositionStatus']).toBe('settled');
-      window.scrollTo({left:0,top:650,behavior:'instant'});
+      window.scrollTo({ left: 0, top: 650, behavior: 'instant' });
       await frame();
       window.dispatchEvent(new Event('scroll'));
       const savedState: unknown = history.state;
       const previous = '/notes/other-page';
       const leaving = beginNavigationIntent('navigation', previous);
       let epoch = beginContentMutation(content);
-      writeHistoryEntry({mode:'push',owner:'router',url:previous});
+      writeHistoryEntry({ mode: 'push', owner: 'router', url: previous });
       content.innerHTML = '<p>other page</p>';
       adoptContentBinding(previous);
-      setContentReadiness({contentEpoch:epoch,root:content,shellCommitId:0,status:'settled',started:true});
+      setContentReadiness({
+        contentEpoch: epoch,
+        root: content,
+        shellCommitId: 0,
+        status: 'settled',
+        started: true,
+      });
       const post = controller.createPostCommitController(content.parentElement ?? document.body);
-      post.run({outlet:content,previousUrl:savedUrl,url:previous,isInitial:false,stateOnly:false,renderedKind:'page',intent:leaving});
+      post.run({
+        outlet: content,
+        previousUrl: savedUrl,
+        url: previous,
+        isInitial: false,
+        stateOnly: false,
+        renderedKind: 'page',
+        intent: leaving,
+      });
       await expect.poll(() => content.dataset['readingPositionStatus']).toBe('settled');
       history.replaceState(savedState, '', savedUrl);
-      const reads = vi.spyOn(ReadingPositionStore.prototype,'read');
+      const reads = vi.spyOn(ReadingPositionStore.prototype, 'read');
       if (condition.endsWith('without-candidate')) reads.mockReturnValue(null);
-      const intent = beginNavigationIntent('traverse',savedUrl);
+      const intent = beginNavigationIntent('traverse', savedUrl);
       expect(reads).toHaveBeenCalledOnce();
       reads.mockClear();
       epoch = beginContentMutation(content);
       content.innerHTML = html;
       adoptContentBinding(savedUrl);
-      setContentReadiness({contentEpoch:epoch,root:content,shellCommitId:0,status:'pending',started:true});
-      window.scrollTo({left:0,top:200,behavior:'instant'});
-      const receipt = Object.freeze({commitId:1,intentId:intent.intentId,entryId:readHistoryEntry()?.id ?? null,url:savedUrl,root:content,contentEpoch:epoch,shellCommitId:0,stateOnly:false,commitTiming:'synchronous' as const});
-      const context = {outlet:content,previousUrl:previous,url:savedUrl,isInitial:false,stateOnly:false,renderedKind:'page' as const,intent,receipt};
+      setContentReadiness({
+        contentEpoch: epoch,
+        root: content,
+        shellCommitId: 0,
+        status: 'pending',
+        started: true,
+      });
+      window.scrollTo({ left: 0, top: 200, behavior: 'instant' });
+      const receipt = Object.freeze({
+        commitId: 1,
+        intentId: intent.intentId,
+        entryId: readHistoryEntry()?.id ?? null,
+        url: condition === 'stale-receipt-url' ? '/notes/stale-receipt' : savedUrl,
+        root: content,
+        contentEpoch: epoch,
+        shellCommitId: 0,
+        stateOnly: false,
+        commitTiming: 'synchronous' as const,
+      });
+      const context = {
+        outlet: content,
+        previousUrl: previous,
+        url: condition === 'slash-normalized-context' ? savedUrl.replace('/#', '#') : savedUrl,
+        isInitial: false,
+        stateOnly: false,
+        renderedKind: 'page' as const,
+        intent,
+        receipt,
+      };
       if (condition.startsWith('cleanup-')) {
         post.run(context);
-        window.scrollTo({left:0,top:200,behavior:'instant'});
+        window.scrollTo({ left: 0, top: 200, behavior: 'instant' });
         const abort = AbortController.prototype.abort;
-        vi.spyOn(AbortController.prototype,'abort').mockImplementationOnce(function(this: AbortController) {
+        vi.spyOn(AbortController.prototype, 'abort').mockImplementationOnce(function (
+          this: AbortController,
+        ) {
           abort.call(this);
           if (condition === 'cleanup-owner-loss') {
-            beginNavigationIntent('navigation',savedUrl);
+            beginNavigationIntent('navigation', savedUrl);
             content.dataset['readingPositionStatus'] = 'new-owner';
           }
           if (condition === 'cleanup-hidden') {
@@ -2319,39 +2384,79 @@ describe('post-commit geometry/focus ownership before schedule', () => {
       }
       const table = content.querySelector<HTMLElement>('[data-table-root]');
       if (!table) throw new Error('table');
-      if (condition.startsWith('geometry-')) Object.defineProperty(table,'clientWidth',{configurable:true,get() {
-        if (condition === 'geometry-owner-loss') {
-          beginNavigationIntent('navigation',savedUrl);
+      if (condition.startsWith('geometry-'))
+        Object.defineProperty(table, 'clientWidth', {
+          configurable: true,
+          get() {
+            if (condition === 'geometry-url-change') {
+              history.replaceState(history.state, '', '/notes/changed-during-geometry');
+              content.dataset['readingPositionStatus'] = 'new-owner';
+              return 120;
+            }
+            if (condition === 'geometry-owner-loss') {
+              beginNavigationIntent('navigation', savedUrl);
+              content.dataset['readingPositionStatus'] = 'new-owner';
+              return 120;
+            }
+            if (condition === 'geometry-hidden') {
+              vi.spyOn(document, 'visibilityState', 'get').mockReturnValue('hidden');
+              return 120;
+            }
+            throw new Error('geometry unavailable');
+          },
+        });
+      if (condition === 'focus-url-change')
+        vi.spyOn(content, 'focus').mockImplementation(() => {
+          history.replaceState(history.state, '', '/notes/changed-during-focus');
           content.dataset['readingPositionStatus'] = 'new-owner';
-          return 120;
-        }
-        if (condition === 'geometry-hidden') {
-          vi.spyOn(document, 'visibilityState', 'get').mockReturnValue('hidden');
-          return 120;
-        }
-        throw new Error('geometry unavailable');
-      }});
-      if (condition === 'focus-owner-loss') vi.spyOn(content,'focus').mockImplementation(() => {
-        beginNavigationIntent('navigation',savedUrl);
+        });
+      if (condition === 'url-change-before-run') {
+        history.replaceState(history.state, '', '/notes/changed-before-run');
         content.dataset['readingPositionStatus'] = 'new-owner';
-      });
-      const schedule = vi.spyOn(ReadingPositionController.prototype,'schedule');
+      }
+      if (condition === 'focus-owner-loss')
+        vi.spyOn(content, 'focus').mockImplementation(() => {
+          beginNavigationIntent('navigation', savedUrl);
+          content.dataset['readingPositionStatus'] = 'new-owner';
+        });
+      const schedule = vi.spyOn(ReadingPositionController.prototype, 'schedule');
       expect(() => post.run(context)).not.toThrow();
       expect(reads).not.toHaveBeenCalled();
       expect(content.querySelector('table')).not.toBeNull();
-      if (condition.endsWith('owner-loss')) {
+      if (condition === 'stale-receipt-url') {
+        expect(schedule).not.toHaveBeenCalled();
+        return;
+      }
+      if (condition.endsWith('owner-loss') || condition.includes('url-change')) {
         expect(schedule).not.toHaveBeenCalled();
         expect(content.dataset['readingPositionStatus']).toBe('new-owner');
         return;
       }
       expect(schedule).toHaveBeenCalledOnce();
-      expect(!!table.previousElementSibling?.matches('[data-table-scroll-rail]')).toBe(condition === 'hash' || condition === 'hashless-without-candidate');
-      expect(content.dataset['readingPositionPrepaint']).toBe(condition === 'hash' ? 'applied' : 'unavailable');
-      if (condition === 'hash') expect(Math.abs(scrollY-650)).toBeLessThanOrEqual(2);
+      expect(!!table.previousElementSibling?.matches('[data-table-scroll-rail]')).toBe(
+        condition === 'hash' ||
+          condition === 'slash-normalized-context' ||
+          condition === 'hashless-without-candidate',
+      );
+      expect(content.dataset['readingPositionPrepaint']).toBe(
+        condition === 'hash' || condition === 'slash-normalized-context'
+          ? 'applied'
+          : 'unavailable',
+      );
+      if (condition === 'hash' || condition === 'slash-normalized-context')
+        expect(Math.abs(scrollY - 650)).toBeLessThanOrEqual(2);
       vi.spyOn(document, 'visibilityState', 'get').mockReturnValue('visible');
-      setContentReadiness({contentEpoch:epoch,root:content,shellCommitId:0,status:'settled',started:true});
+      setContentReadiness({
+        contentEpoch: epoch,
+        root: content,
+        shellCommitId: 0,
+        status: 'settled',
+        started: true,
+      });
       await expect.poll(() => content.dataset['readingPositionStatus']).toBe('settled');
-      expect(Math.abs(scrollY-(condition.endsWith('without-candidate') ? 0 : 650))).toBeLessThanOrEqual(2);
+      expect(
+        Math.abs(scrollY - (condition.endsWith('without-candidate') ? 0 : 650)),
+      ).toBeLessThanOrEqual(2);
     } finally {
       controller.dispose();
     }

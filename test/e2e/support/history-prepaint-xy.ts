@@ -1,4 +1,4 @@
-import { expect, test, type Page, type TestInfo } from '@playwright/test';
+import { expect, test, type Page, type Response, type TestInfo } from '@playwright/test';
 import sharp from 'sharp';
 import { resolveRouterArtifactPathname } from '../../../shared/navigation/router-artifact-path.js';
 
@@ -300,6 +300,51 @@ export const registerHistoryPrepaintXYTests = (): void => {
       expect(Math.abs(await page.evaluate(() => scrollY))).toBeLessThanOrEqual(2);
     });
 
+    test('table rail activation preserves the no-JS body geometry', async ({ page, browser }) => {
+      const target = `/notes/library/collection/${encodeURIComponent('計算機科学・ソフトウェア開発関連書籍')}`;
+      const nativeContext = await browser.newContext({
+        javaScriptEnabled: false,
+        viewport: page.viewportSize(),
+      });
+      try {
+        const native = await nativeContext.newPage();
+        const measure = (page: Page) =>
+          page.evaluate(() => ({
+            range: document.scrollingElement?.scrollHeight,
+            points: [
+              ...document.querySelectorAll<HTMLElement>(
+                'main [data-table-root], main h2[id], main h3[id]',
+              ),
+            ].map((element) => ({
+              id: element.id,
+              top: element.getBoundingClientRect().top + scrollY,
+              height: element.getBoundingClientRect().height,
+            })),
+          }));
+        await native.goto(target);
+        await expect.poll(() => native.evaluate(() => document.fonts.status)).toBe('loaded');
+        const baseline = await measure(native);
+        await page.goto(target);
+        await ready(page);
+        await page.evaluate(() => document.fonts.ready.then(() => undefined));
+        await expect
+          .poll(() => page.locator('[data-table-scroll-rail]').count())
+          .toBeGreaterThan(1);
+        const enhanced = await measure(page);
+        expect(enhanced.points.length).toBeGreaterThan(1);
+        expect(enhanced.points.map(({ id }) => id)).toEqual(baseline.points.map(({ id }) => id));
+        expect(Math.abs((enhanced.range ?? 0) - (baseline.range ?? 0))).toBeLessThanOrEqual(2);
+        for (const [index, point] of enhanced.points.entries()) {
+          const expected = baseline.points[index];
+          if (!expected) throw new Error('static reading point');
+          expect(Math.abs(point.top - expected.top), point.id).toBeLessThanOrEqual(2);
+          expect(Math.abs(point.height - expected.height), point.id).toBeLessThanOrEqual(2);
+        }
+      } finally {
+        await nativeContext.close();
+      }
+    });
+
     for (const viewport of [
       { width: 1365, height: 768 },
       { width: 1280, height: 720 },
@@ -377,8 +422,20 @@ export const registerHistoryPrepaintXYTests = (): void => {
               }, position);
             await settle();
             const before = await measure();
+            // Firefoxは304でもresource timingに初回転送量を残すため、HTTP応答も記録する。
+            const revalidated: string[] = [];
+            const recordRevalidation = (response: Response): void => {
+              if (
+                response.status() === 304 &&
+                new URL(response.url()).origin === new URL(page.url()).origin &&
+                /\.js(?:\?|$)/u.test(response.url())
+              )
+                revalidated.push(response.url());
+            };
+            page.on('response', recordRevalidation);
             await page.reload();
             await settle();
+            page.off('response', recordRevalidation);
             const after = await measure();
             const cached = await page.evaluate(() =>
               performance
@@ -404,6 +461,7 @@ export const registerHistoryPrepaintXYTests = (): void => {
                   before,
                   after,
                   cached,
+                  revalidated,
                   staticIds,
                 },
                 null,
@@ -412,7 +470,7 @@ export const registerHistoryPrepaintXYTests = (): void => {
               contentType: 'application/json',
             });
             expect(
-              cached.length,
+              cached.length + revalidated.length,
               'HTTP cache or revalidation evidence is required',
             ).toBeGreaterThan(0);
             expect(before.fonts).toBe('loaded');

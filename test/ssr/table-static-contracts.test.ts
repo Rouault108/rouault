@@ -223,7 +223,7 @@ describe('table static css contracts', () => {
       'overflow-x: auto',
       'overflow-y: hidden',
       'block-size: 0.875rem',
-      'margin-block: var(--space-1, 0.25rem) calc(var(--space-1, 0.25rem) * -1)',
+      'margin-block: 0 -0.875rem',
       'scrollbar-gutter: stable',
       ':is(.prose, .about-prose) > [data-table-scroll-rail] > [data-table-scroll-rail-spacer]',
       ':is(.prose, .about-prose) > [data-tabs-root] > [data-tab-panel] > [data-table-scroll-rail] > [data-table-scroll-rail-spacer]',

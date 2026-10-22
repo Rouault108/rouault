@@ -16,7 +16,11 @@ if (!baseline || !modified)
     'Usage: tsx scripts/testing/verify-table-reload.ts BASELINE_DIST MODIFIED_DIST [RESULT_JSON]',
   );
 const output = roots[2] ?? '/tmp/rouault-table-reload-results.json';
-const origin = 'http://127.0.0.1:4189';
+// build時のsite originと揃え、manifest検証を無効化せずに実際のartifactを動かす。
+const origin = process.env['ROUAULT_TABLE_RELOAD_ORIGIN'] ?? 'http://127.0.0.1:4189';
+const serverUrl = new URL(origin);
+if (serverUrl.protocol !== 'http:' || serverUrl.hostname !== '127.0.0.1' || !serverUrl.port)
+  throw new Error('Table reload verification requires an explicit HTTP loopback port');
 const pathname = `/notes/library/collection/${encodeURIComponent('計算機科学・ソフトウェア開発関連書籍')}`;
 const url = `${origin}${pathname}#c-net-visual-basic`;
 const elements = (node: Node): Element[] => [
@@ -114,7 +118,7 @@ const respond = async (request: IncomingMessage, response: ServerResponse): Prom
 const server = createServer((request, response) => {
   void respond(request, response);
 });
-await new Promise<void>((resolve) => server.listen(4189, '127.0.0.1', resolve));
+await new Promise<void>((resolve) => server.listen(Number(serverUrl.port), '127.0.0.1', resolve));
 const browser = await chromium.launch();
 const results: unknown[] = [];
 let baselineFailures = 0;
@@ -205,7 +209,9 @@ try {
               JSON.stringify(before.viewport) !== JSON.stringify(after.viewport) ||
               Math.abs(before.range - after.range) > 2
             )
-              throw new Error('Comparison geometry/font conditions differ');
+              throw new Error(
+                `Comparison geometry/font conditions differ: ${JSON.stringify({ version, mode, viewport, repeat, before, after })}`,
+              );
             const passed = Math.abs(after.x - before.x) <= 2 && Math.abs(after.y - before.y) <= 2;
             if (!passed && version === 'baseline') baselineFailures++;
             if (!passed && version === 'modified') modifiedFailures++;
