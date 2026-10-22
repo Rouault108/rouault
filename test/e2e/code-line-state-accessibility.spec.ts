@@ -339,3 +339,57 @@ test('line state semantics remain available across SSR, no-JS, group, and previe
     await context.close();
   }
 });
+
+for (const theme of ['light', 'dark', 'system', 'forced-colors'] as const) {
+  test(`Copy button は ${theme} の production CSS で有効な focus token を使う`, async ({
+    page,
+  }) => {
+    await page.emulateMedia({ forcedColors: theme === 'forced-colors' ? 'active' : 'none' });
+    await page.goto(e2eNoteFixtures.code.directPath, { waitUntil: 'networkidle' });
+    await page.evaluate((value) => {
+      document.documentElement.dataset['theme'] = value === 'forced-colors' ? 'light' : value;
+    }, theme);
+    const button = page
+      .locator('button.static-copy-button[data-copy-enhanced="true"]:visible')
+      .first();
+    await expect(button).toBeEnabled();
+    await page.keyboard.press('Tab');
+    await button.focus();
+    const focus = await button.evaluate(async (element) => {
+      await Promise.all(element.getAnimations().map((animation) => animation.finished));
+      const probe = document.createElement('button');
+      probe.type = 'button';
+      probe.tabIndex = -1;
+      probe.style.cssText =
+        'outline: var(--focus-ring-width) solid var(--focus-ring-color); outline-offset: var(--focus-ring-offset);';
+      element.parentElement?.append(probe);
+      const actual = getComputedStyle(element);
+      const expected = getComputedStyle(probe);
+      const rgba = (color: string): number[] => {
+        const canvas = document.createElement('canvas');
+        canvas.width = canvas.height = 1;
+        const context = canvas.getContext('2d');
+        if (!context) throw new Error('Canvas 2D が必要です');
+        context.fillStyle = color;
+        context.fillRect(0, 0, 1, 1);
+        return Array.from(context.getImageData(0, 0, 1, 1).data);
+      };
+      const result = {
+        visible: element.matches(':focus-visible'),
+        style: actual.outlineStyle,
+        width: actual.outlineWidth,
+        offset: actual.outlineOffset,
+        color: rgba(actual.outlineColor),
+        expectedColor: rgba(expected.outlineColor),
+      };
+      probe.remove();
+      return result;
+    });
+    expect(focus.visible).toBe(true);
+    expect(focus.style).toBe('solid');
+    expect(focus.width).toBe('2px');
+    expect(focus.offset).toBe('2px');
+    expect(focus.color).toEqual(focus.expectedColor);
+    expect(focus.color[3]).toBe(255);
+  });
+}

@@ -2289,8 +2289,10 @@ describe('static CSS contracts', () => {
 
     const copyFocusBlock = ruleBlock(staticCopyButton, '.static-copy-button:focus-visible');
     expect(copyFocusBlock, 'static copy button focus-visible rule').not.toBe('');
-    expect(copyFocusBlock).toContain('outline:');
-    expect(copyFocusBlock).toContain('outline-offset:');
+    expect(copyFocusBlock).toContain(
+      'outline: var(--focus-ring-width) solid var(--focus-ring-color)',
+    );
+    expect(copyFocusBlock).toContain('outline-offset: var(--focus-ring-offset)');
   });
 
   it('code surface CSS aligns copy controls with the inline rail contract', () => {

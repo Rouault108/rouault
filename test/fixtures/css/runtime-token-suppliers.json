@@ -1,0 +1,92 @@
+[
+  {
+    "file": "layout-sidebar.css",
+    "selector": ".layout-sidebar-col",
+    "property": "max-block-size",
+    "reference": "--layout-sticky-max-block-size",
+    "count": 1,
+    "supplier": "src/layout/sticky-footer-boundary.ts",
+    "evidence": "target.style.setProperty('--layout-sticky-max-block-size',"
+  },
+  {
+    "file": "layout-sidebar.css",
+    "selector": "[data-sidebar-enhancement-state='active'] [data-layout-sidebar-root][data-mode='fixed']",
+    "property": "max-block-size",
+    "reference": "--layout-sticky-max-block-size",
+    "count": 1,
+    "supplier": "src/layout/sticky-footer-boundary.ts",
+    "evidence": "target.style.setProperty('--layout-sticky-max-block-size',"
+  },
+  {
+    "file": "layout-sidebar.css",
+    "selector": "[data-sidebar-enhancement-state='active'] [data-layout-sidebar-root][data-mode='fixed']",
+    "property": "transform",
+    "reference": "--layout-sticky-footer-offset",
+    "count": 1,
+    "supplier": "src/layout/sticky-footer-boundary.ts",
+    "evidence": "target.style.setProperty('--layout-sticky-footer-offset',"
+  },
+  {
+    "file": "layout-toc.css",
+    "selector": ".layout-toc__link",
+    "property": "--_toc-level-offset",
+    "reference": "--level",
+    "count": 1,
+    "supplier": "src/layouts/toc-html.ts",
+    "evidence": "style=\"--level: ${String(depth)}\""
+  },
+  {
+    "file": "note-shell.css",
+    "selector": ".layout-toc-col",
+    "property": "block-size",
+    "reference": "--layout-sticky-max-block-size",
+    "count": 1,
+    "supplier": "src/layout/sticky-footer-boundary.ts",
+    "evidence": "target.style.setProperty('--layout-sticky-max-block-size',"
+  },
+  {
+    "file": "note-shell.css",
+    "selector": ".layout-toc-col",
+    "property": "max-block-size",
+    "reference": "--layout-sticky-max-block-size",
+    "count": 1,
+    "supplier": "src/layout/sticky-footer-boundary.ts",
+    "evidence": "target.style.setProperty('--layout-sticky-max-block-size',"
+  },
+  {
+    "file": "note-shell.css",
+    "selector": ".layout-toc-col",
+    "property": "transform",
+    "reference": "--layout-sticky-footer-offset",
+    "count": 1,
+    "supplier": "src/layout/sticky-footer-boundary.ts",
+    "evidence": "target.style.setProperty('--layout-sticky-footer-offset',"
+  },
+  {
+    "file": "video.css",
+    "selector": "[data-video-root] .seek-input",
+    "property": "background",
+    "reference": "--seek-progress",
+    "count": 4,
+    "supplier": "src/client/post-hydrate/video-controller.ts",
+    "evidence": "seek.style.setProperty('--seek-progress',"
+  },
+  {
+    "file": "video.css",
+    "selector": "[data-video-root] .seek-input",
+    "property": "background",
+    "reference": "--seek-buffered",
+    "count": 4,
+    "supplier": "src/client/post-hydrate/video-controller.ts",
+    "evidence": "seek.style.setProperty('--seek-buffered',"
+  },
+  {
+    "file": "video.css",
+    "selector": "[data-video-root] .volume-input",
+    "property": "background",
+    "reference": "--volume-progress",
+    "count": 4,
+    "supplier": "src/client/post-hydrate/video-controller.ts",
+    "evidence": "volume.style.setProperty('--volume-progress',"
+  }
+]

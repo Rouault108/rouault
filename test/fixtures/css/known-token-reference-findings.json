@@ -1,0 +1,479 @@
+[
+  {
+    "file": "about-shell.css",
+    "selector": ".about-lead",
+    "property": "max-inline-size",
+    "reference": "--about-lead-measure",
+    "kind": "unproven-scope",
+    "count": 1,
+    "reason": "shell から lead への DOM 継承は selector に祖先が明記されず静的に未証明。"
+  },
+  {
+    "file": "code-surfaces.css",
+    "selector": ":where(\n    pre[data-code-block][data-code-has-line-state='true'],\n    [data-code-block-root] pre[data-code-block][data-code-has-line-state='true']\n  )\n  .line",
+    "property": "--ui-code-state-marker-backing",
+    "reference": "--ui-code-state-marker-surface-background",
+    "kind": "unproven-scope",
+    "count": 1,
+    "reason": ":where の異なる selector 表現間の包含・継承は静的検証の保証範囲外。既存 browser / E2E の code line state 契約で補完。"
+  },
+  {
+    "file": "code-surfaces.css",
+    "selector": ":where(\n    pre[data-code-block][data-code-has-line-state='true'],\n    [data-code-block-root] pre[data-code-block][data-code-has-line-state='true']\n  )\n  .line",
+    "property": "padding-inline-start",
+    "reference": "--ui-code-state-marker-rail-size",
+    "kind": "unproven-scope",
+    "count": 1,
+    "reason": ":where の異なる selector 表現間の包含・継承は静的検証の保証範囲外。既存 browser / E2E の code line state 契約で補完。"
+  },
+  {
+    "file": "code-surfaces.css",
+    "selector": ":where(\n    pre[data-code-block][data-code-has-line-state='true'],\n    [data-code-block-root] pre[data-code-block][data-code-has-line-state='true']\n  )\n  .line",
+    "property": "padding-inline-start",
+    "reference": "--ui-code-state-marker-gap",
+    "kind": "unproven-scope",
+    "count": 1,
+    "reason": ":where の異なる selector 表現間の包含・継承は静的検証の保証範囲外。既存 browser / E2E の code line state 契約で補完。"
+  },
+  {
+    "file": "code-surfaces.css",
+    "selector": ":where(\n    pre[data-code-block][data-code-has-line-state='true'],\n    [data-code-block-root] pre[data-code-block][data-code-has-line-state='true']\n  )\n  .line::before",
+    "property": "inline-size",
+    "reference": "--ui-code-state-marker-rail-size",
+    "kind": "unproven-scope",
+    "count": 1,
+    "reason": ":where の異なる selector 表現間の包含・継承は静的検証の保証範囲外。既存 browser / E2E の code line state 契約で補完。"
+  },
+  {
+    "file": "code-surfaces.css",
+    "selector": ":where(\n    pre[data-code-block][data-code-has-line-state='true'],\n    [data-code-block-root] pre[data-code-block][data-code-has-line-state='true']\n  )\n  .line::before",
+    "property": "margin-inline-start",
+    "reference": "--ui-code-state-marker-rail-size",
+    "kind": "unproven-scope",
+    "count": 1,
+    "reason": ":where の異なる selector 表現間の包含・継承は静的検証の保証範囲外。既存 browser / E2E の code line state 契約で補完。"
+  },
+  {
+    "file": "code-surfaces.css",
+    "selector": ":where(\n    pre[data-code-block][data-code-has-line-state='true'],\n    [data-code-block-root] pre[data-code-block][data-code-has-line-state='true']\n  )\n  .line::before",
+    "property": "margin-inline-start",
+    "reference": "--ui-code-state-marker-gap",
+    "kind": "unproven-scope",
+    "count": 1,
+    "reason": ":where の異なる selector 表現間の包含・継承は静的検証の保証範囲外。既存 browser / E2E の code line state 契約で補完。"
+  },
+  {
+    "file": "code-surfaces.css",
+    "selector": ":where(\n    pre[data-code-block][data-code-has-line-state='true'],\n    [data-code-block-root] pre[data-code-block][data-code-has-line-state='true']\n  )\n  .line::before",
+    "property": "margin-inline-end",
+    "reference": "--ui-code-state-marker-gap",
+    "kind": "unproven-scope",
+    "count": 1,
+    "reason": ":where の異なる selector 表現間の包含・継承は静的検証の保証範囲外。既存 browser / E2E の code line state 契約で補完。"
+  },
+  {
+    "file": "code-surfaces.css",
+    "selector": ":where(\n    pre[data-code-block][data-code-has-line-state='true'],\n    [data-code-block-root] pre[data-code-block][data-code-has-line-state='true']\n  )\n  [data-code-line-state='highlight']::before",
+    "property": "background-color",
+    "reference": "--ui-code-state-marker-surface-background",
+    "kind": "unproven-scope",
+    "count": 1,
+    "reason": ":where の異なる selector 表現間の包含・継承は静的検証の保証範囲外。既存 browser / E2E の code line state 契約で補完。"
+  },
+  {
+    "file": "code-surfaces.css",
+    "selector": ":where(\n    pre[data-code-block][data-code-has-line-state='true'],\n    [data-code-block-root] pre[data-code-block][data-code-has-line-state='true']\n  )\n  [data-code-line-state='highlight']::before",
+    "property": "background-image",
+    "reference": "--ui-code-state-marker-rail-size",
+    "kind": "unproven-scope",
+    "count": 2,
+    "reason": ":where の異なる selector 表現間の包含・継承は静的検証の保証範囲外。既存 browser / E2E の code line state 契約で補完。"
+  },
+  {
+    "file": "code-surfaces.css",
+    "selector": ":where(\n    pre[data-code-block][data-code-has-line-state='true'],\n    [data-code-block-root] pre[data-code-block][data-code-has-line-state='true']\n  )\n  [data-code-line-state='add']::before",
+    "property": "background-color",
+    "reference": "--ui-code-state-marker-surface-background",
+    "kind": "unproven-scope",
+    "count": 1,
+    "reason": ":where の異なる selector 表現間の包含・継承は静的検証の保証範囲外。既存 browser / E2E の code line state 契約で補完。"
+  },
+  {
+    "file": "code-surfaces.css",
+    "selector": ":where(\n    pre[data-code-block][data-code-has-line-state='true'],\n    [data-code-block-root] pre[data-code-block][data-code-has-line-state='true']\n  )\n  [data-code-line-state='add']::before",
+    "property": "background-size",
+    "reference": "--ui-code-state-marker-inline-offset",
+    "kind": "unproven-scope",
+    "count": 2,
+    "reason": ":where の異なる selector 表現間の包含・継承は静的検証の保証範囲外。既存 browser / E2E の code line state 契約で補完。"
+  },
+  {
+    "file": "code-surfaces.css",
+    "selector": ":where(\n    pre[data-code-block][data-code-has-line-state='true'],\n    [data-code-block-root] pre[data-code-block][data-code-has-line-state='true']\n  )\n  [data-code-line-state='add']::before",
+    "property": "background-size",
+    "reference": "--ui-code-state-marker-stroke",
+    "kind": "unproven-scope",
+    "count": 2,
+    "reason": ":where の異なる selector 表現間の包含・継承は静的検証の保証範囲外。既存 browser / E2E の code line state 契約で補完。"
+  },
+  {
+    "file": "code-surfaces.css",
+    "selector": ":where(\n    pre[data-code-block][data-code-has-line-state='true'],\n    [data-code-block-root] pre[data-code-block][data-code-has-line-state='true']\n  )\n  [data-code-line-state='remove']::before",
+    "property": "background-color",
+    "reference": "--ui-code-state-marker-surface-background",
+    "kind": "unproven-scope",
+    "count": 1,
+    "reason": ":where の異なる selector 表現間の包含・継承は静的検証の保証範囲外。既存 browser / E2E の code line state 契約で補完。"
+  },
+  {
+    "file": "code-surfaces.css",
+    "selector": ":where(\n    pre[data-code-block][data-code-has-line-state='true'],\n    [data-code-block-root] pre[data-code-block][data-code-has-line-state='true']\n  )\n  [data-code-line-state='remove']::before",
+    "property": "background-size",
+    "reference": "--ui-code-state-marker-inline-offset",
+    "kind": "unproven-scope",
+    "count": 1,
+    "reason": ":where の異なる selector 表現間の包含・継承は静的検証の保証範囲外。既存 browser / E2E の code line state 契約で補完。"
+  },
+  {
+    "file": "code-surfaces.css",
+    "selector": ":where(\n    pre[data-code-block][data-code-has-line-state='true'],\n    [data-code-block-root] pre[data-code-block][data-code-has-line-state='true']\n  )\n  [data-code-line-state='remove']::before",
+    "property": "background-size",
+    "reference": "--ui-code-state-marker-stroke",
+    "kind": "unproven-scope",
+    "count": 1,
+    "reason": ":where の異なる selector 表現間の包含・継承は静的検証の保証範囲外。既存 browser / E2E の code line state 契約で補完。"
+  },
+  {
+    "file": "code-surfaces.css",
+    "selector": ":where(\n    pre[data-code-block],\n    [data-code-block-root] pre[data-code-block]\n  )[data-code-line-numbers='true'][data-code-has-line-state='true']\n  .line",
+    "property": "padding-inline-start",
+    "reference": "--ui-code-state-marker-rail-size",
+    "kind": "unproven-scope",
+    "count": 1,
+    "reason": ":where の異なる selector 表現間の包含・継承は静的検証の保証範囲外。既存 browser / E2E の code line state 契約で補完。"
+  },
+  {
+    "file": "code-surfaces.css",
+    "selector": ":where(\n    pre[data-code-block],\n    [data-code-block-root] pre[data-code-block]\n  )[data-code-line-numbers='true'][data-code-has-line-state='true']\n  .line",
+    "property": "padding-inline-start",
+    "reference": "--ui-code-state-marker-gap",
+    "kind": "unproven-scope",
+    "count": 1,
+    "reason": ":where の異なる selector 表現間の包含・継承は静的検証の保証範囲外。既存 browser / E2E の code line state 契約で補完。"
+  },
+  {
+    "file": "details-block.css",
+    "selector": ".details-block__summary:focus-visible",
+    "property": "outline",
+    "reference": "--focus-default",
+    "kind": "undefined",
+    "count": 1,
+    "reason": "既存の未定義参照。Copy button 以外の修正は今回の対象外。"
+  },
+  {
+    "file": "home-page.css",
+    "selector": ".home-lead",
+    "property": "max-inline-size",
+    "reference": "--home-lead-measure",
+    "kind": "unproven-scope",
+    "count": 1,
+    "reason": "shell から lead への DOM 継承は selector に祖先が明記されず静的に未証明。"
+  },
+  {
+    "file": "score.css",
+    "selector": ".score__scroll:focus-visible",
+    "property": "outline",
+    "reference": "--focus-default",
+    "kind": "undefined",
+    "count": 1,
+    "reason": "既存の未定義参照。Copy button 以外の修正は今回の対象外。"
+  },
+  {
+    "file": "search-dialog.css",
+    "selector": ".search-dialog",
+    "property": "border-top-color",
+    "reference": "--fg-link",
+    "kind": "undefined",
+    "count": 1,
+    "reason": "既存の未定義参照。Copy button 以外の修正は今回の対象外。"
+  },
+  {
+    "file": "search-dialog.css",
+    "selector": ".search-dialog__input:focus-visible",
+    "property": "outline",
+    "reference": "--focus-default",
+    "kind": "undefined",
+    "count": 1,
+    "reason": "既存の未定義参照。Copy button 以外の修正は今回の対象外。"
+  },
+  {
+    "file": "search-dialog.css",
+    "selector": ".search-dialog__clear:focus-visible",
+    "property": "outline",
+    "reference": "--focus-default",
+    "kind": "undefined",
+    "count": 1,
+    "reason": "既存の未定義参照。Copy button 以外の修正は今回の対象外。"
+  },
+  {
+    "file": "search-dialog.css",
+    "selector": ".search-dialog__close:focus-visible",
+    "property": "outline",
+    "reference": "--focus-default",
+    "kind": "undefined",
+    "count": 1,
+    "reason": "既存の未定義参照。Copy button 以外の修正は今回の対象外。"
+  },
+  {
+    "file": "search-dialog.css",
+    "selector": ".search-dialog__result:focus-visible",
+    "property": "outline",
+    "reference": "--focus-default",
+    "kind": "undefined",
+    "count": 1,
+    "reason": "既存の未定義参照。Copy button 以外の修正は今回の対象外。"
+  },
+  {
+    "file": "search-page.css",
+    "selector": ".search-input-field",
+    "property": "border-radius",
+    "reference": "--radius-lg",
+    "kind": "undefined",
+    "count": 2,
+    "reason": "既存の未定義参照。Copy button 以外の修正は今回の対象外。"
+  },
+  {
+    "file": "search-page.css",
+    "selector": ".filter-search-field",
+    "property": "border-radius",
+    "reference": "--radius-lg",
+    "kind": "undefined",
+    "count": 1,
+    "reason": "既存の未定義参照。Copy button 以外の修正は今回の対象外。"
+  },
+  {
+    "file": "search-page.css",
+    "selector": ".search-input-control:focus-visible",
+    "property": "outline",
+    "reference": "--focus-default",
+    "kind": "undefined",
+    "count": 1,
+    "reason": "既存の未定義参照。Copy button 以外の修正は今回の対象外。"
+  },
+  {
+    "file": "search-page.css",
+    "selector": ".filter-search-control:focus-visible",
+    "property": "outline",
+    "reference": "--focus-default",
+    "kind": "undefined",
+    "count": 1,
+    "reason": "既存の未定義参照。Copy button 以外の修正は今回の対象外。"
+  },
+  {
+    "file": "search-page.css",
+    "selector": ".search-input-clear:focus-visible",
+    "property": "outline",
+    "reference": "--focus-default",
+    "kind": "undefined",
+    "count": 1,
+    "reason": "既存の未定義参照。Copy button 以外の修正は今回の対象外。"
+  },
+  {
+    "file": "search-page.css",
+    "selector": ".filter-search-field__clear:focus-visible",
+    "property": "outline",
+    "reference": "--focus-default",
+    "kind": "undefined",
+    "count": 1,
+    "reason": "既存の未定義参照。Copy button 以外の修正は今回の対象外。"
+  },
+  {
+    "file": "search-page.css",
+    "selector": ".selected-tag__remove:focus-visible",
+    "property": "outline",
+    "reference": "--focus-default",
+    "kind": "undefined",
+    "count": 1,
+    "reason": "既存の未定義参照。Copy button 以外の修正は今回の対象外。"
+  },
+  {
+    "file": "search-page.css",
+    "selector": ".filter-option-checkbox__input:focus-visible + .filter-option-checkbox__control",
+    "property": "outline",
+    "reference": "--focus-default",
+    "kind": "undefined",
+    "count": 1,
+    "reason": "既存の未定義参照。Copy button 以外の修正は今回の対象外。"
+  },
+  {
+    "file": "search-page.css",
+    "selector": ".filter-details",
+    "property": "border-radius",
+    "reference": "--radius-lg",
+    "kind": "undefined",
+    "count": 1,
+    "reason": "既存の未定義参照。Copy button 以外の修正は今回の対象外。"
+  },
+  {
+    "file": "static-choice-menu.css",
+    "selector": ".static-choice-menu__trigger:focus-visible",
+    "property": "outline",
+    "reference": "--static-choice-menu-focus-outline",
+    "kind": "unproven-scope",
+    "count": 1,
+    "reason": "BEM 子要素への DOM 継承は selector に祖先が明記されず静的に未証明。既存 menu の局所供給。"
+  },
+  {
+    "file": "static-choice-menu.css",
+    "selector": ".static-choice-menu__trigger:focus-visible",
+    "property": "outline-offset",
+    "reference": "--static-choice-menu-focus-outline-offset",
+    "kind": "unproven-scope",
+    "count": 1,
+    "reason": "BEM 子要素への DOM 継承は selector に祖先が明記されず静的に未証明。既存 menu の局所供給。"
+  },
+  {
+    "file": "static-choice-menu.css",
+    "selector": ".static-choice-menu__panel",
+    "property": "padding",
+    "reference": "--static-choice-menu-panel-padding",
+    "kind": "unproven-scope",
+    "count": 1,
+    "reason": "BEM 子要素への DOM 継承は selector に祖先が明記されず静的に未証明。既存 menu の局所供給。"
+  },
+  {
+    "file": "static-choice-menu.css",
+    "selector": ".static-choice-menu__panel",
+    "property": "border",
+    "reference": "--static-choice-menu-panel-border",
+    "kind": "unproven-scope",
+    "count": 1,
+    "reason": "BEM 子要素への DOM 継承は selector に祖先が明記されず静的に未証明。既存 menu の局所供給。"
+  },
+  {
+    "file": "static-choice-menu.css",
+    "selector": ".static-choice-menu__panel",
+    "property": "border-radius",
+    "reference": "--static-choice-menu-panel-radius",
+    "kind": "unproven-scope",
+    "count": 1,
+    "reason": "BEM 子要素への DOM 継承は selector に祖先が明記されず静的に未証明。既存 menu の局所供給。"
+  },
+  {
+    "file": "static-choice-menu.css",
+    "selector": ".static-choice-menu__panel",
+    "property": "background",
+    "reference": "--static-choice-menu-panel-background",
+    "kind": "unproven-scope",
+    "count": 1,
+    "reason": "BEM 子要素への DOM 継承は selector に祖先が明記されず静的に未証明。既存 menu の局所供給。"
+  },
+  {
+    "file": "static-choice-menu.css",
+    "selector": ".static-choice-menu__panel",
+    "property": "box-shadow",
+    "reference": "--static-choice-menu-panel-shadow",
+    "kind": "unproven-scope",
+    "count": 1,
+    "reason": "BEM 子要素への DOM 継承は selector に祖先が明記されず静的に未証明。既存 menu の局所供給。"
+  },
+  {
+    "file": "static-choice-menu.css",
+    "selector": ".static-choice-menu__item",
+    "property": "padding",
+    "reference": "--static-choice-menu-item-padding",
+    "kind": "unproven-scope",
+    "count": 1,
+    "reason": "BEM 子要素への DOM 継承は selector に祖先が明記されず静的に未証明。既存 menu の局所供給。"
+  },
+  {
+    "file": "static-choice-menu.css",
+    "selector": ".static-choice-menu__item",
+    "property": "border-radius",
+    "reference": "--static-choice-menu-item-radius",
+    "kind": "unproven-scope",
+    "count": 1,
+    "reason": "BEM 子要素への DOM 継承は selector に祖先が明記されず静的に未証明。既存 menu の局所供給。"
+  },
+  {
+    "file": "static-choice-menu.css",
+    "selector": ".static-choice-menu__item:hover",
+    "property": "background",
+    "reference": "--static-choice-menu-hover-background",
+    "kind": "unproven-scope",
+    "count": 1,
+    "reason": "BEM 子要素への DOM 継承は selector に祖先が明記されず静的に未証明。既存 menu の局所供給。"
+  },
+  {
+    "file": "static-choice-menu.css",
+    "selector": ".static-choice-menu__item:active",
+    "property": "background",
+    "reference": "--static-choice-menu-hover-background",
+    "kind": "unproven-scope",
+    "count": 1,
+    "reason": "BEM 子要素への DOM 継承は selector に祖先が明記されず静的に未証明。既存 menu の局所供給。"
+  },
+  {
+    "file": "static-choice-menu.css",
+    "selector": ".static-choice-menu__item:focus-visible",
+    "property": "outline",
+    "reference": "--static-choice-menu-focus-outline",
+    "kind": "unproven-scope",
+    "count": 1,
+    "reason": "BEM 子要素への DOM 継承は selector に祖先が明記されず静的に未証明。既存 menu の局所供給。"
+  },
+  {
+    "file": "static-choice-menu.css",
+    "selector": ".static-choice-menu__item:focus-visible",
+    "property": "outline-offset",
+    "reference": "--static-choice-menu-focus-outline-offset",
+    "kind": "unproven-scope",
+    "count": 1,
+    "reason": "BEM 子要素への DOM 継承は selector に祖先が明記されず静的に未証明。既存 menu の局所供給。"
+  },
+  {
+    "file": "static-choice-menu.css",
+    "selector": ".static-choice-menu__item[data-selected='true']",
+    "property": "background",
+    "reference": "--static-choice-menu-selected-background",
+    "kind": "unproven-scope",
+    "count": 1,
+    "reason": "BEM 子要素への DOM 継承は selector に祖先が明記されず静的に未証明。既存 menu の局所供給。"
+  },
+  {
+    "file": "tokens.css",
+    "selector": ":root[data-theme='dark']",
+    "property": "--elevation-sm",
+    "reference": "--shadow-dark-sm",
+    "kind": "unproven-scope",
+    "count": 1,
+    "reason": "dark 明示指定の参照先は OS dark media 内だけに定義される。条件成立を保証できない既存残件。"
+  },
+  {
+    "file": "tokens.css",
+    "selector": ":root[data-theme='dark']",
+    "property": "--elevation-md",
+    "reference": "--shadow-dark-md",
+    "kind": "unproven-scope",
+    "count": 1,
+    "reason": "dark 明示指定の参照先は OS dark media 内だけに定義される。条件成立を保証できない既存残件。"
+  },
+  {
+    "file": "tokens.css",
+    "selector": ":root[data-theme='dark']",
+    "property": "--elevation-lg",
+    "reference": "--shadow-dark-lg",
+    "kind": "unproven-scope",
+    "count": 1,
+    "reason": "dark 明示指定の参照先は OS dark media 内だけに定義される。条件成立を保証できない既存残件。"
+  },
+  {
+    "file": "tokens.css",
+    "selector": ":root[data-theme='dark']",
+    "property": "--elevation-glow",
+    "reference": "--shadow-dark-glow",
+    "kind": "unproven-scope",
+    "count": 1,
+    "reason": "dark 明示指定の参照先は OS dark media 内だけに定義される。条件成立を保証できない既存残件。"
+  }
+]
