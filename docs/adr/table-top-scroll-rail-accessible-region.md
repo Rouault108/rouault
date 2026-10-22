@@ -124,3 +124,5 @@ production最終HTMLではwrapper IDの一意性をpage frameを含む全ペー�
 ## Native reload中の本文幾何
 
 補助railのblock-sizeは同量の負のblock-end marginで相殺し、既存の表前余白内に配置する。rail追加・解除で本文の文書座標とscroll rangeを変えず、native cached reloadの位置採用と競合しない。初期HTMLとrouter bodyのwrapper IDは引き続き同一とし、reload用の追加scroll writerや保存座標は導入しない。production E2Eでno-JS本文とenhancement後の表・見出し座標とrangeを2 CSS px以内で照合する。
+
+本文先頭の表では、rail追加によって sibling flow の余白を新設せず、rail自身は既存の本文前余白へ描画する。本文途中と先頭表の実ページを検証し、railが表の行へ重ならないことも確認する。

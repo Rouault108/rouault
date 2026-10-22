@@ -300,50 +300,66 @@ export const registerHistoryPrepaintXYTests = (): void => {
       expect(Math.abs(await page.evaluate(() => scrollY))).toBeLessThanOrEqual(2);
     });
 
-    test('table rail activation preserves the no-JS body geometry', async ({ page, browser }) => {
-      const target = `/notes/library/collection/${encodeURIComponent('計算機科学・ソフトウェア開発関連書籍')}`;
-      const nativeContext = await browser.newContext({
-        javaScriptEnabled: false,
-        viewport: page.viewportSize(),
-      });
-      try {
-        const native = await nativeContext.newPage();
-        const measure = (page: Page) =>
-          page.evaluate(() => ({
-            range: document.scrollingElement?.scrollHeight,
-            points: [
-              ...document.querySelectorAll<HTMLElement>(
-                'main [data-table-root], main h2[id], main h3[id]',
-              ),
-            ].map((element) => ({
-              id: element.id,
-              top: element.getBoundingClientRect().top + scrollY,
-              height: element.getBoundingClientRect().height,
-            })),
-          }));
-        await native.goto(target);
-        await expect.poll(() => native.evaluate(() => document.fonts.status)).toBe('loaded');
-        const baseline = await measure(native);
-        await page.goto(target);
-        await ready(page);
-        await page.evaluate(() => document.fonts.ready.then(() => undefined));
-        await expect
-          .poll(() => page.locator('[data-table-scroll-rail]').count())
-          .toBeGreaterThan(1);
-        const enhanced = await measure(page);
-        expect(enhanced.points.length).toBeGreaterThan(1);
-        expect(enhanced.points.map(({ id }) => id)).toEqual(baseline.points.map(({ id }) => id));
-        expect(Math.abs((enhanced.range ?? 0) - (baseline.range ?? 0))).toBeLessThanOrEqual(2);
-        for (const [index, point] of enhanced.points.entries()) {
-          const expected = baseline.points[index];
-          if (!expected) throw new Error('static reading point');
-          expect(Math.abs(point.top - expected.top), point.id).toBeLessThanOrEqual(2);
-          expect(Math.abs(point.height - expected.height), point.id).toBeLessThanOrEqual(2);
+    for (const title of ['計算機科学・ソフトウェア開発関連書籍', '岩波文庫']) {
+      test(`table rail activation preserves the no-JS body geometry: ${title}`, async ({
+        page,
+        browser,
+      }) => {
+        const target = `/notes/library/collection/${encodeURIComponent(title)}`;
+        const minimumTables = title === '岩波文庫' ? 1 : 2;
+        const nativeContext = await browser.newContext({
+          javaScriptEnabled: false,
+          viewport: page.viewportSize(),
+        });
+        try {
+          const native = await nativeContext.newPage();
+          const measure = (page: Page) =>
+            page.evaluate(() => ({
+              range: document.scrollingElement?.scrollHeight,
+              points: [
+                ...document.querySelectorAll<HTMLElement>(
+                  'main [data-table-root], main h2[id], main h3[id]',
+                ),
+              ].map((element) => ({
+                id: element.id,
+                top: element.getBoundingClientRect().top + scrollY,
+                height: element.getBoundingClientRect().height,
+              })),
+            }));
+          await native.goto(target);
+          await expect.poll(() => native.evaluate(() => document.fonts.status)).toBe('loaded');
+          const baseline = await measure(native);
+          await page.goto(target);
+          await ready(page);
+          await page.evaluate(() => document.fonts.ready.then(() => undefined));
+          await expect
+            .poll(() => page.locator('[data-table-scroll-rail]').count())
+            .toBeGreaterThanOrEqual(minimumTables);
+          const enhanced = await measure(page);
+          expect(enhanced.points.length).toBeGreaterThanOrEqual(minimumTables);
+          const railClearances = await page
+            .locator('[data-table-scroll-rail]')
+            .evaluateAll((rails) =>
+              rails.map((rail) => {
+                const root = rail.nextElementSibling;
+                if (!(root instanceof HTMLElement)) throw new Error('owned table root');
+                return root.getBoundingClientRect().top - rail.getBoundingClientRect().bottom;
+              }),
+            );
+          for (const clearance of railClearances) expect(clearance).toBeGreaterThanOrEqual(-2);
+          expect(enhanced.points.map(({ id }) => id)).toEqual(baseline.points.map(({ id }) => id));
+          expect(Math.abs((enhanced.range ?? 0) - (baseline.range ?? 0))).toBeLessThanOrEqual(2);
+          for (const [index, point] of enhanced.points.entries()) {
+            const expected = baseline.points[index];
+            if (!expected) throw new Error('static reading point');
+            expect(Math.abs(point.top - expected.top), point.id).toBeLessThanOrEqual(2);
+            expect(Math.abs(point.height - expected.height), point.id).toBeLessThanOrEqual(2);
+          }
+        } finally {
+          await nativeContext.close();
         }
-      } finally {
-        await nativeContext.close();
-      }
-    });
+      });
+    }
 
     for (const viewport of [
       { width: 1365, height: 768 },

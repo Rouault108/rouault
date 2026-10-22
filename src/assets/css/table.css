@@ -54,6 +54,21 @@
   scrollbar-width: thin;
 }
 
+:is(.prose, .about-prose) > [data-table-scroll-rail]:first-child,
+:is(.prose, .about-prose)
+  > [data-tabs-root]
+  > [data-tab-panel]
+  > [data-table-scroll-rail]:first-child {
+  /* 先頭表には本文内の先行余白がないため、既存の本文前余白へ描画する。 */
+  position: relative;
+  inset-block-start: -0.875rem;
+}
+
+:is(.prose, .about-prose) > [data-table-scroll-rail]:first-child + [data-table-root] {
+  /* 補助要素だけを理由に、先頭表へ sibling flow の余白を追加しない。 */
+  margin-block-start: 0;
+}
+
 :is(.prose, .about-prose) > [data-table-scroll-rail] > [data-table-scroll-rail-spacer],
 :is(.prose, .about-prose)
   > [data-tabs-root]
