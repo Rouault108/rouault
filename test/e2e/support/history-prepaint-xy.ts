@@ -1,6 +1,7 @@
 import { expect, test, type Page, type Response, type TestInfo } from '@playwright/test';
 import sharp from 'sharp';
 import { resolveRouterArtifactPathname } from '../../../shared/navigation/router-artifact-path.js';
+import { measureNativeCachedReload } from './native-cached-reload-control.js';
 
 const notes = {
   iwanami: `/notes/library/collection/${encodeURIComponent('岩波文庫')}/`,
@@ -370,6 +371,7 @@ export const registerHistoryPrepaintXYTests = (): void => {
         for (const position of ['hash', 'middle', 'end'] as const) {
           test(`new-to-new reload preserves ${position} reading position`, async ({
             page,
+            browser,
           }, info) => {
             const target = `/notes/library/collection/${encodeURIComponent('計算機科学・ソフトウェア開発関連書籍')}#c-net-visual-basic`;
             const clientResponses: Response[] = [];
@@ -501,6 +503,28 @@ export const registerHistoryPrepaintXYTests = (): void => {
                 response.responseId === initialResponseIds.get(response.url),
             );
             const after = await measure();
+            console.log(
+              'warm-cache-position',
+              JSON.stringify({ viewport, position, before, after }),
+            );
+            if (
+              info.retry === 0 &&
+              viewport.width === 1365 &&
+              position === 'middle' &&
+              Math.abs(after.y - before.y) > 2
+            ) {
+              const native = await measureNativeCachedReload(
+                browser,
+                target,
+                viewport,
+                await page.evaluate(() => history.state as unknown),
+              );
+              console.log('warm-cache-native-control', JSON.stringify(native));
+              await info.attach('warm-cache-native-control', {
+                body: JSON.stringify(native, null, 2),
+                contentType: 'application/json',
+              });
+            }
             const cached = await page.evaluate(() =>
               performance
                 .getEntriesByType('resource')

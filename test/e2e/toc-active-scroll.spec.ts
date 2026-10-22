@@ -734,6 +734,10 @@ test.describe('hash見出しの停止位置は入口によらず共通', () => {
               })
               .toBeLessThanOrEqual(2);
             const landing = await readHashLanding(page, id);
+            console.log(
+              'hash-heading-arrived',
+              JSON.stringify({ entry, id, reducedMotion, landing }),
+            );
             await info.attach(`hash-landing-${entry}-${id}`, {
               body: JSON.stringify(landing, null, 2),
               contentType: 'application/json',
