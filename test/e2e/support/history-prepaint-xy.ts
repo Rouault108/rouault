@@ -449,11 +449,22 @@ export const registerHistoryPrepaintXYTests = (): void => {
               clientResponses.map(async (response) => ({
                 url: response.url(),
                 cacheControl: await response.headerValue('cache-control'),
+                responseId: await response.headerValue('x-rouault-preview-response-id'),
               })),
             );
             // 本番と異なるno-cache配信をwarm-cache条件として受理しない。
             for (const policy of clientCachePolicies)
               expect(policy.cacheControl, policy.url).toBe('public, max-age=31536000, immutable');
+            for (const policy of clientCachePolicies)
+              expect(policy.responseId, policy.url).toMatch(/^[\da-f-]{36}$/u);
+            const initialResponseIds = new Map(
+              clientCachePolicies.map((policy) => [policy.url, policy.responseId]),
+            );
+            const clientModuleUrl = await page.evaluate(() => {
+              const script = document.querySelector('script[type="module"][src]');
+              if (!(script instanceof HTMLScriptElement)) throw new Error('Client entry module');
+              return script.src;
+            });
             const before = await measure();
             // Firefoxは304でもresource timingに初回転送量を残すため、HTTP応答も記録する。
             const revalidated: string[] = [];
@@ -465,10 +476,30 @@ export const registerHistoryPrepaintXYTests = (): void => {
               )
                 revalidated.push(response.url());
             };
+            const reloadClientResponses: Response[] = [];
+            const recordReloadClientResponse = (response: Response): void => {
+              if (new URL(response.url()).pathname.includes('/client-assets/'))
+                reloadClientResponses.push(response);
+            };
             page.on('response', recordRevalidation);
+            page.on('response', recordReloadClientResponse);
             await page.reload();
             await settle();
             page.off('response', recordRevalidation);
+            page.off('response', recordReloadClientResponse);
+            const reusedResponses = (
+              await Promise.all(
+                reloadClientResponses.map(async (response) => ({
+                  url: response.url(),
+                  responseId: await response.headerValue('x-rouault-preview-response-id'),
+                })),
+              )
+            ).filter(
+              (response) =>
+                response.url === clientModuleUrl &&
+                response.responseId !== null &&
+                response.responseId === initialResponseIds.get(response.url),
+            );
             const after = await measure();
             const cached = await page.evaluate(() =>
               performance
@@ -496,6 +527,8 @@ export const registerHistoryPrepaintXYTests = (): void => {
                   cached,
                   revalidated,
                   clientCachePolicies,
+                  reusedResponses,
+                  clientModuleUrl,
                   staticIds,
                 },
                 null,
@@ -504,7 +537,7 @@ export const registerHistoryPrepaintXYTests = (): void => {
               contentType: 'application/json',
             });
             expect(
-              cached.length + revalidated.length,
+              revalidated.length + reusedResponses.length,
               'HTTP cache or revalidation evidence is required',
             ).toBeGreaterThan(0);
             expect(before.fonts).toBe('loaded');

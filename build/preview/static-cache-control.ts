@@ -29,3 +29,22 @@ export const createStaticCacheControlResolver = (
     return value;
   };
 };
+import { randomUUID } from 'node:crypto';
+import type { IncomingMessage, ServerResponse } from 'node:http';
+
+export const createStaticCacheControlMiddleware = (
+  source: string,
+): ((request: IncomingMessage, response: ServerResponse, next: () => void) => void) => {
+  const resolve = createStaticCacheControlResolver(source);
+  return (request, response, next) => {
+    if (request.method === 'GET' || request.method === 'HEAD') {
+      const value = resolve(request.url ?? '/');
+      if (value !== null) {
+        response.setHeader('Cache-Control', value);
+        // network応答ごとに変え、保存済みHTTP応答の再利用をtiming値とは独立に証明する。
+        response.setHeader('X-Rouault-Preview-Response-Id', randomUUID());
+      }
+    }
+    next();
+  };
+};
