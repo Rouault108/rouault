@@ -51,6 +51,8 @@ reloadのnative対照はapp moduleをmode handoffだけのscriptへ置き換え�
 
 試験ではroutingによるHTTP cache無効をapp・全対照で揃える。init時点の継承modeは両者の一致を確認し、browser名による固定値を要求しない。bootの最初の明示auto、load時auto、採用後のmodeを検証する。parse/load中の観測でlayoutを強制せず、mode/readyState/時刻を記録し、座標・字体・rangeはload後に字体loadedを含む安定条件で測る。
 
+実HTTP warm-cache reloadはroutingを使わず、同じpreview origin・URL・静的HTML/CSS・履歴state/entry数・viewport・字体/range・前面化条件で、appとmode-only対照を各caseごとに測る。対照選択headerはpreview専用で、module応答のVaryによりcacheを分離する。両者とも生成済み本番Cache-Controlを使い、entry moduleの保存済み応答ID再利用または同moduleの304を独立に要求する。reload前の読書位置の準備を揃え、reload後はnative実測XYとの差を2 CSS px以内で比較する。固定座標、別mode対照、許容幅の拡大、skipによる代替はしない。no-JSの本文幾何検証は独立して維持する。
+
 ## Verification
 
 A1通常/hash移動、A2entry座標復元、A3同URLの別entry、A4state/native互換、A5遅延/epoch、A6本人取消/stale feature、A7focus/TOC、A8native/reload/fallback/clamp、A9既存owner/transaction/SSRをnode/browser/production E2Eで検証する。新E2EはChromium・Firefox・WebKitに明示選択する。BFCacheはpersistedを観測したrunのみ成功判定する。正式環境未実施を互換browserの結果で置き換えない。

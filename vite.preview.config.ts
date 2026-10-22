@@ -4,6 +4,7 @@ import path from 'node:path';
 import { resolveTrailingSlashRewrite } from './shared/navigation/trailing-slash-rewrite.js';
 import { resolveDevelopmentSiteUrlContext } from './build/site/site-url-context.js';
 import { createStaticCacheControlMiddleware } from './build/preview/static-cache-control.js';
+import { nativeReloadControlMiddleware } from './build/preview/native-reload-control.js';
 
 const registerStaticCacheControl = (server: PreviewServer): void => {
   const source = readFileSync(
@@ -41,6 +42,7 @@ export default defineConfig({
       name: 'rouault-preview-trailing-slash-rewrite',
       configurePreviewServer(server) {
         registerStaticCacheControl(server);
+        server.middlewares.use(nativeReloadControlMiddleware);
         registerTrailingSlashRewrite(server);
       },
     },

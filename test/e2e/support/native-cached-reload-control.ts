@@ -1,156 +1,192 @@
 import { createHash } from 'node:crypto';
-import { readFile, stat } from 'node:fs/promises';
-import { createServer } from 'node:http';
-import path from 'node:path';
-import type { Browser, Response } from '@playwright/test';
-import { createStaticCacheControlMiddleware } from '../../../build/preview/static-cache-control.js';
+import type { Browser, Page, Response } from '@playwright/test';
+import { NATIVE_RELOAD_CONTROL_HEADER } from '../../../build/preview/native-reload-control.js';
 
-// routingはHTTP cacheを無効にするため、同じ静的成果物を別の実HTTP originで配信する。
-// 対照scriptはmodeだけを所有し、scroll/focusや座標保存を行わない。
+interface ReloadObservation {
+  inherited: ScrollRestoration;
+  atLoad: ScrollRestoration | null;
+  writes: ScrollRestoration[];
+  scrollCalls: string[];
+}
+declare global {
+  interface Window {
+    __nativeCachedReload: ReloadObservation;
+  }
+}
+
+export const observeCachedReload = async (page: Page): Promise<void> => {
+  await page.addInitScript(() => {
+    const observation: ReloadObservation = {
+      inherited: history.scrollRestoration,
+      atLoad: null,
+      writes: [],
+      scrollCalls: [],
+    };
+    window.__nativeCachedReload = observation;
+    const descriptor = Object.getOwnPropertyDescriptor(History.prototype, 'scrollRestoration');
+    if (!descriptor?.get || !descriptor.set) throw new Error('scrollRestoration descriptor');
+    Object.defineProperty(history, 'scrollRestoration', {
+      configurable: true,
+      get: () => descriptor.get?.call(history) as ScrollRestoration,
+      set: (value: ScrollRestoration) => {
+        descriptor.set?.call(history, value);
+        observation.writes.push(value);
+      },
+    });
+    // parse/load中にはmodeだけを観測し、幾何を強制しない。
+    addEventListener(
+      'load',
+      () => {
+        observation.atLoad = history.scrollRestoration;
+      },
+      { once: true },
+    );
+    for (const name of ['scrollTo', 'scroll', 'scrollBy'] as const) {
+      const original = window[name].bind(window);
+      window[name] = (options?: ScrollToOptions | number, y?: number): void => {
+        observation.scrollCalls.push(name);
+        if (typeof options === 'number') original(options, y ?? 0);
+        else original(options);
+      };
+    }
+    const intoView = Element.prototype.scrollIntoView;
+    Element.prototype.scrollIntoView = function (options?: boolean | ScrollIntoViewOptions): void {
+      observation.scrollCalls.push('scrollIntoView');
+      intoView.call(this, options);
+    };
+  });
+};
+
+export const readCachedReload = (page: Page) =>
+  page.evaluate(() => ({
+    url: location.href,
+    visibility: document.visibilityState,
+    x: scrollX,
+    y: scrollY,
+    range: document.scrollingElement
+      ? document.scrollingElement.scrollHeight - document.scrollingElement.clientHeight
+      : 0,
+    viewport: [innerWidth, innerHeight],
+    zoom: visualViewport?.scale,
+    font: getComputedStyle(document.querySelector('main') ?? document.body).font,
+    fonts: document.fonts.status,
+    hash: location.hash,
+    mode: history.scrollRestoration,
+    state: history.state as unknown,
+    length: history.length,
+    appDefined: customElements.get('router-document-host') !== undefined,
+    observation: window.__nativeCachedReload,
+  }));
+
+export const settleCachedReload = async (page: Page): Promise<void> => {
+  await page.waitForLoadState('load');
+  let previous = '';
+  let stable = 0;
+  for (let sample = 0; sample < 60; sample++) {
+    await page.evaluate(() => document.fonts.ready.then(() => undefined));
+    const value = await page.evaluate(() =>
+      [scrollX, scrollY, document.scrollingElement?.scrollHeight, document.fonts.status].join(':'),
+    );
+    stable = value === previous ? stable + 1 : 0;
+    if (stable >= 5) return;
+    previous = value;
+    await page.waitForTimeout(50);
+  }
+  throw new Error('cached reload did not settle');
+};
+
+// 初回の読書位置だけを外側から準備する。reload後のscriptには座標を渡さない。
+export const prepareCachedReadingPosition = async (
+  page: Page,
+  position: 'hash' | 'middle' | 'end',
+): Promise<void> => {
+  if (position !== 'hash')
+    await page.evaluate((position) => {
+      const root = document.scrollingElement;
+      if (!root) throw new Error('scrolling element');
+      scrollTo({
+        top: Math.round(
+          (root.scrollHeight - root.clientHeight) * (position === 'middle' ? 0.55 : 0.9),
+        ),
+        behavior: 'instant',
+      });
+    }, position);
+  await settleCachedReload(page);
+};
+
 export const measureNativeCachedReload = async (
   browser: Browser,
-  target: string,
-  viewport: { width: number; height: number },
+  app: Page,
+  position: 'hash' | 'middle' | 'end',
   state: unknown,
-): Promise<unknown[]> => {
-  const directory = path.resolve('dist');
-  const cache = createStaticCacheControlMiddleware(
-    await readFile(path.join(directory, '_headers'), 'utf8'),
-  );
-  const types: Record<string, string> = {
-    '.html': 'text/html; charset=utf-8',
-    '.js': 'text/javascript',
-    '.css': 'text/css',
-    '.woff2': 'font/woff2',
-    '.svg': 'image/svg+xml',
-    '.png': 'image/png',
-    '.json': 'application/json',
-  };
-  let script = '';
-  const server = createServer((request, response) => {
-    cache(request, response, () => {
-      void (async () => {
-        try {
-          const pathname = decodeURIComponent(
-            new URL(request.url ?? '/', 'http://native.local').pathname,
-          );
-          let filename = path.resolve(directory, `.${pathname}`);
-          if (!filename.startsWith(`${directory}${path.sep}`))
-            throw new Error('outside static root');
-          if ((await stat(filename)).isDirectory()) filename = path.join(filename, 'index.html');
-          const body = filename.endsWith('.js') ? Buffer.from(script) : await readFile(filename);
-          const etag = `"${createHash('sha256').update(body).digest('hex')}"`;
-          const status = request.headers['if-none-match'] === etag ? 304 : 200;
-          response.writeHead(status, {
-            'Content-Type': types[path.extname(filename)] ?? 'application/octet-stream',
-            ETag: etag,
-          });
-          response.end(status === 304 || request.method === 'HEAD' ? undefined : body);
-        } catch {
-          response.writeHead(404);
-          response.end();
-        }
-      })();
-    });
+) => {
+  const settings = await app.evaluate(() => ({
+    userAgent: navigator.userAgent,
+    locale: navigator.language,
+    deviceScaleFactor: devicePixelRatio,
+    reducedMotion: matchMedia('(prefers-reduced-motion: reduce)').matches
+      ? ('reduce' as const)
+      : ('no-preference' as const),
+    colorScheme: matchMedia('(prefers-color-scheme: dark)').matches
+      ? ('dark' as const)
+      : ('light' as const),
+  }));
+  const context = await browser.newContext({
+    ...settings,
+    viewport: app.viewportSize(),
+    extraHTTPHeaders: { [NATIVE_RELOAD_CONTROL_HEADER]: '1' },
   });
-  await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
-  const address = server.address();
-  if (address === null || typeof address === 'string') throw new Error('native control address');
-  const results: unknown[] = [];
   try {
-    for (const frames of [1, 4, 0]) {
-      script = `history.scrollRestoration='auto';addEventListener('pagehide',()=>history.scrollRestoration='auto');${frames === 0 ? '' : `addEventListener('load',()=>{let frames=${frames};const adopt=()=>{if(--frames>0)requestAnimationFrame(adopt);else history.scrollRestoration=history.state?.__rouaultHistoryEntry?'manual':'auto';};requestAnimationFrame(adopt);},{once:true});`}`;
-      const context = await browser.newContext({ viewport });
-      try {
-        const page = await context.newPage();
-        page.setDefaultTimeout(5000);
-        const settle = async (): Promise<void> => {
-          let previous = '';
-          let stable = 0;
-          for (let sample = 0; sample < 60; sample++) {
-            await page.evaluate(() => document.fonts.ready.then(() => undefined));
-            const value = await page.evaluate(() =>
-              [
-                scrollX,
-                scrollY,
-                document.scrollingElement?.scrollHeight,
-                document.fonts.status,
-              ].join(':'),
-            );
-            stable = value === previous ? stable + 1 : 0;
-            if (stable >= 5) return;
-            previous = value;
-            await page.waitForTimeout(50);
-          }
-          throw new Error('native control did not settle');
-        };
-        const initialResponses: Response[] = [];
-        page.on('response', (response) => {
-          if (response.url().includes('/client-assets/') && response.url().endsWith('.js'))
-            initialResponses.push(response);
-        });
-        await page.goto(`http://127.0.0.1:${address.port}${target}`);
-        await settle();
-        const entry = await page.locator('script[type="module"][src]').getAttribute('src');
-        const initial = initialResponses.find(
-          (response) => new URL(response.url()).pathname === entry,
-        );
-        const initialId = await initial?.headerValue('x-rouault-preview-response-id');
-        await page.evaluate(
-          ({ state, frames }) => {
-            history.replaceState(state, '');
-            history.scrollRestoration = frames === 0 ? 'auto' : 'manual';
-            const scrolling = document.scrollingElement;
-            if (!scrolling) throw new Error('native scrolling element');
-            scrollTo({
-              top: Math.round((scrolling.scrollHeight - scrolling.clientHeight) * 0.55),
-              behavior: 'instant',
-            });
-          },
-          { state, frames },
-        );
-        await settle();
-        const measure = () =>
-          page.evaluate(() => ({
-            x: scrollX,
-            y: scrollY,
-            range: document.scrollingElement
-              ? document.scrollingElement.scrollHeight - document.scrollingElement.clientHeight
-              : 0,
-            font: getComputedStyle(document.querySelector('main') ?? document.body).font,
-            fonts: document.fonts.status,
-            mode: history.scrollRestoration,
-            appDefined: customElements.get('router-document-host') !== undefined,
-            hash: location.hash,
-            viewport: [innerWidth, innerHeight],
-          }));
-        const before = await measure();
-        const reloadResponses: Response[] = [];
-        page.on('response', (response) => {
-          if (new URL(response.url()).pathname === entry) reloadResponses.push(response);
-        });
-        await page.reload();
-        await settle();
-        const after = await measure();
-        const responses = await Promise.all(
-          reloadResponses.map(async (response) => ({
-            status: response.status(),
-            cacheControl: await response.headerValue('cache-control'),
-            reused:
-              !!initialId &&
-              initialId === (await response.headerValue('x-rouault-preview-response-id')),
-          })),
-        );
-        results.push({ frames, before, after, responses });
-      } finally {
-        await context.close();
-      }
-    }
-  } finally {
-    server.closeAllConnections();
-    await new Promise<void>((resolve, reject) =>
-      server.close((error) => (error ? reject(error) : resolve())),
+    const page = await context.newPage();
+    await observeCachedReload(page);
+    await page.bringToFront();
+    const initialResponses: Response[] = [];
+    const recordInitial = (response: Response): void => {
+      initialResponses.push(response);
+    };
+    page.on('response', recordInitial);
+    const documentResponse = await page.goto(app.url());
+    if (!documentResponse) throw new Error('native document HTTP response');
+    const documentHash = createHash('sha256')
+      .update(await documentResponse.text())
+      .digest('hex');
+    await settleCachedReload(page);
+    page.off('response', recordInitial);
+    const entry = await page.locator('script[type="module"][src]').evaluate((script) => {
+      if (!(script instanceof HTMLScriptElement)) throw new Error('native client entry');
+      return script.src;
+    });
+    const initial = initialResponses.find((response) => response.url() === entry);
+    if (!initial) throw new Error('native client HTTP response');
+    const initialId = await initial.headerValue('x-rouault-preview-response-id');
+    const initialPolicy = await initial.headerValue('cache-control');
+    const initialVary = await initial.headerValue('vary');
+    await page.evaluate((state) => {
+      history.replaceState(state, '');
+      history.scrollRestoration = 'manual';
+    }, state);
+    await prepareCachedReadingPosition(page, position);
+    const before = await readCachedReload(page);
+    const reloadResponses: Response[] = [];
+    page.on('response', (response) => {
+      if (response.url() === entry) reloadResponses.push(response);
+    });
+    await page.bringToFront();
+    await page.reload();
+    await settleCachedReload(page);
+    const after = await readCachedReload(page);
+    const responses = await Promise.all(
+      reloadResponses.map(async (response) => ({
+        url: response.url(),
+        status: response.status(),
+        cacheControl: await response.headerValue('cache-control'),
+        reused:
+          !!initialId &&
+          initialId === (await response.headerValue('x-rouault-preview-response-id')),
+      })),
     );
+    return { before, after, entry, documentHash, initialId, initialPolicy, initialVary, responses };
+  } finally {
+    await context.close();
   }
-  return results;
 };

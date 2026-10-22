@@ -1,7 +1,14 @@
 import { expect, test, type Page, type Response, type TestInfo } from '@playwright/test';
+import { createHash } from 'node:crypto';
 import sharp from 'sharp';
 import { resolveRouterArtifactPathname } from '../../../shared/navigation/router-artifact-path.js';
-import { measureNativeCachedReload } from './native-cached-reload-control.js';
+import {
+  measureNativeCachedReload,
+  observeCachedReload,
+  prepareCachedReadingPosition,
+  readCachedReload,
+  settleCachedReload,
+} from './native-cached-reload-control.js';
 
 const notes = {
   iwanami: `/notes/library/collection/${encodeURIComponent('岩波文庫')}/`,
@@ -369,7 +376,7 @@ export const registerHistoryPrepaintXYTests = (): void => {
       test.describe(`actual HTTP warm-cache reload ${viewport.width}x${viewport.height}`, () => {
         test.use({ viewport });
         for (const position of ['hash', 'middle', 'end'] as const) {
-          test(`new-to-new reload preserves ${position} reading position`, async ({
+          test(`new-to-new reload matches native ${position} reading position`, async ({
             page,
             browser,
           }, info) => {
@@ -380,6 +387,8 @@ export const registerHistoryPrepaintXYTests = (): void => {
                 clientResponses.push(response);
             };
             page.on('response', recordClientResponse);
+            await observeCachedReload(page);
+            await page.bringToFront();
             const response = await page.goto(target);
             if (!response) throw new Error('initial HTTP response');
             const staticIds = await page.evaluate(
@@ -399,52 +408,11 @@ export const registerHistoryPrepaintXYTests = (): void => {
             expect(staticIds.every(({ id, count }) => id.length > 0 && count === 1)).toBe(true);
             const settle = async () => {
               await ready(page);
-              await page.evaluate(() => document.fonts.ready.then(() => undefined));
-              let previous = '';
-              let stable = 0;
-              for (let sample = 0; sample < 40; sample++) {
-                const point = await page.evaluate(() =>
-                  [
-                    scrollX,
-                    scrollY,
-                    document.scrollingElement?.scrollHeight,
-                    document.fonts.status,
-                  ].join(':'),
-                );
-                stable = point === previous ? stable + 1 : 0;
-                if (stable >= 5) return;
-                previous = point;
-                await page.waitForTimeout(50);
-              }
-              throw new Error('reading position did not settle');
+              await settleCachedReload(page);
             };
-            const measure = () =>
-              page.evaluate(() => ({
-                x: scrollX,
-                y: scrollY,
-                range: document.scrollingElement
-                  ? document.scrollingElement.scrollHeight - document.scrollingElement.clientHeight
-                  : 0,
-                viewport: [innerWidth, innerHeight],
-                zoom: visualViewport?.scale,
-                font: getComputedStyle(document.querySelector('main') ?? document.body).font,
-                fonts: document.fonts.status,
-                hash: location.hash,
-              }));
+            const measure = () => readCachedReload(page);
             await settle();
-            if (position !== 'hash')
-              await page.evaluate((position) => {
-                const scrolling = document.scrollingElement;
-                if (!scrolling) throw new Error('scrolling element');
-                scrollTo({
-                  top: Math.round(
-                    (scrolling.scrollHeight - scrolling.clientHeight) *
-                      (position === 'middle' ? 0.55 : 0.9),
-                  ),
-                  behavior: 'instant',
-                });
-              }, position);
-            await settle();
+            await prepareCachedReadingPosition(page, position);
             page.off('response', recordClientResponse);
             expect(clientResponses.length).toBeGreaterThan(0);
             const clientCachePolicies = await Promise.all(
@@ -452,6 +420,7 @@ export const registerHistoryPrepaintXYTests = (): void => {
                 url: response.url(),
                 cacheControl: await response.headerValue('cache-control'),
                 responseId: await response.headerValue('x-rouault-preview-response-id'),
+                vary: await response.headerValue('vary'),
               })),
             );
             // 本番と異なるno-cache配信をwarm-cache条件として受理しない。
@@ -471,11 +440,7 @@ export const registerHistoryPrepaintXYTests = (): void => {
             // Firefoxは304でもresource timingに初回転送量を残すため、HTTP応答も記録する。
             const revalidated: string[] = [];
             const recordRevalidation = (response: Response): void => {
-              if (
-                response.status() === 304 &&
-                new URL(response.url()).origin === new URL(page.url()).origin &&
-                /\.js(?:\?|$)/u.test(response.url())
-              )
+              if (response.status() === 304 && response.url() === clientModuleUrl)
                 revalidated.push(response.url());
             };
             const reloadClientResponses: Response[] = [];
@@ -485,6 +450,7 @@ export const registerHistoryPrepaintXYTests = (): void => {
             };
             page.on('response', recordRevalidation);
             page.on('response', recordReloadClientResponse);
+            await page.bringToFront();
             await page.reload();
             await settle();
             page.off('response', recordRevalidation);
@@ -507,24 +473,15 @@ export const registerHistoryPrepaintXYTests = (): void => {
               'warm-cache-position',
               JSON.stringify({ viewport, position, before, after }),
             );
-            if (
-              info.retry === 0 &&
-              viewport.width === 1365 &&
-              position === 'middle' &&
-              Math.abs(after.y - before.y) > 2
-            ) {
-              const native = await measureNativeCachedReload(
-                browser,
-                target,
-                viewport,
-                await page.evaluate(() => history.state as unknown),
-              );
-              console.log('warm-cache-native-control', JSON.stringify(native));
-              await info.attach('warm-cache-native-control', {
-                body: JSON.stringify(native, null, 2),
-                contentType: 'application/json',
-              });
-            }
+            const native = await measureNativeCachedReload(browser, page, position, before.state);
+            console.log(
+              'warm-cache-native-control',
+              JSON.stringify({ viewport, position, native }),
+            );
+            await info.attach('warm-cache-native-control', {
+              body: JSON.stringify({ viewport, position, native }, null, 2),
+              contentType: 'application/json',
+            });
             const cached = await page.evaluate(() =>
               performance
                 .getEntriesByType('resource')
@@ -544,7 +501,7 @@ export const registerHistoryPrepaintXYTests = (): void => {
             await info.attach('warm-cache-reload', {
               body: JSON.stringify(
                 {
-                  kind: 'actual-HTTP-new-to-new-no-interception-baseline-not-proven',
+                  kind: 'actual-HTTP-new-to-new-matched-mode-native-reload',
                   position,
                   before,
                   after,
@@ -554,6 +511,7 @@ export const registerHistoryPrepaintXYTests = (): void => {
                   reusedResponses,
                   clientModuleUrl,
                   staticIds,
+                  native,
                 },
                 null,
                 2,
@@ -572,7 +530,57 @@ export const registerHistoryPrepaintXYTests = (): void => {
             expect(after.hash).toBe(before.hash);
             expect(Math.abs(after.range - before.range)).toBeLessThanOrEqual(2);
             expect(Math.abs(after.x - before.x)).toBeLessThanOrEqual(2);
-            expect(Math.abs(after.y - before.y)).toBeLessThanOrEqual(2);
+            if (position === 'hash') expect(Math.abs(after.y - before.y)).toBeLessThanOrEqual(2);
+            // reload前XYの保持ではなく、同条件のnative実測との差を固定する。
+            expect(native.entry).toBe(clientModuleUrl);
+            expect(native.documentHash).toBe(
+              createHash('sha256')
+                .update(await response.text())
+                .digest('hex'),
+            );
+            expect(native.initialVary).toContain('x-rouault-preview-mode-only');
+            expect(native.initialVary).toBe(
+              clientCachePolicies.find((policy) => policy.url === clientModuleUrl)?.vary,
+            );
+            expect(native.initialPolicy).toBe('public, max-age=31536000, immutable');
+            expect(native.initialId).toMatch(/^[\da-f-]{36}$/u);
+            expect(
+              native.responses.some((response) => response.status === 304 || response.reused),
+              'native entry module HTTP cache evidence is required',
+            ).toBe(true);
+            for (const response of native.responses)
+              expect(response.cacheControl).toBe('public, max-age=31536000, immutable');
+            expect(native.before.appDefined).toBe(false);
+            expect(native.after.appDefined).toBe(false);
+            for (const [app, control] of [
+              [before, native.before],
+              [after, native.after],
+            ] as const) {
+              expect(control.url).toBe(app.url);
+              expect(control.visibility).toBe('visible');
+              expect(app.visibility).toBe('visible');
+              expect(control.hash).toBe(app.hash);
+              expect(control.viewport).toEqual(app.viewport);
+              expect(control.zoom).toBe(app.zoom);
+              expect(control.fonts).toBe('loaded');
+              expect(control.font).toBe(app.font);
+              expect(control.state).toEqual(before.state);
+              expect(app.state).toEqual(before.state);
+              expect(control.length).toBe(before.length);
+              expect(app.length).toBe(before.length);
+              expect(control.mode).toBe('manual');
+              expect(app.mode).toBe('manual');
+              expect(Math.abs(control.range - app.range)).toBeLessThanOrEqual(2);
+              expect(Math.abs(control.x - app.x)).toBeLessThanOrEqual(2);
+              expect(Math.abs(control.y - app.y)).toBeLessThanOrEqual(2);
+            }
+            expect(Math.abs(native.after.range - native.before.range)).toBeLessThanOrEqual(2);
+            expect(native.after.observation.inherited).toBe(after.observation.inherited);
+            for (const observation of [after.observation, native.after.observation]) {
+              expect(observation.writes[0]).toBe('auto');
+              expect(observation.atLoad).toBe('auto');
+              expect(observation.scrollCalls).toEqual([]);
+            }
           });
         }
       });

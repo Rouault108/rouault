@@ -50,6 +50,7 @@
 - `pnpm test:e2e:dev`はEleventy dev server上の開発時専用経路に限定したsmokeを担当する。production build / previewで固定するfinal DOMや横断的なrouter挙動を重複検証してはならない。
 - production previewは生成済み`dist/_headers`のCache-Controlを適用する。hash付きclient assetのimmutable配信と文書・可変metadataの再検証を本番と揃え、browser標準のcached reloadをVite既定のno-cache配信で代用しない。cache条件と本文幾何・座標の2 CSS px照合は独立して検証する。
 - previewのnetwork応答には毎回異なる`X-Rouault-Preview-Response-Id`を付ける。reload後に同じURLの保存済み応答IDを再観測した場合もHTTP cacheの証拠とする。新しい200/304応答では必ずIDが変わることを実HTTPテストで固定し、転送量を公開しないbrowserでも座標assertionを省略しない。
+- warm-cache reloadのnative対照はpreview専用headerで同URLのmoduleだけをmode-only scriptへ差し替える。通常応答と対照の双方へVaryを付け、HTTP cacheを無効化するroutingは使わない。全viewport・読書位置でappと対照の履歴・mode・字体/range・cache証明を確認し、独立したno-JS検証を維持する。
 - Production import-boundary / CSS artifact / search import-boundary scriptsはnode-level verificationとして扱い、読書chromeのruntime UI挙動はbrowser / e2eで固定する。
 
 ### Browser Test Harness
