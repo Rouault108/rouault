@@ -6,7 +6,8 @@
     "reference": "--layout-sticky-max-block-size",
     "count": 1,
     "supplier": "src/layout/sticky-footer-boundary.ts",
-    "evidence": "target.style.setProperty('--layout-sticky-max-block-size',"
+    "evidence": "target.style.setProperty('--layout-sticky-max-block-size',",
+    "conditions": []
   },
   {
     "file": "layout-sidebar.css",
@@ -15,7 +16,8 @@
     "reference": "--layout-sticky-max-block-size",
     "count": 1,
     "supplier": "src/layout/sticky-footer-boundary.ts",
-    "evidence": "target.style.setProperty('--layout-sticky-max-block-size',"
+    "evidence": "target.style.setProperty('--layout-sticky-max-block-size',",
+    "conditions": []
   },
   {
     "file": "layout-sidebar.css",
@@ -24,7 +26,8 @@
     "reference": "--layout-sticky-footer-offset",
     "count": 1,
     "supplier": "src/layout/sticky-footer-boundary.ts",
-    "evidence": "target.style.setProperty('--layout-sticky-footer-offset',"
+    "evidence": "target.style.setProperty('--layout-sticky-footer-offset',",
+    "conditions": []
   },
   {
     "file": "layout-toc.css",
@@ -33,7 +36,8 @@
     "reference": "--level",
     "count": 1,
     "supplier": "src/layouts/toc-html.ts",
-    "evidence": "style=\"--level: ${String(depth)}\""
+    "evidence": "style=\"--level: ${String(depth)}\"",
+    "conditions": []
   },
   {
     "file": "note-shell.css",
@@ -42,7 +46,8 @@
     "reference": "--layout-sticky-max-block-size",
     "count": 1,
     "supplier": "src/layout/sticky-footer-boundary.ts",
-    "evidence": "target.style.setProperty('--layout-sticky-max-block-size',"
+    "evidence": "target.style.setProperty('--layout-sticky-max-block-size',",
+    "conditions": []
   },
   {
     "file": "note-shell.css",
@@ -51,7 +56,8 @@
     "reference": "--layout-sticky-max-block-size",
     "count": 1,
     "supplier": "src/layout/sticky-footer-boundary.ts",
-    "evidence": "target.style.setProperty('--layout-sticky-max-block-size',"
+    "evidence": "target.style.setProperty('--layout-sticky-max-block-size',",
+    "conditions": []
   },
   {
     "file": "note-shell.css",
@@ -60,33 +66,67 @@
     "reference": "--layout-sticky-footer-offset",
     "count": 1,
     "supplier": "src/layout/sticky-footer-boundary.ts",
-    "evidence": "target.style.setProperty('--layout-sticky-footer-offset',"
+    "evidence": "target.style.setProperty('--layout-sticky-footer-offset',",
+    "conditions": []
   },
   {
     "file": "video.css",
     "selector": "[data-video-root] .seek-input",
     "property": "background",
     "reference": "--seek-progress",
-    "count": 4,
+    "count": 2,
     "supplier": "src/client/post-hydrate/video-controller.ts",
-    "evidence": "seek.style.setProperty('--seek-progress',"
+    "evidence": "seek.style.setProperty('--seek-progress',",
+    "conditions": []
+  },
+  {
+    "file": "video.css",
+    "selector": "[data-video-root] .seek-input",
+    "property": "background",
+    "reference": "--seek-progress",
+    "count": 2,
+    "supplier": "src/client/post-hydrate/video-controller.ts",
+    "evidence": "seek.style.setProperty('--seek-progress',",
+    "conditions": ["@media (forced-colors: active)"]
   },
   {
     "file": "video.css",
     "selector": "[data-video-root] .seek-input",
     "property": "background",
     "reference": "--seek-buffered",
-    "count": 4,
+    "count": 2,
     "supplier": "src/client/post-hydrate/video-controller.ts",
-    "evidence": "seek.style.setProperty('--seek-buffered',"
+    "evidence": "seek.style.setProperty('--seek-buffered',",
+    "conditions": []
+  },
+  {
+    "file": "video.css",
+    "selector": "[data-video-root] .seek-input",
+    "property": "background",
+    "reference": "--seek-buffered",
+    "count": 2,
+    "supplier": "src/client/post-hydrate/video-controller.ts",
+    "evidence": "seek.style.setProperty('--seek-buffered',",
+    "conditions": ["@media (forced-colors: active)"]
   },
   {
     "file": "video.css",
     "selector": "[data-video-root] .volume-input",
     "property": "background",
     "reference": "--volume-progress",
-    "count": 4,
+    "count": 2,
     "supplier": "src/client/post-hydrate/video-controller.ts",
-    "evidence": "volume.style.setProperty('--volume-progress',"
+    "evidence": "volume.style.setProperty('--volume-progress',",
+    "conditions": []
+  },
+  {
+    "file": "video.css",
+    "selector": "[data-video-root] .volume-input",
+    "property": "background",
+    "reference": "--volume-progress",
+    "count": 2,
+    "supplier": "src/client/post-hydrate/video-controller.ts",
+    "evidence": "volume.style.setProperty('--volume-progress',",
+    "conditions": ["@media (forced-colors: active)"]
   }
 ]

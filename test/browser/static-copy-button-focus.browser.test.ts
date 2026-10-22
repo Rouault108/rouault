@@ -15,8 +15,12 @@ const rgba = (color: string): number[] => {
   return Array.from(context.getImageData(0, 0, 1, 1).data);
 };
 
+const originalClipboard = Object.getOwnPropertyDescriptor(navigator, 'clipboard');
+
 describe('Copy button の computed focus token 契約', () => {
   afterEach(() => {
+    if (originalClipboard) Object.defineProperty(navigator, 'clipboard', originalClipboard);
+    else Reflect.deleteProperty(navigator, 'clipboard');
     document.documentElement.removeAttribute('data-theme');
   });
 

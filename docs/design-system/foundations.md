@@ -61,14 +61,19 @@ Componentは、まずSemanticまたはPattern tokenを参照する。Primitive t
 
 ## 9. CSS token参照の検証範囲
 
-`test/ssr/css-token-references.test.ts`は`src/assets/css/**/*.css`の全宣言を既存のPostCSS / selector parserで読み、参照を公開token、局所変数、供給元を確認したruntime変数、fallbackに分類する。公開名は`tokens.css`の無条件`:root`定義から取得し、互換aliasも参照先をたどる通常の定義として検証する。aliasの新設や名前全体のallowlistで未定義を隠さない。
+`test/ssr/css-token-references.test.ts`は`src/assets/css/**/*.css`を既存のPostCSS / selector parserで読み、公開token、局所変数、供給元を確認したruntime変数、明示契約のある任意override、未解決参照を区別する。公開名は`tokens.css`の無条件`:root`定義から取得し、互換aliasも参照先をたどる通常の定義として検証する。aliasの新設や名前全体のallowlistで未定義を隠さない。
 
 - 局所変数は同一ファイル内の同一selector、compoundへの条件追加、明記された祖先prefixからの継承だけを認める。条件付き定義は同じat-rule条件の参照に限定し、無関係なselector / ファイル / 状態の同名定義では合格させない。
-- `var()`は文字列・コメント・括弧・カンマを区別する小さな値scannerで読む。fallbackは空値やliteralを許容し、nested fallback内の参照も検査する。使用されないfallback内の未定義参照、自己循環、相互循環も報告する。
-- 供給元を確認したTOC depth、sticky boundary、video progressは`test/fixtures/css/runtime-token-suppliers.json`にsourceと参照箇所・件数を固定する。source内の供給文の存続を確認するが、全実行経路の到達性やDOM継承は証明しない。Shikiのinline色はCSS上の`inherit` fallbackとして扱い、生成値は既存のShiki SSR testが担当する。
-- `test/fixtures/css/known-token-reference-findings.json`は、未定義および静的に未証明の既存参照をfile / selector / property / 参照名 / 種類 / 件数 / 理由で管理する。追加だけでなく削除・増加・別箇所への移動でもテストが失敗するため、変更時に個別に再確認する。自動更新するsnapshotではない。
-- `--z-overlay`は未定義だがliteral fallbackがある既知残件であり、sidebarの二箇所を専用assertionで固定する。今回z-indexの値・順序・実装は変更しない。他の既存残件は`--focus-default`、`--fg-link`、`--radius-lg`、OS dark mediaにしか供給がないexplicit darkのshadow参照、DOM / functional selectorの継承未証明箇所であり、Copy button修正へ混ぜない。
+- `var()`は文字列・コメント・括弧・カンマを区別する値scannerで読む。fallbackの存在だけでは正常扱いせず、未定義または未証明scopeとして検出する。nested fallbackも検査し、既知tokenの未使用fallback内のtypoや循環も隠さない。
+- 意図的な任意overrideは`test/fixtures/css/intentional-token-overrides.json`に公開契約の根拠とfile / selector / property / 参照名 / at-rule条件 / 件数を固定する。FooterとTabsの文書化済み公開propertyだけを認め、空fallbackやliteral fallbackも明示契約なしには許可しない。契約があってもfallback内の未定義参照や循環は検査する。
+- TOC depth、sticky boundary、video progressは`test/fixtures/css/runtime-token-suppliers.json`にsourceと参照箇所・条件・件数を固定する。source内の供給文の存続を確認するが、全実行経路の到達性やDOM継承は証明しない。Shikiのinline色は既存SSRが生成を検証するが、静的供給契約には入れず既知残件として分類する。
+- `test/fixtures/css/known-token-reference-findings.json`は既存残件をfile / selector / property / 参照名 / at-rule条件 / 種類 / 件数 / 理由で管理する。異なるmediaへの移動や参照の増減も失敗するため、個別の再確認が必要となる。自動更新するsnapshotではない。
+- `--z-overlay`は未定義の既知残件であり、意図的なoverrideとは断定しない。sidebarの二箇所、条件、既存fallback値`100`を専用assertionで固定する。z-indexの値・順序・実装は変更しない。
 
-これはCSS cascadeの完全な解決器ではない。stylesheetの読込・順序、specificity、`!important`、layerの優先順位、theme / mediaの排他性、全DOM構造、継承時の計算済み値、`initial` / `unset` / `@property`、値の型やcontrastは保証しない。`var()`のないliteral fallbackの意味的妥当性や、それが意図されたoverrideかtypoかも推論しない。selectorの`:is()` / `:where()`の包含推論やファイル間の局所変数継承は未証明として残す。escaped identifierなどscannerの未対応構文はunsupportedとして失敗させる。循環検出はfallbackと候補定義を保守的にたどるため、条件の排他性を証明して誤検出を取り除くことはしない。
+循環判定は経路ごとに明示的なlight / dark / system属性条件と、単純なAND mediaに含まれる`prefers-color-scheme`、`forced-colors`、`prefers-reduced-motion`の排他的な値を照合する。排他的なlightとdarkを合成した偽の循環を除外する。明示themeとOS色設定は独立するため、light属性とOS darkの組合せは排除しない。`not` / `or` / カンマを含むmediaや任意のselector論理は推論せず、循環候補を保守的に残す。
+
+これはCSS cascadeの完全な解決器ではない。stylesheetの読込・順序、specificity、`!important`、layerの優先順位、定義の上書き、全DOM構造、継承時の計算済み値、`initial` / `unset` / `@property`、値の型やcontrastは保証しない。literal fallbackの意味的妥当性や、それが意図されたoverrideかtypoかも自動では判定しない。selectorの`:is()` / `:where()`の包含推論やファイル間の局所変数継承は未証明として残す。escaped identifierなどscannerの未対応構文はunsupportedとして失敗させる。
+
+初期棚卸しの57参照は、fallbackのない未定義17件（`--focus-default` 12、`--fg-link` 1、`--radius-lg` 4）と未証明scope 40件（明示darkのshadow供給条件4、code surfaceのfunctional selector 20、menu / leadのDOM継承16）である。厳格化で追加検出したfallback付き95参照も、供給未証明・未定義・生成inline色等の理由を個別に記録する。他機能のAPIやCSSを無断で修正せず、今回のCopy focus修正とは分けて追跡する。
 
 Copy buttonは`--focus-ring-width` / `--focus-ring-color` / `--focus-ring-offset`を使う。実browserのlight / dark / system、token overrideで計算済みoutlineとkeyboard focusを検証し、production E2Eではforced colorsも確認する。本文`main#main-content`へのlogical focusは操作対象のfocus ringと別契約であり、この修正の対象にしない。

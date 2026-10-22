@@ -1,18 +1,140 @@
 [
   {
     "file": "about-shell.css",
+    "selector": ".about-main-col",
+    "property": "width",
+    "reference": "--about-content-max-inline-size",
+    "conditions": [],
+    "kind": "unproven-fallback-scope",
+    "count": 1,
+    "reason": "同名定義は別 scope に存在するが適用は未証明。fallback があっても健全とは扱わない。対象外の継承・条件契約の変更へ広げず既知残件として管理。"
+  },
+  {
+    "file": "about-shell.css",
     "selector": ".about-lead",
     "property": "max-inline-size",
     "reference": "--about-lead-measure",
+    "conditions": [],
     "kind": "unproven-scope",
     "count": 1,
     "reason": "shell から lead への DOM 継承は selector に祖先が明記されず静的に未証明。"
+  },
+  {
+    "file": "callout.css",
+    "selector": ":is(.prose, .about-prose) > [data-callout][data-callout-kind='success']",
+    "property": "--_callout-rule-color",
+    "reference": "--border-success-subtle",
+    "conditions": [],
+    "kind": "undefined-fallback",
+    "count": 1,
+    "reason": "既存の fallback 付き未定義 token 参照。命名の旧契約・typo・任意 override のどれかを断定する根拠がないため正常とは扱わない。Copy focus 以外の修正へ広げず箇所と条件・件数を固定。"
+  },
+  {
+    "file": "callout.css",
+    "selector": ":is(.prose, .about-prose)\n  > [data-tabs-root]\n  > [data-tab-panel]\n  > [data-callout][data-callout-kind='success']",
+    "property": "--_callout-rule-color",
+    "reference": "--border-success-subtle",
+    "conditions": [],
+    "kind": "undefined-fallback",
+    "count": 1,
+    "reason": "既存の fallback 付き未定義 token 参照。命名の旧契約・typo・任意 override のどれかを断定する根拠がないため正常とは扱わない。Copy focus 以外の修正へ広げず箇所と条件・件数を固定。"
+  },
+  {
+    "file": "code-preview.css",
+    "selector": "[data-code-preview-root]",
+    "property": "width",
+    "reference": "--ui-code-preview-breakout-width",
+    "conditions": [],
+    "kind": "undefined-fallback",
+    "count": 1,
+    "reason": "既存の component / layout 用 fallback 付き参照。任意 override の公開契約または供給 scope を本検証では確認できない。fallback を無条件に許可せず、他機能の API / CSS 修正を避けて残件管理。"
+  },
+  {
+    "file": "code-preview.css",
+    "selector": "[data-code-preview-root]",
+    "property": "margin-inline",
+    "reference": "--ui-code-preview-breakout-margin",
+    "conditions": [],
+    "kind": "undefined-fallback",
+    "count": 1,
+    "reason": "既存の component / layout 用 fallback 付き参照。任意 override の公開契約または供給 scope を本検証では確認できない。fallback を無条件に許可せず、他機能の API / CSS 修正を避けて残件管理。"
+  },
+  {
+    "file": "code-preview.css",
+    "selector": "[data-code-preview-root]",
+    "property": "--_note-code-preview-surface-bg",
+    "reference": "--ui-code-preview-preview-bg",
+    "conditions": [],
+    "kind": "undefined-fallback",
+    "count": 1,
+    "reason": "既存の component / layout 用 fallback 付き参照。任意 override の公開契約または供給 scope を本検証では確認できない。fallback を無条件に許可せず、他機能の API / CSS 修正を避けて残件管理。"
+  },
+  {
+    "file": "code-preview.css",
+    "selector": "[data-code-preview-root][data-preview-surface='surface']",
+    "property": "--_note-code-preview-surface-bg",
+    "reference": "--ui-code-preview-preview-bg",
+    "conditions": [],
+    "kind": "undefined-fallback",
+    "count": 1,
+    "reason": "既存の component / layout 用 fallback 付き参照。任意 override の公開契約または供給 scope を本検証では確認できない。fallback を無条件に許可せず、他機能の API / CSS 修正を避けて残件管理。"
+  },
+  {
+    "file": "code-preview.css",
+    "selector": "[data-code-preview-root]",
+    "property": "border-radius",
+    "reference": "--ui-code-preview-radius",
+    "conditions": [],
+    "kind": "undefined-fallback",
+    "count": 1,
+    "reason": "既存の component / layout 用 fallback 付き参照。任意 override の公開契約または供給 scope を本検証では確認できない。fallback を無条件に許可せず、他機能の API / CSS 修正を避けて残件管理。"
+  },
+  {
+    "file": "code-preview.css",
+    "selector": "[data-code-preview-root] > [data-code-preview-surface]",
+    "property": "min-height",
+    "reference": "--ui-code-preview-preview-min-height",
+    "conditions": [],
+    "kind": "undefined-fallback",
+    "count": 1,
+    "reason": "既存の component / layout 用 fallback 付き参照。任意 override の公開契約または供給 scope を本検証では確認できない。fallback を無条件に許可せず、他機能の API / CSS 修正を避けて残件管理。"
+  },
+  {
+    "file": "code-surfaces.css",
+    "selector": ":where(pre[data-code-block], [data-code-block-root] pre[data-code-block])",
+    "property": "padding",
+    "reference": "--ui-code-surface-padding",
+    "conditions": [],
+    "kind": "undefined-fallback",
+    "count": 1,
+    "reason": "既存の component / layout 用 fallback 付き参照。任意 override の公開契約または供給 scope を本検証では確認できない。fallback を無条件に許可せず、他機能の API / CSS 修正を避けて残件管理。"
+  },
+  {
+    "file": "code-surfaces.css",
+    "selector": ":where(pre[data-code-block], [data-code-block-root] pre[data-code-block])",
+    "property": "padding",
+    "reference": "--ui-code-block-padding",
+    "conditions": [],
+    "kind": "undefined-fallback",
+    "count": 1,
+    "reason": "既存の component / layout 用 fallback 付き参照。任意 override の公開契約または供給 scope を本検証では確認できない。fallback を無条件に許可せず、他機能の API / CSS 修正を避けて残件管理。"
+  },
+  {
+    "file": "code-surfaces.css",
+    "selector": ":where(\n  pre[data-code-block][data-code-has-line-state='true'],\n  [data-code-block-root] pre[data-code-block][data-code-has-line-state='true']\n)",
+    "property": "--ui-code-state-marker-surface-background",
+    "reference": "--ui-code-block-background",
+    "conditions": [],
+    "kind": "undefined-fallback",
+    "count": 1,
+    "reason": "既存の component / layout 用 fallback 付き参照。任意 override の公開契約または供給 scope を本検証では確認できない。fallback を無条件に許可せず、他機能の API / CSS 修正を避けて残件管理。"
   },
   {
     "file": "code-surfaces.css",
     "selector": ":where(\n    pre[data-code-block][data-code-has-line-state='true'],\n    [data-code-block-root] pre[data-code-block][data-code-has-line-state='true']\n  )\n  .line",
     "property": "--ui-code-state-marker-backing",
     "reference": "--ui-code-state-marker-surface-background",
+    "conditions": [],
     "kind": "unproven-scope",
     "count": 1,
     "reason": ":where の異なる selector 表現間の包含・継承は静的検証の保証範囲外。既存 browser / E2E の code line state 契約で補完。"
@@ -22,6 +144,7 @@
     "selector": ":where(\n    pre[data-code-block][data-code-has-line-state='true'],\n    [data-code-block-root] pre[data-code-block][data-code-has-line-state='true']\n  )\n  .line",
     "property": "padding-inline-start",
     "reference": "--ui-code-state-marker-rail-size",
+    "conditions": [],
     "kind": "unproven-scope",
     "count": 1,
     "reason": ":where の異なる selector 表現間の包含・継承は静的検証の保証範囲外。既存 browser / E2E の code line state 契約で補完。"
@@ -31,6 +154,7 @@
     "selector": ":where(\n    pre[data-code-block][data-code-has-line-state='true'],\n    [data-code-block-root] pre[data-code-block][data-code-has-line-state='true']\n  )\n  .line",
     "property": "padding-inline-start",
     "reference": "--ui-code-state-marker-gap",
+    "conditions": [],
     "kind": "unproven-scope",
     "count": 1,
     "reason": ":where の異なる selector 表現間の包含・継承は静的検証の保証範囲外。既存 browser / E2E の code line state 契約で補完。"
@@ -40,6 +164,7 @@
     "selector": ":where(\n    pre[data-code-block][data-code-has-line-state='true'],\n    [data-code-block-root] pre[data-code-block][data-code-has-line-state='true']\n  )\n  .line::before",
     "property": "inline-size",
     "reference": "--ui-code-state-marker-rail-size",
+    "conditions": [],
     "kind": "unproven-scope",
     "count": 1,
     "reason": ":where の異なる selector 表現間の包含・継承は静的検証の保証範囲外。既存 browser / E2E の code line state 契約で補完。"
@@ -49,6 +174,7 @@
     "selector": ":where(\n    pre[data-code-block][data-code-has-line-state='true'],\n    [data-code-block-root] pre[data-code-block][data-code-has-line-state='true']\n  )\n  .line::before",
     "property": "margin-inline-start",
     "reference": "--ui-code-state-marker-rail-size",
+    "conditions": [],
     "kind": "unproven-scope",
     "count": 1,
     "reason": ":where の異なる selector 表現間の包含・継承は静的検証の保証範囲外。既存 browser / E2E の code line state 契約で補完。"
@@ -58,6 +184,7 @@
     "selector": ":where(\n    pre[data-code-block][data-code-has-line-state='true'],\n    [data-code-block-root] pre[data-code-block][data-code-has-line-state='true']\n  )\n  .line::before",
     "property": "margin-inline-start",
     "reference": "--ui-code-state-marker-gap",
+    "conditions": [],
     "kind": "unproven-scope",
     "count": 1,
     "reason": ":where の異なる selector 表現間の包含・継承は静的検証の保証範囲外。既存 browser / E2E の code line state 契約で補完。"
@@ -67,6 +194,7 @@
     "selector": ":where(\n    pre[data-code-block][data-code-has-line-state='true'],\n    [data-code-block-root] pre[data-code-block][data-code-has-line-state='true']\n  )\n  .line::before",
     "property": "margin-inline-end",
     "reference": "--ui-code-state-marker-gap",
+    "conditions": [],
     "kind": "unproven-scope",
     "count": 1,
     "reason": ":where の異なる selector 表現間の包含・継承は静的検証の保証範囲外。既存 browser / E2E の code line state 契約で補完。"
@@ -76,6 +204,7 @@
     "selector": ":where(\n    pre[data-code-block][data-code-has-line-state='true'],\n    [data-code-block-root] pre[data-code-block][data-code-has-line-state='true']\n  )\n  [data-code-line-state='highlight']::before",
     "property": "background-color",
     "reference": "--ui-code-state-marker-surface-background",
+    "conditions": [],
     "kind": "unproven-scope",
     "count": 1,
     "reason": ":where の異なる selector 表現間の包含・継承は静的検証の保証範囲外。既存 browser / E2E の code line state 契約で補完。"
@@ -85,6 +214,7 @@
     "selector": ":where(\n    pre[data-code-block][data-code-has-line-state='true'],\n    [data-code-block-root] pre[data-code-block][data-code-has-line-state='true']\n  )\n  [data-code-line-state='highlight']::before",
     "property": "background-image",
     "reference": "--ui-code-state-marker-rail-size",
+    "conditions": [],
     "kind": "unproven-scope",
     "count": 2,
     "reason": ":where の異なる selector 表現間の包含・継承は静的検証の保証範囲外。既存 browser / E2E の code line state 契約で補完。"
@@ -94,6 +224,7 @@
     "selector": ":where(\n    pre[data-code-block][data-code-has-line-state='true'],\n    [data-code-block-root] pre[data-code-block][data-code-has-line-state='true']\n  )\n  [data-code-line-state='add']::before",
     "property": "background-color",
     "reference": "--ui-code-state-marker-surface-background",
+    "conditions": [],
     "kind": "unproven-scope",
     "count": 1,
     "reason": ":where の異なる selector 表現間の包含・継承は静的検証の保証範囲外。既存 browser / E2E の code line state 契約で補完。"
@@ -103,6 +234,7 @@
     "selector": ":where(\n    pre[data-code-block][data-code-has-line-state='true'],\n    [data-code-block-root] pre[data-code-block][data-code-has-line-state='true']\n  )\n  [data-code-line-state='add']::before",
     "property": "background-size",
     "reference": "--ui-code-state-marker-inline-offset",
+    "conditions": [],
     "kind": "unproven-scope",
     "count": 2,
     "reason": ":where の異なる selector 表現間の包含・継承は静的検証の保証範囲外。既存 browser / E2E の code line state 契約で補完。"
@@ -112,6 +244,7 @@
     "selector": ":where(\n    pre[data-code-block][data-code-has-line-state='true'],\n    [data-code-block-root] pre[data-code-block][data-code-has-line-state='true']\n  )\n  [data-code-line-state='add']::before",
     "property": "background-size",
     "reference": "--ui-code-state-marker-stroke",
+    "conditions": [],
     "kind": "unproven-scope",
     "count": 2,
     "reason": ":where の異なる selector 表現間の包含・継承は静的検証の保証範囲外。既存 browser / E2E の code line state 契約で補完。"
@@ -121,6 +254,7 @@
     "selector": ":where(\n    pre[data-code-block][data-code-has-line-state='true'],\n    [data-code-block-root] pre[data-code-block][data-code-has-line-state='true']\n  )\n  [data-code-line-state='remove']::before",
     "property": "background-color",
     "reference": "--ui-code-state-marker-surface-background",
+    "conditions": [],
     "kind": "unproven-scope",
     "count": 1,
     "reason": ":where の異なる selector 表現間の包含・継承は静的検証の保証範囲外。既存 browser / E2E の code line state 契約で補完。"
@@ -130,6 +264,7 @@
     "selector": ":where(\n    pre[data-code-block][data-code-has-line-state='true'],\n    [data-code-block-root] pre[data-code-block][data-code-has-line-state='true']\n  )\n  [data-code-line-state='remove']::before",
     "property": "background-size",
     "reference": "--ui-code-state-marker-inline-offset",
+    "conditions": [],
     "kind": "unproven-scope",
     "count": 1,
     "reason": ":where の異なる selector 表現間の包含・継承は静的検証の保証範囲外。既存 browser / E2E の code line state 契約で補完。"
@@ -139,15 +274,57 @@
     "selector": ":where(\n    pre[data-code-block][data-code-has-line-state='true'],\n    [data-code-block-root] pre[data-code-block][data-code-has-line-state='true']\n  )\n  [data-code-line-state='remove']::before",
     "property": "background-size",
     "reference": "--ui-code-state-marker-stroke",
+    "conditions": [],
     "kind": "unproven-scope",
     "count": 1,
     "reason": ":where の異なる selector 表現間の包含・継承は静的検証の保証範囲外。既存 browser / E2E の code line state 契約で補完。"
+  },
+  {
+    "file": "code-surfaces.css",
+    "selector": ":root:not([data-theme='light'])\n    :where(pre[data-code-block], [data-code-block-root] pre[data-code-block]).shiki",
+    "property": "color",
+    "reference": "--shiki-dark",
+    "conditions": ["@media (prefers-color-scheme: dark)"],
+    "kind": "undefined-fallback",
+    "count": 1,
+    "reason": "Shiki が生成する inline 色の参照。既存 SSR で生成値を検証するが静的 CSS だけでは供給を証明しない。inherit fallback を理由に正常とは扱わず今回対象外の残件として記録。"
+  },
+  {
+    "file": "code-surfaces.css",
+    "selector": ":root:not([data-theme='light'])\n    :where(pre[data-code-block], [data-code-block-root] pre[data-code-block]).shiki\n    span",
+    "property": "color",
+    "reference": "--shiki-dark",
+    "conditions": ["@media (prefers-color-scheme: dark)"],
+    "kind": "undefined-fallback",
+    "count": 1,
+    "reason": "Shiki が生成する inline 色の参照。既存 SSR で生成値を検証するが静的 CSS だけでは供給を証明しない。inherit fallback を理由に正常とは扱わず今回対象外の残件として記録。"
+  },
+  {
+    "file": "code-surfaces.css",
+    "selector": ":root[data-theme='dark']\n  :where(pre[data-code-block], [data-code-block-root] pre[data-code-block]).shiki",
+    "property": "color",
+    "reference": "--shiki-dark",
+    "conditions": [],
+    "kind": "undefined-fallback",
+    "count": 1,
+    "reason": "Shiki が生成する inline 色の参照。既存 SSR で生成値を検証するが静的 CSS だけでは供給を証明しない。inherit fallback を理由に正常とは扱わず今回対象外の残件として記録。"
+  },
+  {
+    "file": "code-surfaces.css",
+    "selector": ":root[data-theme='dark']\n  :where(pre[data-code-block], [data-code-block-root] pre[data-code-block]).shiki\n  span",
+    "property": "color",
+    "reference": "--shiki-dark",
+    "conditions": [],
+    "kind": "undefined-fallback",
+    "count": 1,
+    "reason": "Shiki が生成する inline 色の参照。既存 SSR で生成値を検証するが静的 CSS だけでは供給を証明しない。inherit fallback を理由に正常とは扱わず今回対象外の残件として記録。"
   },
   {
     "file": "code-surfaces.css",
     "selector": ":where(\n    pre[data-code-block],\n    [data-code-block-root] pre[data-code-block]\n  )[data-code-line-numbers='true'][data-code-has-line-state='true']\n  .line",
     "property": "padding-inline-start",
     "reference": "--ui-code-state-marker-rail-size",
+    "conditions": [],
     "kind": "unproven-scope",
     "count": 1,
     "reason": ":where の異なる selector 表現間の包含・継承は静的検証の保証範囲外。既存 browser / E2E の code line state 契約で補完。"
@@ -157,15 +334,197 @@
     "selector": ":where(\n    pre[data-code-block],\n    [data-code-block-root] pre[data-code-block]\n  )[data-code-line-numbers='true'][data-code-has-line-state='true']\n  .line",
     "property": "padding-inline-start",
     "reference": "--ui-code-state-marker-gap",
+    "conditions": [],
     "kind": "unproven-scope",
     "count": 1,
     "reason": ":where の異なる selector 表現間の包含・継承は静的検証の保証範囲外。既存 browser / E2E の code line state 契約で補完。"
+  },
+  {
+    "file": "code-surfaces.css",
+    "selector": "[data-code-block-root]",
+    "property": "inline-size",
+    "reference": "--ui-code-block-breakout-width",
+    "conditions": [],
+    "kind": "unproven-fallback-scope",
+    "count": 1,
+    "reason": "同名定義は別 scope に存在するが適用は未証明。fallback があっても健全とは扱わない。対象外の継承・条件契約の変更へ広げず既知残件として管理。"
+  },
+  {
+    "file": "code-surfaces.css",
+    "selector": "[data-code-block-root]",
+    "property": "inline-size",
+    "reference": "--ui-code-surface-breakout-width",
+    "conditions": [],
+    "kind": "unproven-fallback-scope",
+    "count": 1,
+    "reason": "同名定義は別 scope に存在するが適用は未証明。fallback があっても健全とは扱わない。対象外の継承・条件契約の変更へ広げず既知残件として管理。"
+  },
+  {
+    "file": "code-surfaces.css",
+    "selector": "[data-code-block-root]",
+    "property": "margin-inline",
+    "reference": "--ui-code-block-breakout-margin",
+    "conditions": [],
+    "kind": "unproven-fallback-scope",
+    "count": 1,
+    "reason": "同名定義は別 scope に存在するが適用は未証明。fallback があっても健全とは扱わない。対象外の継承・条件契約の変更へ広げず既知残件として管理。"
+  },
+  {
+    "file": "code-surfaces.css",
+    "selector": "[data-code-block-root]",
+    "property": "margin-inline",
+    "reference": "--ui-code-surface-breakout-margin",
+    "conditions": [],
+    "kind": "unproven-fallback-scope",
+    "count": 1,
+    "reason": "同名定義は別 scope に存在するが適用は未証明。fallback があっても健全とは扱わない。対象外の継承・条件契約の変更へ広げず既知残件として管理。"
+  },
+  {
+    "file": "code-surfaces.css",
+    "selector": "[data-code-block-root]",
+    "property": "border",
+    "reference": "--ui-code-block-border",
+    "conditions": [],
+    "kind": "undefined-fallback",
+    "count": 1,
+    "reason": "既存の component / layout 用 fallback 付き参照。任意 override の公開契約または供給 scope を本検証では確認できない。fallback を無条件に許可せず、他機能の API / CSS 修正を避けて残件管理。"
+  },
+  {
+    "file": "code-surfaces.css",
+    "selector": "[data-code-block-root]",
+    "property": "background",
+    "reference": "--ui-code-block-background",
+    "conditions": [],
+    "kind": "undefined-fallback",
+    "count": 1,
+    "reason": "既存の component / layout 用 fallback 付き参照。任意 override の公開契約または供給 scope を本検証では確認できない。fallback を無条件に許可せず、他機能の API / CSS 修正を避けて残件管理。"
+  },
+  {
+    "file": "code-surfaces.css",
+    "selector": "[data-code-block-root]",
+    "property": "border-radius",
+    "reference": "--ui-code-block-radius-top",
+    "conditions": [],
+    "kind": "unproven-fallback-scope",
+    "count": 2,
+    "reason": "同名定義は別 scope に存在するが適用は未証明。fallback があっても健全とは扱わない。対象外の継承・条件契約の変更へ広げず既知残件として管理。"
+  },
+  {
+    "file": "code-surfaces.css",
+    "selector": "[data-code-block-root]",
+    "property": "border-radius",
+    "reference": "--ui-code-block-radius-bottom",
+    "conditions": [],
+    "kind": "undefined-fallback",
+    "count": 2,
+    "reason": "既存の component / layout 用 fallback 付き参照。任意 override の公開契約または供給 scope を本検証では確認できない。fallback を無条件に許可せず、他機能の API / CSS 修正を避けて残件管理。"
+  },
+  {
+    "file": "code-surfaces.css",
+    "selector": "[data-code-block-root] > .code-surface-caption",
+    "property": "padding-inline-start",
+    "reference": "--ui-code-surface-padding",
+    "conditions": [],
+    "kind": "undefined-fallback",
+    "count": 1,
+    "reason": "既存の component / layout 用 fallback 付き参照。任意 override の公開契約または供給 scope を本検証では確認できない。fallback を無条件に許可せず、他機能の API / CSS 修正を避けて残件管理。"
+  },
+  {
+    "file": "code-surfaces.css",
+    "selector": "[data-code-block-root] > .code-surface-caption",
+    "property": "padding-inline-start",
+    "reference": "--ui-code-block-padding",
+    "conditions": [],
+    "kind": "undefined-fallback",
+    "count": 1,
+    "reason": "既存の component / layout 用 fallback 付き参照。任意 override の公開契約または供給 scope を本検証では確認できない。fallback を無条件に許可せず、他機能の API / CSS 修正を避けて残件管理。"
+  },
+  {
+    "file": "code-surfaces.css",
+    "selector": "section[data-code-group]",
+    "property": "inline-size",
+    "reference": "--ui-code-group-width",
+    "conditions": [],
+    "kind": "unproven-fallback-scope",
+    "count": 1,
+    "reason": "同名定義は別 scope に存在するが適用は未証明。fallback があっても健全とは扱わない。対象外の継承・条件契約の変更へ広げず既知残件として管理。"
+  },
+  {
+    "file": "code-surfaces.css",
+    "selector": "section[data-code-group]",
+    "property": "inline-size",
+    "reference": "--ui-code-surface-breakout-width",
+    "conditions": [],
+    "kind": "unproven-fallback-scope",
+    "count": 1,
+    "reason": "同名定義は別 scope に存在するが適用は未証明。fallback があっても健全とは扱わない。対象外の継承・条件契約の変更へ広げず既知残件として管理。"
+  },
+  {
+    "file": "code-surfaces.css",
+    "selector": "section[data-code-group]",
+    "property": "margin-inline",
+    "reference": "--ui-code-group-margin-inline",
+    "conditions": [],
+    "kind": "unproven-fallback-scope",
+    "count": 1,
+    "reason": "同名定義は別 scope に存在するが適用は未証明。fallback があっても健全とは扱わない。対象外の継承・条件契約の変更へ広げず既知残件として管理。"
+  },
+  {
+    "file": "code-surfaces.css",
+    "selector": "section[data-code-group]",
+    "property": "margin-inline",
+    "reference": "--ui-code-surface-breakout-margin",
+    "conditions": [],
+    "kind": "unproven-fallback-scope",
+    "count": 1,
+    "reason": "同名定義は別 scope に存在するが適用は未証明。fallback があっても健全とは扱わない。対象外の継承・条件契約の変更へ広げず既知残件として管理。"
+  },
+  {
+    "file": "code-surfaces.css",
+    "selector": ".code-group-header-tools",
+    "property": "padding-inline-start",
+    "reference": "--ui-code-copy-control-inline-rail",
+    "conditions": [],
+    "kind": "unproven-fallback-scope",
+    "count": 1,
+    "reason": "同名定義は別 scope に存在するが適用は未証明。fallback があっても健全とは扱わない。対象外の継承・条件契約の変更へ広げず既知残件として管理。"
+  },
+  {
+    "file": "code-surfaces.css",
+    "selector": ".code-group-header-tools",
+    "property": "padding-inline-end",
+    "reference": "--ui-code-copy-control-inline-rail",
+    "conditions": [],
+    "kind": "unproven-fallback-scope",
+    "count": 1,
+    "reason": "同名定義は別 scope に存在するが適用は未証明。fallback があっても健全とは扱わない。対象外の継承・条件契約の変更へ広げず既知残件として管理。"
+  },
+  {
+    "file": "details-block.css",
+    "selector": ".details-block__chevron.static-icon",
+    "property": "align-self",
+    "reference": "--details-block-icon-align-self",
+    "conditions": [],
+    "kind": "undefined-fallback",
+    "count": 1,
+    "reason": "既存の component / layout 用 fallback 付き参照。任意 override の公開契約または供給 scope を本検証では確認できない。fallback を無条件に許可せず、他機能の API / CSS 修正を避けて残件管理。"
+  },
+  {
+    "file": "details-block.css",
+    "selector": ".details-block__chevron.static-icon",
+    "property": "margin-block-start",
+    "reference": "--details-block-icon-offset-block-start",
+    "conditions": [],
+    "kind": "undefined-fallback",
+    "count": 1,
+    "reason": "既存の component / layout 用 fallback 付き参照。任意 override の公開契約または供給 scope を本検証では確認できない。fallback を無条件に許可せず、他機能の API / CSS 修正を避けて残件管理。"
   },
   {
     "file": "details-block.css",
     "selector": ".details-block__summary:focus-visible",
     "property": "outline",
     "reference": "--focus-default",
+    "conditions": [],
     "kind": "undefined",
     "count": 1,
     "reason": "既存の未定義参照。Copy button 以外の修正は今回の対象外。"
@@ -175,24 +534,437 @@
     "selector": ".home-lead",
     "property": "max-inline-size",
     "reference": "--home-lead-measure",
+    "conditions": [],
     "kind": "unproven-scope",
     "count": 1,
     "reason": "shell から lead への DOM 継承は selector に祖先が明記されず静的に未証明。"
+  },
+  {
+    "file": "home-page.css",
+    "selector": ".home-meta-separator",
+    "property": "color",
+    "reference": "--fg-ghost",
+    "conditions": [],
+    "kind": "undefined-fallback",
+    "count": 1,
+    "reason": "既存の fallback 付き未定義 token 参照。命名の旧契約・typo・任意 override のどれかを断定する根拠がないため正常とは扱わない。Copy focus 以外の修正へ広げず箇所と条件・件数を固定。"
+  },
+  {
+    "file": "layout-header.css",
+    "selector": "header[data-layout-header]",
+    "property": "--_header-primary-start-offset",
+    "reference": "--layout-header-primary-start-offset",
+    "conditions": [],
+    "kind": "undefined-fallback",
+    "count": 1,
+    "reason": "既存の component / layout 用 fallback 付き参照。任意 override の公開契約または供給 scope を本検証では確認できない。fallback を無条件に許可せず、他機能の API / CSS 修正を避けて残件管理。"
+  },
+  {
+    "file": "layout-header.css",
+    "selector": "header[data-layout-header]",
+    "property": "--_header-menu-selected-background",
+    "reference": "--bg-surface-selected",
+    "conditions": [],
+    "kind": "undefined-fallback",
+    "count": 1,
+    "reason": "既存の fallback 付き未定義 token 参照。命名の旧契約・typo・任意 override のどれかを断定する根拠がないため正常とは扱わない。Copy focus 以外の修正へ広げず箇所と条件・件数を固定。"
+  },
+  {
+    "file": "layout-header.css",
+    "selector": "header[data-layout-header] .layout-header__inner",
+    "property": "max-inline-size",
+    "reference": "--app-header-inner-max-width",
+    "conditions": [],
+    "kind": "undefined-fallback",
+    "count": 1,
+    "reason": "既存の component / layout 用 fallback 付き参照。任意 override の公開契約または供給 scope を本検証では確認できない。fallback を無条件に許可せず、他機能の API / CSS 修正を避けて残件管理。"
+  },
+  {
+    "file": "layout-header.css",
+    "selector": "header[data-layout-header][data-note-layout='true'][data-sidebar-enabled='true']\n    .layout-header__center",
+    "property": "--_header-center-start-inset",
+    "reference": "--note-sidebar-main-gap",
+    "conditions": ["@container layout-header-shell (width >= 1024px)"],
+    "kind": "unproven-fallback-scope",
+    "count": 1,
+    "reason": "同名定義は別 scope に存在するが適用は未証明。fallback があっても健全とは扱わない。対象外の継承・条件契約の変更へ広げず既知残件として管理。"
+  },
+  {
+    "file": "layout-header.css",
+    "selector": "header[data-layout-header][data-note-layout='true'][data-sidebar-enabled='true']\n    .layout-header__compact-center",
+    "property": "--_header-center-start-inset",
+    "reference": "--note-sidebar-main-gap",
+    "conditions": ["@container layout-header-shell (width >= 1024px)"],
+    "kind": "unproven-fallback-scope",
+    "count": 1,
+    "reason": "同名定義は別 scope に存在するが適用は未証明。fallback があっても健全とは扱わない。対象外の継承・条件契約の変更へ広げず既知残件として管理。"
+  },
+  {
+    "file": "layout-sidebar.css",
+    "selector": "[data-sidebar-enhancement-state='active'] [data-layout-sidebar-root][data-mode='overlay']",
+    "property": "z-index",
+    "reference": "--z-overlay",
+    "conditions": [],
+    "kind": "undefined-fallback",
+    "count": 1,
+    "reason": "未定義の既知残件。意図的な override と断定せず、対象外の z-index 実装・値・順序を維持する。既存 fallback 100 は別 assertion で固定。"
+  },
+  {
+    "file": "layout-sidebar.css",
+    "selector": "[data-layout-sidebar-backdrop]",
+    "property": "z-index",
+    "reference": "--z-overlay",
+    "conditions": [],
+    "kind": "undefined-fallback",
+    "count": 1,
+    "reason": "未定義の既知残件。意図的な override と断定せず、対象外の z-index 実装・値・順序を維持する。既存 fallback 100 は別 assertion で固定。"
+  },
+  {
+    "file": "layout-toc.css",
+    "selector": ".layout-toc-col[data-density-tier='compact'] .layout-toc",
+    "property": "--toc-item-min-block-size",
+    "reference": "--toc-item-compact-min-block-size",
+    "conditions": [],
+    "kind": "undefined-fallback",
+    "count": 1,
+    "reason": "既存の component / layout 用 fallback 付き参照。任意 override の公開契約または供給 scope を本検証では確認できない。fallback を無条件に許可せず、他機能の API / CSS 修正を避けて残件管理。"
+  },
+  {
+    "file": "layout-toc.css",
+    "selector": ".layout-toc[data-density-tier='compact']",
+    "property": "--toc-item-min-block-size",
+    "reference": "--toc-item-compact-min-block-size",
+    "conditions": [],
+    "kind": "undefined-fallback",
+    "count": 1,
+    "reason": "既存の component / layout 用 fallback 付き参照。任意 override の公開契約または供給 scope を本検証では確認できない。fallback を無条件に許可せず、他機能の API / CSS 修正を避けて残件管理。"
+  },
+  {
+    "file": "layout-toc.css",
+    "selector": ".layout-toc-mobile-panel[data-density-tier='compact']",
+    "property": "--toc-item-min-block-size",
+    "reference": "--toc-item-compact-min-block-size",
+    "conditions": [],
+    "kind": "undefined-fallback",
+    "count": 1,
+    "reason": "既存の component / layout 用 fallback 付き参照。任意 override の公開契約または供給 scope を本検証では確認できない。fallback を無条件に許可せず、他機能の API / CSS 修正を避けて残件管理。"
+  },
+  {
+    "file": "layout-toc.css",
+    "selector": ".layout-toc-col[data-density-tier='compact'] .layout-toc",
+    "property": "--toc-item-padding-block",
+    "reference": "--toc-item-compact-padding-block",
+    "conditions": [],
+    "kind": "undefined-fallback",
+    "count": 1,
+    "reason": "既存の component / layout 用 fallback 付き参照。任意 override の公開契約または供給 scope を本検証では確認できない。fallback を無条件に許可せず、他機能の API / CSS 修正を避けて残件管理。"
+  },
+  {
+    "file": "layout-toc.css",
+    "selector": ".layout-toc[data-density-tier='compact']",
+    "property": "--toc-item-padding-block",
+    "reference": "--toc-item-compact-padding-block",
+    "conditions": [],
+    "kind": "undefined-fallback",
+    "count": 1,
+    "reason": "既存の component / layout 用 fallback 付き参照。任意 override の公開契約または供給 scope を本検証では確認できない。fallback を無条件に許可せず、他機能の API / CSS 修正を避けて残件管理。"
+  },
+  {
+    "file": "layout-toc.css",
+    "selector": ".layout-toc-mobile-panel[data-density-tier='compact']",
+    "property": "--toc-item-padding-block",
+    "reference": "--toc-item-compact-padding-block",
+    "conditions": [],
+    "kind": "undefined-fallback",
+    "count": 1,
+    "reason": "既存の component / layout 用 fallback 付き参照。任意 override の公開契約または供給 scope を本検証では確認できない。fallback を無条件に許可せず、他機能の API / CSS 修正を避けて残件管理。"
+  },
+  {
+    "file": "layout-toc.css",
+    "selector": ".layout-toc-col[data-density-tier='expanded'] .layout-toc",
+    "property": "--toc-item-min-block-size",
+    "reference": "--toc-item-expanded-min-block-size",
+    "conditions": [],
+    "kind": "undefined-fallback",
+    "count": 1,
+    "reason": "既存の component / layout 用 fallback 付き参照。任意 override の公開契約または供給 scope を本検証では確認できない。fallback を無条件に許可せず、他機能の API / CSS 修正を避けて残件管理。"
+  },
+  {
+    "file": "layout-toc.css",
+    "selector": ".layout-toc[data-density-tier='expanded']",
+    "property": "--toc-item-min-block-size",
+    "reference": "--toc-item-expanded-min-block-size",
+    "conditions": [],
+    "kind": "undefined-fallback",
+    "count": 1,
+    "reason": "既存の component / layout 用 fallback 付き参照。任意 override の公開契約または供給 scope を本検証では確認できない。fallback を無条件に許可せず、他機能の API / CSS 修正を避けて残件管理。"
+  },
+  {
+    "file": "layout-toc.css",
+    "selector": ".layout-toc-mobile-panel[data-density-tier='expanded']",
+    "property": "--toc-item-min-block-size",
+    "reference": "--toc-item-expanded-min-block-size",
+    "conditions": [],
+    "kind": "undefined-fallback",
+    "count": 1,
+    "reason": "既存の component / layout 用 fallback 付き参照。任意 override の公開契約または供給 scope を本検証では確認できない。fallback を無条件に許可せず、他機能の API / CSS 修正を避けて残件管理。"
+  },
+  {
+    "file": "layout-toc.css",
+    "selector": ".layout-toc-col[data-density-tier='expanded'] .layout-toc",
+    "property": "--toc-item-padding-block",
+    "reference": "--toc-item-expanded-padding-block",
+    "conditions": [],
+    "kind": "undefined-fallback",
+    "count": 1,
+    "reason": "既存の component / layout 用 fallback 付き参照。任意 override の公開契約または供給 scope を本検証では確認できない。fallback を無条件に許可せず、他機能の API / CSS 修正を避けて残件管理。"
+  },
+  {
+    "file": "layout-toc.css",
+    "selector": ".layout-toc[data-density-tier='expanded']",
+    "property": "--toc-item-padding-block",
+    "reference": "--toc-item-expanded-padding-block",
+    "conditions": [],
+    "kind": "undefined-fallback",
+    "count": 1,
+    "reason": "既存の component / layout 用 fallback 付き参照。任意 override の公開契約または供給 scope を本検証では確認できない。fallback を無条件に許可せず、他機能の API / CSS 修正を避けて残件管理。"
+  },
+  {
+    "file": "layout-toc.css",
+    "selector": ".layout-toc-mobile-panel[data-density-tier='expanded']",
+    "property": "--toc-item-padding-block",
+    "reference": "--toc-item-expanded-padding-block",
+    "conditions": [],
+    "kind": "undefined-fallback",
+    "count": 1,
+    "reason": "既存の component / layout 用 fallback 付き参照。任意 override の公開契約または供給 scope を本検証では確認できない。fallback を無条件に許可せず、他機能の API / CSS 修正を避けて残件管理。"
+  },
+  {
+    "file": "lists.css",
+    "selector": "ol[data-list]",
+    "property": "counter-reset",
+    "reference": "--ui-ol-counter-reset",
+    "conditions": [],
+    "kind": "undefined-fallback",
+    "count": 1,
+    "reason": "既存の component / layout 用 fallback 付き参照。任意 override の公開契約または供給 scope を本検証では確認できない。fallback を無条件に許可せず、他機能の API / CSS 修正を避けて残件管理。"
+  },
+  {
+    "file": "lists.css",
+    "selector": "ol[data-list] > li",
+    "property": "counter-increment",
+    "reference": "--ui-ol-counter-step",
+    "conditions": [],
+    "kind": "undefined-fallback",
+    "count": 1,
+    "reason": "既存の component / layout 用 fallback 付き参照。任意 override の公開契約または供給 scope を本検証では確認できない。fallback を無条件に許可せず、他機能の API / CSS 修正を避けて残件管理。"
+  },
+  {
+    "file": "lists.css",
+    "selector": "ol[data-list] > li[data-ol-has-value]",
+    "property": "counter-set",
+    "reference": "--ui-ol-counter-set",
+    "conditions": [],
+    "kind": "undefined-fallback",
+    "count": 1,
+    "reason": "既存の component / layout 用 fallback 付き参照。任意 override の公開契約または供給 scope を本検証では確認できない。fallback を無条件に許可せず、他機能の API / CSS 修正を避けて残件管理。"
+  },
+  {
+    "file": "lists.css",
+    "selector": "ol[data-list][data-marker-digits='3']",
+    "property": "padding-inline-start",
+    "reference": "--space-7",
+    "conditions": [],
+    "kind": "undefined-fallback",
+    "count": 1,
+    "reason": "既存の fallback 付き未定義 token 参照。命名の旧契約・typo・任意 override のどれかを断定する根拠がないため正常とは扱わない。Copy focus 以外の修正へ広げず箇所と条件・件数を固定。"
+  },
+  {
+    "file": "main.css",
+    "selector": ":is(.prose, .about-prose) mark[data-current-match='true']",
+    "property": "box-shadow",
+    "reference": "--bg-highlight-current",
+    "conditions": [],
+    "kind": "undefined-fallback",
+    "count": 1,
+    "reason": "既存の fallback 付き未定義 token 参照。命名の旧契約・typo・任意 override のどれかを断定する根拠がないため正常とは扱わない。Copy focus 以外の修正へ広げず箇所と条件・件数を固定。"
+  },
+  {
+    "file": "main.css",
+    "selector": ":is(.prose, .about-prose) :is(h2, h3, h4, h5, h6)[id] > .heading-text:hover",
+    "property": "text-decoration-color",
+    "reference": "--border-strong",
+    "conditions": [],
+    "kind": "undefined-fallback",
+    "count": 1,
+    "reason": "既存の fallback 付き未定義 token 参照。命名の旧契約・typo・任意 override のどれかを断定する根拠がないため正常とは扱わない。Copy focus 以外の修正へ広げず箇所と条件・件数を固定。"
+  },
+  {
+    "file": "main.css",
+    "selector": ":is(.prose, .about-prose) :is(h2, h3, h4, h5, h6)[id]:focus-within > .heading-text",
+    "property": "text-decoration-color",
+    "reference": "--border-strong",
+    "conditions": [],
+    "kind": "undefined-fallback",
+    "count": 1,
+    "reason": "既存の fallback 付き未定義 token 参照。命名の旧契約・typo・任意 override のどれかを断定する根拠がないため正常とは扱わない。Copy focus 以外の修正へ広げず箇所と条件・件数を固定。"
+  },
+  {
+    "file": "note-controls.css",
+    "selector": "[data-code-preview-root] [data-command-menu-panel]",
+    "property": "min-inline-size",
+    "reference": "--ui-dropdown-min-inline-size",
+    "conditions": [],
+    "kind": "undefined-fallback",
+    "count": 1,
+    "reason": "既存の component / layout 用 fallback 付き参照。任意 override の公開契約または供給 scope を本検証では確認できない。fallback を無条件に許可せず、他機能の API / CSS 修正を避けて残件管理。"
+  },
+  {
+    "file": "note-controls.css",
+    "selector": "[data-code-preview-root] [data-command-menu-panel]",
+    "property": "max-inline-size",
+    "reference": "--ui-dropdown-max-inline-size",
+    "conditions": [],
+    "kind": "undefined-fallback",
+    "count": 1,
+    "reason": "既存の component / layout 用 fallback 付き参照。任意 override の公開契約または供給 scope を本検証では確認できない。fallback を無条件に許可せず、他機能の API / CSS 修正を避けて残件管理。"
+  },
+  {
+    "file": "note-shell.css",
+    "selector": ".layout-main-col",
+    "property": "padding-block-end",
+    "reference": "--layout-main-col-padding-block-end",
+    "conditions": [],
+    "kind": "undefined-fallback",
+    "count": 1,
+    "reason": "既存の component / layout 用 fallback 付き参照。任意 override の公開契約または供給 scope を本検証では確認できない。fallback を無条件に許可せず、他機能の API / CSS 修正を避けて残件管理。"
+  },
+  {
+    "file": "preview-sandbox.css",
+    "selector": "[data-preview-sandbox-root] > [data-preview-sandbox-placeholder]",
+    "property": "min-block-size",
+    "reference": "--_note-preview-sandbox-min-height",
+    "conditions": [],
+    "kind": "undefined-fallback",
+    "count": 1,
+    "reason": "既存の component / layout 用 fallback 付き参照。任意 override の公開契約または供給 scope を本検証では確認できない。fallback を無条件に許可せず、他機能の API / CSS 修正を避けて残件管理。"
+  },
+  {
+    "file": "preview-sandbox.css",
+    "selector": "[data-preview-sandbox-root] > [data-preview-sandbox-placeholder]",
+    "property": "block-size",
+    "reference": "--_note-preview-sandbox-resolved-height",
+    "conditions": [],
+    "kind": "undefined-fallback",
+    "count": 1,
+    "reason": "既存の component / layout 用 fallback 付き参照。任意 override の公開契約または供給 scope を本検証では確認できない。fallback を無条件に許可せず、他機能の API / CSS 修正を避けて残件管理。"
+  },
+  {
+    "file": "preview-sandbox.css",
+    "selector": "[data-preview-sandbox-root] > [data-preview-sandbox-placeholder]",
+    "property": "background",
+    "reference": "--ui-preview-sandbox-bg",
+    "conditions": [],
+    "kind": "undefined-fallback",
+    "count": 1,
+    "reason": "既存の component / layout 用 fallback 付き参照。任意 override の公開契約または供給 scope を本検証では確認できない。fallback を無条件に許可せず、他機能の API / CSS 修正を避けて残件管理。"
+  },
+  {
+    "file": "preview-sandbox.css",
+    "selector": "[data-preview-sandbox-root] > iframe[data-sandbox-frame]",
+    "property": "min-block-size",
+    "reference": "--_note-preview-sandbox-min-height",
+    "conditions": [],
+    "kind": "undefined-fallback",
+    "count": 1,
+    "reason": "既存の component / layout 用 fallback 付き参照。任意 override の公開契約または供給 scope を本検証では確認できない。fallback を無条件に許可せず、他機能の API / CSS 修正を避けて残件管理。"
+  },
+  {
+    "file": "preview-sandbox.css",
+    "selector": "[data-preview-sandbox-root] > iframe[data-sandbox-frame]",
+    "property": "block-size",
+    "reference": "--_note-preview-sandbox-resolved-height",
+    "conditions": [],
+    "kind": "undefined-fallback",
+    "count": 1,
+    "reason": "既存の component / layout 用 fallback 付き参照。任意 override の公開契約または供給 scope を本検証では確認できない。fallback を無条件に許可せず、他機能の API / CSS 修正を避けて残件管理。"
+  },
+  {
+    "file": "preview-sandbox.css",
+    "selector": "[data-preview-sandbox-root] > iframe[data-sandbox-frame]",
+    "property": "background",
+    "reference": "--ui-preview-sandbox-bg",
+    "conditions": [],
+    "kind": "undefined-fallback",
+    "count": 1,
+    "reason": "既存の component / layout 用 fallback 付き参照。任意 override の公開契約または供給 scope を本検証では確認できない。fallback を無条件に許可せず、他機能の API / CSS 修正を避けて残件管理。"
+  },
+  {
+    "file": "result-card.css",
+    "selector": ".page-shell .result-card",
+    "property": "border-radius",
+    "reference": "--radius-lg",
+    "conditions": [],
+    "kind": "undefined-fallback",
+    "count": 1,
+    "reason": "既存の fallback 付き未定義 token 参照。命名の旧契約・typo・任意 override のどれかを断定する根拠がないため正常とは扱わない。Copy focus 以外の修正へ広げず箇所と条件・件数を固定。"
+  },
+  {
+    "file": "router-shell.css",
+    "selector": "router-document-host[data-sidebar-presence='present']",
+    "property": "column-gap",
+    "reference": "--note-sidebar-main-gap",
+    "conditions": [],
+    "kind": "unproven-fallback-scope",
+    "count": 1,
+    "reason": "同名定義は別 scope に存在するが適用は未証明。fallback があっても健全とは扱わない。対象外の継承・条件契約の変更へ広げず既知残件として管理。"
   },
   {
     "file": "score.css",
     "selector": ".score__scroll:focus-visible",
     "property": "outline",
     "reference": "--focus-default",
+    "conditions": [],
     "kind": "undefined",
     "count": 1,
     "reason": "既存の未定義参照。Copy button 以外の修正は今回の対象外。"
+  },
+  {
+    "file": "score.css",
+    "selector": ".score__scroll::-webkit-scrollbar",
+    "property": "block-size",
+    "reference": "--scrollbar-size",
+    "conditions": [],
+    "kind": "undefined-fallback",
+    "count": 1,
+    "reason": "既存の fallback 付き未定義 token 参照。命名の旧契約・typo・任意 override のどれかを断定する根拠がないため正常とは扱わない。Copy focus 以外の修正へ広げず箇所と条件・件数を固定。"
+  },
+  {
+    "file": "score.css",
+    "selector": ".score__stage",
+    "property": "aspect-ratio",
+    "reference": "--_score-aspect-ratio",
+    "conditions": [],
+    "kind": "undefined-fallback",
+    "count": 1,
+    "reason": "既存の component / layout 用 fallback 付き参照。任意 override の公開契約または供給 scope を本検証では確認できない。fallback を無条件に許可せず、他機能の API / CSS 修正を避けて残件管理。"
+  },
+  {
+    "file": "search-dialog.css",
+    "selector": ".search-dialog",
+    "property": "border-top-color",
+    "reference": "--fg-accent",
+    "conditions": [],
+    "kind": "undefined-fallback",
+    "count": 1,
+    "reason": "既存の fallback 付き未定義 token 参照。命名の旧契約・typo・任意 override のどれかを断定する根拠がないため正常とは扱わない。Copy focus 以外の修正へ広げず箇所と条件・件数を固定。"
   },
   {
     "file": "search-dialog.css",
     "selector": ".search-dialog",
     "property": "border-top-color",
     "reference": "--fg-link",
+    "conditions": [],
     "kind": "undefined",
     "count": 1,
     "reason": "既存の未定義参照。Copy button 以外の修正は今回の対象外。"
@@ -202,6 +974,7 @@
     "selector": ".search-dialog__input:focus-visible",
     "property": "outline",
     "reference": "--focus-default",
+    "conditions": [],
     "kind": "undefined",
     "count": 1,
     "reason": "既存の未定義参照。Copy button 以外の修正は今回の対象外。"
@@ -211,6 +984,7 @@
     "selector": ".search-dialog__clear:focus-visible",
     "property": "outline",
     "reference": "--focus-default",
+    "conditions": [],
     "kind": "undefined",
     "count": 1,
     "reason": "既存の未定義参照。Copy button 以外の修正は今回の対象外。"
@@ -220,6 +994,7 @@
     "selector": ".search-dialog__close:focus-visible",
     "property": "outline",
     "reference": "--focus-default",
+    "conditions": [],
     "kind": "undefined",
     "count": 1,
     "reason": "既存の未定義参照。Copy button 以外の修正は今回の対象外。"
@@ -229,15 +1004,77 @@
     "selector": ".search-dialog__result:focus-visible",
     "property": "outline",
     "reference": "--focus-default",
+    "conditions": [],
     "kind": "undefined",
     "count": 1,
     "reason": "既存の未定義参照。Copy button 以外の修正は今回の対象外。"
+  },
+  {
+    "file": "search-dialog.css",
+    "selector": ".search-dialog__result[aria-selected='true']",
+    "property": "background",
+    "reference": "--bg-accent-muted",
+    "conditions": [],
+    "kind": "undefined-fallback",
+    "count": 2,
+    "reason": "既存の fallback 付き未定義 token 参照。命名の旧契約・typo・任意 override のどれかを断定する根拠がないため正常とは扱わない。Copy focus 以外の修正へ広げず箇所と条件・件数を固定。"
+  },
+  {
+    "file": "search-dialog.css",
+    "selector": ".search-dialog__result[data-active='true']",
+    "property": "background",
+    "reference": "--bg-accent-muted",
+    "conditions": [],
+    "kind": "undefined-fallback",
+    "count": 1,
+    "reason": "既存の fallback 付き未定義 token 参照。命名の旧契約・typo・任意 override のどれかを断定する根拠がないため正常とは扱わない。Copy focus 以外の修正へ広げず箇所と条件・件数を固定。"
+  },
+  {
+    "file": "search-dialog.css",
+    "selector": ".search-dialog__result[aria-selected='true']",
+    "property": "outline",
+    "reference": "--border-accent",
+    "conditions": [],
+    "kind": "undefined-fallback",
+    "count": 2,
+    "reason": "既存の fallback 付き未定義 token 参照。命名の旧契約・typo・任意 override のどれかを断定する根拠がないため正常とは扱わない。Copy focus 以外の修正へ広げず箇所と条件・件数を固定。"
+  },
+  {
+    "file": "search-dialog.css",
+    "selector": ".search-dialog__result[data-active='true']",
+    "property": "outline",
+    "reference": "--border-accent",
+    "conditions": [],
+    "kind": "undefined-fallback",
+    "count": 1,
+    "reason": "既存の fallback 付き未定義 token 参照。命名の旧契約・typo・任意 override のどれかを断定する根拠がないため正常とは扱わない。Copy focus 以外の修正へ広げず箇所と条件・件数を固定。"
+  },
+  {
+    "file": "search-dialog.css",
+    "selector": ".search-dialog__result mark",
+    "property": "background",
+    "reference": "--bg-mark",
+    "conditions": [],
+    "kind": "undefined-fallback",
+    "count": 1,
+    "reason": "既存の fallback 付き未定義 token 参照。命名の旧契約・typo・任意 override のどれかを断定する根拠がないため正常とは扱わない。Copy focus 以外の修正へ広げず箇所と条件・件数を固定。"
+  },
+  {
+    "file": "search-dialog.css",
+    "selector": ".search-dialog__result mark",
+    "property": "border-radius",
+    "reference": "--radius-xs",
+    "conditions": [],
+    "kind": "undefined-fallback",
+    "count": 1,
+    "reason": "既存の fallback 付き未定義 token 参照。命名の旧契約・typo・任意 override のどれかを断定する根拠がないため正常とは扱わない。Copy focus 以外の修正へ広げず箇所と条件・件数を固定。"
   },
   {
     "file": "search-page.css",
     "selector": ".search-input-field",
     "property": "border-radius",
     "reference": "--radius-lg",
+    "conditions": [],
     "kind": "undefined",
     "count": 2,
     "reason": "既存の未定義参照。Copy button 以外の修正は今回の対象外。"
@@ -247,6 +1084,7 @@
     "selector": ".filter-search-field",
     "property": "border-radius",
     "reference": "--radius-lg",
+    "conditions": [],
     "kind": "undefined",
     "count": 1,
     "reason": "既存の未定義参照。Copy button 以外の修正は今回の対象外。"
@@ -256,6 +1094,7 @@
     "selector": ".search-input-control:focus-visible",
     "property": "outline",
     "reference": "--focus-default",
+    "conditions": [],
     "kind": "undefined",
     "count": 1,
     "reason": "既存の未定義参照。Copy button 以外の修正は今回の対象外。"
@@ -265,6 +1104,7 @@
     "selector": ".filter-search-control:focus-visible",
     "property": "outline",
     "reference": "--focus-default",
+    "conditions": [],
     "kind": "undefined",
     "count": 1,
     "reason": "既存の未定義参照。Copy button 以外の修正は今回の対象外。"
@@ -274,6 +1114,7 @@
     "selector": ".search-input-clear:focus-visible",
     "property": "outline",
     "reference": "--focus-default",
+    "conditions": [],
     "kind": "undefined",
     "count": 1,
     "reason": "既存の未定義参照。Copy button 以外の修正は今回の対象外。"
@@ -283,6 +1124,7 @@
     "selector": ".filter-search-field__clear:focus-visible",
     "property": "outline",
     "reference": "--focus-default",
+    "conditions": [],
     "kind": "undefined",
     "count": 1,
     "reason": "既存の未定義参照。Copy button 以外の修正は今回の対象外。"
@@ -292,6 +1134,7 @@
     "selector": ".selected-tag__remove:focus-visible",
     "property": "outline",
     "reference": "--focus-default",
+    "conditions": [],
     "kind": "undefined",
     "count": 1,
     "reason": "既存の未定義参照。Copy button 以外の修正は今回の対象外。"
@@ -301,6 +1144,7 @@
     "selector": ".filter-option-checkbox__input:focus-visible + .filter-option-checkbox__control",
     "property": "outline",
     "reference": "--focus-default",
+    "conditions": [],
     "kind": "undefined",
     "count": 1,
     "reason": "既存の未定義参照。Copy button 以外の修正は今回の対象外。"
@@ -310,6 +1154,7 @@
     "selector": ".filter-details",
     "property": "border-radius",
     "reference": "--radius-lg",
+    "conditions": [],
     "kind": "undefined",
     "count": 1,
     "reason": "既存の未定義参照。Copy button 以外の修正は今回の対象外。"
@@ -319,6 +1164,7 @@
     "selector": ".static-choice-menu__trigger:focus-visible",
     "property": "outline",
     "reference": "--static-choice-menu-focus-outline",
+    "conditions": [],
     "kind": "unproven-scope",
     "count": 1,
     "reason": "BEM 子要素への DOM 継承は selector に祖先が明記されず静的に未証明。既存 menu の局所供給。"
@@ -328,6 +1174,7 @@
     "selector": ".static-choice-menu__trigger:focus-visible",
     "property": "outline-offset",
     "reference": "--static-choice-menu-focus-outline-offset",
+    "conditions": [],
     "kind": "unproven-scope",
     "count": 1,
     "reason": "BEM 子要素への DOM 継承は selector に祖先が明記されず静的に未証明。既存 menu の局所供給。"
@@ -337,6 +1184,7 @@
     "selector": ".static-choice-menu__panel",
     "property": "padding",
     "reference": "--static-choice-menu-panel-padding",
+    "conditions": [],
     "kind": "unproven-scope",
     "count": 1,
     "reason": "BEM 子要素への DOM 継承は selector に祖先が明記されず静的に未証明。既存 menu の局所供給。"
@@ -346,6 +1194,7 @@
     "selector": ".static-choice-menu__panel",
     "property": "border",
     "reference": "--static-choice-menu-panel-border",
+    "conditions": [],
     "kind": "unproven-scope",
     "count": 1,
     "reason": "BEM 子要素への DOM 継承は selector に祖先が明記されず静的に未証明。既存 menu の局所供給。"
@@ -355,6 +1204,7 @@
     "selector": ".static-choice-menu__panel",
     "property": "border-radius",
     "reference": "--static-choice-menu-panel-radius",
+    "conditions": [],
     "kind": "unproven-scope",
     "count": 1,
     "reason": "BEM 子要素への DOM 継承は selector に祖先が明記されず静的に未証明。既存 menu の局所供給。"
@@ -364,6 +1214,7 @@
     "selector": ".static-choice-menu__panel",
     "property": "background",
     "reference": "--static-choice-menu-panel-background",
+    "conditions": [],
     "kind": "unproven-scope",
     "count": 1,
     "reason": "BEM 子要素への DOM 継承は selector に祖先が明記されず静的に未証明。既存 menu の局所供給。"
@@ -373,6 +1224,7 @@
     "selector": ".static-choice-menu__panel",
     "property": "box-shadow",
     "reference": "--static-choice-menu-panel-shadow",
+    "conditions": [],
     "kind": "unproven-scope",
     "count": 1,
     "reason": "BEM 子要素への DOM 継承は selector に祖先が明記されず静的に未証明。既存 menu の局所供給。"
@@ -382,6 +1234,7 @@
     "selector": ".static-choice-menu__item",
     "property": "padding",
     "reference": "--static-choice-menu-item-padding",
+    "conditions": [],
     "kind": "unproven-scope",
     "count": 1,
     "reason": "BEM 子要素への DOM 継承は selector に祖先が明記されず静的に未証明。既存 menu の局所供給。"
@@ -391,6 +1244,7 @@
     "selector": ".static-choice-menu__item",
     "property": "border-radius",
     "reference": "--static-choice-menu-item-radius",
+    "conditions": [],
     "kind": "unproven-scope",
     "count": 1,
     "reason": "BEM 子要素への DOM 継承は selector に祖先が明記されず静的に未証明。既存 menu の局所供給。"
@@ -400,6 +1254,7 @@
     "selector": ".static-choice-menu__item:hover",
     "property": "background",
     "reference": "--static-choice-menu-hover-background",
+    "conditions": [],
     "kind": "unproven-scope",
     "count": 1,
     "reason": "BEM 子要素への DOM 継承は selector に祖先が明記されず静的に未証明。既存 menu の局所供給。"
@@ -409,6 +1264,7 @@
     "selector": ".static-choice-menu__item:active",
     "property": "background",
     "reference": "--static-choice-menu-hover-background",
+    "conditions": [],
     "kind": "unproven-scope",
     "count": 1,
     "reason": "BEM 子要素への DOM 継承は selector に祖先が明記されず静的に未証明。既存 menu の局所供給。"
@@ -418,6 +1274,7 @@
     "selector": ".static-choice-menu__item:focus-visible",
     "property": "outline",
     "reference": "--static-choice-menu-focus-outline",
+    "conditions": [],
     "kind": "unproven-scope",
     "count": 1,
     "reason": "BEM 子要素への DOM 継承は selector に祖先が明記されず静的に未証明。既存 menu の局所供給。"
@@ -427,6 +1284,7 @@
     "selector": ".static-choice-menu__item:focus-visible",
     "property": "outline-offset",
     "reference": "--static-choice-menu-focus-outline-offset",
+    "conditions": [],
     "kind": "unproven-scope",
     "count": 1,
     "reason": "BEM 子要素への DOM 継承は selector に祖先が明記されず静的に未証明。既存 menu の局所供給。"
@@ -436,15 +1294,107 @@
     "selector": ".static-choice-menu__item[data-selected='true']",
     "property": "background",
     "reference": "--static-choice-menu-selected-background",
+    "conditions": [],
     "kind": "unproven-scope",
     "count": 1,
     "reason": "BEM 子要素への DOM 継承は selector に祖先が明記されず静的に未証明。既存 menu の局所供給。"
+  },
+  {
+    "file": "static-copy-button.css",
+    "selector": ".static-copy-button[data-copy-state='copied']",
+    "property": "background",
+    "reference": "--bg-success-muted",
+    "conditions": [],
+    "kind": "undefined-fallback",
+    "count": 1,
+    "reason": "既存の fallback 付き未定義 token 参照。命名の旧契約・typo・任意 override のどれかを断定する根拠がないため正常とは扱わない。Copy focus 以外の修正へ広げず箇所と条件・件数を固定。"
+  },
+  {
+    "file": "static-copy-button.css",
+    "selector": ".static-copy-button[data-copy-state='copied']",
+    "property": "border-color",
+    "reference": "--border-success",
+    "conditions": [],
+    "kind": "undefined-fallback",
+    "count": 1,
+    "reason": "既存の fallback 付き未定義 token 参照。命名の旧契約・typo・任意 override のどれかを断定する根拠がないため正常とは扱わない。Copy focus 以外の修正へ広げず箇所と条件・件数を固定。"
+  },
+  {
+    "file": "static-copy-button.css",
+    "selector": ".static-copy-button[data-copy-state='error']",
+    "property": "background",
+    "reference": "--bg-danger-muted",
+    "conditions": [],
+    "kind": "undefined-fallback",
+    "count": 1,
+    "reason": "既存の fallback 付き未定義 token 参照。命名の旧契約・typo・任意 override のどれかを断定する根拠がないため正常とは扱わない。Copy focus 以外の修正へ広げず箇所と条件・件数を固定。"
+  },
+  {
+    "file": "syntax.css",
+    "selector": ".syntax-card",
+    "property": "margin-inline",
+    "reference": "--syntax-card-breakout-margin",
+    "conditions": [],
+    "kind": "undefined-fallback",
+    "count": 1,
+    "reason": "既存の component / layout 用 fallback 付き参照。任意 override の公開契約または供給 scope を本検証では確認できない。fallback を無条件に許可せず、他機能の API / CSS 修正を避けて残件管理。"
+  },
+  {
+    "file": "syntax.css",
+    "selector": ".syntax-card",
+    "property": "margin-inline",
+    "reference": "--ui-syntax-card-breakout-margin",
+    "conditions": [],
+    "kind": "undefined-fallback",
+    "count": 1,
+    "reason": "既存の component / layout 用 fallback 付き参照。任意 override の公開契約または供給 scope を本検証では確認できない。fallback を無条件に許可せず、他機能の API / CSS 修正を避けて残件管理。"
+  },
+  {
+    "file": "syntax.css",
+    "selector": ".syntax-card",
+    "property": "width",
+    "reference": "--syntax-card-breakout-width",
+    "conditions": [],
+    "kind": "undefined-fallback",
+    "count": 1,
+    "reason": "既存の component / layout 用 fallback 付き参照。任意 override の公開契約または供給 scope を本検証では確認できない。fallback を無条件に許可せず、他機能の API / CSS 修正を避けて残件管理。"
+  },
+  {
+    "file": "syntax.css",
+    "selector": ".syntax-card",
+    "property": "width",
+    "reference": "--ui-syntax-card-breakout-width",
+    "conditions": [],
+    "kind": "undefined-fallback",
+    "count": 1,
+    "reason": "既存の component / layout 用 fallback 付き参照。任意 override の公開契約または供給 scope を本検証では確認できない。fallback を無条件に許可せず、他機能の API / CSS 修正を避けて残件管理。"
+  },
+  {
+    "file": "tabs.css",
+    "selector": "[data-tabs-root] > [data-tab-panel]",
+    "property": "margin-block-start",
+    "reference": "--prose-flow-space",
+    "conditions": [],
+    "kind": "undefined-fallback",
+    "count": 1,
+    "reason": "既存の fallback 付き未定義 token 参照。命名の旧契約・typo・任意 override のどれかを断定する根拠がないため正常とは扱わない。Copy focus 以外の修正へ広げず箇所と条件・件数を固定。"
+  },
+  {
+    "file": "tabs.css",
+    "selector": "[data-tabs-root][data-tabs-orientation='vertical'] > [data-tab-panel]",
+    "property": "margin-inline-start",
+    "reference": "--prose-flow-space",
+    "conditions": [],
+    "kind": "undefined-fallback",
+    "count": 1,
+    "reason": "既存の fallback 付き未定義 token 参照。命名の旧契約・typo・任意 override のどれかを断定する根拠がないため正常とは扱わない。Copy focus 以外の修正へ広げず箇所と条件・件数を固定。"
   },
   {
     "file": "tokens.css",
     "selector": ":root[data-theme='dark']",
     "property": "--elevation-sm",
     "reference": "--shadow-dark-sm",
+    "conditions": [],
     "kind": "unproven-scope",
     "count": 1,
     "reason": "dark 明示指定の参照先は OS dark media 内だけに定義される。条件成立を保証できない既存残件。"
@@ -454,6 +1404,7 @@
     "selector": ":root[data-theme='dark']",
     "property": "--elevation-md",
     "reference": "--shadow-dark-md",
+    "conditions": [],
     "kind": "unproven-scope",
     "count": 1,
     "reason": "dark 明示指定の参照先は OS dark media 内だけに定義される。条件成立を保証できない既存残件。"
@@ -463,6 +1414,7 @@
     "selector": ":root[data-theme='dark']",
     "property": "--elevation-lg",
     "reference": "--shadow-dark-lg",
+    "conditions": [],
     "kind": "unproven-scope",
     "count": 1,
     "reason": "dark 明示指定の参照先は OS dark media 内だけに定義される。条件成立を保証できない既存残件。"
@@ -472,8 +1424,19 @@
     "selector": ":root[data-theme='dark']",
     "property": "--elevation-glow",
     "reference": "--shadow-dark-glow",
+    "conditions": [],
     "kind": "unproven-scope",
     "count": 1,
     "reason": "dark 明示指定の参照先は OS dark media 内だけに定義される。条件成立を保証できない既存残件。"
+  },
+  {
+    "file": "video.css",
+    "selector": "[data-video-root] .play-button",
+    "property": "border",
+    "reference": "--video-overlay-border",
+    "conditions": [],
+    "kind": "undefined-fallback",
+    "count": 1,
+    "reason": "既存の component / layout 用 fallback 付き参照。任意 override の公開契約または供給 scope を本検証では確認できない。fallback を無条件に許可せず、他機能の API / CSS 修正を避けて残件管理。"
   }
 ]

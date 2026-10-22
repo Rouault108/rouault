@@ -11,15 +11,23 @@ export interface TokenReferenceLocation {
   readonly selector: string;
   readonly property: string;
   readonly reference: string;
+  readonly conditions: readonly string[];
 }
 
 export interface TokenReferenceFinding extends TokenReferenceLocation {
-  readonly kind: 'undefined' | 'unproven-scope' | 'cycle' | 'unsupported';
+  readonly kind:
+    | 'undefined'
+    | 'unproven-scope'
+    | 'undefined-fallback'
+    | 'unproven-fallback-scope'
+    | 'cycle'
+    | 'unsupported';
 }
 
 interface Reference {
   readonly name: string;
   readonly fallback: readonly Reference[] | undefined;
+  readonly fallbackValue: string | undefined;
 }
 
 // 値全体の文法判定ではなく、文字列・コメント・括弧を保護して var の引数を読む。
@@ -78,6 +86,7 @@ const references = (value: string): Reference[] => {
         if (!/^--[a-zA-Z0-9_-]+$/u.test(token)) throw new Error('未対応の var 名');
         result.push({
           name: token,
+          fallbackValue: comma === undefined ? undefined : value.slice(comma + 1, index).trim(),
           fallback: comma === undefined ? undefined : references(value.slice(comma + 1, index)),
         });
       } else result.push(...references(value.slice(argumentStart, index)));
@@ -146,12 +155,41 @@ const inheritsFrom = (consumer: string, provider: string): boolean => {
 };
 
 export interface TokenReferenceAudit extends TokenReferenceLocation {
+  readonly fallback?: string;
   readonly category: 'public' | 'local' | 'runtime' | 'fallback' | 'unresolved';
 }
+
+// 明示 theme と単純な AND media の排他軸だけを扱う。theme と OS 色設定は独立する。
+const mergeConditions = (
+  context: ReadonlyMap<string, string>,
+  entry: Entry,
+): ReadonlyMap<string, string> | undefined => {
+  const merged = new Map(context);
+  const constraints: [string, string][] = [];
+  const theme = /^:root\[data-theme=['"](light|dark|system)['"]\]$/u.exec(entry.selector)?.[1];
+  if (theme !== undefined) constraints.push(['theme', theme]);
+  for (const condition of entry.conditions) {
+    if (!condition.startsWith('@media ') || /,|\b(?:or|not)\b/u.test(condition)) continue;
+    const query = condition.slice(7).trim();
+    // 複雑な構文の断片から排他性を推測して、本物の循環を隠さない。
+    if (!/^(?:(?:all|screen)\s+and\s+)?\([^()]+\)(?:\s+and\s+\([^()]+\))*$/u.test(query)) continue;
+    for (const match of query.matchAll(
+      /\(\s*(prefers-color-scheme|forced-colors|prefers-reduced-motion)\s*:\s*(light|dark|active|none|reduce|no-preference)\s*\)/gu,
+    )) {
+      if (match[1] && match[2]) constraints.push([match[1], match[2]]);
+    }
+  }
+  for (const [axis, value] of constraints) {
+    if (merged.has(axis) && merged.get(axis) !== value) return undefined;
+    merged.set(axis, value);
+  }
+  return merged;
+};
 
 export const auditTokenReferences = (
   sources: readonly CssSource[],
   runtime: readonly TokenReferenceLocation[] = [],
+  intentionalFallbacks: readonly TokenReferenceLocation[] = [],
 ): { findings: TokenReferenceFinding[]; references: TokenReferenceAudit[] } => {
   const entries: Entry[] = [];
   const findings: TokenReferenceFinding[] = [];
@@ -166,6 +204,7 @@ export const auditTokenReferences = (
             selector: rule?.type === 'atrule' ? `@${rule.name} ${rule.params}` : '<root>',
             property: declaration.prop,
             reference: declaration.value,
+            conditions: [],
             kind: 'unsupported',
           });
         return;
@@ -193,6 +232,7 @@ export const auditTokenReferences = (
             selector,
             property: declaration.prop,
             reference: declaration.value,
+            conditions: conditionsFor(rule),
             kind: 'unsupported',
           });
         }
@@ -226,6 +266,7 @@ export const auditTokenReferences = (
     selector: entry.selector,
     property: entry.declaration.prop,
     reference,
+    conditions: entry.conditions,
   });
   const matchesRuntime = (entry: Entry, name: string): boolean =>
     runtime.some(
@@ -233,7 +274,8 @@ export const auditTokenReferences = (
         item.file === entry.file &&
         item.selector === entry.selector &&
         item.property === entry.declaration.prop &&
-        item.reference === name,
+        item.reference === name &&
+        JSON.stringify(item.conditions) === JSON.stringify(entry.conditions),
     );
   const check = (entry: Entry, refs: readonly Reference[]): void => {
     for (const ref of refs) {
@@ -245,16 +287,32 @@ export const auditTokenReferences = (
             : 'local'
           : matchesRuntime(entry, ref.name)
             ? 'runtime'
-            : ref.fallback !== undefined
+            : ref.fallback !== undefined &&
+                intentionalFallbacks.some(
+                  (item) =>
+                    item.file === entry.file &&
+                    item.selector === entry.selector &&
+                    item.property === entry.declaration.prop &&
+                    item.reference === ref.name &&
+                    JSON.stringify(item.conditions) === JSON.stringify(entry.conditions),
+                )
               ? 'fallback'
               : 'unresolved';
-      audit.push({ ...location(entry, ref.name), category });
+      audit.push({
+        ...location(entry, ref.name),
+        category,
+        ...(ref.fallbackValue === undefined ? {} : { fallback: ref.fallbackValue }),
+      });
       if (category === 'unresolved') {
         findings.push({
           ...location(entry, ref.name),
           kind: definitions.some((item) => item.declaration.prop === ref.name)
-            ? 'unproven-scope'
-            : 'undefined',
+            ? ref.fallback === undefined
+              ? 'unproven-scope'
+              : 'unproven-fallback-scope'
+            : ref.fallback === undefined
+              ? 'undefined'
+              : 'undefined-fallback',
         });
       }
       // 使用されない fallback も検査し、上位 token の存在で typo を隠さない。
@@ -263,17 +321,31 @@ export const auditTokenReferences = (
   };
   const allReferences = (refs: readonly Reference[]): Reference[] =>
     refs.flatMap((ref) => [ref, ...allReferences(ref.fallback ?? [])]);
-  const cycleFrom = (origin: Entry, entry: Entry, path: readonly Entry[]): boolean =>
+  const cycleFrom = (
+    origin: Entry,
+    entry: Entry,
+    path: readonly Entry[],
+    context: ReadonlyMap<string, string>,
+  ): boolean =>
     allReferences(entry.references).some((ref) =>
-      providers(entry, ref.name).some(
-        (candidate) =>
-          candidate === origin ||
-          (!path.includes(candidate) && cycleFrom(origin, candidate, [...path, candidate])),
-      ),
+      providers(entry, ref.name).some((candidate) => {
+        const compatible = mergeConditions(context, candidate);
+        return (
+          compatible !== undefined &&
+          (candidate === origin ||
+            (!path.includes(candidate) &&
+              cycleFrom(origin, candidate, [...path, candidate], compatible)))
+        );
+      }),
     );
   for (const entry of entries) {
     check(entry, entry.references);
-    if (entry.declaration.prop.startsWith('--') && cycleFrom(entry, entry, [entry])) {
+    const context = mergeConditions(new Map(), entry);
+    if (
+      entry.declaration.prop.startsWith('--') &&
+      context !== undefined &&
+      cycleFrom(entry, entry, [entry], context)
+    ) {
       findings.push({ ...location(entry, entry.declaration.prop), kind: 'cycle' });
     }
   }
@@ -283,4 +355,5 @@ export const auditTokenReferences = (
 export const inspectTokenReferences = (
   sources: readonly CssSource[],
   runtime: readonly TokenReferenceLocation[] = [],
-): TokenReferenceFinding[] => auditTokenReferences(sources, runtime).findings;
+  intentionalFallbacks: readonly TokenReferenceLocation[] = [],
+): TokenReferenceFinding[] => auditTokenReferences(sources, runtime, intentionalFallbacks).findings;
