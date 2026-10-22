@@ -372,6 +372,12 @@ export const registerHistoryPrepaintXYTests = (): void => {
             page,
           }, info) => {
             const target = `/notes/library/collection/${encodeURIComponent('計算機科学・ソフトウェア開発関連書籍')}#c-net-visual-basic`;
+            const clientResponses: Response[] = [];
+            const recordClientResponse = (response: Response): void => {
+              if (new URL(response.url()).pathname.includes('/client-assets/'))
+                clientResponses.push(response);
+            };
+            page.on('response', recordClientResponse);
             const response = await page.goto(target);
             if (!response) throw new Error('initial HTTP response');
             const staticIds = await page.evaluate(
@@ -437,6 +443,17 @@ export const registerHistoryPrepaintXYTests = (): void => {
                 });
               }, position);
             await settle();
+            page.off('response', recordClientResponse);
+            expect(clientResponses.length).toBeGreaterThan(0);
+            const clientCachePolicies = await Promise.all(
+              clientResponses.map(async (response) => ({
+                url: response.url(),
+                cacheControl: await response.headerValue('cache-control'),
+              })),
+            );
+            // 本番と異なるno-cache配信をwarm-cache条件として受理しない。
+            for (const policy of clientCachePolicies)
+              expect(policy.cacheControl, policy.url).toBe('public, max-age=31536000, immutable');
             const before = await measure();
             // Firefoxは304でもresource timingに初回転送量を残すため、HTTP応答も記録する。
             const revalidated: string[] = [];
@@ -478,6 +495,7 @@ export const registerHistoryPrepaintXYTests = (): void => {
                   after,
                   cached,
                   revalidated,
+                  clientCachePolicies,
                   staticIds,
                 },
                 null,

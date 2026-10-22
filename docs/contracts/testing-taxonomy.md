@@ -48,6 +48,7 @@
 - `test/ssr/**`はbuild-time / final DOM / static artifact / CSS structureを担当する。
 - `test/e2e/**`はapp shell integration、no-JS baseline、router/history/search、主要導線を担当する。
 - `pnpm test:e2e:dev`はEleventy dev server上の開発時専用経路に限定したsmokeを担当する。production build / previewで固定するfinal DOMや横断的なrouter挙動を重複検証してはならない。
+- production previewは生成済み`dist/_headers`のCache-Controlを適用する。hash付きclient assetのimmutable配信と文書・可変metadataの再検証を本番と揃え、browser標準のcached reloadをVite既定のno-cache配信で代用しない。cache条件と本文幾何・座標の2 CSS px照合は独立して検証する。
 - Production import-boundary / CSS artifact / search import-boundary scriptsはnode-level verificationとして扱い、読書chromeのruntime UI挙動はbrowser / e2eで固定する。
 
 ### Browser Test Harness
