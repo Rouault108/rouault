@@ -326,6 +326,58 @@ describe('TocActiveTracker', () => {
     document.documentElement.style.scrollPaddingTop = '';
   });
 
+  it.each(['arrival', 'wheel', 'new-navigation', 'coordinate-priority', 'target-hidden'] as const)(
+    '初期予約より遅いhash到達を同期し、本人入力と新intentは取消す: %s',
+    async (event) => {
+      const previousUrl = window.location.href;
+      document.body.innerHTML =
+        '<article id="late-hash-root"><h2 id="late-one">One</h2><h2 id="late-two">Two</h2></article>';
+      window.history.replaceState(null, '', '#late-two');
+      let targetTop = window.innerHeight + 200;
+      for (const id of ['late-one', 'late-two']) {
+        const heading = document.getElementById(id);
+        if (!heading) throw new Error('late hash heading');
+        heading.getBoundingClientRect = () =>
+          new DOMRect(0, id === 'late-one' ? -100 : targetTop, 600, 32);
+      }
+      let activeId = '';
+      let coordinatePriority = false;
+      const tracker = new TocActiveTracker({
+        contentRootId: 'late-hash-root',
+        headings: ['late-one', 'late-two'].map((id) => ({ id, text: id, level: 2 })),
+        capabilities: { activeTracking: true, dynamicScopes: false, mobilePanel: false },
+        getActiveId: () => activeId,
+        coordinatePriority: () => coordinatePriority,
+        onActiveIdChange: (id) => {
+          activeId = id;
+        },
+      });
+      try {
+        tracker.start();
+        await new Promise<void>((resolve) => setTimeout(resolve, 160));
+        expect(activeId).toBe('late-one');
+        if (event === 'wheel') window.dispatchEvent(new WheelEvent('wheel'));
+        if (event === 'new-navigation') tracker.invalidateNavigationIntent();
+        if (event === 'coordinate-priority') coordinatePriority = true;
+        const target = document.getElementById('late-two');
+        if (!target) throw new Error('late target');
+        if (event === 'target-hidden') target.style.display = 'none';
+        targetTop = 160;
+        window.dispatchEvent(new Event('scroll'));
+        await waitForRefresh();
+        coordinatePriority = false;
+        target.style.display = '';
+        window.dispatchEvent(new Event('scroll'));
+        await waitForRefresh();
+        expect(activeId).toBe(event === 'arrival' ? 'late-two' : 'late-one');
+      } finally {
+        tracker.destroy();
+        window.history.replaceState(null, '', previousUrl);
+        document.getElementById('late-hash-root')?.remove();
+      }
+    },
+  );
+
   it('hashchange 直後は viewport 外の hash 対象も native hash hold で維持すること', async () => {
     document.body.innerHTML = `
       <article id="content-root">

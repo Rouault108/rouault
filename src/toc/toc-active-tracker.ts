@@ -134,6 +134,7 @@ export class TocActiveTracker {
   private _initialRefreshTimer: number | null = null;
   private _initialViewportSyncFrame: number | null = null;
   private _initialHashStabilizationTimer: number | null = null;
+  private _pendingInitialHash: string | null = null;
   private _programmaticNavigation: TocProgrammaticNavigation | null = null;
   private _hashNavigationHold: TocHashNavigationHold | null = null;
   private _suppressedHashActivePreservationId: string | null = null;
@@ -216,6 +217,8 @@ export class TocActiveTracker {
     if (this._initialStarted || typeof window === 'undefined') return;
     this._initialStarted = true;
     const needsInitialHold = !this._hasSnapshot;
+    if (needsInitialHold && !this._priority())
+      this._pendingInitialHash = decodeHash(window.location.hash) || null;
     try {
       this.observe();
       this.refresh();
@@ -280,6 +283,7 @@ export class TocActiveTracker {
     }
 
     this._started = false;
+    this._pendingInitialHash = null;
     window.removeEventListener('hashchange', this._onHashChange);
     window.removeEventListener('popstate', this._onPopState);
     window.removeEventListener('scroll', this._onViewportChange);
@@ -399,6 +403,7 @@ export class TocActiveTracker {
   }
 
   invalidateNavigationIntent(): void {
+    this._pendingInitialHash = null;
     this.cancelProgrammaticNavigation('new-navigation');
     this._cancelHashNavigationHold();
   }
@@ -406,11 +411,25 @@ export class TocActiveTracker {
   // DOM rollbackは入力の取消を戻さない。candidateを読む前に失効holdを一度消費する。
   private _reconcileNavigationInput(): void {
     const root = this._contentRoot;
-    if (!root || (!this._programmaticNavigation && !this._hashNavigationHold)) return;
+    if (
+      !root ||
+      (!this._programmaticNavigation && !this._hashNavigationHold && !this._pendingInitialHash)
+    )
+      return;
     const headings = filterHeadingsByScopeSelections(
       this._allHeadings,
       readTocScopeSelectionMap(root),
     );
+    if (this._pendingInitialHash) {
+      const target = this._resolveHeadingElement(this._pendingInitialHash);
+      if (
+        !target ||
+        !headings.some((heading) => heading.id === this._pendingInitialHash) ||
+        isHeadingInsideInactivePanel(target, root) ||
+        !isElementRenderable(target)
+      )
+        this._pendingInitialHash = null;
+    }
     const navigation = this._programmaticNavigation;
     if (navigation) {
       const target = this._resolveHeadingElement(navigation.targetId);
@@ -592,17 +611,25 @@ export class TocActiveTracker {
   }
 
   private _syncInitialHashActiveId(): void {
-    const hash = this._priority() ? '' : decodeHash(window.location.hash);
-    if (hash.length === 0 || this._getActiveId() === hash) {
+    const hash = this._pendingInitialHash;
+    if (hash === null) return;
+    if (
+      this._priority() ||
+      hash !== decodeHash(window.location.hash) ||
+      this._suppressedHashActivePreservationId === hash
+    ) {
+      this._pendingInitialHash = null;
       return;
     }
 
     if (!this._headings().some((heading) => heading.id === hash)) {
+      this._pendingInitialHash = null;
       return;
     }
 
     const target = document.getElementById(hash);
-    if (!(target instanceof HTMLElement)) {
+    if (!(target instanceof HTMLElement) || !isElementRenderable(target)) {
+      this._pendingInitialHash = null;
       return;
     }
 
@@ -611,9 +638,11 @@ export class TocActiveTracker {
       return;
     }
 
+    this._pendingInitialHash = null;
+
     /*
-     * 初回 hash 直アクセスでは、router 側の hash scroll と
-     * TOC hydration の開始順がブラウザ差で前後し得る。
+     * routerの準備待ちは既存120ms予約より後にも到達し得る。
+     * 本人入力・新intentで失効していない初期対象だけを、実到達時に一度採用する。
      * scroll 後に対象見出しが viewport 内へ入っているなら、
      * 初期 current は hash を正本に戻してから通常の viewport 同期へ委ねる。
      */
@@ -628,6 +657,7 @@ export class TocActiveTracker {
     ) {
       return;
     }
+    this._syncInitialHashActiveId();
     this._requestSnapshot();
   }
 
@@ -737,6 +767,7 @@ export class TocActiveTracker {
   }
 
   private _onHashChange = (): void => {
+    this._pendingInitialHash = null;
     this._suppressedHashActivePreservationId = null;
     this.cancelProgrammaticNavigation('hashchange');
     this._syncActiveHeadingFromHash();
@@ -745,17 +776,20 @@ export class TocActiveTracker {
   };
 
   private _onPopState = (): void => {
+    this._pendingInitialHash = null;
     this.cancelProgrammaticNavigation('popstate');
     this._scheduleViewportSync();
   };
 
   private _onResize = (): void => {
+    this._pendingInitialHash = null;
     this.cancelProgrammaticNavigation('resize');
     this._cancelHashNavigationHold();
     this._scheduleViewportSync();
   };
 
   private _onUserScrollIntent = (): void => {
+    this._pendingInitialHash = null;
     this._policyRevision += 1;
     let shouldSync = false;
 

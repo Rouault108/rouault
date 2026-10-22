@@ -236,6 +236,8 @@ hashless full commitの位置受理後は、PostRenderからReadingに注入し�
 
 controller/tracker/mobile の最初の公開と、その後の初期再更新も同じ候補計算でvisible/current を一括採用する。先頭仮設定を公開しない。SSRは現在地を決めず、遅延activationは最新viewportで再判定する。設計詳細は [ADR](../adr/toc-current-at-accepted-reading-position.md)、実施範囲は[検証記録](../references/toc-current-position-validation-2026-10-18.md)を参照。
 
+初期の明示見出しが本文準備待ちで初期予約より後に到達する場合、同じ初期対象の実到達を通常のviewport観測で一度同期する。本人のスクロール入力、新しいintent、座標優先への切替、対象の消失・非表示で未完了の同期を取り消す。この同期は本文を再スクロールしない。
+
 ## Native位置観測とsource session
 
 Readingの同期分類、実位置受理、検証済みshellに基づくearly接続と通常activationは同じsessionを使う。normal候補の算出・current書込もsessionを通す。pagehideは位置証明だけを失効し、pageshowは新観測を使う。初期followupは個別に一度試行し、presentation再試行で再登録しない。詳細は[設計ADR](../adr/toc-source-session-native-observation.md)と[検証記録](../references/toc-native-source-session-validation-2026-10-19.md)を参照する。
