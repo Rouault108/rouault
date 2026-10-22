@@ -364,7 +364,6 @@ for (const theme of ['light', 'dark', 'system', 'forced-colors'] as const) {
         'outline: var(--focus-ring-width) solid var(--focus-ring-color); outline-offset: var(--focus-ring-offset);';
       element.parentElement?.append(probe);
       const actual = getComputedStyle(element);
-      const expected = getComputedStyle(probe);
       const rgba = (color: string): number[] => {
         const canvas = document.createElement('canvas');
         canvas.width = canvas.height = 1;
@@ -381,12 +380,18 @@ for (const theme of ['light', 'dark', 'system', 'forced-colors'] as const) {
         width: actual.outlineWidth,
         offset: actual.outlineOffset,
         color: rgba(actual.outlineColor),
-        expectedColor: rgba(expected.outlineColor),
       };
+      // forced colors の補正と focus animation は focus 状態にも依存する。
+      // 同じ button を同じ keyboard focus 状態で測り、色の比較を保持する。
+      probe.focus({ preventScroll: true });
+      await Promise.all(probe.getAnimations().map((animation) => animation.finished));
+      const expectedColor = rgba(getComputedStyle(probe).outlineColor);
       probe.remove();
-      return result;
+      if (element instanceof HTMLElement) element.focus({ preventScroll: true });
+      return { ...result, expectedColor, restoredFocus: document.activeElement === element };
     });
     expect(focus.visible).toBe(true);
+    expect(focus.restoredFocus).toBe(true);
     expect(focus.forcedColors).toBe(theme === 'forced-colors');
     expect(focus.style).toBe('solid');
     expect(focus.width).toBe('2px');
