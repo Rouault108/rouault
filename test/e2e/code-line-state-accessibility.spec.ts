@@ -376,6 +376,7 @@ for (const theme of ['light', 'dark', 'system', 'forced-colors'] as const) {
       };
       const result = {
         visible: element.matches(':focus-visible'),
+        forcedColors: matchMedia('(forced-colors: active)').matches,
         style: actual.outlineStyle,
         width: actual.outlineWidth,
         offset: actual.outlineOffset,
@@ -386,10 +387,12 @@ for (const theme of ['light', 'dark', 'system', 'forced-colors'] as const) {
       return result;
     });
     expect(focus.visible).toBe(true);
+    expect(focus.forcedColors).toBe(theme === 'forced-colors');
     expect(focus.style).toBe('solid');
     expect(focus.width).toBe('2px');
     expect(focus.offset).toBe('2px');
     expect(focus.color).toEqual(focus.expectedColor);
-    expect(focus.color[3]).toBe(255);
+    // システムの Highlight は半透明にもなるため、可視性は非ゼロ alpha で固定する。
+    expect(focus.color[3]).toBeGreaterThan(0);
   });
 }
