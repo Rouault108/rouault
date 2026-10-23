@@ -928,6 +928,7 @@ export class SearchPageController {
   }
 
   private startSearch(search: 'debounced' | 'immediate', token: FeatureToken): boolean {
+    if (!this.canAcceptOperation() || !isFeatureTokenCurrent(this.source, token)) return false;
     this.cancelPendingSearch();
     if (this.disposed || !isFeatureTokenCurrent(this.source, token)) return false;
     const job: SearchJob = {

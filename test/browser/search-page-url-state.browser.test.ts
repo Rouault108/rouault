@@ -802,4 +802,28 @@ describe('search-page semantic admission', () => {
     expect(query.value).toBe(' next ');
     expect(root.querySelector<HTMLElement>('[data-search-page-loading]')?.hidden).toBe(true);
   });
+
+  it('a superseded caller cannot cancel a newer job created during synchronous form projection', async () => {
+    vi.useFakeTimers();
+    const search = vi.fn(
+      async (_request: Parameters<ReturnType<typeof createSearchRuntime>['search']>[0]) =>
+        staticResponse,
+    );
+    const { root, input, query } = mount(createSearchRuntime(search));
+    const name = `search-reenter-projection-${crypto.randomUUID()}`;
+    customElements.define(
+      name,
+      class extends HTMLElement {
+        disconnectedCallback() {
+          input('winner');
+        }
+      },
+    );
+    root.querySelector('[data-static-choice-current-label]')?.append(document.createElement(name));
+    input('superseded');
+    await vi.advanceTimersByTimeAsync(SEARCH_DEBOUNCE_MS);
+    expect(search).toHaveBeenCalledTimes(1);
+    expect(search.mock.calls[0]?.[0]).toMatchObject({ q: 'winner' });
+    expect(query.value).toBe('winner');
+  });
 });
