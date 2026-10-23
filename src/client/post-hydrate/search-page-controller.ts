@@ -876,15 +876,15 @@ export class SearchPageController {
   private commitUrl(
     method: 'pushState' | 'replaceState',
     token: FeatureToken,
+    state: SearchState,
   ): FeatureToken | null {
     if (this.runtimeState === null || this.siteUrlContext === null) return null;
     const adopted = writeFeatureHistoryEntry(this.source, token, {
       mode: method === 'pushState' ? 'push' : 'replace',
       state: history.state,
-      url: buildSearchPageHistoryHref(this.toSearchState(), this.siteUrlContext),
+      url: buildSearchPageHistoryHref(state, this.siteUrlContext),
     });
     if (!adopted) return null;
-    this.syncHeroFromRuntimeState();
     return isFeatureTokenCurrent(this.source, adopted) ? adopted : null;
   }
 
@@ -1294,7 +1294,8 @@ export class SearchPageController {
         this.disposed ||
         !isFeatureSourceCurrent(this.source) ||
         this.runtimeState === null ||
-        this.searchRuntime === null
+        this.searchRuntime === null ||
+        this.siteUrlContext === null
       )
         return 'rejected';
       const data = new FormData(form);
@@ -1327,7 +1328,11 @@ export class SearchPageController {
         }
       };
       const same = areSearchStatesCanonicallyEqual(candidate, this.toSearchState());
-      if (same && (this.searchPhase === 'success' || this.hasLiveSearchJob())) {
+      const sameUrl = areSearchStatesCanonicallyEqual(
+        candidate,
+        parseCurrentSearchState(this.siteUrlContext),
+      );
+      if (same && sameUrl && (this.searchPhase === 'success' || this.hasLiveSearchJob())) {
         applyInputChanges();
         this.runtimeState.queryInputValue = rawQuery;
         syncStaticSearchFieldClearButtons(this.page);
@@ -1337,6 +1342,8 @@ export class SearchPageController {
       let token = beginFeatureNavigation(this.source);
       if (!token || !this.canAcceptOperation() || !isFeatureTokenCurrent(this.source, token))
         return 'rejected';
+      if (!sameUrl) token = this.commitUrl(method, token, candidate);
+      if (!token || !isFeatureTokenCurrent(this.source, token)) return 'rejected';
       applyInputChanges();
       this.searchPhase = 'idle';
       this.runtimeState.queryInputValue = rawQuery;
@@ -1345,8 +1352,7 @@ export class SearchPageController {
       this.runtimeState.tagMode = candidate.tagMode;
       this.runtimeState.sort = candidate.sort;
       if (invalidateCounts) this.runtimeState.countsStatus = 'pending';
-      if (!same) token = this.commitUrl(method, token);
-      if (!token || !isFeatureTokenCurrent(this.source, token)) return 'rejected';
+      this.syncHeroFromRuntimeState();
       this.syncSearchChoiceMenusFromRuntimeState(form);
       syncFilterDom(preferredTag);
       return this.startSearch(search, token) ? 'search-started' : 'rejected';

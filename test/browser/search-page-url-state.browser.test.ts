@@ -7,6 +7,7 @@ import {
 } from '../../src/navigation/content-navigation-context.js';
 import { normalizeSearchCanonicalPathname } from '../../shared/search/document-url.js';
 import { buildSearchResultRenderHref } from '../../src/search/normalize-search-result-url.js';
+import { observeHistoryEntries } from '../../src/navigation/history-entry.js';
 import { SEARCH_DEBOUNCE_MS } from '../../src/search/search-constants.js';
 import { DEFAULT_SITE_URL_CONTEXT } from '../../shared/site/site-url-context.js';
 import type { ExploreSearchResponse } from '../../shared/search/search-types.js';
@@ -959,6 +960,44 @@ describe('search-page semantic admission', () => {
         expect(root.querySelector<HTMLElement>('[data-search-page-loading]')?.hidden).toBe(false);
         expect(search).toHaveBeenCalledTimes(2);
       }
+    },
+  );
+
+  it.each(['before', 'after'] as const)(
+    'a rejected %s-history operation retries with the matching URL and no duplicate history',
+    async (phase) => {
+      vi.useFakeTimers();
+      const search = vi.fn(async () => staticResponse);
+      const { input } = mount(createSearchRuntime(search));
+      let intervene = true;
+      const interrupt = () => {
+        if (!intervene) return;
+        intervene = false;
+        beginNavigationIntent('navigation', '/notes/next/');
+      };
+      const stop = observeHistoryEntries(
+        () => {
+          if (phase === 'before') interrupt();
+        },
+        () => {
+          if (phase === 'after') interrupt();
+        },
+      );
+      try {
+        input('retry');
+      } finally {
+        stop();
+      }
+      expect(new URL(location.href).searchParams.get('q')).toBe(
+        phase === 'before' ? null : 'retry',
+      );
+      expect(search).not.toHaveBeenCalled();
+      const replace = vi.spyOn(history, 'replaceState');
+      input('retry');
+      await vi.advanceTimersByTimeAsync(SEARCH_DEBOUNCE_MS);
+      expect(new URL(location.href).searchParams.get('q')).toBe('retry');
+      expect(replace).toHaveBeenCalledTimes(phase === 'before' ? 1 : 0);
+      expect(search).toHaveBeenCalledTimes(1);
     },
   );
 });

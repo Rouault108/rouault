@@ -193,6 +193,8 @@ errorは検索phaseを表さない。同条件の成功結果と一致するvali
 失敗・未実行の同条件は既存操作で再試行でき、履歴を追加しない。retry UIやEnter挙動は追加しない。
 
 candidateと意味上のadmissionを先に確定し、検索が必要な場合だけ新しいFeatureTokenを取得する。
+canonical stateは履歴書き込みの成立後に投影し、履歴observer再入で拒否されたcandidateを成功条件として残さない。
+履歴の要否は現在URLとのcanonical比較で決め、書き込み前後の失効を経た同条件再試行でもURL同期・履歴重複防止を保つ。
 同条件のraw空白変更はruntimeの表示値とclear状態だけを更新し、pending response後も保持する。
 同じchoiceの選択もmenuを閉じて通常のtriggerへfocusを返す。成功済み同条件の操作はtokenを取得せず、
 URL / bindingがまだ同じ未commit navigationを失効させない。異条件や再実行が必要な操作は新intentを取得できる。無関係なclick / input / change / keydown /
