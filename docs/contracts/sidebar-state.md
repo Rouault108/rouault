@@ -61,7 +61,19 @@ canonical snapshotはtransaction内だけで生成し、runtime expanded state /
 
 初期化失敗、abort、unexpected disconnectではlistener / observer / subscriptionを解除し、共有state属性を除去する。header readiness喪失はnative fallbackへ収束する。schedulerがactivation timingを所有し、componentによる自己起動を追加しない。
 
-## 7. Native scrollbar
+## 7. Paintとnative scrollbar
+
+### Overlayの局所stacking契約
+
+既存の`.layout-sidebar-overlay-layer`は、同じshellのenhancementが`active`かつ直下のsidebar rootが`data-mode="overlay"`の場合だけ`z-index: var(--z-blocking-layer, 200)`のstacking contextとなる。parentのrelative / 0幅 / 0高 / overflow visibleは維持する。内部のbackdropはlocal `0`、active overlay sidebarはlocal `1`とし、子DOM順に依存しない。unitless integerのtoken override（例: `250`）はparentだけへ作用する。fixed / fallback / dormant / 未起動 / cleanupではparentは`auto`、sidebarへlocal `1`を適用しない。backdropは黒30%、上端は`--header-height`を維持する。
+
+presentのactive expanded overlayはroot.hidden=false / visibility=visible / inert=false / backdrop.hidden=false、collapsed overlayはroot.hidden=false / visibility=hidden / inert=true / backdrop.hidden=trueである。absentはroot.hidden=trueであり、通常collapseと区別する。fallbackはdynamic mode / stateとinertを解除し、host内で既存navを可視のnative表示へ戻す。
+
+これはsidebar / header / mobile TOC間のscopedなpaint契約である。headerは通常100、active expanded overlayだけ300、mobile TOCは300とし、同値時のDOM順によるtieは変更しない。native search dialogとfootnote popoverはtop layerを別に使う。translation UI、note controls、skip linkを含むサイト全体のtotal orderではない。
+
+paint順はinput所有権を意味しない。Escapeのforemost-only owner、相互排他、modal化、background inert、focus trapは導入しない。到達可能なTOC / header menu / searchの共存ではpaint / hit target、open state、最終focusを別に検証する。既存の複数closeの可能性は別の未決定課題であり、望ましい動作として承認したものではない。新しいfocus喪失、hidden / inert面へのfocus残留、dismiss不能、fallbackの遮断は失敗とする。
+
+### Native scrollbar
 
 `scrollbar-width: thin`は`[data-sidebar-enhancement-state='active'] [data-layout-sidebar-root][data-mode='fixed']`と`[data-sidebar-enhancement-state='active'] [data-layout-sidebar-root][data-mode='overlay']`のbase ruleだけへ指定する。共通root、inner nav、inactive state、No-JS fallbackへ広げない。色はUAに委ね、transparent / noneやWebKit scrollbar paintingで隠さない。
 
