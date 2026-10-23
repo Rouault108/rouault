@@ -183,6 +183,24 @@ query、clear、tag checkbox、selected-tag remove、tag名ローカルfilter / 
 
 ready確認用probe、health API、periodic monitoring、自動retry、core / session再生成によるbudget補充は追加しない。valid SSR initial response adoption時の初回検索省略とlazy initializationを維持する。
 
+### Search page operation ownership
+
+検索条件のcanonical state（query trim、既存tag正規化、queryの大小文字は区別）、query表示用のraw値、
+検索phase（idle / scheduled / running / success / error）、現在jobを分離する。候補件数のready / pending /
+errorは検索phaseを表さない。同条件の成功結果と一致するvalid SSR初期payloadはlive tokenなしでも再利用する。
+同条件のscheduled / runningは、そのjobのgeneration・FeatureToken・生きているtimer / requestが現在所有される
+場合だけ維持し、abort・再検索・debounce延長をしない。失効jobは再利用・token再取得せず、次の明示操作が新jobを始める。
+失敗・未実行の同条件は既存操作で再試行でき、履歴を追加しない。retry UIやEnter挙動は追加しない。
+
+candidateと意味上のadmissionを先に確定し、検索が必要な場合だけ新しいFeatureTokenを取得する。
+同条件のraw空白変更はruntimeの表示値とclear状態だけを更新し、pending response後も保持する。
+同じchoiceの選択もmenuを閉じて通常のtriggerへfocusを返す。無関係なclick / input / change / keydown /
+submit / resetはpending検索を失効させない。別URLを指す旧DOMの操作はprojection・hidden field・history・results変更前に拒否する。
+
+異なる条件はqueryのreplaceState + debounce、tag / mode / sortのpushState + 即時検索を維持し、旧results / countを消す。
+popstateは履歴を書かない独立したURL同期と即時検索である。completion / finallyはjob identity・generation・tokenの
+所有権を再照合し、旧callbackが新jobを上書きしない。cacheや旧結果保持は導入しない。
+
 ### SSR baseline identity
 
 - Search SSR文書はStatic Exploreの説明、Tag projection由来のtag anchors、`/corpora/`へのanchorだけをbaselineとする。recent feed、全ノート一覧、corpus索引の複製、query評価 / ranking / snippet / search resultを持ち込まない。

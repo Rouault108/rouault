@@ -137,6 +137,17 @@ export type SearchPageRenderableItem = Omit<SearchResultItem, 'reasons'>;
 
 type SearchPageStatusVariant = 'loading' | 'error' | 'unavailable';
 
+type SearchPhase = 'idle' | 'scheduled' | 'running' | 'success' | 'error';
+type SearchAdmission = 'rejected' | 'local-only' | 'search-started';
+
+interface SearchJob {
+  readonly generation: number;
+  readonly token: FeatureToken;
+  readonly state: SearchState;
+  timerId: number | undefined;
+  request: AbortController | null;
+}
+
 const parseJsonAttribute = (page: HTMLElement, name: string): unknown => {
   const value = page.getAttribute(name);
   if (value === null) {
@@ -641,10 +652,9 @@ export class SearchPageController {
   private runtimeState: SearchPageRuntimeState | null = null;
   private siteUrlContext: SiteUrlContext | null = null;
   private searchRuntime: SearchCore | null = null;
-  private debounceTimerId: number | undefined;
   private searchGeneration = 0;
-  private operation: FeatureToken | null = null;
-  private activeSearchAbortController: AbortController | null = null;
+  private searchPhase: SearchPhase = 'idle';
+  private currentJob: SearchJob | null = null;
 
   constructor(options: CreateSearchPageControllerOptions) {
     this.page = options.page;
@@ -730,6 +740,7 @@ export class SearchPageController {
       adoptedInitialResponse.ok &&
       areSearchStatesCanonicallyEqual(initialState, urlState);
     if (canAdoptInitialResponse) {
+      this.searchPhase = 'success';
       const response = adoptedInitialResponse.response;
       this.runtimeState = createRuntimeState(urlState, {
         items: response.items.map((item) => staticItemToRenderableItem(item, siteUrlContext)),
@@ -752,7 +763,10 @@ export class SearchPageController {
     });
     this.currentState = { kind: 'ready', siteUrlContext, bootstrapState, searchRuntime };
     this.setDynamicSearchControlsDisabled(false);
-    if (!canAdoptInitialResponse) this.runSearchImmediately();
+    if (!canAdoptInitialResponse) {
+      const token = beginFeatureNavigation(this.source, 'initialization');
+      if (token) this.startSearch('immediate', token);
+    }
   }
 
   dispose(): void {
@@ -772,8 +786,8 @@ export class SearchPageController {
     if (this.disposed || this.siteUrlContext === null || this.runtimeState === null) {
       return;
     }
-    this.operation = beginFeatureNavigation(this.source, 'url-sync');
-    if (!this.operation) return;
+    const token = beginFeatureNavigation(this.source, 'url-sync');
+    if (!token) return;
     const state = parseCurrentSearchState(this.siteUrlContext);
     this.closeAllSearchChoiceMenus();
     if (this.searchRuntime === null) {
@@ -790,7 +804,7 @@ export class SearchPageController {
       syncFilterDomFromForm(this.page, this.form, this.runtimeState);
     }
     this.syncHeroFromRuntimeState();
-    this.runSearchImmediately();
+    this.startSearch('immediate', token);
   };
 
   private showUnavailable(message: string): void {
@@ -828,32 +842,50 @@ export class SearchPageController {
 
   private cancelPendingSearch(): void {
     this.searchGeneration += 1;
-    if (typeof this.debounceTimerId === 'number') {
-      window.clearTimeout(this.debounceTimerId);
-      this.debounceTimerId = undefined;
-    }
-    this.activeSearchAbortController?.abort();
-    this.activeSearchAbortController = null;
+    const job = this.currentJob;
+    this.currentJob = null;
+    this.searchPhase = 'idle';
+    if (job?.timerId !== undefined) window.clearTimeout(job.timerId);
+    job?.request?.abort();
   }
 
-  private readCurrentOperation(): FeatureToken | null {
-    const token = this.operation;
-    return token && isFeatureTokenCurrent(this.source, token) ? token : null;
+  private ownsSearchJob(job: SearchJob): boolean {
+    return (
+      !this.disposed &&
+      this.currentJob === job &&
+      job.generation === this.searchGeneration &&
+      isFeatureTokenCurrent(this.source, job.token) &&
+      !job.request?.signal.aborted
+    );
   }
 
-  private commitUrl(method: 'pushState' | 'replaceState'): boolean {
-    if (this.runtimeState === null || this.siteUrlContext === null) return false;
-    const token = this.operation ?? beginFeatureNavigation(this.source, 'url-sync');
-    if (!token) return false;
+  private canAcceptOperation(): boolean {
+    return !this.disposed && isFeatureSourceCurrent(this.source);
+  }
+
+  private hasLiveSearchJob(): boolean {
+    const job = this.currentJob;
+    return (
+      job !== null &&
+      this.ownsSearchJob(job) &&
+      ((this.searchPhase === 'scheduled' && job.timerId !== undefined) ||
+        (this.searchPhase === 'running' && job.request !== null))
+    );
+  }
+
+  private commitUrl(
+    method: 'pushState' | 'replaceState',
+    token: FeatureToken,
+  ): FeatureToken | null {
+    if (this.runtimeState === null || this.siteUrlContext === null) return null;
     const adopted = writeFeatureHistoryEntry(this.source, token, {
       mode: method === 'pushState' ? 'push' : 'replace',
       state: history.state,
       url: buildSearchPageHistoryHref(this.toSearchState(), this.siteUrlContext),
     });
-    this.operation = adopted;
-    if (!adopted) return false;
+    if (!adopted) return null;
     this.syncHeroFromRuntimeState();
-    return isFeatureTokenCurrent(this.source, adopted);
+    return isFeatureTokenCurrent(this.source, adopted) ? adopted : null;
   }
 
   private syncHeroFromRuntimeState(): void {
@@ -895,57 +927,55 @@ export class SearchPageController {
     };
   }
 
-  private scheduleSearch(): void {
+  private startSearch(search: 'debounced' | 'immediate', token: FeatureToken): boolean {
     this.cancelPendingSearch();
+    if (this.disposed || !isFeatureTokenCurrent(this.source, token)) return false;
+    const job: SearchJob = {
+      generation: this.searchGeneration,
+      token,
+      state: this.toSearchState(),
+      timerId: undefined,
+      request: null,
+    };
+    this.currentJob = job;
+    this.searchPhase = search === 'debounced' ? 'scheduled' : 'running';
     this.clearCurrentResults();
-    this.debounceTimerId = window.setTimeout(() => {
-      this.debounceTimerId = undefined;
-      this.executeSearch();
-    }, SEARCH_DEBOUNCE_MS);
+    if (!this.ownsSearchJob(job)) return false;
+    if (search === 'debounced') {
+      job.timerId = window.setTimeout(() => {
+        if (!this.ownsSearchJob(job)) return;
+        job.timerId = undefined;
+        this.executeSearch(job);
+      }, SEARCH_DEBOUNCE_MS);
+    } else {
+      this.executeSearch(job);
+    }
+    return this.ownsSearchJob(job);
   }
 
-  private runSearchImmediately(): void {
-    this.cancelPendingSearch();
-    this.executeSearch();
-  }
-
-  private executeSearch(): void {
-    if (this.disposed || this.searchRuntime === null || this.runtimeState === null) {
+  private executeSearch(job: SearchJob): void {
+    if (!this.ownsSearchJob(job) || this.searchRuntime === null || this.runtimeState === null) {
       return;
     }
-    const token = this.operation ?? beginFeatureNavigation(this.source, 'url-sync');
-    if (!token || !isFeatureTokenCurrent(this.source, token)) return;
-    const generation = this.searchGeneration;
     const searchAbortController = new AbortController();
-    this.activeSearchAbortController = searchAbortController;
+    job.request = searchAbortController;
+    this.searchPhase = 'running';
     this.clearCurrentResults();
+    if (!this.ownsSearchJob(job)) return;
     this.showStatus('loading');
-    const searchRuntime = this.searchRuntime;
-    const request = { mode: 'explore' as const, ...this.toSearchState() };
+    const request = { mode: 'explore' as const, ...job.state };
     let pending: ReturnType<SearchCore['search']>;
     try {
-      pending = searchRuntime.search(request, { signal: searchAbortController.signal });
+      pending = this.searchRuntime.search(request, { signal: searchAbortController.signal });
     } catch {
-      if (
-        !isFeatureTokenCurrent(this.source, token) ||
-        generation !== this.searchGeneration ||
-        searchAbortController.signal.aborted
-      )
-        return;
-      this.activeSearchAbortController = null;
+      if (!this.ownsSearchJob(job)) return;
       this.showRequestError();
+      if (this.ownsSearchJob(job)) job.request = null;
       return;
     }
     void pending
       .then((response) => {
-        if (
-          this.disposed ||
-          !isFeatureTokenCurrent(this.source, token) ||
-          generation !== this.searchGeneration ||
-          searchAbortController.signal.aborted
-        ) {
-          return;
-        }
+        if (!this.ownsSearchJob(job)) return;
         if (response.mode !== 'explore') {
           throw new Error('Search page requires explore search response.');
         }
@@ -953,27 +983,19 @@ export class SearchPageController {
           this.showRequestError();
           return;
         }
+        this.searchPhase = 'success';
         this.applySearchResponse(response);
       })
       .catch((error: unknown) => {
         if (
-          this.disposed ||
-          !isFeatureTokenCurrent(this.source, token) ||
-          generation !== this.searchGeneration ||
-          searchAbortController.signal.aborted ||
+          !this.ownsSearchJob(job) ||
           (error instanceof DOMException && error.name === 'AbortError')
-        ) {
+        )
           return;
-        }
         this.showRequestError();
       })
       .finally(() => {
-        if (
-          generation === this.searchGeneration &&
-          this.activeSearchAbortController === searchAbortController
-        ) {
-          this.activeSearchAbortController = null;
-        }
+        if (this.ownsSearchJob(job)) this.currentJob = null;
       });
   }
 
@@ -983,6 +1005,7 @@ export class SearchPageController {
   }
 
   private showRequestError(): void {
+    this.searchPhase = 'error';
     if (this.runtimeState?.countsStatus === 'pending') {
       this.runtimeState.countsStatus = 'error';
       if (this.form) syncFilterDomFromForm(this.page, this.form, this.runtimeState);
@@ -1215,8 +1238,7 @@ export class SearchPageController {
           )
             return;
           if (event instanceof KeyboardEvent && !['Enter', ' '].includes(event.key)) return;
-          this.operation = beginFeatureNavigation(this.source);
-          if (!this.operation) {
+          if (this.disposed || !isFeatureSourceCurrent(this.source)) {
             event.preventDefault();
             event.stopImmediatePropagation();
           }
@@ -1237,35 +1259,50 @@ export class SearchPageController {
       search: 'debounced' | 'immediate',
       preferredTag?: string,
       invalidateCounts = true,
-    ): boolean => {
+      choice?: { readonly name: SearchChoiceName; readonly value: string },
+    ): SearchAdmission => {
       if (
-        !this.operation ||
-        !isFeatureTokenCurrent(this.source, this.operation) ||
         this.disposed ||
+        !isFeatureSourceCurrent(this.source) ||
         this.runtimeState === null ||
         this.searchRuntime === null
-      ) {
-        return false;
-      }
+      )
+        return 'rejected';
       const data = new FormData(form);
-      this.runtimeState.queryInputValue =
+      const rawQuery =
         form.querySelector<HTMLInputElement>('[data-search-query-input]')?.value ?? '';
-      this.runtimeState.normalizedQuery = normalizeSearchQuery(this.runtimeState.queryInputValue);
-      this.runtimeState.selectedTags = normalizeSearchTags(
-        orderedSelectedTagValues(form, preferredTag),
-      );
-      this.runtimeState.tagMode = normalizeSearchTagMode(readFormString(data.get('tagMode')));
-      this.runtimeState.sort = normalizeSearchSort(readFormString(data.get('sort')));
+      const candidate: SearchState = {
+        q: normalizeSearchQuery(rawQuery),
+        tags: normalizeSearchTags(orderedSelectedTagValues(form, preferredTag)),
+        tagMode: normalizeSearchTagMode(
+          choice?.name === 'tagMode' ? choice.value : readFormString(data.get('tagMode')),
+        ),
+        sort: normalizeSearchSort(
+          choice?.name === 'sort' ? choice.value : readFormString(data.get('sort')),
+        ),
+      };
+      const same = areSearchStatesCanonicallyEqual(candidate, this.toSearchState());
+      if (same && (this.searchPhase === 'success' || this.hasLiveSearchJob())) {
+        this.runtimeState.queryInputValue = rawQuery;
+        syncStaticSearchFieldClearButtons(this.page);
+        return 'local-only';
+      }
+      // 意味のある検索だけが新しいintentを取得し、旧callbackの再取得を許さない。
+      let token = beginFeatureNavigation(this.source);
+      if (!token || !this.canAcceptOperation() || !isFeatureTokenCurrent(this.source, token))
+        return 'rejected';
+      this.searchPhase = 'idle';
+      this.runtimeState.queryInputValue = rawQuery;
+      this.runtimeState.normalizedQuery = candidate.q;
+      this.runtimeState.selectedTags = candidate.tags;
+      this.runtimeState.tagMode = candidate.tagMode;
+      this.runtimeState.sort = candidate.sort;
       if (invalidateCounts) this.runtimeState.countsStatus = 'pending';
-      if (!this.commitUrl(method)) return false;
+      if (!same) token = this.commitUrl(method, token);
+      if (!token || !isFeatureTokenCurrent(this.source, token)) return 'rejected';
       this.syncSearchChoiceMenusFromRuntimeState(form);
       syncFilterDom(preferredTag);
-      if (search === 'debounced') {
-        this.scheduleSearch();
-      } else {
-        this.runSearchImmediately();
-      }
-      return this.readCurrentOperation() !== null;
+      return this.startSearch(search, token) ? 'search-started' : 'rejected';
     };
 
     form.addEventListener(
@@ -1329,11 +1366,11 @@ export class SearchPageController {
           return;
         }
         const name: SearchChoiceName = kind === 'tag-mode' ? 'tagMode' : 'sort';
-        const input = form.querySelector<HTMLInputElement>(choiceInputSelector(name));
-        if (input) {
-          input.value = value;
-        }
-        if (!commitFormState('pushState', 'immediate', undefined, name !== 'sort')) return;
+        if (
+          commitFormState('pushState', 'immediate', undefined, name !== 'sort', { name, value }) ===
+          'rejected'
+        )
+          return;
         this.closeSearchChoiceMenu(details, true);
       },
       listenerOptions,
@@ -1452,7 +1489,7 @@ export class SearchPageController {
         const input = form.querySelector<HTMLInputElement>('[data-search-query-input]');
         if (input) {
           input.value = '';
-          if (commitFormState('replaceState', 'debounced')) input.focus();
+          if (commitFormState('replaceState', 'debounced') !== 'rejected') input.focus();
         }
       },
       listenerOptions,

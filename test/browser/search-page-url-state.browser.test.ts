@@ -1,5 +1,11 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import {
+  beginNavigationIntent,
+  initializeContentContext,
+  releaseContentContext,
+} from '../../src/navigation/content-navigation-context.js';
+import { SEARCH_DEBOUNCE_MS } from '../../src/search/search-constants.js';
 import { DEFAULT_SITE_URL_CONTEXT } from '../../shared/site/site-url-context.js';
 import type { ExploreSearchResponse } from '../../shared/search/search-types.js';
 import {
@@ -27,6 +33,8 @@ describe('search-page URL state', () => {
   });
 
   afterEach(() => {
+    vi.useRealTimers();
+    vi.restoreAllMocks();
     cleanupSearchPageTest();
   });
 
@@ -314,5 +322,192 @@ describe('search-page URL state', () => {
       root.querySelector('[data-filter-option][data-filter-tag="music"] .filter-option-count')
         ?.textContent,
     ).to.equal('件数を取得できません');
+  });
+});
+
+describe('search-page semantic admission', () => {
+  let ownedRoot: HTMLElement | null = null;
+  beforeEach(() => history.replaceState(history.state, '', '/search/'));
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.restoreAllMocks();
+    if (ownedRoot) releaseContentContext(ownedRoot);
+    ownedRoot = null;
+    cleanupSearchPageTest();
+  });
+
+  const mount = (search = createSearchRuntime()) => {
+    const root = renderSearchPageFixture();
+    ownedRoot = root;
+    initializeContentContext(root);
+    const controller = enhanceWithRuntime(root, undefined, search);
+    const query = expectElement(
+      root.querySelector<HTMLInputElement>('[data-search-query-input]'),
+      'query',
+    );
+    const input = (value: string) => {
+      query.value = value;
+      query.dispatchEvent(new Event('input', { bubbles: true }));
+    };
+    const choice = (value: string) => {
+      const menu = expectElement(
+        root.querySelector<HTMLDetailsElement>('[data-search-choice-menu="sort"]'),
+        'sort menu',
+      );
+      menu.open = true;
+      const item = expectElement(
+        menu.querySelector<HTMLButtonElement>(`[data-value="${value}"]`),
+        'sort item',
+      );
+      item.click();
+      return menu;
+    };
+    return { root, query, input, choice, controller };
+  };
+
+  it('matching SSR and successful conditions reuse result DOM without history or a live token', async () => {
+    vi.useFakeTimers();
+    const search = vi.fn(async () => staticResponse);
+    const { root, query, input, choice } = mount(createSearchRuntime(search));
+    const section = expectElement(
+      root.querySelector('[data-search-page-results-section]'),
+      'results',
+    );
+    const initial = section.firstChild;
+    const push = vi.spyOn(history, 'pushState');
+    const replace = vi.spyOn(history, 'replaceState');
+    input('   ');
+    expect(query.value).toBe('   ');
+    expect(root.querySelector<HTMLButtonElement>('[data-search-query-clear]')?.hidden).toBe(false);
+    const menu = choice('relevance');
+    expect(menu.open).toBe(false);
+    expect(document.activeElement).toBe(menu.querySelector('[data-static-choice-trigger]'));
+    expect(section.firstChild).toBe(initial);
+    expect(search).not.toHaveBeenCalled();
+    expect(push).not.toHaveBeenCalled();
+    expect(replace).not.toHaveBeenCalled();
+    input('Router');
+    await vi.advanceTimersByTimeAsync(SEARCH_DEBOUNCE_MS);
+    expect(search).toHaveBeenCalledTimes(1);
+    const result = section.firstChild;
+    push.mockClear();
+    replace.mockClear();
+    beginNavigationIntent('navigation', location.href);
+    input(' Router ');
+    choice('relevance');
+    await vi.advanceTimersByTimeAsync(SEARCH_DEBOUNCE_MS);
+    expect(search).toHaveBeenCalledTimes(1);
+    expect(section.firstChild).toBe(result);
+    expect(push).not.toHaveBeenCalled();
+    expect(replace).not.toHaveBeenCalled();
+  });
+
+  it('same pending trim preserves deadline, request, clear state, and latest raw input after response', async () => {
+    vi.useFakeTimers();
+    let finish!: (response: ExploreSearchResponse) => void;
+    let signal: AbortSignal | undefined;
+    const search = vi.fn((_request, options) => {
+      signal = options?.signal;
+      return new Promise<ExploreSearchResponse>((resolve) => {
+        finish = resolve;
+      });
+    });
+    const { root, query, input, choice } = mount(createSearchRuntime(search));
+    const replace = vi.spyOn(history, 'replaceState');
+    input('Router');
+    await vi.advanceTimersByTimeAsync(SEARCH_DEBOUNCE_MS - 10);
+    input(' Router ');
+    choice('relevance');
+    await vi.advanceTimersByTimeAsync(10);
+    expect(search).toHaveBeenCalledTimes(1);
+    expect(replace).toHaveBeenCalledTimes(1);
+    input('  Router  ');
+    query.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+    query.click();
+    expect(signal?.aborted).toBe(false);
+    finish(staticResponse);
+    await vi.advanceTimersByTimeAsync(0);
+    expect(query.value).toBe('  Router  ');
+    expect(root.querySelector<HTMLButtonElement>('[data-search-query-clear]')?.hidden).toBe(false);
+    await vi.advanceTimersByTimeAsync(SEARCH_DEBOUNCE_MS);
+    expect(search).toHaveBeenCalledTimes(1);
+  });
+
+  it.each(['scheduled', 'running'] as const)(
+    'expired %s job cannot reclaim ownership; the next same operation starts fresh without history',
+    async (phase) => {
+      vi.useFakeTimers();
+      const resolvers: ((response: ExploreSearchResponse) => void)[] = [];
+      const signals: AbortSignal[] = [];
+      const search = vi.fn((_request, options) => {
+        if (options?.signal) signals.push(options.signal);
+        return new Promise<ExploreSearchResponse>((resolve) => resolvers.push(resolve));
+      });
+      const { root, input } = mount(createSearchRuntime(search));
+      input('Router');
+      if (phase === 'running') await vi.advanceTimersByTimeAsync(SEARCH_DEBOUNCE_MS);
+      beginNavigationIntent('navigation', location.href);
+      if (phase === 'scheduled') await vi.advanceTimersByTimeAsync(SEARCH_DEBOUNCE_MS);
+      else {
+        resolvers[0]?.(staticResponse);
+        await vi.advanceTimersByTimeAsync(0);
+        expect(root.querySelector('[data-search-page-results-section]')?.childNodes.length).toBe(0);
+      }
+      const replace = vi.spyOn(history, 'replaceState');
+      input(' Router ');
+      await vi.advanceTimersByTimeAsync(SEARCH_DEBOUNCE_MS);
+      expect(search).toHaveBeenCalledTimes(phase === 'running' ? 2 : 1);
+      expect(replace).not.toHaveBeenCalled();
+      if (phase === 'running') expect(signals[0]?.aborted).toBe(true);
+      resolvers.at(-1)?.(staticResponse);
+      await vi.advanceTimersByTimeAsync(0);
+      expect(
+        root.querySelector('[data-search-page-results-section]')?.childNodes.length,
+      ).toBeGreaterThan(0);
+    },
+  );
+
+  it('sort error with ready counts retries the same choice without history', async () => {
+    let fail!: (reason: Error) => void;
+    const search = vi.fn(
+      () =>
+        new Promise<ExploreSearchResponse>((_resolve, reject) => {
+          fail = reject;
+        }),
+    );
+    const { root, choice } = mount(createSearchRuntime(search));
+    choice('date-desc');
+    expect(root.querySelector<HTMLElement>('[data-filter-option]')?.dataset['countStatus']).toBe(
+      'ready',
+    );
+    fail(new Error('failed'));
+    await Promise.resolve();
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(root.querySelector<HTMLElement>('[data-search-page-error]')?.hidden).toBe(false);
+    const push = vi.spyOn(history, 'pushState');
+    const menu = choice('date-desc');
+    expect(search).toHaveBeenCalledTimes(2);
+    expect(push).not.toHaveBeenCalled();
+    expect(menu.open).toBe(false);
+  });
+
+  it('a stale URL rejects input and choice before history, hidden fields, or result changes', () => {
+    const search = vi.fn(async () => staticResponse);
+    const { root, input, choice } = mount(createSearchRuntime(search));
+    const result = root.querySelector('[data-search-page-results-section]')?.firstChild;
+    history.replaceState(history.state, '', '/notes/elsewhere/');
+    const push = vi.spyOn(history, 'pushState');
+    const replace = vi.spyOn(history, 'replaceState');
+    input('stale');
+    const menu = choice('date-desc');
+    expect(menu.open).toBe(true);
+    expect(root.querySelector<HTMLInputElement>('[data-search-sort-value]')?.value).toBe(
+      'relevance',
+    );
+    expect(root.querySelector('[data-search-page-results-section]')?.firstChild).toBe(result);
+    expect(search).not.toHaveBeenCalled();
+    expect(push).not.toHaveBeenCalled();
+    expect(replace).not.toHaveBeenCalled();
   });
 });
