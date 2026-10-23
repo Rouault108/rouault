@@ -1162,8 +1162,14 @@ test('短文化したentryは現在rangeへclampし保存座標の到達を無�
   await expect(page.locator('#main-content h1')).toHaveText('短い本文');
 });
 
-for (const surface of ['tabs', 'search'] as const)
-  test(`遅い未commit requestを本人${surface}の同値選択でも失効する（B2/A6）`, async ({ page }) => {
+for (const { surface, same, supersedes } of [
+  { surface: 'tabs', same: true, supersedes: true },
+  { surface: 'search', same: true, supersedes: false },
+  { surface: 'search', same: false, supersedes: true },
+] as const)
+  test(`遅い未commit requestは本人${surface}の${same ? '同値' : '異なる条件'}選択で${supersedes ? '失効' : '継続'}する（B2/A6）`, async ({
+    page,
+  }) => {
     await page.goto(surface === 'tabs' ? e2eNoteFixtures.interactive.directPath : '/search/');
     await ready(page);
     if (surface === 'search')
@@ -1195,26 +1201,44 @@ for (const surface of ['tabs', 'search'] as const)
         });
       }, b());
       await seen;
+      const entryId: unknown = await page.evaluate(() => history.state.__rouaultHistoryEntry.id);
+      if (surface === 'search' && same) {
+        await page
+          .locator('[data-search-page-results-section] > *')
+          .first()
+          .evaluate((element) => {
+            element.setAttribute('data-reading-owned-result', 'true');
+          });
+      }
       if (surface === 'tabs')
         await page.getByRole('tab', { name: 'JavaScript', exact: true }).click();
       else {
         const menu = page.locator('[data-search-choice-menu="tag-mode"]').first();
         await menu.locator('[data-static-choice-trigger]').click();
-        await menu.locator('[data-static-choice-item][data-value="or"]').click();
+        await menu
+          .locator(`[data-static-choice-item][data-value="${same ? 'or' : 'and'}"]`)
+          .click();
+        await expect(menu).not.toHaveAttribute('open');
+        await expect(menu.locator('[data-static-choice-trigger]')).toBeFocused();
+        if (same) {
+          expect(await page.evaluate(() => history.state.__rouaultHistoryEntry.id)).toBe(entryId);
+          await expect(page.locator('[data-reading-owned-result]')).toHaveCount(1);
+        }
       }
       const ownedUrl = page.url();
       release();
       await expect(page.locator('router-document-host')).toHaveAttribute(
         'data-reading-request-outcome',
-        'superseded',
+        supersedes ? 'superseded' : 'completed',
       );
-      expect(page.url()).toBe(ownedUrl);
+      if (supersedes) expect(page.url()).toBe(ownedUrl);
+      else await expect(page).toHaveURL(new URL(b(), ownedUrl).href);
       if (surface === 'tabs')
         await expect(page.getByRole('tab', { name: 'JavaScript', exact: true })).toHaveAttribute(
           'aria-selected',
           'true',
         );
-      else await expect(page.locator('[data-search-page-root]')).toHaveCount(1);
+      else await expect(page.locator('[data-search-page-root]')).toHaveCount(supersedes ? 1 : 0);
     } finally {
       release();
     }

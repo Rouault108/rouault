@@ -194,7 +194,8 @@ errorは検索phaseを表さない。同条件の成功結果と一致するvali
 
 candidateと意味上のadmissionを先に確定し、検索が必要な場合だけ新しいFeatureTokenを取得する。
 同条件のraw空白変更はruntimeの表示値とclear状態だけを更新し、pending response後も保持する。
-同じchoiceの選択もmenuを閉じて通常のtriggerへfocusを返す。無関係なclick / input / change / keydown /
+同じchoiceの選択もmenuを閉じて通常のtriggerへfocusを返す。成功済み同条件の操作はtokenを取得せず、
+URL / bindingがまだ同じ未commit navigationを失効させない。異条件や再実行が必要な操作は新intentを取得できる。無関係なclick / input / change / keydown /
 submit / resetはpending検索を失効させない。別URLを指す旧DOMの操作はprojection・hidden field・history・results変更前に拒否する。
 
 異なる条件はqueryのreplaceState + debounce、tag / mode / sortのpushState + 即時検索を維持し、旧results / countを消す。
