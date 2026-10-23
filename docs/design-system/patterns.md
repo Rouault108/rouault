@@ -103,7 +103,8 @@ row全体のbackground hover、shadow、transform、elevationは禁止する。`
 ## 4. Overlay Pattern
 
 - Overlayは閉じ方、focus return、background interaction、escape behaviorを先に定義する。
-- Dialog、search dialog、popover、sidebar overlayは同じz-index語彙を共有するが、component固有動作はcomponent文書へ置く。
+- Sidebar overlayは既存parentのblocking layer（既定200）内にbackdrop local 0 / sidebar local 1を持つ。headerは通常100、active expanded overlay時300、mobile TOCは300で同値のDOM tieを維持する。適用状態は`docs/contracts/sidebar-state.md`を正本とする。
+- これはsidebar / header / mobile TOCのscopedなpaint契約であり、input優先順位やサイト全体のtotal orderを保証しない。native search dialogとfootnote popoverのtop layerは別に扱い、component固有動作はcomponent文書へ置く。translation UI、note controls、skip linkは再設計しない。
 - Accessibility要求事項は`docs/design-system/accessibility.md`を正本とする。
 
 ## 5. URL-aware UI

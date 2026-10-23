@@ -52,7 +52,8 @@ const fixture = (present = true): HTMLElement => {
   abort = new AbortController();
   shell = document.createElement('div');
   shell.setAttribute('data-app-shell-root', '');
-  shell.innerHTML = `<header data-layout-header data-sidebar-id="note-primary" data-sidebar-enabled="true"><button data-layout-sidebar-toggle data-sidebar-id="note-primary">Toggle</button></header><div data-app-shell-sidebar-host ${present ? '' : 'hidden'}><aside data-layout-sidebar-root tabindex="-1" aria-label="Navigation" ${present ? '' : 'hidden'} sidebar-id="note-primary" state-scope-id="note-navigation" selected-id="leaf" initial-expanded-ids='["branch"]' topology-revision="test" presentation="overlay"><a data-layout-sidebar-main-link href="#main-content" data-link-kind="internal-fragment" data-link-surface="structural">Main</a><div data-layout-sidebar-surface>${present ? navHtml : ''}</div></aside></div><div data-app-shell-sidebar-overlay-layer><div data-layout-sidebar-backdrop hidden></div></div><button data-external-focus>Outside</button>`;
+  shell.className = 'app-shell-root';
+  shell.innerHTML = `<header data-layout-header data-sidebar-id="note-primary" data-sidebar-enabled="true"><button data-layout-sidebar-toggle data-sidebar-id="note-primary">Toggle</button></header><router-document-host data-sidebar-presence="${present ? 'present' : 'absent'}"><div class="layout-sidebar-col" data-app-shell-sidebar-host ${present ? '' : 'hidden'}><aside data-layout-sidebar-root tabindex="-1" aria-label="Navigation" ${present ? '' : 'hidden'} sidebar-id="note-primary" state-scope-id="note-navigation" selected-id="leaf" initial-expanded-ids='["branch"]' topology-revision="test" presentation="overlay"><a data-layout-sidebar-main-link href="#main-content" data-link-kind="internal-fragment" data-link-surface="structural">Main</a><div data-layout-sidebar-surface>${present ? navHtml : ''}</div></aside></div></router-document-host><div class="layout-sidebar-overlay-layer" data-app-shell-sidebar-overlay-layer><div data-layout-sidebar-backdrop hidden></div></div><button data-external-focus>Outside</button>`;
   document.body.append(shell);
   const root = shell.querySelector<HTMLElement>('[data-layout-sidebar-root]');
   if (!root) throw new Error('missing fixture root');
@@ -89,6 +90,251 @@ afterEach(() => {
   resetShellLifecycleForTest();
   localStorage.removeItem(treeKey);
   localStorage.removeItem('rouault.note-sidebar.overlay-state');
+});
+
+const overlayParts = () => ({
+  layer: required(shell.querySelector<HTMLElement>('.layout-sidebar-overlay-layer')),
+  backdrop: required(shell.querySelector<HTMLElement>('[data-layout-sidebar-backdrop]')),
+  button: required(shell.querySelector<HTMLElement>('[data-layout-sidebar-toggle]')),
+  host: required(shell.querySelector<HTMLElement>('[data-app-shell-sidebar-host]')),
+  header: required(shell.querySelector<HTMLElement>('[data-layout-header]')),
+});
+
+const expectOverlayStack = (root: HTMLElement, parent = '200'): void => {
+  const { layer, backdrop } = overlayParts();
+  expect(root.parentElement).toBe(layer);
+  expect(getComputedStyle(layer).zIndex).toBe(parent);
+  expect(getComputedStyle(backdrop).zIndex).toBe('0');
+  expect(getComputedStyle(root).zIndex).toBe('1');
+};
+
+const expectNativeStack = (root: HTMLElement): void => {
+  const { layer, host, backdrop } = overlayParts();
+  expect(getComputedStyle(layer).zIndex).toBe('auto');
+  expect(getComputedStyle(root).zIndex).toBe('auto');
+  expect(root.parentElement).toBe(host);
+  expect(root.hasAttribute('data-mode')).toBe(false);
+  expect(root.hasAttribute('data-state')).toBe(false);
+  expect(root.inert).toBe(false);
+  expect(backdrop.hidden).toBe(true);
+};
+
+describe('sidebar overlay paint contract with production CSS', () => {
+  for (const width of [639, 640, 1023, 1024]) {
+    it(`forced overlay at ${width}px keeps child paint independent of DOM order`, async () => {
+      await page.viewport(width, 480);
+      await ensureMainCssLoaded();
+      const root = fixture();
+      const nav = root.querySelector('nav');
+      const { layer, backdrop, button, header } = overlayParts();
+      start(root);
+      await Promise.resolve();
+      expect(state()).toBe('active');
+      expect(root.hidden).toBe(false);
+      expect(root.inert).toBe(true);
+      expect(getComputedStyle(root).visibility).toBe('hidden');
+      expect(backdrop.hidden).toBe(true);
+      expect(getComputedStyle(header).zIndex).toBe('100');
+      await userEvent.click(button);
+      expect(root.inert).toBe(false);
+      expect(root.hidden).toBe(false);
+      expect(getComputedStyle(root).visibility).toBe('visible');
+      expect(backdrop.hidden).toBe(false);
+      expect(getComputedStyle(header).zIndex).toBe('300');
+      expectOverlayStack(root);
+
+      // enhancerの配置が終わった後に逆転し、assertion中も逆順を保つ。
+      layer.append(backdrop);
+      await Promise.resolve();
+      expect([...layer.children]).toEqual([root, backdrop]);
+      const rect = root.getBoundingClientRect();
+      const background = backdrop.getBoundingClientRect();
+      const headerHeight = parseFloat(getComputedStyle(shell).getPropertyValue('--header-height'));
+      expect(rect.top).toBeCloseTo(headerHeight);
+      expect(background.top).toBeCloseTo(headerHeight);
+      expect(rect.bottom).toBeCloseTo(480);
+      expect(background.bottom).toBeCloseTo(480);
+      expect(rect.width).toBeCloseTo(
+        Math.min(
+          parseFloat(getComputedStyle(shell).getPropertyValue('--sidebar-width')),
+          width * 0.9,
+        ),
+      );
+      expect(getComputedStyle(backdrop).backgroundColor).toBe('rgba(0, 0, 0, 0.3)');
+      expect(layer.getBoundingClientRect().width).toBe(0);
+      expect(layer.getBoundingClientRect().height).toBe(0);
+      expect(getComputedStyle(layer).overflow).toBe('visible');
+      expect(root.contains(document.elementFromPoint(10, rect.top + 20))).toBe(true);
+      // Chromiumのnative scrollbar帯を避け、可視content viewport内でhitを検証する。
+      const contentRight = document.documentElement.clientWidth;
+      expect(contentRight).toBeGreaterThan(rect.right);
+      const backdropX = (rect.right + contentRight) / 2;
+      expect(document.elementFromPoint(backdropX, rect.top + 100)).toBe(backdrop);
+      const summary = required(root.querySelector<HTMLElement>('summary'));
+      const summaryRect = summary.getBoundingClientRect();
+      expect(
+        summary.contains(document.elementFromPoint(summaryRect.x + 10, summaryRect.y + 10)),
+      ).toBe(true);
+      await userEvent.click(summary);
+      expect(required(root.querySelector('details')).open).toBe(false);
+      expect(root.getAttribute('data-state')).toBe('expanded');
+      expect([...layer.children]).toEqual([root, backdrop]);
+      shell.style.setProperty('--z-blocking-layer', '250');
+      expectOverlayStack(root, '250');
+      await userEvent.click(backdrop, { position: { x: backdropX - background.left, y: 100 } });
+      expect(root.getAttribute('data-state')).toBe('collapsed');
+      expect(root.inert).toBe(true);
+      expect(backdrop.hidden).toBe(true);
+      expect(document.activeElement).toBe(button);
+      expect(root.contains(document.elementFromPoint(10, rect.top + 20))).toBe(false);
+      await userEvent.keyboard('{Enter}');
+      expect(root.getAttribute('data-state')).toBe('expanded');
+      await userEvent.click(summary);
+      await userEvent.keyboard('{Escape}');
+      expect(root.getAttribute('data-state')).toBe('collapsed');
+      expect(document.activeElement).toBe(button);
+      await userEvent.tab();
+      expect(root.contains(document.activeElement)).toBe(false);
+      expect(root.querySelector('nav')).toBe(nav);
+    });
+  }
+
+  it('auto crosses 1023/1024 both ways with stable root/nav and valid focus handoffs', async () => {
+    await page.viewport(1023, 480);
+    await ensureMainCssLoaded();
+    const root = fixture();
+    root.setAttribute('presentation', 'auto');
+    root.setAttribute('fixed-breakpoint', '1024');
+    const nav = root.querySelector('nav');
+    const { button, layer, host, backdrop, header } = overlayParts();
+    start(root);
+    await userEvent.click(button);
+    await userEvent.click(required(root.querySelector<HTMLElement>('summary')));
+    await userEvent.keyboard('{Escape}');
+    expect(document.activeElement).toBe(button);
+    for (const width of [1024, 1023, 1024, 1023]) {
+      await page.viewport(width, 480);
+      const fixed = width === 1024;
+      await waitForCondition(
+        () => root.getAttribute('data-mode') === (fixed ? 'fixed' : 'overlay'),
+        'auto breakpoint',
+      );
+      expect(state()).toBe('active');
+      expect(root.parentElement).toBe(fixed ? host : layer);
+      expect(getComputedStyle(layer).zIndex).toBe(fixed ? 'auto' : '200');
+      expect(getComputedStyle(root).zIndex).toBe(fixed ? 'auto' : '1');
+      expect(root.hidden).toBe(false);
+      expect(root.inert).toBe(!fixed);
+      expect(backdrop.hidden).toBe(true);
+      expect(getComputedStyle(header).zIndex).toBe('100');
+      expect(document.activeElement).toBe(fixed ? root : button);
+      expect(shell.querySelector('[data-layout-sidebar-root]')).toBe(root);
+      expect(root.querySelector('nav')).toBe(nav);
+    }
+  });
+
+  it('overlay follows viewport without changing parent geometry or sidebar scrolling', async () => {
+    await page.viewport(639, 480);
+    await ensureMainCssLoaded();
+    const root = fixture();
+    const nav = required(root.querySelector('nav'));
+    const list = required(nav.querySelector('ul'));
+    for (let index = 0; index < 50; index++) {
+      const row = document.createElement('li');
+      row.innerHTML = `<a data-sidebar-nav-control href="#main-content">Extra ${index}</a>`;
+      list.append(row);
+    }
+    start(root);
+    await userEvent.click(overlayParts().button);
+    expect(root.scrollHeight).toBeGreaterThan(root.clientHeight);
+    const before = window.scrollY;
+    root.scrollTop = root.scrollHeight;
+    expect(root.scrollTop).toBeGreaterThan(0);
+    expect(window.scrollY).toBe(before);
+    await page.viewport(640, 600);
+    expect(root.getBoundingClientRect().bottom).toBeCloseTo(600);
+    expect(overlayParts().backdrop.getBoundingClientRect().bottom).toBeCloseTo(600);
+    expect(root.querySelector('nav')).toBe(nav);
+    expectOverlayStack(root);
+  });
+
+  it('unstarted, failed activation, cleanup, reinit and readiness fallback keep native navigation usable', async () => {
+    await page.viewport(639, 480);
+    await ensureMainCssLoaded();
+    const root = fixture();
+    const nav = root.querySelector('nav');
+    expectNativeStack(root);
+    enhanceLayoutSidebar(root, abort.signal);
+    validate();
+    expect(state()).toBe('fallback');
+    expectNativeStack(root);
+    const summary = required(root.querySelector<HTMLElement>('summary'));
+    await userEvent.click(summary);
+    expect(required(root.querySelector('details')).open).toBe(false);
+    abort.abort();
+    expectNativeStack(root);
+    required(root.querySelector('details')).open = true;
+    required(shell.querySelector<HTMLElement>('[data-external-focus]')).focus();
+    abort = new AbortController();
+    start(root);
+    expect(state()).toBe('active');
+    expectOverlayStack(root);
+    shell.removeAttribute('data-layout-header-enhancer-state');
+    await waitForCondition(() => state() === 'fallback', 'readiness fallback');
+    expectNativeStack(root);
+    expect(root.checkVisibility()).toBe(true);
+    expect(root.querySelector('nav')).toBe(nav);
+    await userEvent.click(summary);
+    expect(document.activeElement).toBe(summary);
+    abort.abort();
+    expectNativeStack(root);
+  });
+
+  it('absent dormant root is hidden, unlike collapsed present overlay', async () => {
+    await ensureMainCssLoaded();
+    const root = fixture(false);
+    start(root);
+    expect(state()).toBe('dormant');
+    expectNativeStack(root);
+    expect(root.hidden).toBe(true);
+  });
+
+  it('navigation replaces nav legitimately and rollback restores paint on the persistent root', async () => {
+    await page.viewport(639, 480);
+    await ensureMainCssLoaded();
+    const root = fixture();
+    start(root);
+    const previousNav = required(root.querySelector('nav'));
+    const mutation = createLayoutSidebarShellAdapter().prepare({
+      shell: {
+        headerHtml: '',
+        sidebarProjection: { ...projection, navHtml: navHtml.replace('>Page<', '>Other Page<') },
+      },
+      navigationUrl: '/about/',
+      shellCommitId: 1,
+    });
+    mutation.commit();
+    commitShellGeneration(1);
+    ready(1);
+    event('app-shell:committed', { shellCommitId: 1 });
+    expectNativeStack(root);
+    validate(1);
+    expect(state()).toBe('active');
+    expectOverlayStack(root);
+    expect(root.querySelector('nav')).not.toBe(previousNav);
+    expect(root.textContent).toContain('Other Page');
+    event('app-shell:rollback-start', { failedShellCommitId: 1 });
+    mutation.rollback();
+    restoreShellGeneration(0);
+    event('app-shell:restored', { restoredShellCommitId: 0 });
+    ready(0);
+    expectNativeStack(root);
+    await waitForCondition(() => state() === 'active', 'rollback paint restored');
+    expectOverlayStack(root);
+    expect(shell.querySelector('[data-layout-sidebar-root]')).toBe(root);
+    expect(root.querySelectorAll('nav')).toHaveLength(1);
+    expect(root.textContent).not.toContain('Other Page');
+  });
 });
 
 describe('plain sidebar shell lifecycle', () => {
