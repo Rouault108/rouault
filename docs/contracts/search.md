@@ -199,7 +199,8 @@ submit / resetはpending検索を失効させない。別URLを指す旧DOMの�
 
 異なる条件はqueryのreplaceState + debounce、tag / mode / sortのpushState + 即時検索を維持し、旧results / countを消す。
 popstateは履歴を書かない独立したURL同期と即時検索である。completion / finallyはjob identity・generation・tokenの
-所有権を再照合し、旧callbackが新jobを上書きしない。cacheや旧結果保持は導入しない。
+所有権を再照合し、旧callbackが新jobを上書きしない。候補行の既存focus保持から同期再入した場合も、
+旧response / error投影の後続書き込みを行わない。cacheや旧結果保持は導入しない。
 
 ### Dynamic result clearing focus
 

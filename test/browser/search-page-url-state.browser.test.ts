@@ -865,4 +865,100 @@ describe('search-page semantic admission', () => {
       if (control === 'selected-tag-remove') expect(tag.checked).toBe(true);
     },
   );
+
+  it.each(['search', 'navigation', 'dispose'] as const)(
+    'response tag-focus %s stops old projection writes',
+    async (action) => {
+      vi.useFakeTimers();
+      let finish!: (response: ExploreSearchResponse) => void;
+      const search = vi.fn(
+        () =>
+          new Promise<ExploreSearchResponse>((resolve) => {
+            finish = resolve;
+          }),
+      );
+      const { root, query, input, controller } = mount(createSearchRuntime(search));
+      input('original');
+      await vi.advanceTimersByTimeAsync(SEARCH_DEBOUNCE_MS);
+      const music = expectElement(
+        root.querySelector<HTMLInputElement>('[data-search-tag-checkbox][value="music"]'),
+        'music',
+      );
+      music.focus();
+      const clear = expectElement(
+        root.querySelector<HTMLButtonElement>('[data-search-query-clear]'),
+        'clear',
+      );
+      const hidden = vi.spyOn(clear, 'hidden', 'set');
+      let reentered = false;
+      music.addEventListener(
+        'focus',
+        () => {
+          reentered = true;
+          if (action === 'search') input('winner');
+          if (action === 'navigation') beginNavigationIntent('navigation', '/notes/next/');
+          if (action === 'dispose') controller?.dispose();
+          hidden.mockClear();
+        },
+        { once: true },
+      );
+      finish({
+        ...staticResponse,
+        tagCounts: { architecture: 1, music: 3 },
+        allTagCounts: { architecture: 1, music: 3 },
+      });
+      await vi.advanceTimersByTimeAsync(0);
+      expect(reentered).toBe(true);
+      expect(hidden).not.toHaveBeenCalled();
+      if (action === 'search') {
+        expect(query.value).toBe('winner');
+        await vi.advanceTimersByTimeAsync(SEARCH_DEBOUNCE_MS);
+        expect(search).toHaveBeenCalledTimes(2);
+      }
+    },
+  );
+
+  it.each(['search', 'navigation', 'dispose'] as const)(
+    'error tag-focus %s cannot overwrite newer status',
+    async (action) => {
+      vi.useFakeTimers();
+      let fail!: (reason: Error) => void;
+      const search = vi.fn(
+        () =>
+          new Promise<ExploreSearchResponse>((_resolve, reject) => {
+            fail = reject;
+          }),
+      );
+      const { root, input, choice, controller } = mount(createSearchRuntime(search));
+      input('original');
+      await vi.advanceTimersByTimeAsync(SEARCH_DEBOUNCE_MS);
+      const music = expectElement(
+        root.querySelector<HTMLInputElement>('[data-search-tag-checkbox][value="music"]'),
+        'music',
+      );
+      const list = expectElement(root.querySelector('[data-search-filter-list]'), 'list');
+      // 公開DOMの空白nodeも正規化時の再構成対象となる。
+      list.append(document.createTextNode(' '));
+      music.focus();
+      let reentered = false;
+      music.addEventListener(
+        'focus',
+        () => {
+          reentered = true;
+          if (action === 'search') choice('date-desc');
+          if (action === 'navigation') beginNavigationIntent('navigation', '/notes/next/');
+          if (action === 'dispose') controller?.dispose();
+        },
+        { once: true },
+      );
+      fail(new Error('failed'));
+      await vi.advanceTimersByTimeAsync(0);
+      expect(reentered).toBe(true);
+      expect(root.querySelector<HTMLElement>('[data-search-page-error]')?.hidden).toBe(true);
+      if (action === 'search') {
+        expect(root.querySelector<HTMLElement>('[data-search-page-loading]')?.hidden).toBe(false);
+        expect(search).toHaveBeenCalledTimes(2);
+      }
+    },
+  );
 });

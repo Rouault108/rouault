@@ -507,11 +507,11 @@ const syncFilterDomFromForm = (
   if (filterEmpty) {
     filterEmpty.hidden = visibleCount > 0;
   }
+  syncStaticSearchFieldClearButtons(page);
   // local filter 適用後に可視性を判定し、隠れた行へ focus を戻さない。
   if (focusToKeep && !focusToKeep.disabled && focusToKeep.getClientRects().length > 0) {
     focusToKeep.focus({ preventScroll: true });
   }
-  syncStaticSearchFieldClearButtons(page);
 };
 
 const createSearchPageEmptyState = (document: Document, state: SearchState): HTMLElement => {
@@ -968,7 +968,7 @@ export class SearchPageController {
       pending = this.searchRuntime.search(request, { signal: searchAbortController.signal });
     } catch {
       if (!this.ownsSearchJob(job)) return;
-      this.showRequestError();
+      this.showRequestError(job);
       if (this.ownsSearchJob(job)) job.request = null;
       return;
     }
@@ -979,11 +979,11 @@ export class SearchPageController {
           throw new Error('Search page requires explore search response.');
         }
         if (response.diagnostics.failures.includes('all-sources-failed')) {
-          this.showRequestError();
+          this.showRequestError(job);
           return;
         }
         this.searchPhase = 'success';
-        this.applySearchResponse(response);
+        this.applySearchResponse(response, job);
       })
       .catch((error: unknown) => {
         if (
@@ -991,7 +991,7 @@ export class SearchPageController {
           (error instanceof DOMException && error.name === 'AbortError')
         )
           return;
-        this.showRequestError();
+        this.showRequestError(job);
       })
       .finally(() => {
         if (this.ownsSearchJob(job)) this.currentJob = null;
@@ -1036,20 +1036,22 @@ export class SearchPageController {
     return this.ownsSearchJob(job);
   }
 
-  private showRequestError(): void {
+  private showRequestError(job: SearchJob): void {
+    if (!this.ownsSearchJob(job)) return;
     this.searchPhase = 'error';
     if (this.runtimeState?.countsStatus === 'pending') {
       this.runtimeState.countsStatus = 'error';
       if (this.form) syncFilterDomFromForm(this.page, this.form, this.runtimeState);
     }
+    if (!this.ownsSearchJob(job)) return;
     this.showStatus(
       'error',
       '検索の読み込みに失敗しました。検索語や条件を変更して再入力できます。',
     );
   }
 
-  private applySearchResponse(response: ExploreSearchResponse): void {
-    if (this.runtimeState === null) {
+  private applySearchResponse(response: ExploreSearchResponse, job: SearchJob): void {
+    if (this.runtimeState === null || !this.ownsSearchJob(job)) {
       return;
     }
     this.runtimeState.items = response.items.map(dynamicItemToRenderableItem);
@@ -1059,10 +1061,13 @@ export class SearchPageController {
     this.runtimeState.loaded = true;
     this.showStatus(null);
     renderSearchPageResults(this.page, this.runtimeState);
+    if (!this.ownsSearchJob(job)) return;
     if (this.form) {
       this.syncFormFromRuntimeState(this.form);
+      if (!this.ownsSearchJob(job)) return;
       syncFilterDomFromForm(this.page, this.form, this.runtimeState);
     }
+    if (!this.ownsSearchJob(job)) return;
     if (response.diagnostics.degraded) {
       console.warn('Search page completed with degraded diagnostics.', response.diagnostics);
     }
