@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
   beginNavigationIntent,
@@ -328,8 +328,19 @@ describe('search-page URL state', () => {
 });
 
 describe('search-page semantic admission', () => {
+  // 同じWebKit sessionの前後suiteへHistory API quotaを持ち越さず、全履歴assertionを実行する。
+  const waitForHistoryBudget = async (milliseconds: number): Promise<void> => {
+    if (navigator.userAgent.includes('WebKit') && !navigator.userAgent.includes('Chrome')) {
+      await new Promise<void>((resolve) => window.setTimeout(resolve, milliseconds));
+    }
+  };
+  beforeAll(() => waitForHistoryBudget(11_000), 20_000);
+  afterAll(() => waitForHistoryBudget(11_000), 20_000);
   let ownedRoot: HTMLElement | null = null;
-  beforeEach(() => history.replaceState(history.state, '', '/search/'));
+  beforeEach(async () => {
+    await waitForHistoryBudget(500);
+    history.replaceState(history.state, '', '/search/');
+  });
   afterEach(() => {
     vi.useRealTimers();
     vi.restoreAllMocks();
@@ -826,4 +837,32 @@ describe('search-page semantic admission', () => {
     expect(search.mock.calls[0]?.[0]).toMatchObject({ q: 'winner' });
     expect(query.value).toBe('winner');
   });
+
+  it.each(['query-clear', 'selected-tag-remove'] as const)(
+    '%s admits its candidate before projecting input changes',
+    (control) => {
+      const { root, query, input } = mount();
+      input('original');
+      const tag = expectElement(
+        root.querySelector<HTMLInputElement>('[data-search-tag-checkbox][value="music"]'),
+        'music',
+      );
+      if (control === 'selected-tag-remove') {
+        tag.checked = true;
+        tag.dispatchEvent(new Event('change', { bubbles: true }));
+      }
+      const button = expectElement(
+        root.querySelector<HTMLButtonElement>(`[data-search-${control}]`),
+        'button',
+      );
+      button.addEventListener(
+        'click',
+        () => history.replaceState(history.state, '', '/notes/elsewhere/'),
+        { capture: true },
+      );
+      button.click();
+      expect(query.value).toBe('original');
+      if (control === 'selected-tag-remove') expect(tag.checked).toBe(true);
+    },
+  );
 });

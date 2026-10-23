@@ -1279,7 +1279,11 @@ export class SearchPageController {
       search: 'debounced' | 'immediate',
       preferredTag?: string,
       invalidateCounts = true,
-      choice?: { readonly name: SearchChoiceName; readonly value: string },
+      changes?: {
+        readonly choice?: { readonly name: SearchChoiceName; readonly value: string };
+        readonly queryInputValue?: string;
+        readonly removedTag?: string;
+      },
     ): SearchAdmission => {
       if (
         this.disposed ||
@@ -1289,20 +1293,37 @@ export class SearchPageController {
       )
         return 'rejected';
       const data = new FormData(form);
-      const rawQuery =
-        form.querySelector<HTMLInputElement>('[data-search-query-input]')?.value ?? '';
+      const queryInput = form.querySelector<HTMLInputElement>('[data-search-query-input]');
+      const rawQuery = changes?.queryInputValue ?? queryInput?.value ?? '';
       const candidate: SearchState = {
         q: normalizeSearchQuery(rawQuery),
-        tags: normalizeSearchTags(orderedSelectedTagValues(form, preferredTag)),
+        tags: normalizeSearchTags(
+          orderedSelectedTagValues(form, preferredTag).filter((tag) => tag !== changes?.removedTag),
+        ),
         tagMode: normalizeSearchTagMode(
-          choice?.name === 'tagMode' ? choice.value : readFormString(data.get('tagMode')),
+          changes?.choice?.name === 'tagMode'
+            ? changes.choice.value
+            : readFormString(data.get('tagMode')),
         ),
         sort: normalizeSearchSort(
-          choice?.name === 'sort' ? choice.value : readFormString(data.get('sort')),
+          changes?.choice?.name === 'sort'
+            ? changes.choice.value
+            : readFormString(data.get('sort')),
         ),
+      };
+      const applyInputChanges = (): void => {
+        if (changes?.queryInputValue !== undefined && queryInput) queryInput.value = rawQuery;
+        if (changes?.removedTag !== undefined) {
+          for (const checkbox of form.querySelectorAll<HTMLInputElement>(
+            '[data-search-tag-checkbox]',
+          )) {
+            if (checkbox.value === changes.removedTag) checkbox.checked = false;
+          }
+        }
       };
       const same = areSearchStatesCanonicallyEqual(candidate, this.toSearchState());
       if (same && (this.searchPhase === 'success' || this.hasLiveSearchJob())) {
+        applyInputChanges();
         this.runtimeState.queryInputValue = rawQuery;
         syncStaticSearchFieldClearButtons(this.page);
         return 'local-only';
@@ -1311,6 +1332,7 @@ export class SearchPageController {
       let token = beginFeatureNavigation(this.source);
       if (!token || !this.canAcceptOperation() || !isFeatureTokenCurrent(this.source, token))
         return 'rejected';
+      applyInputChanges();
       this.searchPhase = 'idle';
       this.runtimeState.queryInputValue = rawQuery;
       this.runtimeState.normalizedQuery = candidate.q;
@@ -1387,8 +1409,9 @@ export class SearchPageController {
         }
         const name: SearchChoiceName = kind === 'tag-mode' ? 'tagMode' : 'sort';
         if (
-          commitFormState('pushState', 'immediate', undefined, name !== 'sort', { name, value }) ===
-          'rejected'
+          commitFormState('pushState', 'immediate', undefined, name !== 'sort', {
+            choice: { name, value },
+          }) === 'rejected'
         )
           return;
         this.closeSearchChoiceMenu(details, true);
@@ -1508,8 +1531,12 @@ export class SearchPageController {
       () => {
         const input = form.querySelector<HTMLInputElement>('[data-search-query-input]');
         if (input) {
-          input.value = '';
-          if (commitFormState('replaceState', 'debounced') !== 'rejected') input.focus();
+          if (
+            commitFormState('replaceState', 'debounced', undefined, true, {
+              queryInputValue: '',
+            }) !== 'rejected'
+          )
+            input.focus();
         }
       },
       listenerOptions,
@@ -1542,8 +1569,9 @@ export class SearchPageController {
           ...form.querySelectorAll<HTMLInputElement>('[data-search-tag-checkbox]'),
         ].find((candidate) => candidate.value === tag);
         if (checkbox) {
-          checkbox.checked = false;
-          commitFormState('pushState', 'immediate');
+          commitFormState('pushState', 'immediate', undefined, true, {
+            removedTag: checkbox.value,
+          });
         }
       },
       listenerOptions,
