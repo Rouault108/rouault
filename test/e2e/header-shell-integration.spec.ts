@@ -27,7 +27,7 @@ const waitForRouterDocumentHostSettled = async (page: Page): Promise<void> => {
 };
 
 test.describe('header shell integration', () => {
-  for (const surface of ['menu', 'toc', 'search'] as const) {
+  for (const surface of ['menu', 'toc', 'search', 'combined'] as const) {
     test(`sidebar overlay can coexist with reachable ${surface} without losing usable focus`, async ({
       page,
     }, testInfo) => {
@@ -39,53 +39,61 @@ test.describe('header shell integration', () => {
       await expect(sidebar).toHaveAttribute('data-mode', 'overlay');
       if ((await sidebar.getAttribute('data-state')) !== 'expanded') await sidebarToggle.click();
       await expect(sidebar).toHaveAttribute('data-state', 'expanded');
+      const expectExpandedSidebar = async (): Promise<void> => {
+        await expect(sidebar).toHaveAttribute('data-state', 'expanded');
+        await expect(sidebar).not.toHaveAttribute('hidden');
+        await expect(sidebar).not.toHaveAttribute('inert');
+        expect(
+          await sidebar.evaluate((element) => {
+            if (!(element instanceof HTMLElement)) throw new Error('sidebar root missing');
+            return { hidden: element.hidden, inert: element.inert };
+          }),
+        ).toEqual({ hidden: false, inert: false });
+      };
 
       const evidence: unknown[] = [];
       const record = async (stage: string): Promise<void> => {
-        evidence.push(
-          await page.evaluate((label) => {
-            const root = document.querySelector<HTMLElement>('aside[data-layout-sidebar-root]');
-            const focus = document.activeElement;
-            const describe = (element: Element | null) =>
-              element
-                ? `${element.tagName.toLowerCase()}#${element.id}.${element.className}`
-                : null;
-            return {
-              stage: label,
-              hits: [
-                [10, 80],
-                [innerWidth - 10, 120],
-                [innerWidth / 2, 180],
-              ].map(([x, y]) => ({
-                x,
-                y,
-                target: describe(document.elementFromPoint(x ?? 0, y ?? 0)),
-              })),
-              sidebar: {
-                mode: root?.dataset['mode'],
-                state: root?.dataset['state'],
-                hidden: root?.hidden,
-                inert: root?.inert,
-              },
-              toc: document.querySelector('[data-toc-trigger]')?.getAttribute('aria-expanded'),
-              menu: document.querySelector('[data-header-menu="theme"]')?.hasAttribute('open'),
-              search: document
-                .querySelector('dialog[data-search-dialog-root]')
-                ?.hasAttribute('open'),
-              focus: describe(focus),
-              usableFocus:
-                focus instanceof HTMLElement &&
-                focus !== document.body &&
-                focus.checkVisibility() &&
-                !focus.closest('[hidden], [inert]'),
-            };
-          }, stage),
-        );
+        const sample = await page.evaluate((label) => {
+          const root = document.querySelector<HTMLElement>('aside[data-layout-sidebar-root]');
+          const focus = document.activeElement;
+          const describe = (element: Element | null) =>
+            element ? `${element.tagName.toLowerCase()}#${element.id}.${element.className}` : null;
+          return {
+            stage: label,
+            hits: [
+              [10, 80],
+              [innerWidth - 10, 120],
+              [innerWidth / 2, 180],
+            ].map(([x, y]) => ({
+              x,
+              y,
+              target: describe(document.elementFromPoint(x ?? 0, y ?? 0)),
+            })),
+            sidebar: {
+              mode: root?.dataset['mode'],
+              state: root?.dataset['state'],
+              hidden: root?.hidden,
+              inert: root?.inert,
+            },
+            toc: document.querySelector('[data-toc-trigger]')?.getAttribute('aria-expanded'),
+            menu: document.querySelector('[data-header-menu="theme"]')?.hasAttribute('open'),
+            search: document.querySelector('dialog[data-search-dialog-root]')?.hasAttribute('open'),
+            focus: describe(focus),
+            usableFocus:
+              focus instanceof HTMLElement &&
+              focus !== document.body &&
+              focus.checkVisibility({ visibilityProperty: true }) &&
+              !focus.closest('[hidden], [inert]'),
+          };
+        }, stage);
+        evidence.push(sample);
+        expect(sample.usableFocus).toBe(true);
       };
       await record('sidebar expanded');
       if (surface === 'menu') {
         await page.locator(themeTriggerRootSelector).click();
         await expectMenuOpen(page, 'theme', true);
+        await expectExpandedSidebar();
         const item = page.locator('[data-header-menu="theme"] [data-theme-value="dark"]');
         await expect(item).toBeVisible();
         expect(
@@ -106,6 +114,7 @@ test.describe('header shell integration', () => {
         await trigger.click();
         const panel = page.locator('[data-layout-toc-mobile-panel]');
         await expect(panel).toBeVisible();
+        await expectExpandedSidebar();
         await expect(panel).toHaveCSS('z-index', '300');
         expect(
           await panel.evaluate((element) =>
@@ -115,17 +124,97 @@ test.describe('header shell integration', () => {
           ),
         ).toBe(true);
         await record('TOC and sidebar open');
+        await sidebarToggle.focus();
+        await page.setViewportSize({ width: 640, height: 760 });
+        await expect(panel).toBeHidden();
+        await expect(sidebarToggle).toBeFocused();
+        expect(
+          await sidebar.evaluate((element) =>
+            element.contains(
+              document.elementFromPoint(20, element.getBoundingClientRect().top + 20),
+            ),
+          ),
+        ).toBe(true);
+        await record('640px TOC paint excluded');
+        await page.setViewportSize({ width: 639, height: 760 });
+        await expect(panel).toBeVisible();
+        await expectExpandedSidebar();
+        await expect(sidebarToggle).toBeFocused();
+        await record('639px TOC paint restored');
         await trigger.click();
         await expect(panel).toBeHidden();
         await expect(trigger).toBeFocused();
-        await page.setViewportSize({ width: 640, height: 760 });
-        await expect(panel).toBeHidden();
-        await page.setViewportSize({ width: 639, height: 760 });
+      } else if (surface === 'combined') {
+        const tocTrigger = page.locator('[data-toc-trigger]');
+        const panel = page.locator('[data-layout-toc-mobile-panel]');
+        await expect(tocTrigger).toHaveAttribute('data-toc-trigger-interactive', 'true');
+        await tocTrigger.click();
+        await expect(panel).toBeVisible();
+        await expectExpandedSidebar();
+        const menuTrigger = page.locator(themeTriggerRootSelector);
+        await menuTrigger.focus();
+        await menuTrigger.press('Enter');
+        await expectMenuOpen(page, 'theme', true);
+        await expectExpandedSidebar();
+        await expect(panel).toBeVisible();
+        await expectExpandedSidebar();
+        // 同値300のDOM tieを観測し、menuのlocal400をsite全体の順位にしない。
+        const overlap = await page.locator('.theme-switcher__menu').evaluate((menu) => {
+          const toc = document.querySelector('[data-layout-toc-mobile-panel]');
+          if (!toc) throw new Error('mobile TOC missing');
+          const a = menu.getBoundingClientRect();
+          const b = toc.getBoundingClientRect();
+          const left = Math.max(a.left, b.left);
+          const top = Math.max(a.top, b.top);
+          const right = Math.min(a.right, b.right);
+          const bottom = Math.min(a.bottom, b.bottom);
+          return {
+            width: right - left,
+            height: bottom - top,
+            tocHit: toc.contains(document.elementFromPoint((left + right) / 2, (top + bottom) / 2)),
+          };
+        });
+        expect(overlap.width).toBeGreaterThan(0);
+        expect(overlap.height).toBeGreaterThan(0);
+        expect(overlap.tocHit).toBe(true);
+        evidence.push({ stage: 'header/menu and TOC overlap', overlap });
+        await record('keyboard-opened menu plus TOC and sidebar');
+        const searchTrigger = page.locator('[data-search-dialog-trigger]');
+        await searchTrigger.focus();
+        await searchTrigger.press('Enter');
+        const dialog = page.locator('dialog[data-search-dialog-root]');
+        await expect(dialog).toBeVisible();
+        // native modalのimplicit inertとsidebarの明示inert属性を区別する。
+        await expectExpandedSidebar();
+        expect(
+          await dialog.evaluate((element) => {
+            const rect = element.getBoundingClientRect();
+            return (
+              element.matches(':modal') &&
+              element.contains(
+                document.elementFromPoint(rect.x + rect.width / 2, rect.y + rect.height / 2),
+              )
+            );
+          }),
+        ).toBe(true);
+        await record('reachable combined surfaces with top-layer search');
+        await page.keyboard.press('Escape');
+        await expect(dialog).not.toHaveAttribute('open', '');
+        // Escapeによる複数closeの有無は記録し、foremost-only契約を追加しない。
+        await record('combined Escape result');
+        if ((await page.locator('[data-header-menu="theme"]').getAttribute('open')) !== null) {
+          await menuTrigger.focus();
+          await menuTrigger.press('Escape');
+        }
+        if ((await tocTrigger.getAttribute('aria-expanded')) === 'true') await tocTrigger.click();
+        await expectMenuOpen(page, 'theme', false);
         await expect(panel).toBeHidden();
       } else {
         await page.locator('[data-search-dialog-trigger]').click();
         const dialog = page.locator('dialog[data-search-dialog-root]');
         await expect(dialog).toBeVisible();
+        // native modalのimplicit inertとsidebarの明示inert属性を区別する。
+        await expectExpandedSidebar();
         expect(
           await dialog.evaluate((element) => {
             const rect = element.getBoundingClientRect();
@@ -148,7 +237,7 @@ test.describe('header shell integration', () => {
           return (
             focus instanceof HTMLElement &&
             focus !== document.body &&
-            focus.checkVisibility() &&
+            focus.checkVisibility({ visibilityProperty: true }) &&
             !focus.closest('[hidden], [inert]')
           );
         }),
@@ -163,6 +252,7 @@ test.describe('header shell integration', () => {
       await expect(sidebar).toHaveAttribute('data-state', 'collapsed');
       await expect(sidebarToggle).toBeFocused();
       await record('sidebar dismissed');
+      console.log('sidebar-overlay-surface-evidence', JSON.stringify(evidence));
       await testInfo.attach('overlay-surface-state-hit-focus', {
         body: JSON.stringify(evidence, null, 2),
         contentType: 'application/json',

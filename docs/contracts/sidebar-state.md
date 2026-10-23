@@ -83,6 +83,8 @@ paint順はinput所有権を意味しない。Escapeのforemost-only owner、相
 
 - Node / SSR: native nav invariant、root cardinality、projection、hydration budget、SSR target
 - Browser: `layout-sidebar-enhancer.browser.test.ts`、controller、shell mutation、native keyboard / persistence
+- Overlay paint: SSRの`sidebar-overlay-css-contract.test.ts`とproduction CSSを読み込むBrowserで、強制overlayの639 / 640 / 1023 / 1024、配置後の逆DOM順、座標hit / pointer / keyboard、parent token override、bounds / scrollを検証する。autoの1023 / 1024往復は別caseでroot / nav実体と正当なfocus handoffを確認する。route交換 / rollback、未起動 / fallback / dormant / cleanup / reinitはlocal stackingの適用資格を別に確認する。
+- Header integrationは単独surface、sidebarとの共存、keyboardで到達するTOC / menu / search共存のhit target・open state・最終focusを別の証拠として添付する。No-JSとmanifest失敗ではparent / sidebarのautoとbackdrop非表示を検証する。
 - E2E: `sidebar-pre-hydration-leakage.spec.ts`、`sidebar-scroll.spec.ts`、`header-layout-contract.spec.ts`、`header-shell-integration.spec.ts`、`header-no-js.spec.ts`
 - UI CheckはPhase3まで比較用のmeta / smoke ownerとして維持する。
 

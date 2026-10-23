@@ -53,7 +53,7 @@ const fixture = (present = true): HTMLElement => {
   shell = document.createElement('div');
   shell.setAttribute('data-app-shell-root', '');
   shell.className = 'app-shell-root';
-  shell.innerHTML = `<header data-layout-header data-sidebar-id="note-primary" data-sidebar-enabled="true"><button data-layout-sidebar-toggle data-sidebar-id="note-primary">Toggle</button></header><router-document-host><div class="layout-sidebar-col" data-app-shell-sidebar-host ${present ? '' : 'hidden'}><aside data-layout-sidebar-root tabindex="-1" aria-label="Navigation" ${present ? '' : 'hidden'} sidebar-id="note-primary" state-scope-id="note-navigation" selected-id="leaf" initial-expanded-ids='["branch"]' topology-revision="test" presentation="overlay"><a data-layout-sidebar-main-link href="#main-content" data-link-kind="internal-fragment" data-link-surface="structural">Main</a><div data-layout-sidebar-surface>${present ? navHtml : ''}</div></aside></div></router-document-host><div class="layout-sidebar-overlay-layer" data-app-shell-sidebar-overlay-layer><div data-layout-sidebar-backdrop hidden></div></div><button data-external-focus>Outside</button>`;
+  shell.innerHTML = `<header data-layout-header data-sidebar-id="note-primary" data-sidebar-enabled="true"><button data-layout-sidebar-toggle data-sidebar-id="note-primary">Toggle</button></header><router-document-host data-sidebar-presence="${present ? 'present' : 'absent'}"><div class="layout-sidebar-col" data-app-shell-sidebar-host ${present ? '' : 'hidden'}><aside data-layout-sidebar-root tabindex="-1" aria-label="Navigation" ${present ? '' : 'hidden'} sidebar-id="note-primary" state-scope-id="note-navigation" selected-id="leaf" initial-expanded-ids='["branch"]' topology-revision="test" presentation="overlay"><a data-layout-sidebar-main-link href="#main-content" data-link-kind="internal-fragment" data-link-surface="structural">Main</a><div data-layout-sidebar-surface>${present ? navHtml : ''}</div></aside></div></router-document-host><div class="layout-sidebar-overlay-layer" data-app-shell-sidebar-overlay-layer><div data-layout-sidebar-backdrop hidden></div></div><button data-external-focus>Outside</button>`;
   document.body.append(shell);
   const root = shell.querySelector<HTMLElement>('[data-layout-sidebar-root]');
   if (!root) throw new Error('missing fixture root');
@@ -165,7 +165,11 @@ describe('sidebar overlay paint contract with production CSS', () => {
       expect(layer.getBoundingClientRect().height).toBe(0);
       expect(getComputedStyle(layer).overflow).toBe('visible');
       expect(root.contains(document.elementFromPoint(10, rect.top + 20))).toBe(true);
-      expect(document.elementFromPoint(width - 10, rect.top + 100)).toBe(backdrop);
+      // Chromiumのnative scrollbar帯を避け、可視content viewport内でhitを検証する。
+      const contentRight = document.documentElement.clientWidth;
+      expect(contentRight).toBeGreaterThan(rect.right);
+      const backdropX = (rect.right + contentRight) / 2;
+      expect(document.elementFromPoint(backdropX, rect.top + 100)).toBe(backdrop);
       const summary = required(root.querySelector<HTMLElement>('summary'));
       const summaryRect = summary.getBoundingClientRect();
       expect(
@@ -177,7 +181,7 @@ describe('sidebar overlay paint contract with production CSS', () => {
       expect([...layer.children]).toEqual([root, backdrop]);
       shell.style.setProperty('--z-blocking-layer', '250');
       expectOverlayStack(root, '250');
-      await userEvent.click(backdrop, { position: { x: width - 10, y: 100 } });
+      await userEvent.click(backdrop, { position: { x: backdropX - background.left, y: 100 } });
       expect(root.getAttribute('data-state')).toBe('collapsed');
       expect(root.inert).toBe(true);
       expect(backdrop.hidden).toBe(true);
@@ -293,6 +297,43 @@ describe('sidebar overlay paint contract with production CSS', () => {
     expect(state()).toBe('dormant');
     expectNativeStack(root);
     expect(root.hidden).toBe(true);
+  });
+
+  it('navigation replaces nav legitimately and rollback restores paint on the persistent root', async () => {
+    await page.viewport(639, 480);
+    await ensureMainCssLoaded();
+    const root = fixture();
+    start(root);
+    const previousNav = required(root.querySelector('nav'));
+    const mutation = createLayoutSidebarShellAdapter().prepare({
+      shell: {
+        headerHtml: '',
+        sidebarProjection: { ...projection, navHtml: navHtml.replace('>Page<', '>Other Page<') },
+      },
+      navigationUrl: '/about/',
+      shellCommitId: 1,
+    });
+    mutation.commit();
+    commitShellGeneration(1);
+    ready(1);
+    event('app-shell:committed', { shellCommitId: 1 });
+    expectNativeStack(root);
+    validate(1);
+    expect(state()).toBe('active');
+    expectOverlayStack(root);
+    expect(root.querySelector('nav')).not.toBe(previousNav);
+    expect(root.textContent).toContain('Other Page');
+    event('app-shell:rollback-start', { failedShellCommitId: 1 });
+    mutation.rollback();
+    restoreShellGeneration(0);
+    event('app-shell:restored', { restoredShellCommitId: 0 });
+    ready(0);
+    expectNativeStack(root);
+    await waitForCondition(() => state() === 'active', 'rollback paint restored');
+    expectOverlayStack(root);
+    expect(shell.querySelector('[data-layout-sidebar-root]')).toBe(root);
+    expect(root.querySelectorAll('nav')).toHaveLength(1);
+    expect(root.textContent).not.toContain('Other Page');
   });
 });
 
