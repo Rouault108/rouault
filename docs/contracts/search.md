@@ -201,6 +201,20 @@ submit / resetはpending検索を失効させない。別URLを指す旧DOMの�
 popstateは履歴を書かない独立したURL同期と即時検索である。completion / finallyはjob identity・generation・tokenの
 所有権を再照合し、旧callbackが新jobを上書きしない。cacheや旧結果保持は導入しない。
 
+### Dynamic result clearing focus
+
+新jobは旧jobのcancel（generation更新）の後、最初のclearより前に確定する。results / countの実際の
+子孫削除直前だけactiveElementをsnapshotし、保持されるcontainer自身は対象にしない。削除後もpage / source /
+token / generation / jobが有効で、snapshotが切断され、他の接続済み要素がfocusを得ていなければ、同controllerの
+query inputへ同期的にpreventScroll付きでfocusする。inputは接続・可視・enabledでhidden / inert祖先の外にあること。
+利用不能inputや他要素へのfocus移動はrescueだけを省略し、有効な検索を継続する。
+
+focus handlerによる新検索・navigation・disposeを含め、focus直後に所有権を再照合する。失効したcallerはtimer登録、
+request開始、loading projection、completion / finally書き込みを継続しない。二度目のclearに削除対象のfocusがなければ
+rescueしない。response時のsuccess / 0件 / error、href照合、SSR baseline adoption、disposeへこのrescueを広げない。
+最初のclear後にユーザーが移したfocusを保持し、後のbody focusだけでは古いsnapshotから復元しない。
+preventScrollはfocus起因のscrollだけを抑え、layout縮小によるscroll clampingは抑えない。
+
 ### SSR baseline identity
 
 - Search SSR文書はStatic Exploreの説明、Tag projection由来のtag anchors、`/corpora/`へのanchorだけをbaselineとする。recent feed、全ノート一覧、corpus索引の複製、query評価 / ranking / snippet / search resultを持ち込まない。

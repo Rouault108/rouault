@@ -939,8 +939,7 @@ export class SearchPageController {
     };
     this.currentJob = job;
     this.searchPhase = search === 'debounced' ? 'scheduled' : 'running';
-    this.clearCurrentResults();
-    if (!this.ownsSearchJob(job)) return false;
+    if (!this.clearCurrentResults(job)) return false;
     if (search === 'debounced') {
       job.timerId = window.setTimeout(() => {
         if (!this.ownsSearchJob(job)) return;
@@ -960,8 +959,7 @@ export class SearchPageController {
     const searchAbortController = new AbortController();
     job.request = searchAbortController;
     this.searchPhase = 'running';
-    this.clearCurrentResults();
-    if (!this.ownsSearchJob(job)) return;
+    if (!this.clearCurrentResults(job)) return;
     this.showStatus('loading');
     const request = { mode: 'explore' as const, ...job.state };
     let pending: ReturnType<SearchCore['search']>;
@@ -999,9 +997,42 @@ export class SearchPageController {
       });
   }
 
-  private clearCurrentResults(): void {
-    this.page.querySelector<HTMLElement>('[data-search-page-results-section]')?.replaceChildren();
-    this.page.querySelector<HTMLElement>('[data-search-page-result-count]')?.replaceChildren();
+  private clearCurrentResults(job: SearchJob): boolean {
+    if (!this.ownsSearchJob(job)) return false;
+    const document = this.page.ownerDocument;
+    const regions = [
+      this.page.querySelector<HTMLElement>('[data-search-page-results-section]'),
+      this.page.querySelector<HTMLElement>('[data-search-page-result-count]'),
+    ];
+    const active = document.activeElement;
+    const removedFocus =
+      active && regions.some((region) => region !== active && region?.contains(active))
+        ? active
+        : null;
+    for (const region of regions) {
+      region?.replaceChildren();
+      if (!this.ownsSearchJob(job)) return false;
+    }
+    if (removedFocus && !removedFocus.isConnected) {
+      const current = document.activeElement;
+      const focusMoved =
+        current !== null &&
+        current !== document.body &&
+        current !== document.documentElement &&
+        current.isConnected;
+      const input = this.form?.querySelector<HTMLInputElement>('[data-search-query-input]');
+      if (
+        !focusMoved &&
+        input?.isConnected &&
+        !input.matches(':disabled') &&
+        !input.closest('[hidden], [inert]') &&
+        input.checkVisibility({ checkOpacity: true, checkVisibilityCSS: true })
+      ) {
+        input.focus({ preventScroll: true });
+      }
+    }
+    // focus handlerは同期的に次の検索・navigation・disposeへ再入できる。
+    return this.ownsSearchJob(job);
   }
 
   private showRequestError(): void {
@@ -1010,7 +1041,6 @@ export class SearchPageController {
       this.runtimeState.countsStatus = 'error';
       if (this.form) syncFilterDomFromForm(this.page, this.form, this.runtimeState);
     }
-    this.clearCurrentResults();
     this.showStatus(
       'error',
       '検索の読み込みに失敗しました。検索語や条件を変更して再入力できます。',
@@ -1227,17 +1257,6 @@ export class SearchPageController {
       form.addEventListener(
         name,
         (event) => {
-          const target = event.target;
-          if (
-            event.type !== 'submit' &&
-            event.type !== 'reset' &&
-            (!(target instanceof HTMLElement) ||
-              !target.closest(
-                '[data-search-query-input], [data-search-query-clear], [data-search-tag-checkbox], [data-search-selected-tag-remove], [data-static-choice-item]',
-              ))
-          )
-            return;
-          if (event instanceof KeyboardEvent && !['Enter', ' '].includes(event.key)) return;
           if (this.disposed || !isFeatureSourceCurrent(this.source)) {
             event.preventDefault();
             event.stopImmediatePropagation();
