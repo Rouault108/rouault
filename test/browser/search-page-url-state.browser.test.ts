@@ -1,5 +1,14 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import {
+  beginNavigationIntent,
+  initializeContentContext,
+  releaseContentContext,
+} from '../../src/navigation/content-navigation-context.js';
+import { normalizeSearchCanonicalPathname } from '../../shared/search/document-url.js';
+import { buildSearchResultRenderHref } from '../../src/search/normalize-search-result-url.js';
+import { observeHistoryEntries } from '../../src/navigation/history-entry.js';
+import { SEARCH_DEBOUNCE_MS } from '../../src/search/search-constants.js';
 import { DEFAULT_SITE_URL_CONTEXT } from '../../shared/site/site-url-context.js';
 import type { ExploreSearchResponse } from '../../shared/search/search-types.js';
 import {
@@ -27,6 +36,8 @@ describe('search-page URL state', () => {
   });
 
   afterEach(() => {
+    vi.useRealTimers();
+    vi.restoreAllMocks();
     cleanupSearchPageTest();
   });
 
@@ -315,4 +326,678 @@ describe('search-page URL state', () => {
         ?.textContent,
     ).to.equal('件数を取得できません');
   });
+});
+
+describe('search-page semantic admission', () => {
+  // 同じWebKit sessionの前後suiteへHistory API quotaを持ち越さず、全履歴assertionを実行する。
+  const waitForHistoryBudget = async (milliseconds: number): Promise<void> => {
+    if (navigator.userAgent.includes('WebKit') && !navigator.userAgent.includes('Chrome')) {
+      await new Promise<void>((resolve) => window.setTimeout(resolve, milliseconds));
+    }
+  };
+  beforeAll(() => waitForHistoryBudget(11_000), 20_000);
+  afterAll(() => waitForHistoryBudget(11_000), 20_000);
+  let ownedRoot: HTMLElement | null = null;
+  beforeEach(async () => {
+    await waitForHistoryBudget(500);
+    history.replaceState(history.state, '', '/search/');
+  });
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.restoreAllMocks();
+    if (ownedRoot) releaseContentContext(ownedRoot);
+    ownedRoot = null;
+    cleanupSearchPageTest();
+  });
+
+  const mount = (search = createSearchRuntime()) => {
+    const root = renderSearchPageFixture();
+    ownedRoot = root;
+    initializeContentContext(root);
+    const controller = enhanceWithRuntime(root, undefined, search);
+    const query = expectElement(
+      root.querySelector<HTMLInputElement>('[data-search-query-input]'),
+      'query',
+    );
+    const input = (value: string) => {
+      query.value = value;
+      query.dispatchEvent(new Event('input', { bubbles: true }));
+    };
+    const choice = (value: string) => {
+      const menu = expectElement(
+        root.querySelector<HTMLDetailsElement>('[data-search-choice-menu="sort"]'),
+        'sort menu',
+      );
+      menu.open = true;
+      const item = expectElement(
+        menu.querySelector<HTMLButtonElement>(`[data-value="${value}"]`),
+        'sort item',
+      );
+      item.click();
+      return menu;
+    };
+    return { root, query, input, choice, controller };
+  };
+
+  it('matching SSR and successful conditions reuse result DOM without history or a live token', async () => {
+    vi.useFakeTimers();
+    const search = vi.fn(async () => staticResponse);
+    const { root, query, input, choice } = mount(createSearchRuntime(search));
+    const section = expectElement(
+      root.querySelector('[data-search-page-results-section]'),
+      'results',
+    );
+    const initial = section.firstChild;
+    const push = vi.spyOn(history, 'pushState');
+    const replace = vi.spyOn(history, 'replaceState');
+    input('   ');
+    expect(query.value).toBe('   ');
+    expect(root.querySelector<HTMLButtonElement>('[data-search-query-clear]')?.hidden).toBe(false);
+    const menu = choice('relevance');
+    expect(menu.open).toBe(false);
+    expect(document.activeElement).toBe(menu.querySelector('[data-static-choice-trigger]'));
+    expect(section.firstChild).toBe(initial);
+    expect(search).not.toHaveBeenCalled();
+    expect(push).not.toHaveBeenCalled();
+    expect(replace).not.toHaveBeenCalled();
+    input('Router');
+    await vi.advanceTimersByTimeAsync(SEARCH_DEBOUNCE_MS);
+    expect(search).toHaveBeenCalledTimes(1);
+    const result = section.firstChild;
+    push.mockClear();
+    replace.mockClear();
+    beginNavigationIntent('navigation', location.href);
+    input(' Router ');
+    choice('relevance');
+    await vi.advanceTimersByTimeAsync(SEARCH_DEBOUNCE_MS);
+    expect(search).toHaveBeenCalledTimes(1);
+    expect(section.firstChild).toBe(result);
+    expect(push).not.toHaveBeenCalled();
+    expect(replace).not.toHaveBeenCalled();
+  });
+
+  it('same pending trim preserves deadline, request, clear state, and latest raw input after response', async () => {
+    vi.useFakeTimers();
+    let finish!: (response: ExploreSearchResponse) => void;
+    let signal: AbortSignal | undefined;
+    const search = vi.fn((_request, options) => {
+      signal = options?.signal;
+      return new Promise<ExploreSearchResponse>((resolve) => {
+        finish = resolve;
+      });
+    });
+    const { root, query, input, choice } = mount(createSearchRuntime(search));
+    const replace = vi.spyOn(history, 'replaceState');
+    input('Router');
+    await vi.advanceTimersByTimeAsync(SEARCH_DEBOUNCE_MS - 10);
+    input(' Router ');
+    choice('relevance');
+    await vi.advanceTimersByTimeAsync(10);
+    expect(search).toHaveBeenCalledTimes(1);
+    expect(replace).toHaveBeenCalledTimes(1);
+    input('  Router  ');
+    query.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+    query.click();
+    expect(signal?.aborted).toBe(false);
+    finish(staticResponse);
+    await vi.advanceTimersByTimeAsync(0);
+    expect(query.value).toBe('  Router  ');
+    expect(root.querySelector<HTMLButtonElement>('[data-search-query-clear]')?.hidden).toBe(false);
+    await vi.advanceTimersByTimeAsync(SEARCH_DEBOUNCE_MS);
+    expect(search).toHaveBeenCalledTimes(1);
+  });
+
+  it.each(['scheduled', 'running'] as const)(
+    'expired %s job cannot reclaim ownership; the next same operation starts fresh without history',
+    async (phase) => {
+      vi.useFakeTimers();
+      const resolvers: ((response: ExploreSearchResponse) => void)[] = [];
+      const signals: AbortSignal[] = [];
+      const search = vi.fn((_request, options) => {
+        if (options?.signal) signals.push(options.signal);
+        return new Promise<ExploreSearchResponse>((resolve) => resolvers.push(resolve));
+      });
+      const { root, input } = mount(createSearchRuntime(search));
+      input('Router');
+      if (phase === 'running') await vi.advanceTimersByTimeAsync(SEARCH_DEBOUNCE_MS);
+      beginNavigationIntent('navigation', location.href);
+      if (phase === 'scheduled') await vi.advanceTimersByTimeAsync(SEARCH_DEBOUNCE_MS);
+      else {
+        resolvers[0]?.(staticResponse);
+        await vi.advanceTimersByTimeAsync(0);
+        expect(root.querySelector('[data-search-page-results-section]')?.childNodes.length).toBe(0);
+      }
+      const replace = vi.spyOn(history, 'replaceState');
+      input(' Router ');
+      await vi.advanceTimersByTimeAsync(SEARCH_DEBOUNCE_MS);
+      expect(search).toHaveBeenCalledTimes(phase === 'running' ? 2 : 1);
+      expect(replace).not.toHaveBeenCalled();
+      if (phase === 'running') expect(signals[0]?.aborted).toBe(true);
+      resolvers.at(-1)?.(staticResponse);
+      await vi.advanceTimersByTimeAsync(0);
+      expect(
+        root.querySelector('[data-search-page-results-section]')?.childNodes.length,
+      ).toBeGreaterThan(0);
+    },
+  );
+
+  it('sort error with ready counts retries the same choice without history', async () => {
+    let fail!: (reason: Error) => void;
+    const search = vi.fn(
+      () =>
+        new Promise<ExploreSearchResponse>((_resolve, reject) => {
+          fail = reject;
+        }),
+    );
+    const { root, choice } = mount(createSearchRuntime(search));
+    choice('date-desc');
+    expect(root.querySelector<HTMLElement>('[data-filter-option]')?.dataset['countStatus']).toBe(
+      'ready',
+    );
+    fail(new Error('failed'));
+    await Promise.resolve();
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(root.querySelector<HTMLElement>('[data-search-page-error]')?.hidden).toBe(false);
+    const push = vi.spyOn(history, 'pushState');
+    const menu = choice('date-desc');
+    expect(search).toHaveBeenCalledTimes(2);
+    expect(push).not.toHaveBeenCalled();
+    expect(menu.open).toBe(false);
+  });
+
+  it('a stale URL rejects input and choice before history, hidden fields, or result changes', () => {
+    const search = vi.fn(async () => staticResponse);
+    const { root, input, choice } = mount(createSearchRuntime(search));
+    const result = root.querySelector('[data-search-page-results-section]')?.firstChild;
+    history.replaceState(history.state, '', '/notes/elsewhere/');
+    const push = vi.spyOn(history, 'pushState');
+    const replace = vi.spyOn(history, 'replaceState');
+    input('stale');
+    const menu = choice('date-desc');
+    expect(menu.open).toBe(true);
+    expect(root.querySelector<HTMLInputElement>('[data-search-sort-value]')?.value).toBe(
+      'relevance',
+    );
+    expect(root.querySelector('[data-search-page-results-section]')?.firstChild).toBe(result);
+    expect(search).not.toHaveBeenCalled();
+    expect(push).not.toHaveBeenCalled();
+    expect(replace).not.toHaveBeenCalled();
+  });
+
+  it.each(['results-section', 'result-count'] as const)(
+    'rescues only focused removed descendants of %s synchronously with preventScroll',
+    (region) => {
+      const search = vi.fn(async () => staticResponse);
+      const { root, query, input } = mount(createSearchRuntime(search));
+      const section = expectElement(
+        root.querySelector<HTMLElement>(`[data-search-page-${region}]`),
+        'region',
+      );
+      const link = document.createElement('a');
+      link.href = '#removed';
+      link.textContent = 'old result';
+      section.append(link);
+      link.focus();
+      const focus = vi.spyOn(query, 'focus');
+      input('new');
+      expect(link.isConnected).toBe(false);
+      expect(document.activeElement).toBe(query);
+      expect(focus).toHaveBeenCalledExactlyOnceWith({ preventScroll: true });
+      expect(root.querySelector('[data-search-page-results-section]')?.childNodes.length).toBe(0);
+      expect(root.querySelector('[data-search-page-result-count]')?.childNodes.length).toBe(0);
+      expect(search).not.toHaveBeenCalled();
+    },
+  );
+
+  it.each(['container', 'control', 'external', 'body'] as const)(
+    'does not rescue retained %s focus',
+    (target) => {
+      const { root, query, input } = mount();
+      const section = expectElement(
+        root.querySelector<HTMLElement>('[data-search-page-results-section]'),
+        'results',
+      );
+      section.tabIndex = -1;
+      const external = document.createElement('button');
+      document.body.append(external);
+      const control = expectElement(
+        root.querySelector<HTMLInputElement>('[data-search-filter-input]'),
+        'filter',
+      );
+      const active =
+        target === 'container'
+          ? section
+          : target === 'control'
+            ? control
+            : target === 'external'
+              ? external
+              : document.body;
+      if (target === 'body')
+        document.activeElement instanceof HTMLElement && document.activeElement.blur();
+      else active.focus();
+      const focus = vi.spyOn(query, 'focus');
+      input('new');
+      expect(document.activeElement).toBe(active);
+      expect(focus).not.toHaveBeenCalled();
+    },
+  );
+
+  it.each(['disabled', 'hidden', 'inert', 'display', 'visibility', 'opacity', 'detached'] as const)(
+    'unavailable %s query skips rescue and continues immediate search',
+    (unavailable) => {
+      const search = vi.fn(async () => staticResponse);
+      const { root, query, choice } = mount(createSearchRuntime(search));
+      if (unavailable === 'disabled') query.disabled = true;
+      if (unavailable === 'hidden') query.hidden = true;
+      if (unavailable === 'inert') query.inert = true;
+      if (unavailable === 'display') query.style.display = 'none';
+      if (unavailable === 'visibility') query.style.visibility = 'hidden';
+      if (unavailable === 'opacity') query.style.opacity = '0';
+      if (unavailable === 'detached') query.remove();
+      const section = expectElement(
+        root.querySelector('[data-search-page-results-section]'),
+        'results',
+      );
+      const link = document.createElement('a');
+      link.href = '#removed';
+      section.append(link);
+      link.focus();
+      const focus = vi.spyOn(query, 'focus');
+      choice('date-desc');
+      expect(search).toHaveBeenCalledTimes(1);
+      expect(focus).not.toHaveBeenCalled();
+    },
+  );
+
+  it.each(['search', 'navigation', 'dispose'] as const)(
+    'rescue focus handler %s prevents every old continuation',
+    async (action) => {
+      vi.useFakeTimers();
+      const finishers: ((response: ExploreSearchResponse) => void)[] = [];
+      const search = vi.fn(
+        (_request: Parameters<ReturnType<typeof createSearchRuntime>['search']>[0]) =>
+          new Promise<ExploreSearchResponse>((resolve) => finishers.push(resolve)),
+      );
+      const { root, query, input, choice, controller } = mount(createSearchRuntime(search));
+      const section = expectElement(
+        root.querySelector('[data-search-page-results-section]'),
+        'results',
+      );
+      const link = document.createElement('a');
+      link.href = '#removed';
+      section.append(link);
+      link.focus();
+      const external = document.createElement('button');
+      document.body.append(external);
+      query.addEventListener(
+        'focus',
+        () => {
+          if (action === 'search') choice('date-desc');
+          if (action === 'navigation') beginNavigationIntent('navigation', '/notes/next/');
+          if (action === 'dispose') controller?.dispose();
+          external.focus();
+        },
+        { once: true },
+      );
+      input('old');
+      const loading = root.querySelector<HTMLElement>('[data-search-page-loading]');
+      expect(loading?.hidden).toBe(action !== 'search');
+      expect(document.activeElement).toBe(external);
+      await vi.advanceTimersByTimeAsync(SEARCH_DEBOUNCE_MS);
+      expect(search).toHaveBeenCalledTimes(action === 'search' ? 1 : 0);
+      if (action === 'search') {
+        expect(search.mock.calls[0]?.[0]).toMatchObject({ sort: 'date-desc' });
+        finishers[0]?.(staticResponse);
+        await vi.advanceTimersByTimeAsync(0);
+        expect(loading?.hidden).toBe(true);
+        // 新jobのfinally後も成功結果を同条件として再利用できる。
+        choice('date-desc');
+        expect(search).toHaveBeenCalledTimes(1);
+      }
+      expect(document.activeElement).toBe(
+        action === 'search'
+          ? root.querySelector('[data-search-choice-menu="sort"] [data-static-choice-trigger]')
+          : external,
+      );
+    },
+  );
+
+  it.each(['success', 'zero', 'error'] as const)(
+    'user focus after initial clear survives debounce and later %s response',
+    async (outcome) => {
+      vi.useFakeTimers();
+      let finish!: (response: ExploreSearchResponse) => void;
+      let fail!: (reason: Error) => void;
+      const search = vi.fn(
+        () =>
+          new Promise<ExploreSearchResponse>((resolve, reject) => {
+            finish = resolve;
+            fail = reject;
+          }),
+      );
+      const { root, query, input } = mount(createSearchRuntime(search));
+      const section = expectElement(
+        root.querySelector('[data-search-page-results-section]'),
+        'results',
+      );
+      const link = document.createElement('a');
+      link.href = '#removed';
+      section.append(link);
+      link.focus();
+      const focus = vi.spyOn(query, 'focus');
+      input('new');
+      const filter = expectElement(
+        root.querySelector<HTMLInputElement>('[data-search-filter-input]'),
+        'filter',
+      );
+      filter.focus();
+      await vi.advanceTimersByTimeAsync(SEARCH_DEBOUNCE_MS);
+      expect(document.activeElement).toBe(filter);
+      const canonicalPathname = normalizeSearchCanonicalPathname('/notes/new/');
+      if (!canonicalPathname) throw new Error('Invalid fixture');
+      if (outcome === 'error') fail(new Error('failed'));
+      else
+        finish(
+          outcome === 'zero'
+            ? staticResponse
+            : {
+                ...staticResponse,
+                total: 1,
+                items: [
+                  {
+                    canonicalPathname,
+                    renderHref: buildSearchResultRenderHref({
+                      canonicalPathname,
+                      siteUrlContext: DEFAULT_SITE_URL_CONTEXT,
+                    }),
+                    title: 'new',
+                    description: 'new',
+                    pathLabel: 'new',
+                    tags: [],
+                    date: { original: null, epochMs: null },
+                    snippet: null,
+                    reasons: [],
+                  },
+                ],
+              },
+        );
+      await vi.advanceTimersByTimeAsync(0);
+      expect(document.activeElement).toBe(filter);
+      expect(focus).toHaveBeenCalledTimes(1);
+    },
+  );
+
+  it('focus gained during removal skips rescue while a valid search continues', async () => {
+    vi.useFakeTimers();
+    const search = vi.fn(async () => staticResponse);
+    const { root, query, input } = mount(createSearchRuntime(search));
+    const external = document.createElement('button');
+    document.body.append(external);
+    const name = `search-focus-on-remove-${crypto.randomUUID()}`;
+    customElements.define(
+      name,
+      class extends HTMLElement {
+        disconnectedCallback() {
+          external.focus();
+        }
+      },
+    );
+    const element = document.createElement(name);
+    const link = document.createElement('a');
+    link.href = '#removed';
+    element.append(link);
+    root.querySelector('[data-search-page-results-section]')?.append(element);
+    link.focus();
+    const focus = vi.spyOn(query, 'focus');
+    input('new');
+    expect(document.activeElement).toBe(external);
+    expect(focus).not.toHaveBeenCalled();
+    await vi.advanceTimersByTimeAsync(SEARCH_DEBOUNCE_MS);
+    expect(search).toHaveBeenCalledTimes(1);
+  });
+
+  it.each(['navigation', 'dispose'] as const)(
+    'second clear rescue %s prevents request start and loading projection',
+    async (action) => {
+      vi.useFakeTimers();
+      const search = vi.fn(async () => staticResponse);
+      const { root, query, input, controller } = mount(createSearchRuntime(search));
+      input('new');
+      const link = document.createElement('a');
+      link.href = '#removed';
+      root.querySelector('[data-search-page-results-section]')?.append(link);
+      link.focus();
+      query.addEventListener(
+        'focus',
+        () => {
+          if (action === 'navigation') beginNavigationIntent('navigation', '/notes/next/');
+          else controller?.dispose();
+        },
+        { once: true },
+      );
+      await vi.advanceTimersByTimeAsync(SEARCH_DEBOUNCE_MS);
+      expect(search).not.toHaveBeenCalled();
+      expect(root.querySelector<HTMLElement>('[data-search-page-loading]')?.hidden).toBe(true);
+    },
+  );
+
+  it('old completion and finally cannot replace the pending job started by a rescue focus handler', async () => {
+    vi.useFakeTimers();
+    const finishers: ((response: ExploreSearchResponse) => void)[] = [];
+    const signals: AbortSignal[] = [];
+    const search = vi.fn((_request, options) => {
+      if (options?.signal) signals.push(options.signal);
+      return new Promise<ExploreSearchResponse>((resolve) => finishers.push(resolve));
+    });
+    const { root, query, input, choice } = mount(createSearchRuntime(search));
+    choice('date-desc');
+    expect(search).toHaveBeenCalledTimes(1);
+    const link = document.createElement('a');
+    link.href = '#removed';
+    root.querySelector('[data-search-page-results-section]')?.append(link);
+    link.focus();
+    query.addEventListener('focus', () => choice('relevance'), { once: true });
+    input('next');
+    expect(search).toHaveBeenCalledTimes(2);
+    expect(signals[0]?.aborted).toBe(true);
+    finishers[0]?.(staticResponse);
+    await vi.advanceTimersByTimeAsync(0);
+    expect(root.querySelector('[data-search-page-results-section]')?.childNodes.length).toBe(0);
+    expect(root.querySelector<HTMLElement>('[data-search-page-loading]')?.hidden).toBe(false);
+    input(' next ');
+    await vi.advanceTimersByTimeAsync(SEARCH_DEBOUNCE_MS);
+    expect(search).toHaveBeenCalledTimes(2);
+    expect(signals[1]?.aborted).toBe(false);
+    finishers[1]?.(staticResponse);
+    await vi.advanceTimersByTimeAsync(0);
+    expect(query.value).toBe(' next ');
+    expect(root.querySelector<HTMLElement>('[data-search-page-loading]')?.hidden).toBe(true);
+  });
+
+  it('a superseded caller cannot cancel a newer job created during synchronous form projection', async () => {
+    vi.useFakeTimers();
+    const search = vi.fn(
+      async (_request: Parameters<ReturnType<typeof createSearchRuntime>['search']>[0]) =>
+        staticResponse,
+    );
+    const { root, input, query } = mount(createSearchRuntime(search));
+    const name = `search-reenter-projection-${crypto.randomUUID()}`;
+    customElements.define(
+      name,
+      class extends HTMLElement {
+        disconnectedCallback() {
+          input('winner');
+        }
+      },
+    );
+    root.querySelector('[data-static-choice-current-label]')?.append(document.createElement(name));
+    input('superseded');
+    await vi.advanceTimersByTimeAsync(SEARCH_DEBOUNCE_MS);
+    expect(search).toHaveBeenCalledTimes(1);
+    expect(search.mock.calls[0]?.[0]).toMatchObject({ q: 'winner' });
+    expect(query.value).toBe('winner');
+  });
+
+  it.each(['query-clear', 'selected-tag-remove'] as const)(
+    '%s admits its candidate before projecting input changes',
+    (control) => {
+      const { root, query, input } = mount();
+      input('original');
+      const tag = expectElement(
+        root.querySelector<HTMLInputElement>('[data-search-tag-checkbox][value="music"]'),
+        'music',
+      );
+      if (control === 'selected-tag-remove') {
+        tag.checked = true;
+        tag.dispatchEvent(new Event('change', { bubbles: true }));
+      }
+      const button = expectElement(
+        root.querySelector<HTMLButtonElement>(`[data-search-${control}]`),
+        'button',
+      );
+      button.addEventListener(
+        'click',
+        () => history.replaceState(history.state, '', '/notes/elsewhere/'),
+        { capture: true },
+      );
+      button.click();
+      expect(query.value).toBe('original');
+      if (control === 'selected-tag-remove') expect(tag.checked).toBe(true);
+    },
+  );
+
+  it.each(['search', 'navigation', 'dispose'] as const)(
+    'response tag-focus %s stops old projection writes',
+    async (action) => {
+      vi.useFakeTimers();
+      let finish!: (response: ExploreSearchResponse) => void;
+      const search = vi.fn(
+        () =>
+          new Promise<ExploreSearchResponse>((resolve) => {
+            finish = resolve;
+          }),
+      );
+      const { root, query, input, controller } = mount(createSearchRuntime(search));
+      input('original');
+      await vi.advanceTimersByTimeAsync(SEARCH_DEBOUNCE_MS);
+      const music = expectElement(
+        root.querySelector<HTMLInputElement>('[data-search-tag-checkbox][value="music"]'),
+        'music',
+      );
+      music.focus();
+      const clear = expectElement(
+        root.querySelector<HTMLButtonElement>('[data-search-query-clear]'),
+        'clear',
+      );
+      const hidden = vi.spyOn(clear, 'hidden', 'set');
+      let reentered = false;
+      music.addEventListener(
+        'focus',
+        () => {
+          reentered = true;
+          if (action === 'search') input('winner');
+          if (action === 'navigation') beginNavigationIntent('navigation', '/notes/next/');
+          if (action === 'dispose') controller?.dispose();
+          hidden.mockClear();
+        },
+        { once: true },
+      );
+      finish({
+        ...staticResponse,
+        tagCounts: { architecture: 1, music: 3 },
+        allTagCounts: { architecture: 1, music: 3 },
+      });
+      await vi.advanceTimersByTimeAsync(0);
+      expect(reentered).toBe(true);
+      expect(hidden).not.toHaveBeenCalled();
+      if (action === 'search') {
+        expect(query.value).toBe('winner');
+        await vi.advanceTimersByTimeAsync(SEARCH_DEBOUNCE_MS);
+        expect(search).toHaveBeenCalledTimes(2);
+      }
+    },
+  );
+
+  it.each(['search', 'navigation', 'dispose'] as const)(
+    'error tag-focus %s cannot overwrite newer status',
+    async (action) => {
+      vi.useFakeTimers();
+      let fail!: (reason: Error) => void;
+      const search = vi.fn(
+        () =>
+          new Promise<ExploreSearchResponse>((_resolve, reject) => {
+            fail = reject;
+          }),
+      );
+      const { root, input, choice, controller } = mount(createSearchRuntime(search));
+      input('original');
+      await vi.advanceTimersByTimeAsync(SEARCH_DEBOUNCE_MS);
+      const music = expectElement(
+        root.querySelector<HTMLInputElement>('[data-search-tag-checkbox][value="music"]'),
+        'music',
+      );
+      const list = expectElement(root.querySelector('[data-search-filter-list]'), 'list');
+      // 公開DOMの空白nodeも正規化時の再構成対象となる。
+      list.append(document.createTextNode(' '));
+      music.focus();
+      let reentered = false;
+      music.addEventListener(
+        'focus',
+        () => {
+          reentered = true;
+          if (action === 'search') choice('date-desc');
+          if (action === 'navigation') beginNavigationIntent('navigation', '/notes/next/');
+          if (action === 'dispose') controller?.dispose();
+        },
+        { once: true },
+      );
+      fail(new Error('failed'));
+      await vi.advanceTimersByTimeAsync(0);
+      expect(reentered).toBe(true);
+      expect(root.querySelector<HTMLElement>('[data-search-page-error]')?.hidden).toBe(true);
+      if (action === 'search') {
+        expect(root.querySelector<HTMLElement>('[data-search-page-loading]')?.hidden).toBe(false);
+        expect(search).toHaveBeenCalledTimes(2);
+      }
+    },
+  );
+
+  it.each(['before', 'after'] as const)(
+    'a rejected %s-history operation retries with the matching URL and no duplicate history',
+    async (phase) => {
+      vi.useFakeTimers();
+      const search = vi.fn(async () => staticResponse);
+      const { input } = mount(createSearchRuntime(search));
+      let intervene = true;
+      const interrupt = () => {
+        if (!intervene) return;
+        intervene = false;
+        beginNavigationIntent('navigation', '/notes/next/');
+      };
+      const stop = observeHistoryEntries(
+        () => {
+          if (phase === 'before') interrupt();
+        },
+        () => {
+          if (phase === 'after') interrupt();
+        },
+      );
+      try {
+        input('retry');
+      } finally {
+        stop();
+      }
+      expect(new URL(location.href).searchParams.get('q')).toBe(
+        phase === 'before' ? null : 'retry',
+      );
+      expect(search).not.toHaveBeenCalled();
+      const replace = vi.spyOn(history, 'replaceState');
+      input('retry');
+      await vi.advanceTimersByTimeAsync(SEARCH_DEBOUNCE_MS);
+      expect(new URL(location.href).searchParams.get('q')).toBe('retry');
+      expect(replace).toHaveBeenCalledTimes(phase === 'before' ? 1 : 0);
+      expect(search).toHaveBeenCalledTimes(1);
+    },
+  );
 });
