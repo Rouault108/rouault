@@ -183,6 +183,42 @@ query、clear、tag checkbox、selected-tag remove、tag名ローカルfilter / 
 
 ready確認用probe、health API、periodic monitoring、自動retry、core / session再生成によるbudget補充は追加しない。valid SSR initial response adoption時の初回検索省略とlazy initializationを維持する。
 
+### Search page operation ownership
+
+検索条件のcanonical state（query trim、既存tag正規化、queryの大小文字は区別）、query表示用のraw値、
+検索phase（idle / scheduled / running / success / error）、現在jobを分離する。候補件数のready / pending /
+errorは検索phaseを表さない。同条件の成功結果と一致するvalid SSR初期payloadはlive tokenなしでも再利用する。
+同条件のscheduled / runningは、そのjobのgeneration・FeatureToken・生きているtimer / requestが現在所有される
+場合だけ維持し、abort・再検索・debounce延長をしない。失効jobは再利用・token再取得せず、次の明示操作が新jobを始める。
+失敗・未実行の同条件は既存操作で再試行でき、履歴を追加しない。retry UIやEnter挙動は追加しない。
+
+candidateと意味上のadmissionを先に確定し、検索が必要な場合だけ新しいFeatureTokenを取得する。
+canonical stateは履歴書き込みの成立後に投影し、履歴observer再入で拒否されたcandidateを成功条件として残さない。
+履歴の要否は現在URLとのcanonical比較で決め、書き込み前後の失効を経た同条件再試行でもURL同期・履歴重複防止を保つ。
+同条件のraw空白変更はruntimeの表示値とclear状態だけを更新し、pending response後も保持する。
+同じchoiceの選択もmenuを閉じて通常のtriggerへfocusを返す。成功済み同条件の操作はtokenを取得せず、
+URL / bindingがまだ同じ未commit navigationを失効させない。異条件や再実行が必要な操作は新intentを取得できる。無関係なclick / input / change / keydown /
+submit / resetはpending検索を失効させない。別URLを指す旧DOMの操作はprojection・hidden field・history・results変更前に拒否する。
+
+異なる条件はqueryのreplaceState + debounce、tag / mode / sortのpushState + 即時検索を維持し、旧results / countを消す。
+popstateは履歴を書かない独立したURL同期と即時検索である。completion / finallyはjob identity・generation・tokenの
+所有権を再照合し、旧callbackが新jobを上書きしない。候補行の既存focus保持から同期再入した場合も、
+旧response / error投影の後続書き込みを行わない。cacheや旧結果保持は導入しない。
+
+### Dynamic result clearing focus
+
+新jobは旧jobのcancel（generation更新）の後、最初のclearより前に確定する。results / countの実際の
+子孫削除直前だけactiveElementをsnapshotし、保持されるcontainer自身は対象にしない。削除後もpage / source /
+token / generation / jobが有効で、snapshotが切断され、他の接続済み要素がfocusを得ていなければ、同controllerの
+query inputへ同期的にpreventScroll付きでfocusする。inputは接続・可視・enabledでhidden / inert祖先の外にあること。
+利用不能inputや他要素へのfocus移動はrescueだけを省略し、有効な検索を継続する。
+
+focus handlerによる新検索・navigation・disposeを含め、focus直後に所有権を再照合する。失効したcallerはtimer登録、
+request開始、loading projection、completion / finally書き込みを継続しない。二度目のclearに削除対象のfocusがなければ
+rescueしない。response時のsuccess / 0件 / error、href照合、SSR baseline adoption、disposeへこのrescueを広げない。
+最初のclear後にユーザーが移したfocusを保持し、後のbody focusだけでは古いsnapshotから復元しない。
+preventScrollはfocus起因のscrollだけを抑え、layout縮小によるscroll clampingは抑えない。
+
 ### SSR baseline identity
 
 - Search SSR文書はStatic Exploreの説明、Tag projection由来のtag anchors、`/corpora/`へのanchorだけをbaselineとする。recent feed、全ノート一覧、corpus索引の複製、query評価 / ranking / snippet / search resultを持ち込まない。

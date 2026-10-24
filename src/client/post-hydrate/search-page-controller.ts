@@ -137,6 +137,17 @@ export type SearchPageRenderableItem = Omit<SearchResultItem, 'reasons'>;
 
 type SearchPageStatusVariant = 'loading' | 'error' | 'unavailable';
 
+type SearchPhase = 'idle' | 'scheduled' | 'running' | 'success' | 'error';
+type SearchAdmission = 'rejected' | 'local-only' | 'search-started';
+
+interface SearchJob {
+  readonly generation: number;
+  readonly token: FeatureToken;
+  readonly state: SearchState;
+  timerId: number | undefined;
+  request: AbortController | null;
+}
+
 const parseJsonAttribute = (page: HTMLElement, name: string): unknown => {
   const value = page.getAttribute(name);
   if (value === null) {
@@ -496,11 +507,11 @@ const syncFilterDomFromForm = (
   if (filterEmpty) {
     filterEmpty.hidden = visibleCount > 0;
   }
+  syncStaticSearchFieldClearButtons(page);
   // local filter 適用後に可視性を判定し、隠れた行へ focus を戻さない。
   if (focusToKeep && !focusToKeep.disabled && focusToKeep.getClientRects().length > 0) {
     focusToKeep.focus({ preventScroll: true });
   }
-  syncStaticSearchFieldClearButtons(page);
 };
 
 const createSearchPageEmptyState = (document: Document, state: SearchState): HTMLElement => {
@@ -641,10 +652,9 @@ export class SearchPageController {
   private runtimeState: SearchPageRuntimeState | null = null;
   private siteUrlContext: SiteUrlContext | null = null;
   private searchRuntime: SearchCore | null = null;
-  private debounceTimerId: number | undefined;
   private searchGeneration = 0;
-  private operation: FeatureToken | null = null;
-  private activeSearchAbortController: AbortController | null = null;
+  private searchPhase: SearchPhase = 'idle';
+  private currentJob: SearchJob | null = null;
 
   constructor(options: CreateSearchPageControllerOptions) {
     this.page = options.page;
@@ -730,6 +740,7 @@ export class SearchPageController {
       adoptedInitialResponse.ok &&
       areSearchStatesCanonicallyEqual(initialState, urlState);
     if (canAdoptInitialResponse) {
+      this.searchPhase = 'success';
       const response = adoptedInitialResponse.response;
       this.runtimeState = createRuntimeState(urlState, {
         items: response.items.map((item) => staticItemToRenderableItem(item, siteUrlContext)),
@@ -752,7 +763,10 @@ export class SearchPageController {
     });
     this.currentState = { kind: 'ready', siteUrlContext, bootstrapState, searchRuntime };
     this.setDynamicSearchControlsDisabled(false);
-    if (!canAdoptInitialResponse) this.runSearchImmediately();
+    if (!canAdoptInitialResponse) {
+      const token = beginFeatureNavigation(this.source, 'initialization');
+      if (token) this.startSearch('immediate', token);
+    }
   }
 
   dispose(): void {
@@ -772,8 +786,8 @@ export class SearchPageController {
     if (this.disposed || this.siteUrlContext === null || this.runtimeState === null) {
       return;
     }
-    this.operation = beginFeatureNavigation(this.source, 'url-sync');
-    if (!this.operation) return;
+    const token = beginFeatureNavigation(this.source, 'url-sync');
+    if (!token) return;
     const state = parseCurrentSearchState(this.siteUrlContext);
     this.closeAllSearchChoiceMenus();
     if (this.searchRuntime === null) {
@@ -790,7 +804,7 @@ export class SearchPageController {
       syncFilterDomFromForm(this.page, this.form, this.runtimeState);
     }
     this.syncHeroFromRuntimeState();
-    this.runSearchImmediately();
+    this.startSearch('immediate', token);
   };
 
   private showUnavailable(message: string): void {
@@ -828,32 +842,50 @@ export class SearchPageController {
 
   private cancelPendingSearch(): void {
     this.searchGeneration += 1;
-    if (typeof this.debounceTimerId === 'number') {
-      window.clearTimeout(this.debounceTimerId);
-      this.debounceTimerId = undefined;
-    }
-    this.activeSearchAbortController?.abort();
-    this.activeSearchAbortController = null;
+    const job = this.currentJob;
+    this.currentJob = null;
+    this.searchPhase = 'idle';
+    if (job?.timerId !== undefined) window.clearTimeout(job.timerId);
+    job?.request?.abort();
   }
 
-  private readCurrentOperation(): FeatureToken | null {
-    const token = this.operation;
-    return token && isFeatureTokenCurrent(this.source, token) ? token : null;
+  private ownsSearchJob(job: SearchJob): boolean {
+    return (
+      !this.disposed &&
+      this.currentJob === job &&
+      job.generation === this.searchGeneration &&
+      isFeatureTokenCurrent(this.source, job.token) &&
+      !job.request?.signal.aborted
+    );
   }
 
-  private commitUrl(method: 'pushState' | 'replaceState'): boolean {
-    if (this.runtimeState === null || this.siteUrlContext === null) return false;
-    const token = this.operation ?? beginFeatureNavigation(this.source, 'url-sync');
-    if (!token) return false;
+  private canAcceptOperation(): boolean {
+    return !this.disposed && isFeatureSourceCurrent(this.source);
+  }
+
+  private hasLiveSearchJob(): boolean {
+    const job = this.currentJob;
+    return (
+      job !== null &&
+      this.ownsSearchJob(job) &&
+      ((this.searchPhase === 'scheduled' && job.timerId !== undefined) ||
+        (this.searchPhase === 'running' && job.request !== null))
+    );
+  }
+
+  private commitUrl(
+    method: 'pushState' | 'replaceState',
+    token: FeatureToken,
+    state: SearchState,
+  ): FeatureToken | null {
+    if (this.runtimeState === null || this.siteUrlContext === null) return null;
     const adopted = writeFeatureHistoryEntry(this.source, token, {
       mode: method === 'pushState' ? 'push' : 'replace',
       state: history.state,
-      url: buildSearchPageHistoryHref(this.toSearchState(), this.siteUrlContext),
+      url: buildSearchPageHistoryHref(state, this.siteUrlContext),
     });
-    this.operation = adopted;
-    if (!adopted) return false;
-    this.syncHeroFromRuntimeState();
-    return isFeatureTokenCurrent(this.source, adopted);
+    if (!adopted) return null;
+    return isFeatureTokenCurrent(this.source, adopted) ? adopted : null;
   }
 
   private syncHeroFromRuntimeState(): void {
@@ -895,107 +927,131 @@ export class SearchPageController {
     };
   }
 
-  private scheduleSearch(): void {
+  private startSearch(search: 'debounced' | 'immediate', token: FeatureToken): boolean {
+    if (!this.canAcceptOperation() || !isFeatureTokenCurrent(this.source, token)) return false;
     this.cancelPendingSearch();
-    this.clearCurrentResults();
-    this.debounceTimerId = window.setTimeout(() => {
-      this.debounceTimerId = undefined;
-      this.executeSearch();
-    }, SEARCH_DEBOUNCE_MS);
+    if (this.disposed || !isFeatureTokenCurrent(this.source, token)) return false;
+    const job: SearchJob = {
+      generation: this.searchGeneration,
+      token,
+      state: this.toSearchState(),
+      timerId: undefined,
+      request: null,
+    };
+    this.currentJob = job;
+    this.searchPhase = search === 'debounced' ? 'scheduled' : 'running';
+    if (!this.clearCurrentResults(job)) return false;
+    if (search === 'debounced') {
+      job.timerId = window.setTimeout(() => {
+        if (!this.ownsSearchJob(job)) return;
+        job.timerId = undefined;
+        this.executeSearch(job);
+      }, SEARCH_DEBOUNCE_MS);
+    } else {
+      this.executeSearch(job);
+    }
+    return this.ownsSearchJob(job);
   }
 
-  private runSearchImmediately(): void {
-    this.cancelPendingSearch();
-    this.executeSearch();
-  }
-
-  private executeSearch(): void {
-    if (this.disposed || this.searchRuntime === null || this.runtimeState === null) {
+  private executeSearch(job: SearchJob): void {
+    if (!this.ownsSearchJob(job) || this.searchRuntime === null || this.runtimeState === null) {
       return;
     }
-    const token = this.operation ?? beginFeatureNavigation(this.source, 'url-sync');
-    if (!token || !isFeatureTokenCurrent(this.source, token)) return;
-    const generation = this.searchGeneration;
     const searchAbortController = new AbortController();
-    this.activeSearchAbortController = searchAbortController;
-    this.clearCurrentResults();
+    job.request = searchAbortController;
+    this.searchPhase = 'running';
+    if (!this.clearCurrentResults(job)) return;
     this.showStatus('loading');
-    const searchRuntime = this.searchRuntime;
-    const request = { mode: 'explore' as const, ...this.toSearchState() };
+    const request = { mode: 'explore' as const, ...job.state };
     let pending: ReturnType<SearchCore['search']>;
     try {
-      pending = searchRuntime.search(request, { signal: searchAbortController.signal });
+      pending = this.searchRuntime.search(request, { signal: searchAbortController.signal });
     } catch {
-      if (
-        !isFeatureTokenCurrent(this.source, token) ||
-        generation !== this.searchGeneration ||
-        searchAbortController.signal.aborted
-      )
-        return;
-      this.activeSearchAbortController = null;
-      this.showRequestError();
+      if (!this.ownsSearchJob(job)) return;
+      this.showRequestError(job);
+      if (this.ownsSearchJob(job)) job.request = null;
       return;
     }
     void pending
       .then((response) => {
-        if (
-          this.disposed ||
-          !isFeatureTokenCurrent(this.source, token) ||
-          generation !== this.searchGeneration ||
-          searchAbortController.signal.aborted
-        ) {
-          return;
-        }
+        if (!this.ownsSearchJob(job)) return;
         if (response.mode !== 'explore') {
           throw new Error('Search page requires explore search response.');
         }
         if (response.diagnostics.failures.includes('all-sources-failed')) {
-          this.showRequestError();
+          this.showRequestError(job);
           return;
         }
-        this.applySearchResponse(response);
+        this.searchPhase = 'success';
+        this.applySearchResponse(response, job);
       })
       .catch((error: unknown) => {
         if (
-          this.disposed ||
-          !isFeatureTokenCurrent(this.source, token) ||
-          generation !== this.searchGeneration ||
-          searchAbortController.signal.aborted ||
+          !this.ownsSearchJob(job) ||
           (error instanceof DOMException && error.name === 'AbortError')
-        ) {
+        )
           return;
-        }
-        this.showRequestError();
+        this.showRequestError(job);
       })
       .finally(() => {
-        if (
-          generation === this.searchGeneration &&
-          this.activeSearchAbortController === searchAbortController
-        ) {
-          this.activeSearchAbortController = null;
-        }
+        if (this.ownsSearchJob(job)) this.currentJob = null;
       });
   }
 
-  private clearCurrentResults(): void {
-    this.page.querySelector<HTMLElement>('[data-search-page-results-section]')?.replaceChildren();
-    this.page.querySelector<HTMLElement>('[data-search-page-result-count]')?.replaceChildren();
+  private clearCurrentResults(job: SearchJob): boolean {
+    if (!this.ownsSearchJob(job)) return false;
+    const document = this.page.ownerDocument;
+    const regions = [
+      this.page.querySelector<HTMLElement>('[data-search-page-results-section]'),
+      this.page.querySelector<HTMLElement>('[data-search-page-result-count]'),
+    ];
+    const active = document.activeElement;
+    const removedFocus =
+      active && regions.some((region) => region !== active && region?.contains(active))
+        ? active
+        : null;
+    for (const region of regions) {
+      region?.replaceChildren();
+      if (!this.ownsSearchJob(job)) return false;
+    }
+    if (removedFocus && !removedFocus.isConnected) {
+      const current = document.activeElement;
+      const focusMoved =
+        current !== null &&
+        current !== document.body &&
+        current !== document.documentElement &&
+        current.isConnected;
+      const input = this.form?.querySelector<HTMLInputElement>('[data-search-query-input]');
+      if (
+        !focusMoved &&
+        input?.isConnected &&
+        !input.matches(':disabled') &&
+        !input.closest('[hidden], [inert]') &&
+        input.checkVisibility({ checkOpacity: true, checkVisibilityCSS: true })
+      ) {
+        input.focus({ preventScroll: true });
+      }
+    }
+    // focus handlerは同期的に次の検索・navigation・disposeへ再入できる。
+    return this.ownsSearchJob(job);
   }
 
-  private showRequestError(): void {
+  private showRequestError(job: SearchJob): void {
+    if (!this.ownsSearchJob(job)) return;
+    this.searchPhase = 'error';
     if (this.runtimeState?.countsStatus === 'pending') {
       this.runtimeState.countsStatus = 'error';
       if (this.form) syncFilterDomFromForm(this.page, this.form, this.runtimeState);
     }
-    this.clearCurrentResults();
+    if (!this.ownsSearchJob(job)) return;
     this.showStatus(
       'error',
       '検索の読み込みに失敗しました。検索語や条件を変更して再入力できます。',
     );
   }
 
-  private applySearchResponse(response: ExploreSearchResponse): void {
-    if (this.runtimeState === null) {
+  private applySearchResponse(response: ExploreSearchResponse, job: SearchJob): void {
+    if (this.runtimeState === null || !this.ownsSearchJob(job)) {
       return;
     }
     this.runtimeState.items = response.items.map(dynamicItemToRenderableItem);
@@ -1005,10 +1061,13 @@ export class SearchPageController {
     this.runtimeState.loaded = true;
     this.showStatus(null);
     renderSearchPageResults(this.page, this.runtimeState);
+    if (!this.ownsSearchJob(job)) return;
     if (this.form) {
       this.syncFormFromRuntimeState(this.form);
+      if (!this.ownsSearchJob(job)) return;
       syncFilterDomFromForm(this.page, this.form, this.runtimeState);
     }
+    if (!this.ownsSearchJob(job)) return;
     if (response.diagnostics.degraded) {
       console.warn('Search page completed with degraded diagnostics.', response.diagnostics);
     }
@@ -1204,19 +1263,7 @@ export class SearchPageController {
       form.addEventListener(
         name,
         (event) => {
-          const target = event.target;
-          if (
-            event.type !== 'submit' &&
-            event.type !== 'reset' &&
-            (!(target instanceof HTMLElement) ||
-              !target.closest(
-                '[data-search-query-input], [data-search-query-clear], [data-search-tag-checkbox], [data-search-selected-tag-remove], [data-static-choice-item]',
-              ))
-          )
-            return;
-          if (event instanceof KeyboardEvent && !['Enter', ' '].includes(event.key)) return;
-          this.operation = beginFeatureNavigation(this.source);
-          if (!this.operation) {
+          if (this.disposed || !isFeatureSourceCurrent(this.source)) {
             event.preventDefault();
             event.stopImmediatePropagation();
           }
@@ -1237,35 +1284,78 @@ export class SearchPageController {
       search: 'debounced' | 'immediate',
       preferredTag?: string,
       invalidateCounts = true,
-    ): boolean => {
+      changes?: {
+        readonly choice?: { readonly name: SearchChoiceName; readonly value: string };
+        readonly queryInputValue?: string;
+        readonly removedTag?: string;
+      },
+    ): SearchAdmission => {
       if (
-        !this.operation ||
-        !isFeatureTokenCurrent(this.source, this.operation) ||
         this.disposed ||
+        !isFeatureSourceCurrent(this.source) ||
         this.runtimeState === null ||
-        this.searchRuntime === null
-      ) {
-        return false;
-      }
+        this.searchRuntime === null ||
+        this.siteUrlContext === null
+      )
+        return 'rejected';
       const data = new FormData(form);
-      this.runtimeState.queryInputValue =
-        form.querySelector<HTMLInputElement>('[data-search-query-input]')?.value ?? '';
-      this.runtimeState.normalizedQuery = normalizeSearchQuery(this.runtimeState.queryInputValue);
-      this.runtimeState.selectedTags = normalizeSearchTags(
-        orderedSelectedTagValues(form, preferredTag),
+      const queryInput = form.querySelector<HTMLInputElement>('[data-search-query-input]');
+      const rawQuery = changes?.queryInputValue ?? queryInput?.value ?? '';
+      const candidate: SearchState = {
+        q: normalizeSearchQuery(rawQuery),
+        tags: normalizeSearchTags(
+          orderedSelectedTagValues(form, preferredTag).filter((tag) => tag !== changes?.removedTag),
+        ),
+        tagMode: normalizeSearchTagMode(
+          changes?.choice?.name === 'tagMode'
+            ? changes.choice.value
+            : readFormString(data.get('tagMode')),
+        ),
+        sort: normalizeSearchSort(
+          changes?.choice?.name === 'sort'
+            ? changes.choice.value
+            : readFormString(data.get('sort')),
+        ),
+      };
+      const applyInputChanges = (): void => {
+        if (changes?.queryInputValue !== undefined && queryInput) queryInput.value = rawQuery;
+        if (changes?.removedTag !== undefined) {
+          for (const checkbox of form.querySelectorAll<HTMLInputElement>(
+            '[data-search-tag-checkbox]',
+          )) {
+            if (checkbox.value === changes.removedTag) checkbox.checked = false;
+          }
+        }
+      };
+      const same = areSearchStatesCanonicallyEqual(candidate, this.toSearchState());
+      const sameUrl = areSearchStatesCanonicallyEqual(
+        candidate,
+        parseCurrentSearchState(this.siteUrlContext),
       );
-      this.runtimeState.tagMode = normalizeSearchTagMode(readFormString(data.get('tagMode')));
-      this.runtimeState.sort = normalizeSearchSort(readFormString(data.get('sort')));
+      if (same && sameUrl && (this.searchPhase === 'success' || this.hasLiveSearchJob())) {
+        applyInputChanges();
+        this.runtimeState.queryInputValue = rawQuery;
+        syncStaticSearchFieldClearButtons(this.page);
+        return 'local-only';
+      }
+      // 意味のある検索だけが新しいintentを取得し、旧callbackの再取得を許さない。
+      let token = beginFeatureNavigation(this.source);
+      if (!token || !this.canAcceptOperation() || !isFeatureTokenCurrent(this.source, token))
+        return 'rejected';
+      if (!sameUrl) token = this.commitUrl(method, token, candidate);
+      if (!token || !isFeatureTokenCurrent(this.source, token)) return 'rejected';
+      applyInputChanges();
+      this.searchPhase = 'idle';
+      this.runtimeState.queryInputValue = rawQuery;
+      this.runtimeState.normalizedQuery = candidate.q;
+      this.runtimeState.selectedTags = candidate.tags;
+      this.runtimeState.tagMode = candidate.tagMode;
+      this.runtimeState.sort = candidate.sort;
       if (invalidateCounts) this.runtimeState.countsStatus = 'pending';
-      if (!this.commitUrl(method)) return false;
+      this.syncHeroFromRuntimeState();
       this.syncSearchChoiceMenusFromRuntimeState(form);
       syncFilterDom(preferredTag);
-      if (search === 'debounced') {
-        this.scheduleSearch();
-      } else {
-        this.runSearchImmediately();
-      }
-      return this.readCurrentOperation() !== null;
+      return this.startSearch(search, token) ? 'search-started' : 'rejected';
     };
 
     form.addEventListener(
@@ -1329,11 +1419,12 @@ export class SearchPageController {
           return;
         }
         const name: SearchChoiceName = kind === 'tag-mode' ? 'tagMode' : 'sort';
-        const input = form.querySelector<HTMLInputElement>(choiceInputSelector(name));
-        if (input) {
-          input.value = value;
-        }
-        if (!commitFormState('pushState', 'immediate', undefined, name !== 'sort')) return;
+        if (
+          commitFormState('pushState', 'immediate', undefined, name !== 'sort', {
+            choice: { name, value },
+          }) === 'rejected'
+        )
+          return;
         this.closeSearchChoiceMenu(details, true);
       },
       listenerOptions,
@@ -1451,8 +1542,12 @@ export class SearchPageController {
       () => {
         const input = form.querySelector<HTMLInputElement>('[data-search-query-input]');
         if (input) {
-          input.value = '';
-          if (commitFormState('replaceState', 'debounced')) input.focus();
+          if (
+            commitFormState('replaceState', 'debounced', undefined, true, {
+              queryInputValue: '',
+            }) !== 'rejected'
+          )
+            input.focus();
         }
       },
       listenerOptions,
@@ -1485,8 +1580,9 @@ export class SearchPageController {
           ...form.querySelectorAll<HTMLInputElement>('[data-search-tag-checkbox]'),
         ].find((candidate) => candidate.value === tag);
         if (checkbox) {
-          checkbox.checked = false;
-          commitFormState('pushState', 'immediate');
+          commitFormState('pushState', 'immediate', undefined, true, {
+            removedTag: checkbox.value,
+          });
         }
       },
       listenerOptions,

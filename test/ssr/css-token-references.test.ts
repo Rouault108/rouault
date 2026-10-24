@@ -95,30 +95,28 @@ describe('source CSS token reference integrity', () => {
     );
   });
 
-  it('対象外の --z-overlay は未定義残件として箇所・条件・件数と既存 fallback 100 を固定する', () => {
+  it('旧 overlay 参照を残さず、親の blocking layer を公開 token として解決する', () => {
+    const audit = auditTokenReferences(sources(), runtime, overrides);
+    expect(audit.references.filter((item) => item.reference === '--z-overlay')).toEqual([]);
+    expect(known.filter((item) => item.reference === '--z-overlay')).toEqual([]);
+    // stacking の値・順序は sidebar-overlay-css-contract.test.ts が所有する。
     expect(
-      auditTokenReferences(sources(), runtime, overrides).references.filter(
-        (item) => item.reference === '--z-overlay',
+      audit.references.filter(
+        (item) =>
+          item.file === 'layout-sidebar.css' &&
+          item.property === 'z-index' &&
+          item.reference === '--z-blocking-layer',
       ),
     ).toEqual([
       {
         file: 'layout-sidebar.css',
         selector:
-          "[data-sidebar-enhancement-state='active'] [data-layout-sidebar-root][data-mode='overlay']",
+          "[data-sidebar-enhancement-state='active']\n  .layout-sidebar-overlay-layer:has(> [data-layout-sidebar-root][data-mode='overlay'])",
         property: 'z-index',
-        reference: '--z-overlay',
+        reference: '--z-blocking-layer',
         conditions: [],
-        category: 'unresolved',
-        fallback: '100',
-      },
-      {
-        file: 'layout-sidebar.css',
-        selector: '[data-layout-sidebar-backdrop]',
-        property: 'z-index',
-        reference: '--z-overlay',
-        conditions: [],
-        category: 'unresolved',
-        fallback: '100',
+        category: 'public',
+        fallback: '200',
       },
     ]);
   });

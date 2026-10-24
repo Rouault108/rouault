@@ -321,10 +321,15 @@ describe('SSR baseline / capability / request outcome', () => {
                     : [],
               },
             };
-      const search = vi.fn(async () => response);
+      const search = vi.fn(async (_request: Parameters<SearchCore['search']>[0]) => response);
       enhance(host, { search });
+      if (outcome === 'empty') {
+        query(input, 'prior');
+        await vi.waitFor(() => expect(search).toHaveBeenCalledTimes(1));
+      }
       query(input, outcome === 'empty' ? '' : 'next');
-      await vi.waitFor(() => expect(search).toHaveBeenCalledTimes(1));
+      await vi.waitFor(() => expect(search).toHaveBeenCalledTimes(outcome === 'empty' ? 2 : 1));
+      expect(search.mock.calls.at(-1)?.[0]).toMatchObject({ q: outcome === 'empty' ? '' : 'next' });
       await vi.waitFor(() =>
         expect(host.querySelector('[data-search-page-result-count]')?.textContent).toContain(
           outcome === 'zero' || outcome === 'empty' ? '0 ' : '1 ',

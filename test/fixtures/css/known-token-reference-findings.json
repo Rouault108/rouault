@@ -600,26 +600,6 @@
     "reason": "同名定義は別 scope に存在するが適用は未証明。fallback があっても健全とは扱わない。対象外の継承・条件契約の変更へ広げず既知残件として管理。"
   },
   {
-    "file": "layout-sidebar.css",
-    "selector": "[data-sidebar-enhancement-state='active'] [data-layout-sidebar-root][data-mode='overlay']",
-    "property": "z-index",
-    "reference": "--z-overlay",
-    "conditions": [],
-    "kind": "undefined-fallback",
-    "count": 1,
-    "reason": "未定義の既知残件。意図的な override と断定せず、対象外の z-index 実装・値・順序を維持する。既存 fallback 100 は別 assertion で固定。"
-  },
-  {
-    "file": "layout-sidebar.css",
-    "selector": "[data-layout-sidebar-backdrop]",
-    "property": "z-index",
-    "reference": "--z-overlay",
-    "conditions": [],
-    "kind": "undefined-fallback",
-    "count": 1,
-    "reason": "未定義の既知残件。意図的な override と断定せず、対象外の z-index 実装・値・順序を維持する。既存 fallback 100 は別 assertion で固定。"
-  },
-  {
     "file": "layout-toc.css",
     "selector": ".layout-toc-col[data-density-tier='compact'] .layout-toc",
     "property": "--toc-item-min-block-size",

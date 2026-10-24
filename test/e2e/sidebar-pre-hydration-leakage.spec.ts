@@ -114,6 +114,9 @@ test.describe('sidebar static baseline', () => {
         await expect(root.locator('nav[data-sidebar-nav]')).toHaveCount(1);
         if (condition !== 'normal') {
           await expect(root.locator('nav')).toBeVisible();
+          await expect(page.locator('.layout-sidebar-overlay-layer')).toHaveCSS('z-index', 'auto');
+          await expect(root).toHaveCSS('z-index', 'auto');
+          await expect(page.locator('[data-layout-sidebar-backdrop]')).toBeHidden();
           await test.info().attach('static-baseline-sampled-paint', {
             body: await page.screenshot(),
             contentType: 'image/png',
@@ -173,6 +176,9 @@ test.describe('sidebar static baseline', () => {
       await helper.focus();
       for (const width of [390, 1023, 1024, 1440, 390]) {
         await page.setViewportSize({ width, height: 844 });
+        await expect(page.locator('.layout-sidebar-overlay-layer')).toHaveCSS('z-index', 'auto');
+        await expect(root).toHaveCSS('z-index', 'auto');
+        await expect(page.locator('[data-layout-sidebar-backdrop]')).toBeHidden();
         await expect(helper).toBeVisible();
         await expect(helper).toBeFocused();
         await expect(root.locator('nav')).toBeVisible();

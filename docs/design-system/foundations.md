@@ -68,12 +68,12 @@ Componentは、まずSemanticまたはPattern tokenを参照する。Primitive t
 - 意図的な任意overrideは`test/fixtures/css/intentional-token-overrides.json`に公開契約の根拠とfile / selector / property / 参照名 / at-rule条件 / 件数を固定する。FooterとTabsの文書化済み公開propertyだけを認め、空fallbackやliteral fallbackも明示契約なしには許可しない。契約があってもfallback内の未定義参照や循環は検査する。
 - TOC depth、sticky boundary、video progressは`test/fixtures/css/runtime-token-suppliers.json`にsourceと参照箇所・条件・件数を固定する。source内の供給文の存続を確認するが、全実行経路の到達性やDOM継承は証明しない。Shikiのinline色は既存SSRが生成を検証するが、静的供給契約には入れず既知残件として分類する。
 - `test/fixtures/css/known-token-reference-findings.json`は既存残件をfile / selector / property / 参照名 / at-rule条件 / 種類 / 件数 / 理由で管理する。異なるmediaへの移動や参照の増減も失敗するため、個別の再確認が必要となる。自動更新するsnapshotではない。
-- `--z-overlay`は未定義の既知残件であり、意図的なoverrideとは断定しない。sidebarの二箇所、条件、既存fallback値`100`を専用assertionで固定する。z-indexの値・順序・実装は変更しない。
+- 初期棚卸しの`--z-overlay`未定義2参照は、main `fa8d5e1a`までのsidebar stacking修正で解消された。現在は旧参照ゼロと、親の`--z-blocking-layer`がpublic / fallback `200`として解決することを確認する。stackingの値・順序は既存の`sidebar-overlay-css-contract.test.ts`が所有し、token参照検証から重複して規定しない。
 
 循環判定は経路ごとに明示的なlight / dark / system属性条件と、単純なAND mediaに含まれる`prefers-color-scheme`、`forced-colors`、`prefers-reduced-motion`の排他的な値を照合する。排他的なlightとdarkを合成した偽の循環を除外する。明示themeとOS色設定は独立するため、light属性とOS darkの組合せは排除しない。`not` / `or` / カンマを含むmediaや任意のselector論理は推論せず、循環候補を保守的に残す。
 
 これはCSS cascadeの完全な解決器ではない。stylesheetの読込・順序、specificity、`!important`、layerの優先順位、定義の上書き、全DOM構造、継承時の計算済み値、`initial` / `unset` / `@property`、値の型やcontrastは保証しない。literal fallbackの意味的妥当性や、それが意図されたoverrideかtypoかも自動では判定しない。selectorの`:is()` / `:where()`の包含推論やファイル間の局所変数継承は未証明として残す。escaped identifierなどscannerの未対応構文はunsupportedとして失敗させる。
 
-初期棚卸しの57参照は、fallbackのない未定義17件（`--focus-default` 12、`--fg-link` 1、`--radius-lg` 4）と未証明scope 40件（明示darkのshadow供給条件4、code surfaceのfunctional selector 20、menu / leadのDOM継承16）である。厳格化で追加検出したfallback付き95参照も、供給未証明・未定義・生成inline色等の理由を個別に記録する。他機能のAPIやCSSを無断で修正せず、今回のCopy focus修正とは分けて追跡する。
+初期棚卸しの57参照は、fallbackのない未定義17件（`--focus-default` 12、`--fg-link` 1、`--radius-lg` 4）と未証明scope 40件（明示darkのshadow供給条件4、code surfaceのfunctional selector 20、menu / leadのDOM継承16）である。厳格化時のfallback付き95参照を含めた初期baselineは144項目・152参照だった。main `fa8d5e1a`統合後は、旧`--z-overlay`の2座標（各1参照）だけをfinding多重集合の厳密差分で除き、142項目・150参照となった。現在のfallback付き残件は93参照（未定義77、scope未証明16）であり、その他の残件・理由・件数は不変である。新規findingのbaseline再生成による容認は行わない。供給未証明・未定義・生成inline色等の理由を個別に記録し、他機能のAPIやCSSを無断で修正せず追跡する。
 
-Copy buttonは`--focus-ring-width` / `--focus-ring-color` / `--focus-ring-offset`を使う。実browserのlight / dark / system、token overrideで計算済みoutlineとkeyboard focusを検証し、production E2Eではforced colorsも確認する。本文`main#main-content`へのlogical focusは操作対象のfocus ringと別契約であり、この修正の対象にしない。
+Copy buttonは`--focus-ring-width` / `--focus-ring-color` / `--focus-ring-offset`を使う。実browserのlight / dark / system、token overrideで計算済みoutlineとkeyboard focusを検証する。production E2EはsystemとOS colorScheme light / darkを明示して両分岐を確認し、light / dark / forced colorsも維持する。コード単体・グループ・previewそれぞれでnative Tab移動によるfocusと計算済みringを確認する。本文`main#main-content`へのlogical focusは操作対象のfocus ringと別契約であり、この修正の対象にしない。
