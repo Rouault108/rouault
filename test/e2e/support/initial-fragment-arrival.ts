@@ -1,24 +1,30 @@
 import { expect, test } from '@playwright/test';
 
+interface FragmentGeometryEvidence {
+  documentY: number;
+  offset: number;
+  viewportWidth: number;
+  viewportHeight: number;
+  rangeX: number;
+  rangeY: number;
+  targetX: number;
+  targetY: number;
+}
+interface FragmentFrameEvidence {
+  at: number;
+  x: number;
+  y: number;
+  geometry: FragmentGeometryEvidence | null;
+  fonts: FontFaceSetLoadStatus;
+  pendingUpperImages: number | null;
+  visible: boolean;
+  correction: string | undefined;
+}
 interface FragmentTrace {
   hydratedAt: number | null;
-  firstCorrection: {
-    at: number;
-    x: number;
-    y: number;
-    target: number;
-    fonts: FontFaceSetLoadStatus;
-    pendingUpperImages: number;
-  } | null;
+  firstCorrection: FragmentFrameEvidence | null;
   readonly scrollEnds: number[];
-  readonly frames: {
-    at: number;
-    x: number;
-    y: number;
-    fonts: FontFaceSetLoadStatus;
-    visible: boolean;
-    correction: string | undefined;
-  }[];
+  readonly frames: FragmentFrameEvidence[];
   readonly calls: {
     before: number;
     after: number;
@@ -56,18 +62,61 @@ function installFragmentTrace(): void {
   document.addEventListener('scrollend', (event) => {
     if (event.target === document) trace.scrollEnds.push(performance.now());
   });
+  const sample = (): FragmentFrameEvidence => {
+    const heading = document.getElementById('cobol');
+    const main = document.getElementById('main-content');
+    const root = document.scrollingElement;
+    let geometry: FragmentGeometryEvidence | null = null;
+    let pendingUpperImages: number | null = null;
+    if (heading && main?.contains(heading) && root && heading.getClientRects().length) {
+      const documentY = heading.getBoundingClientRect().top + scrollY;
+      const offset =
+        Number.parseFloat(getComputedStyle(document.documentElement).scrollPaddingTop) +
+        Number.parseFloat(getComputedStyle(heading).scrollMarginTop);
+      const rangeX = Math.max(0, root.scrollWidth - root.clientWidth);
+      const rangeY = Math.max(0, root.scrollHeight - root.clientHeight);
+      geometry = {
+        documentY,
+        offset,
+        viewportWidth: innerWidth,
+        viewportHeight: innerHeight,
+        rangeX,
+        rangeY,
+        targetX: 0,
+        targetY: Math.max(0, Math.min(rangeY, documentY - offset)),
+      };
+      pendingUpperImages = Array.from(main.querySelectorAll('img')).filter(
+        (image) =>
+          !image.complete &&
+          (!image.hasAttribute('width') || !image.hasAttribute('height')) &&
+          image.getBoundingClientRect().top + scrollY <= documentY,
+      ).length;
+    }
+    return {
+      at: performance.now(),
+      x: scrollX,
+      y: scrollY,
+      geometry,
+      fonts: document.fonts.status,
+      pendingUpperImages,
+      visible: document.visibilityState === 'visible',
+      correction: main?.dataset['readingPositionCorrection'],
+    };
+  };
   const original = window.scrollTo;
   Object.defineProperty(window, 'scrollTo', {
     configurable: true,
     writable: true,
     value: (...args: unknown[]): void => {
+      const correction =
+        document.getElementById('main-content')?.dataset['readingPositionCorrection'];
+      // 最初の書込より前に同じ幾何を記録し、前後のtargetを混ぜて適格性を作らない。
+      if (correction === 'running' && trace.firstCorrection === null)
+        trace.firstCorrection = sample();
       const before = scrollY;
-      const x = scrollX;
       const at = performance.now();
       Reflect.apply(original, window, args);
       const options: unknown = args[0];
-      const correction =
-        document.getElementById('main-content')?.dataset['readingPositionCorrection'];
       trace.calls.push({
         correction,
         before,
@@ -78,42 +127,10 @@ function installFragmentTrace(): void {
             ? options.behavior
             : undefined,
       });
-      if (correction === 'running' && trace.firstCorrection === null) {
-        // 書込前にlayoutを追加照会せず、最初のstep後に残差と準備条件を記録する。
-        const heading = document.getElementById('cobol');
-        const root = document.scrollingElement;
-        if (!heading || !root) throw new Error('fragment target');
-        const documentY = heading.getBoundingClientRect().top + scrollY;
-        const offset =
-          Number.parseFloat(getComputedStyle(document.documentElement).scrollPaddingTop) +
-          Number.parseFloat(getComputedStyle(heading).scrollMarginTop);
-        trace.firstCorrection = {
-          at,
-          x,
-          y: before,
-          target: Math.max(0, Math.min(root.scrollHeight - root.clientHeight, documentY - offset)),
-          fonts: document.fonts.status,
-          pendingUpperImages: Array.from(
-            document.querySelectorAll<HTMLImageElement>('main img'),
-          ).filter(
-            (image) =>
-              !image.complete &&
-              (!image.hasAttribute('width') || !image.hasAttribute('height')) &&
-              image.getBoundingClientRect().top + scrollY <= documentY,
-          ).length,
-        };
-      }
     },
   });
   const frame = (): void => {
-    trace.frames.push({
-      at: performance.now(),
-      x: scrollX,
-      y: scrollY,
-      fonts: document.fonts.status,
-      visible: document.visibilityState === 'visible',
-      correction: document.getElementById('main-content')?.dataset['readingPositionCorrection'],
-    });
+    trace.frames.push(sample());
     if (performance.now() < 6500) requestAnimationFrame(frame);
   };
   requestAnimationFrame(frame);
@@ -123,7 +140,15 @@ const expectEligibleResidual = (trace: FragmentTrace): void => {
   const first = trace.firstCorrection;
   expect(first, 'corrected arrival requires a measured native miss').not.toBeNull();
   if (!first) return;
-  expect(Math.max(Math.abs(first.x), Math.abs(first.y - first.target))).toBeGreaterThan(2);
+  expect(first.geometry).not.toBeNull();
+  if (!first.geometry) return;
+  expect(
+    Math.max(
+      Math.abs(first.x - first.geometry.targetX),
+      Math.abs(first.y - first.geometry.targetY),
+    ),
+  ).toBeGreaterThan(2);
+  expect(first.visible).toBe(true);
   expect(first.fonts).toBe('loaded');
   expect(first.pendingUpperImages).toBe(0);
   expect(trace.hydratedAt).not.toBeNull();
@@ -136,7 +161,20 @@ const expectEligibleResidual = (trace: FragmentTrace): void => {
       frame.x !== first.x ||
       frame.y !== first.y ||
       frame.fonts !== 'loaded' ||
+      frame.pendingUpperImages !== 0 ||
+      !frame.geometry ||
       !frame.visible ||
+      ![first, ...quiet].every((value) => {
+        const baseline = frame.geometry;
+        const current = value.geometry;
+        return (
+          baseline !== null &&
+          current !== null &&
+          (Object.keys(baseline) as (keyof FragmentGeometryEvidence)[]).every(
+            (key) => Math.abs(baseline[key] - current[key]) <= 1,
+          )
+        );
+      }) ||
       (quiet[quiet.length - 1]?.at ?? first.at) - frame.at > 50
     )
       break;
@@ -234,6 +272,8 @@ export function registerInitialFragmentArrivalTests(): void {
         )
         .toBe('settled')
         .catch(async (error: unknown) => {
+          // 到達assertionの失敗は維持し、jobの元の期限後に停止理由だけを採取する。
+          await page.waitForTimeout(1500);
           await info.attach('initial-fragment-failure', {
             contentType: 'application/json',
             body: JSON.stringify(
