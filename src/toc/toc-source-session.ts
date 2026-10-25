@@ -238,6 +238,17 @@ export class TocSourceSession {
       this.nativePolicy = position;
       this.policyRevision += 1;
     }
+    if (position.phase === 'unavailable') {
+      this.positionProof = null;
+      this.earlyAuthority = null;
+      this.activate();
+      if (this.isCurrent() && position.isCurrent()) {
+        this.binding.root.dataset['tocNativeSync'] = 'unavailable';
+        delete this.binding.root.dataset['tocPositionSequence'];
+        delete this.binding.root.dataset['tocPositionProvisional'];
+      }
+      return;
+    }
     if (position.phase !== 'accepted') return;
     this.positionProof = position.isCurrent;
     this.earlyAuthority = authority;
@@ -256,6 +267,8 @@ export class TocSourceSession {
     if (this.isCurrent() && position.isCurrent()) {
       this.binding.root.dataset['tocNativeSync'] = result;
       this.binding.root.dataset['tocPositionSequence'] = String(position.sequence);
+      if (position.provisional) this.binding.root.dataset['tocPositionProvisional'] = 'true';
+      else delete this.binding.root.dataset['tocPositionProvisional'];
     }
   }
   accept(position: AcceptedReadingPosition): TocPositionSyncResult {
@@ -643,8 +656,9 @@ export const observeNativeTocPosition = (observation: NativeReadingPositionObser
   )
     return;
   nativeObservation = observation;
-  // 分類だけでは購読を前倒しせず、実際の位置受理とshell検証が揃ってから接続する。
-  if (observation.phase === 'accepted') connectNativeObservation();
+  // 分類だけでは購読を前倒ししない。未到達の終端は位置証明なしで通常追跡へ進める。
+  if (observation.phase === 'accepted' || observation.phase === 'unavailable')
+    connectNativeObservation();
   else {
     const controller = observation.root.querySelector<HTMLElement>('layout-toc-controller');
     if (controller) sessions.get(controller)?.observe(observation);

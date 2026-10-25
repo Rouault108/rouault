@@ -5,6 +5,7 @@ import { registerHistoryLivePresentationTests } from './support/history-live-pre
 import { registerHistoryPrepaintXYTests } from './support/history-prepaint-xy.js';
 import { registerHistoryPrepaintTocTests } from './support/history-prepaint-toc.js';
 import { registerNativeTocSessionTests } from './support/native-toc-session.js';
+import { registerInitialFragmentArrivalTests } from './support/initial-fragment-arrival.js';
 
 interface ReloadProbe {
   modeAtLoad: ScrollRestoration | null;
@@ -1350,3 +1351,4 @@ registerHistoryPrepaintXYTests();
 registerHistoryPrepaintTocTests();
 
 registerNativeTocSessionTests();
+registerInitialFragmentArrivalTests();

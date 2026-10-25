@@ -45,7 +45,12 @@ import { resolveTocScrollMetrics } from '../../src/toc/toc-scroll-contract.js';
 import type { TocActiveTracker } from '../../src/toc/toc-active-tracker.js';
 import { Router } from '../../src/router/router.js';
 import { RouterDocumentHostPostRenderController } from '../../src/components/app/controllers/router-document-host-post-render-controller.js';
-import { ReadingPositionController } from '../../src/components/app/controllers/reading-position-controller.js';
+import {
+  ReadingPositionController,
+  type AcceptedReadingPosition,
+  type NativeReadingPositionObservation,
+} from '../../src/components/app/controllers/reading-position-controller.js';
+import { readHeadingScrollOffset } from '../../src/navigation/heading-scroll-offset.js';
 import { RouterDocumentHost } from '../../src/components/app/router-document-host.js';
 import {
   readCurrentShellCommitId,
@@ -919,7 +924,9 @@ describe('検証済み履歴経路の表示状態', () => {
         ...(condition === 'missing-receipt' ? {} : { receipt }),
       });
 
-      expect(content.dataset['readingPositionPrepaint']).toBe(condition === 'visible' ? 'applied' : 'unavailable');
+      expect(content.dataset['readingPositionPrepaint']).toBe(
+        condition === 'visible' ? 'applied' : 'unavailable',
+      );
       expect(notifications).toHaveBeenCalledTimes(early ? 1 : 0);
       expect(scroll).toHaveBeenCalledTimes(early ? 1 : 0);
       expect(animate).toHaveBeenCalledTimes(early ? 1 : 0);
@@ -2002,13 +2009,15 @@ describe('同期受理した履歴本文のraw XY先行適用', () => {
       initializeContentContext(content);
       adoptContentBinding(readAddress());
     }
-    if (condition === 'hash-existing') content.insertAdjacentHTML('afterbegin', '<h2 id="saved-heading">stale hash at top</h2>');
+    if (condition === 'hash-existing')
+      content.insertAdjacentHTML('afterbegin', '<h2 id="saved-heading">stale hash at top</h2>');
     const savedUrl = readAddress();
     const errors = vi.fn();
     let observe = false;
     const notifications = vi.fn(() => {
       if (!observe || notifications.mock.calls.length > 1) return;
-      if (condition === 'notify-shift') window.scrollTo({ left: 80, top: 500, behavior: 'instant' });
+      if (condition === 'notify-shift')
+        window.scrollTo({ left: 80, top: 500, behavior: 'instant' });
       if (condition === 'notify-range') content.style.height = '7000px';
       if (condition === 'notify-owner-loss') {
         beginNavigationIntent('navigation', savedUrl);
@@ -2045,7 +2054,8 @@ describe('同期受理した履歴本文のraw XY先行適用', () => {
     const intent = beginNavigationIntent('traverse', savedUrl);
     const epoch = beginContentMutation(content);
     content.innerHTML = savedHtml;
-    if (condition === 'hash-existing') content.insertAdjacentHTML('afterbegin', '<h2 id="saved-heading">stale hash at top</h2>');
+    if (condition === 'hash-existing')
+      content.insertAdjacentHTML('afterbegin', '<h2 id="saved-heading">stale hash at top</h2>');
     adoptContentBinding(savedUrl);
     setContentReadiness({
       contentEpoch: epoch,
@@ -2079,7 +2089,8 @@ describe('同期受理した履歴本文のraw XY先行適用', () => {
       ...(condition === 'async-commit' ? {} : { commitTiming: 'synchronous' as const }),
     };
     const receipt = condition === 'mutable-receipt' ? receiptValue : Object.freeze(receiptValue);
-    if (condition === 'already-aligned') window.scrollTo({ left: 80, top: 650, behavior: 'instant' });
+    if (condition === 'already-aligned')
+      window.scrollTo({ left: 80, top: 650, behavior: 'instant' });
     notifications.mockClear();
     observe = true;
     const reads = vi.spyOn(ReadingPositionStore.prototype, 'read');
@@ -2100,10 +2111,22 @@ describe('同期受理した履歴本文のraw XY先行適用', () => {
       ...(condition === 'missing-receipt' ? {} : { receipt }),
       ...(qualified ? { prepaintCandidate: qualified } : {}),
     });
-    const arrived = ['table', 'unknown-surface', 'hash', 'hash-existing', 'already-aligned', 'notify-shift', 'notify-range', 'notify-owner-loss', 'notify-throw'].includes(condition);
+    const arrived = [
+      'table',
+      'unknown-surface',
+      'hash',
+      'hash-existing',
+      'already-aligned',
+      'notify-shift',
+      'notify-range',
+      'notify-owner-loss',
+      'notify-throw',
+    ].includes(condition);
     const early = arrived && !condition.startsWith('notify-');
     expect(reads).not.toHaveBeenCalled();
-    expect(scroll).toHaveBeenCalledTimes(condition === 'already-aligned' ? 0 : condition === 'notify-shift' ? 2 : arrived ? 1 : 0);
+    expect(scroll).toHaveBeenCalledTimes(
+      condition === 'already-aligned' ? 0 : condition === 'notify-shift' ? 2 : arrived ? 1 : 0,
+    );
     expect(content.dataset['readingPositionPrepaint'] === 'applied').toBe(early);
     if (condition === 'notify-owner-loss') {
       expect(content.dataset['readingPositionStatus']).toBe('new-owner');
@@ -2140,7 +2163,8 @@ describe('同期受理した履歴本文のraw XY先行適用', () => {
       expect(Math.abs(scrollX - 80)).toBeLessThanOrEqual(2);
       expect(Math.abs(scrollY - 650)).toBeLessThanOrEqual(2);
       expect(reader).toMatchObject({ candidate: null, restoring: false });
-      if (condition.startsWith('notify-')) expect(notifications.mock.calls.length).toBeGreaterThanOrEqual(2);
+      if (condition.startsWith('notify-'))
+        expect(notifications.mock.calls.length).toBeGreaterThanOrEqual(2);
       else expect(scroll).toHaveBeenCalledTimes(condition === 'already-aligned' ? 0 : 1);
     }
     expect(errors).toHaveBeenCalledTimes(condition === 'notify-throw' ? 1 : 0);
@@ -2255,7 +2279,6 @@ describe('明示hashの停止位置とCSS offset', () => {
     expect(Math.abs(scrollY - 650)).toBeLessThanOrEqual(2);
   });
 });
-
 
 describe('post-commit geometry/focus ownership before schedule', () => {
   it.each([
@@ -2461,4 +2484,416 @@ describe('post-commit geometry/focus ownership before schedule', () => {
       controller.dispose();
     }
   });
+});
+
+describe('fresh initial fragmentのnative観測と受理', () => {
+  // WebKitのsession共有History quotaを直前の既存integration casesから分離する。
+  beforeAll(() => new Promise<void>((resolve) => window.setTimeout(resolve, 10_000)), 15_000);
+  let now = 1000;
+  let nextFrame = 0;
+  let frames = new Map<number, FrameRequestCallback>();
+  let accepted: AcceptedReadingPosition[] = [];
+  let native: NativeReadingPositionObservation[] = [];
+  let errors: unknown[] = [];
+  let target = 0;
+  let epoch = 0;
+  let originalBehavior = '';
+  let callback: ((phase: 'native' | 'position') => void) | undefined;
+  const advance = async (milliseconds = 25): Promise<void> => {
+    now += milliseconds;
+    const pending = [...frames.values()];
+    frames.clear();
+    for (const frame of pending) frame(now);
+    for (let index = 0; index < 8; index++) await Promise.resolve();
+  };
+  const observeFor = async (milliseconds: number): Promise<void> => {
+    for (let elapsed = 0; elapsed < milliseconds; elapsed += 25) await advance();
+  };
+  const prepare = async (
+    navigationType: PerformanceNavigationTiming['type'] = 'navigate',
+    originalDocument = true,
+  ) => {
+    epoch = await setup();
+    if (!root) throw new Error('root');
+    const content = root;
+    content.id = 'main-content';
+    originalBehavior = document.documentElement.style.scrollBehavior;
+    document.documentElement.style.scrollBehavior = 'auto';
+    history.replaceState(baselineState, '', originalUrl + '#reading-heading');
+    adoptContentBinding(readAddress());
+    const heading = content.querySelector<HTMLElement>('#reading-heading');
+    if (!heading) throw new Error('heading');
+    target =
+      heading.getBoundingClientRect().top + scrollY - readHeadingScrollOffset(heading).offset;
+    window.scrollTo({ top: target, left: 0, behavior: 'instant' });
+    now = 1000;
+    nextFrame = 0;
+    frames = new Map();
+    accepted = [];
+    native = [];
+    errors = [];
+    const navigation: unknown = Object.create(PerformanceNavigationTiming.prototype);
+    Object.defineProperty(navigation, 'type', { value: navigationType });
+    Object.defineProperty(navigation, 'name', {
+      value: originalDocument ? location.href : new URL(originalUrl, location.origin).href,
+    });
+    vi.spyOn(performance, 'getEntriesByType').mockImplementation((type) =>
+      type === 'navigation' ? [navigation as PerformanceNavigationTiming] : [],
+    );
+    vi.spyOn(performance, 'now').mockImplementation(() => now);
+    vi.spyOn(window, 'requestAnimationFrame').mockImplementation((frame) => {
+      frames.set(++nextFrame, frame);
+      return nextFrame;
+    });
+    vi.spyOn(window, 'cancelAnimationFrame').mockImplementation((id) => {
+      frames.delete(id);
+    });
+    reader = new ReadingPositionController(
+      (error) => errors.push(error),
+      (position) => {
+        accepted.push(position);
+        callback?.('position');
+      },
+      (observation) => {
+        if (observation.phase === 'accepted') {
+          native.push(observation);
+          callback?.('native');
+        }
+      },
+    );
+    reader.start(content);
+    const scroll = vi.spyOn(window, 'scrollTo');
+    const write = vi.spyOn(ReadingPositionStore.prototype, 'write');
+    return { content, scroll, write };
+  };
+  afterEach(() => {
+    callback = undefined;
+    document.documentElement.style.scrollBehavior = originalBehavior;
+  });
+
+  it('既に整列していてもcallback後200msの検証前にはsampleしない', async () => {
+    const { content, scroll, write } = await prepare();
+    await observeFor(250);
+    expect(accepted).toHaveLength(1);
+    expect(accepted[0]?.provisional).toBe(true);
+    expect(native[0]?.provisional).toBe(true);
+    expect(native[0]?.isCurrent()).toBe(true);
+    expect(content.dataset['readingPositionStatus']).toBe('pending');
+    expect(write).not.toHaveBeenCalled();
+    await observeFor(250);
+    expect(content.dataset['readingPositionStatus']).toBe('settled');
+    expect(content.dataset['readingPositionArrival']).toBe('native');
+    expect(native[0]?.isCurrent()).toBe(true);
+    expect(write).toHaveBeenCalled();
+    expect(scroll).not.toHaveBeenCalled();
+  });
+
+  it('readinessより前のnative移動を中断せず、遅いreadinessから窓を取り直す', async () => {
+    const { content, scroll, write } = await prepare();
+    setContentReadiness({
+      contentEpoch: epoch,
+      root: content,
+      shellCommitId: 0,
+      status: 'pending',
+      started: true,
+    });
+    for (const y of [0, 300, 700, target]) {
+      window.scrollTo({ top: y, behavior: 'instant' });
+      scroll.mockClear();
+      await advance();
+      expect(scroll).not.toHaveBeenCalled();
+    }
+    document.dispatchEvent(new Event('scrollend'));
+    await observeFor(300);
+    expect(accepted).toHaveLength(0);
+    expect(write).not.toHaveBeenCalled();
+    setContentReadiness({
+      contentEpoch: epoch,
+      root: content,
+      shellCommitId: 0,
+      status: 'settled',
+      started: true,
+    });
+    await observeFor(500);
+    expect(content.dataset['readingPositionStatus']).toBe('settled');
+    expect(scroll).not.toHaveBeenCalled();
+  });
+
+  it('無関係なscrollendを候補窓の短縮に使わない', async () => {
+    await prepare();
+    await advance();
+    root?.dispatchEvent(new Event('scrollend', { bubbles: true }));
+    await observeFor(125);
+    expect(accepted).toHaveLength(0);
+    await observeFor(100);
+    expect(accepted).toHaveLength(1);
+  });
+
+  it.each(['image', 'font'] as const)(
+    '上方の%s準備と幾何変化後に自然に整列した位置だけを採る',
+    async (kind) => {
+      const { content, scroll } = await prepare();
+      const image = document.createElement('img');
+      if (kind === 'image') {
+        Object.defineProperty(image, 'complete', { configurable: true, value: false });
+        content.prepend(image);
+      } else vi.spyOn(document.fonts, 'status', 'get').mockReturnValue('loading');
+      await observeFor(500);
+      expect(accepted).toHaveLength(0);
+      if (kind === 'image') Object.defineProperty(image, 'complete', { value: true });
+      else vi.spyOn(document.fonts, 'status', 'get').mockReturnValue('loaded');
+      const heading = content.querySelector<HTMLElement>('#reading-heading');
+      if (!heading) throw new Error('heading');
+      heading.style.marginTop = '1300px';
+      window.scrollTo({
+        top:
+          heading.getBoundingClientRect().top + scrollY - readHeadingScrollOffset(heading).offset,
+        behavior: 'instant',
+      });
+      scroll.mockClear();
+      await observeFor(500);
+      expect(content.dataset['readingPositionStatus']).toBe('settled');
+      expect(scroll).not.toHaveBeenCalled();
+    },
+  );
+
+  it('range末尾のclampを共有停止線として受理する', async () => {
+    const { content, scroll } = await prepare();
+    content.style.height = '1300px';
+    const range = Math.max(
+      0,
+      document.documentElement.scrollHeight - document.documentElement.clientHeight,
+    );
+    window.scrollTo({ top: range, behavior: 'instant' });
+    scroll.mockClear();
+    await observeFor(500);
+    expect(content.dataset['readingPositionStatus']).toBe('settled');
+    expect(scroll).not.toHaveBeenCalled();
+  });
+
+  it.each(['native', 'position'] as const)(
+    '%s callbackの例外で証明を取り消し、成功sampleしない',
+    async (phase) => {
+      const { content, scroll, write } = await prepare();
+      callback = (current) => {
+        if (current === phase) throw new Error('observer failed');
+      };
+      await observeFor(500);
+      expect(content.dataset['readingPositionStatus']).toBe('unavailable');
+      expect(native[0]?.isCurrent()).toBe(false);
+      expect(write).not.toHaveBeenCalled();
+      expect(errors).toHaveLength(1);
+      expect(scroll).not.toHaveBeenCalled();
+    },
+  );
+
+  it('callbackが位置を変えても補正せず、旧証明と成功sampleを破棄する', async () => {
+    const { content, scroll, write } = await prepare();
+    callback = (phase) => {
+      if (phase === 'position') window.scrollTo({ top: target - 100, behavior: 'instant' });
+    };
+    await observeFor(500);
+    expect(content.dataset['readingPositionStatus']).toBe('unavailable');
+    expect(native[0]?.isCurrent()).toBe(false);
+    expect(write).not.toHaveBeenCalled();
+    expect(scroll).toHaveBeenCalledTimes(1);
+  });
+
+  it.each(['await', 'callback', 'verification'] as const)(
+    '%sでの本人取消後は通知・補正・成功を続けない',
+    async (when) => {
+      const { content, scroll } = await prepare();
+      if (when === 'callback') callback = () => window.dispatchEvent(new WheelEvent('wheel'));
+      if (when === 'verification') await observeFor(250);
+      if (when !== 'callback') window.dispatchEvent(new WheelEvent('wheel'));
+      await observeFor(500);
+      expect(content.dataset['readingPositionStatus']).toBe('cancelled');
+      expect(native.every((proof) => !proof.isCurrent())).toBe(true);
+      expect(scroll).not.toHaveBeenCalled();
+    },
+  );
+
+  it.each(['await', 'callback', 'verification'] as const)(
+    '%sで新navigationを始めても旧後始末で新ownerを書き換えない',
+    async (when) => {
+      const { content, scroll } = await prepare();
+      const navigate = (): void => {
+        beginNavigationIntent('navigation', originalUrl);
+        content.dataset['readingPositionStatus'] = 'new-owner';
+      };
+      if (when === 'callback') callback = navigate;
+      if (when === 'verification') await observeFor(250);
+      if (when !== 'callback') navigate();
+      await observeFor(600);
+      expect(content.dataset['readingPositionStatus']).toBe('new-owner');
+      expect(native.every((proof) => !proof.isCurrent())).toBe(true);
+      expect(scroll).not.toHaveBeenCalled();
+    },
+  );
+
+  it('最終検証中の幾何変化で旧証明を失効し、自然な再到達を再観測する', async () => {
+    const { content, scroll } = await prepare();
+    await observeFor(250);
+    const old = native[0];
+    const heading = content.querySelector<HTMLElement>('#reading-heading');
+    if (!heading) throw new Error('heading');
+    heading.style.marginTop = '1250px';
+    expect(old?.isCurrent()).toBe(false);
+    await observeFor(250);
+    expect(content.dataset['readingPositionStatus']).toBe('pending');
+    window.scrollTo({ top: target + 50, behavior: 'instant' });
+    scroll.mockClear();
+    await observeFor(500);
+    expect(content.dataset['readingPositionStatus']).toBe('settled');
+    expect(old?.isCurrent()).toBe(false);
+    expect(scroll).not.toHaveBeenCalled();
+  });
+
+  it('51msのgapを最終検証時間に数えず、5000ms以降は成功にしない', async () => {
+    const { content, scroll, write } = await prepare();
+    await observeFor(250);
+    await advance(51);
+    await observeFor(150);
+    expect(content.dataset['readingPositionStatus']).toBe('pending');
+    now = 6000;
+    await advance();
+    expect(content.dataset['readingPositionStatus']).toBe('unavailable');
+    expect(native[0]?.isCurrent()).toBe(false);
+    expect(write).not.toHaveBeenCalled();
+    expect(scroll).not.toHaveBeenCalled();
+  });
+
+  it('補正途中の期限超過を成功や最後のsnapに変換しない', async () => {
+    const { content, scroll, write } = await prepare();
+    window.scrollTo({ top: 0, behavior: 'instant' });
+    scroll.mockClear();
+    await observeFor(500);
+    const writes = scroll.mock.calls.length;
+    const before = scrollY;
+    expect(writes).toBeGreaterThan(0);
+    await advance(5000);
+    expect(content.dataset['readingPositionStatus']).toBe('unavailable');
+    expect(accepted).toHaveLength(0);
+    expect(write).not.toHaveBeenCalled();
+    expect(scroll).toHaveBeenCalledTimes(writes);
+    expect(scrollY).toBe(before);
+  });
+
+  it('native未到達なら一回の小step軌道だけで補正し、その後も検証する', async () => {
+    const { content, scroll } = await prepare();
+    window.scrollTo({ top: 0, behavior: 'instant' });
+    scroll.mockClear();
+    await observeFor(4000);
+    expect(content.dataset['readingPositionStatus']).toBe('settled');
+    expect(content.dataset['readingPositionArrival']).toBe('corrected');
+    expect(Math.abs(scrollY - target)).toBeLessThanOrEqual(2);
+    expect(scroll.mock.calls.length).toBeGreaterThan(10);
+    const instant = (options: unknown): boolean =>
+      typeof options === 'object' &&
+      options !== null &&
+      'behavior' in options &&
+      options.behavior === 'instant';
+    expect(scroll.mock.calls.every(([options]) => instant(options))).toBe(true);
+  });
+
+  it.each(['gap', 'motion', 'geometry', 'input', 'navigation'] as const)(
+    '補正中の%sで将来の書込を止め、二度目の補正を始めない',
+    async (condition) => {
+      const { content, scroll } = await prepare();
+      window.scrollTo({ top: 0, behavior: 'instant' });
+      scroll.mockClear();
+      await observeFor(300);
+      expect(scroll.mock.calls.length).toBeGreaterThan(0);
+      if (condition === 'motion') window.scrollTo({ top: scrollY + 5, behavior: 'instant' });
+      if (condition === 'geometry') content.style.height = '7000px';
+      if (condition === 'input') window.dispatchEvent(new WheelEvent('wheel'));
+      if (condition === 'navigation') {
+        beginNavigationIntent('navigation', originalUrl);
+        content.dataset['readingPositionStatus'] = 'new-owner';
+      }
+      scroll.mockClear();
+      await advance(condition === 'gap' ? 51 : 25);
+      await observeFor(800);
+      expect(scroll).not.toHaveBeenCalled();
+      expect(content.dataset['readingPositionStatus']).toBe(
+        condition === 'input' ? 'cancelled' : condition === 'navigation' ? 'new-owner' : 'pending',
+      );
+    },
+  );
+
+  it('残りbudgetがない候補から補正を開始しない', async () => {
+    const { content, scroll } = await prepare();
+    window.scrollTo({ top: 0, behavior: 'instant' });
+    scroll.mockClear();
+    await advance(4500);
+    await observeFor(300);
+    await advance(300);
+    expect(content.dataset['readingPositionStatus']).toBe('unavailable');
+    expect(content.dataset['readingPositionReason']).toBe('correction-budget');
+    expect(scroll).not.toHaveBeenCalled();
+  });
+
+  it('displayed bindingが変われば同じURL/rootでもsupersededになる', async () => {
+    const { content, scroll } = await prepare();
+    adoptContentBinding(originalUrl + '#another-heading');
+    await advance();
+    expect(content.dataset['readingPositionStatus']).toBe('superseded');
+    expect(accepted).toHaveLength(0);
+    expect(scroll).not.toHaveBeenCalled();
+  });
+
+  it.each(['reload', 'back_forward'] as const)(
+    '%sの初期表示をfragment観測に変更しない',
+    async (type) => {
+      const { content, scroll } = await prepare(type);
+      await observeFor(500);
+      expect(content.dataset['readingPositionStatus']).toBe('settled');
+      expect(content.dataset['readingPositionArrival']).toBeUndefined();
+      expect(native.every((observation) => observation.policy === 'native-viewport')).toBe(true);
+      expect(scroll).not.toHaveBeenCalled();
+    },
+  );
+  it('replaceStateだけで追加したhashをfresh document navigationと扱わない', async () => {
+    const { content, scroll } = await prepare('navigate', false);
+    await observeFor(500);
+    expect(content.dataset['readingPositionStatus']).toBe('settled');
+    expect(content.dataset['readingPositionArrival']).toBeUndefined();
+    expect(scroll).not.toHaveBeenCalled();
+  });
+  it('hiddenの時間と古い仮受理を最終検証へ持ち越さない', async () => {
+    const { content, scroll } = await prepare();
+    await observeFor(250);
+    const old = native[0];
+    const visibility = vi.spyOn(document, 'visibilityState', 'get').mockReturnValue('hidden');
+    document.dispatchEvent(new Event('visibilitychange'));
+    await observeFor(500);
+    expect(old?.isCurrent()).toBe(false);
+    expect(content.dataset['readingPositionStatus']).toBe('pending');
+    visibility.mockReturnValue('visible');
+    document.dispatchEvent(new Event('visibilitychange'));
+    await observeFor(500);
+    expect(content.dataset['readingPositionStatus']).toBe('settled');
+    expect(old?.isCurrent()).toBe(false);
+    expect(scroll).not.toHaveBeenCalled();
+  });
+  it.each(['entry', 'url', 'epoch', 'root'] as const)(
+    '最終検証中の%s失効後は旧証明とsuccess sampleを残さない',
+    async (condition) => {
+      const { content, scroll, write } = await prepare();
+      await observeFor(250);
+      const old = native[0];
+      if (condition === 'entry') {
+        history.replaceState({}, '', readAddress());
+        adoptHistoryEntry();
+      }
+      if (condition === 'url') history.replaceState(history.state, '', originalUrl + '#changed');
+      if (condition === 'epoch') beginContentMutation(content);
+      if (condition === 'root') content.remove();
+      await observeFor(500);
+      expect(old?.isCurrent()).toBe(false);
+      expect(content.dataset['readingPositionStatus']).not.toBe('settled');
+      expect(write).not.toHaveBeenCalled();
+      expect(scroll).not.toHaveBeenCalled();
+    },
+  );
 });

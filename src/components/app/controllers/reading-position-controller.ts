@@ -13,7 +13,18 @@ import {
   subscribeContentContext,
   type NavigationIntent,
 } from '../../../navigation/content-navigation-context.js';
-import { waitForContentReadiness } from '../../../client/hydration/content-readiness.js';
+import {
+  readContentReadiness,
+  waitForContentReadiness,
+} from '../../../client/hydration/content-readiness.js';
+import {
+  FRAGMENT_DEADLINE_MS,
+  FragmentCorrectionTrajectory,
+  FragmentQuietWindow,
+  planFragmentCorrection,
+  sameFragmentGeometry,
+  type FragmentGeometry,
+} from '../navigation/initial-fragment-motion.js';
 import {
   clampReadingPosition,
   validateReadingPosition,
@@ -46,6 +57,8 @@ type PresentationEligibility =
   | 'failed';
 
 interface ScrollJob {
+  readonly freshInitialFragment: boolean;
+  fragmentProof?: InitialFragmentProof;
   readonly intent: NavigationIntent;
   readonly epoch: number;
   readonly root: HTMLElement;
@@ -60,6 +73,23 @@ interface ScrollJob {
   candidate: ReadingPosition | null;
   url: string;
 }
+interface InitialFragmentSnapshot {
+  readonly geometry: FragmentGeometry;
+  readonly element: HTMLElement;
+  readonly ready: boolean;
+}
+interface InitialFragmentProof {
+  active: boolean;
+  final: boolean;
+  readonly deadline: number;
+  readonly snapshot: InitialFragmentSnapshot;
+  readonly sequence: number;
+  readonly isCurrent: () => boolean;
+}
+type InitialFragmentOutcome =
+  | { readonly kind: 'accepted'; readonly via: 'native' | 'corrected'; readonly deadline: number }
+  | { readonly kind: 'unavailable'; readonly reason: string }
+  | { readonly kind: 'cancelled' | 'superseded' };
 interface PositionEvidence {
   readonly x: number;
   readonly y: number;
@@ -67,6 +97,7 @@ interface PositionEvidence {
   readonly rangeY: number;
 }
 export interface AcceptedReadingPosition {
+  readonly provisional?: boolean;
   readonly root: HTMLElement;
   readonly intent: NavigationIntent;
   readonly receipt: NavigationCommitReceipt | undefined;
@@ -74,6 +105,7 @@ export interface AcceptedReadingPosition {
   readonly isCurrent?: () => boolean;
 }
 export interface NativeReadingPositionObservation {
+  readonly provisional?: boolean;
   readonly root: HTMLElement;
   readonly intent: NavigationIntent;
   readonly contentEpoch: number;
@@ -82,7 +114,7 @@ export interface NativeReadingPositionObservation {
   readonly url: string;
   readonly sequence: number;
   readonly policy: 'native-viewport' | 'initial-fragment';
-  readonly phase: 'classified' | 'accepted';
+  readonly phase: 'classified' | 'accepted' | 'unavailable';
   readonly isCurrent: () => boolean;
 }
 const interventionKeys = new Set([
@@ -396,6 +428,11 @@ export class ReadingPositionController {
       stateOnly: false,
       error: false,
       shellCommitId: readCurrentShellCommitId(),
+      freshInitialFragment:
+        navigation instanceof PerformanceNavigationTiming &&
+        navigation.type === 'navigate' &&
+        navigation.name === window.location.href &&
+        readDecodedHash(readAddress()) !== '',
     });
   }
 
@@ -444,6 +481,7 @@ export class ReadingPositionController {
     receipt?: NavigationCommitReceipt;
     prepaintGeometryReady?: boolean;
     prepaintCandidate?: ReadingPosition;
+    freshInitialFragment?: boolean;
   }): void {
     if (this.disposed || options.intent.signal.aborted) return;
     this.cancel();
@@ -477,6 +515,14 @@ export class ReadingPositionController {
     const controller = new AbortController();
     const job: ScrollJob = {
       ...options,
+      freshInitialFragment:
+        options.freshInitialFragment === true &&
+        options.intent.cause === 'initial' &&
+        !options.stateOnly &&
+        !options.error &&
+        !this.renderedError &&
+        !this.candidate &&
+        readDecodedHash(options.url) !== '',
       entryId: this.renderedId,
       presentation: 'pending',
       error: options.error || this.renderedError,
@@ -492,13 +538,22 @@ export class ReadingPositionController {
     };
     this.job = job;
     job.root.dataset['readingPositionStatus'] = 'pending';
+    delete job.root.dataset['readingPositionReason'];
+    delete job.root.dataset['readingPositionArrival'];
+    delete job.root.dataset['readingPositionCorrection'];
     this.restoring = true;
     const cancel = (): void => {
       controller.abort();
     };
     options.intent.signal.addEventListener('abort', cancel, { once: true });
     let failed = false;
-    void this.restore(job)
+    let initialOutcome: InitialFragmentOutcome = { kind: 'unavailable', reason: 'failed' };
+    const restoration = job.freshInitialFragment
+      ? this.restoreInitialFragment(job).then((outcome) => {
+          initialOutcome = outcome;
+        })
+      : this.restore(job);
+    void restoration
       .catch((error: unknown) => {
         failed = true;
         this.cancelJobPresentation(job, 'position-failed');
@@ -507,6 +562,10 @@ export class ReadingPositionController {
       .finally(() => {
         options.intent.signal.removeEventListener('abort', cancel);
         if (this.job !== job) return;
+        if (job.freshInitialFragment) {
+          this.finishInitialFragment(job, initialOutcome);
+          return;
+        }
         this.job = null;
         if (!controller.signal.aborted) {
           job.root.dataset['readingPositionStatus'] = failed ? 'unavailable' : 'settled';
@@ -578,6 +637,370 @@ export class ReadingPositionController {
       job.url === readAddress()
     );
   }
+  private initialFragmentIdentity(job: ScrollJob): boolean {
+    const context = readContentContext();
+    return (
+      !this.disposed &&
+      !job.controller.signal.aborted &&
+      !job.intent.signal.aborted &&
+      this.shouldFocus(job.intent) &&
+      job.root.isConnected &&
+      job.root.ownerDocument === document &&
+      document.getElementById('main-content') === job.root &&
+      context?.root === job.root &&
+      context.contentEpoch === job.epoch &&
+      context.intent === job.intent &&
+      !context.mutation &&
+      !context.recoveryRequired &&
+      readCurrentShellCommitId() === job.shellCommitId &&
+      (readHistoryEntry()?.id ?? null) === job.entryId &&
+      readAddress() === job.url &&
+      context.displayedBinding.entryId === job.entryId &&
+      context.displayedBinding.url === job.url &&
+      context.addressBinding.entryId === job.entryId &&
+      context.addressBinding.url === job.url
+    );
+  }
+
+  private initialFragmentCurrent(job: ScrollJob): boolean {
+    return this.job === job && this.initialFragmentIdentity(job);
+  }
+
+  private readInitialFragment(job: ScrollJob): InitialFragmentSnapshot | null {
+    const element = document.getElementById(readDecodedHash(job.url));
+    if (
+      !(element instanceof HTMLElement) ||
+      !job.root.contains(element) ||
+      element.getClientRects().length === 0
+    )
+      return null;
+    const range = this.range();
+    const documentY = element.getBoundingClientRect().top + scrollY;
+    const { offset } = readHeadingScrollOffset(element);
+    const target = clampReadingPosition(
+      { version: 1, url: job.url, x: 0, y: Math.max(0, documentY - offset) },
+      range.x,
+      range.y,
+    );
+    const readiness = readContentReadiness(job.epoch);
+    return {
+      element,
+      ready:
+        readiness?.root === job.root &&
+        readiness.shellCommitId === job.shellCommitId &&
+        readiness.status === 'settled' &&
+        document.fonts.status !== 'loading' &&
+        !Array.from(job.root.querySelectorAll('img')).some(
+          (image) =>
+            !image.complete &&
+            image.getBoundingClientRect().top + scrollY <= target.y &&
+            (!image.hasAttribute('width') || !image.hasAttribute('height')),
+        ),
+      geometry: {
+        documentY,
+        offset,
+        viewportWidth: innerWidth,
+        viewportHeight: innerHeight,
+        rangeX: range.x,
+        rangeY: range.y,
+        targetX: target.x,
+        targetY: target.y,
+      },
+    };
+  }
+
+  private fragmentArrived(geometry: FragmentGeometry): boolean {
+    return Math.abs(scrollX - geometry.targetX) <= 2 && Math.abs(scrollY - geometry.targetY) <= 2;
+  }
+
+  private initialFrame(signal: AbortSignal): Promise<void> {
+    return new Promise((resolve) => {
+      let frame = 0;
+      const finish = (): void => {
+        cancelAnimationFrame(frame);
+        signal.removeEventListener('abort', finish);
+        resolve();
+      };
+      if (signal.aborted) {
+        finish();
+        return;
+      }
+      signal.addEventListener('abort', finish, { once: true });
+      frame = requestAnimationFrame(finish);
+    });
+  }
+
+  private revokeInitialFragment(job: ScrollJob): void {
+    const proof = job.fragmentProof;
+    if (!proof) return;
+    proof.active = false;
+    // 新しい通知世代を古いjobの後始末で失効させない。
+    if (this.positionSequence === proof.sequence) this.positionSequence += 1;
+    delete job.fragmentProof;
+  }
+
+  private offerInitialFragment(
+    job: ScrollJob,
+    snapshot: InitialFragmentSnapshot,
+    deadline: number,
+  ): boolean {
+    const sequence = this.positionSequence + 1;
+    const proof: InitialFragmentProof = {
+      active: true,
+      final: false,
+      deadline,
+      snapshot,
+      sequence,
+      // 最終成功後にもTOCが遅れて接続できるが、旧位置の証明は再利用しない。
+      isCurrent: () => {
+        const ownsProof = (): boolean =>
+          proof.active &&
+          (proof.final || performance.now() < proof.deadline) &&
+          this.positionSequence === sequence &&
+          document.visibilityState === 'visible' &&
+          this.initialFragmentIdentity(job);
+        if (!ownsProof()) return false;
+        const current = this.readInitialFragment(job);
+        return (
+          current?.ready === true &&
+          current.element === snapshot.element &&
+          sameFragmentGeometry(current.geometry, snapshot.geometry) &&
+          this.fragmentArrived(current.geometry) &&
+          ownsProof()
+        );
+      },
+    };
+    job.fragmentProof = proof;
+    if (
+      !this.observeNativePosition(job.root, job.intent, 'initial-fragment', 'accepted', proof) ||
+      !this.initialFragmentCurrent(job) ||
+      !proof.isCurrent()
+    )
+      return false;
+    return (
+      this.notifyPositionObserver(() => {
+        this.onPositionAccepted({
+          root: job.root,
+          intent: job.intent,
+          receipt: job.receipt,
+          provisional: true,
+          sequence,
+          isCurrent: proof.isCurrent,
+        });
+      }) &&
+      this.initialFragmentCurrent(job) &&
+      proof.isCurrent()
+    );
+  }
+
+  private async restoreInitialFragment(job: ScrollJob): Promise<InitialFragmentOutcome> {
+    const deadline = performance.now() + FRAGMENT_DEADLINE_MS;
+    const lifetime = new AbortController();
+    const abort = (): void => {
+      lifetime.abort();
+    };
+    job.controller.signal.addEventListener('abort', abort, { once: true });
+    const timer = window.setTimeout(abort, FRAGMENT_DEADLINE_MS);
+    const quiet = new FragmentQuietWindow();
+    const verification = new FragmentQuietWindow(true);
+    const reset = (): void => {
+      quiet.reset();
+      verification.reset();
+      this.revokeInitialFragment(job);
+    };
+    document.addEventListener(
+      'scrollend',
+      (event) => {
+        if (event.target === document && this.initialFragmentCurrent(job))
+          quiet.hint(performance.now());
+      },
+      { signal: lifetime.signal },
+    );
+    document.addEventListener('visibilitychange', reset, { signal: lifetime.signal });
+    let reason = 'native-arrival';
+    let corrected = false;
+    let attempted = false;
+    let correctionReason: string | null = null;
+    const observing = (): boolean =>
+      this.initialFragmentCurrent(job) && !lifetime.signal.aborted && performance.now() < deadline;
+    try {
+      // hydrationを待つ前から観測する。幾何の安定だけでnative移動を中断しない。
+      while (observing()) {
+        await this.initialFrame(lifetime.signal);
+        if (
+          !this.initialFragmentCurrent(job) ||
+          lifetime.signal.aborted ||
+          performance.now() >= deadline
+        )
+          break;
+        const snapshot = this.readInitialFragment(job);
+        if (!this.initialFragmentCurrent(job)) break;
+        if (!snapshot) {
+          reason = 'target-missing';
+          reset();
+          continue;
+        }
+        reason = snapshot.ready ? (correctionReason ?? 'native-arrival') : 'readiness';
+        const value = {
+          at: performance.now(),
+          x: scrollX,
+          y: scrollY,
+          geometry: snapshot.geometry,
+          ready: snapshot.ready,
+          visible: document.visibilityState === 'visible',
+        };
+        const eligible = quiet.observe(value);
+        if (job.fragmentProof) {
+          if (!job.fragmentProof.isCurrent()) reset();
+          else if (verification.observe(value)) {
+            if (
+              performance.now() < deadline &&
+              this.initialFragmentCurrent(job) &&
+              job.fragmentProof.isCurrent()
+            )
+              return { kind: 'accepted', via: corrected ? 'corrected' : 'native', deadline };
+            reset();
+          }
+        } else if (eligible && this.fragmentArrived(snapshot.geometry)) {
+          snapshot.element.setAttribute('data-router-hash-target', 'true');
+          if (!this.offerInitialFragment(job, snapshot, deadline)) {
+            reset();
+            // callbackによる移動・失効は成功にせず、補正や通知の無限再試行を行わない。
+            return { kind: 'unavailable', reason: 'acceptance-invalidated' };
+          }
+          verification.observe({ ...value, at: performance.now(), x: scrollX, y: scrollY });
+        } else if (eligible && !attempted) {
+          attempted = true;
+          const correction = await this.correctInitialFragment(job, deadline, lifetime.signal);
+          corrected = correction.wrote;
+          reason = correctionReason = correction.reason;
+          quiet.reset();
+          verification.reset();
+        }
+      }
+      reset();
+      if (job.controller.signal.aborted || job.intent.signal.aborted) return { kind: 'cancelled' };
+      if (!this.initialFragmentCurrent(job)) return { kind: 'superseded' };
+      return { kind: 'unavailable', reason };
+    } finally {
+      clearTimeout(timer);
+      lifetime.abort();
+      job.controller.signal.removeEventListener('abort', abort);
+    }
+  }
+
+  private async correctInitialFragment(
+    job: ScrollJob,
+    deadline: number,
+    signal: AbortSignal,
+  ): Promise<{ wrote: boolean; reason: string }> {
+    const snapshot = this.readInitialFragment(job);
+    if (!snapshot?.ready || !this.initialFragmentCurrent(job))
+      return { wrote: false, reason: 'correction-invalidated' };
+    if (this.fragmentArrived(snapshot.geometry)) return { wrote: false, reason: 'native-arrival' };
+    const plan = planFragmentCorrection(
+      {
+        at: performance.now(),
+        x: scrollX,
+        y: scrollY,
+        geometry: snapshot.geometry,
+        ready: snapshot.ready,
+        visible: document.visibilityState === 'visible',
+      },
+      deadline,
+      matchMedia('(prefers-reduced-motion: reduce)').matches,
+    );
+    if (!plan) return { wrote: false, reason: 'correction-budget' };
+    const trajectory = new FragmentCorrectionTrajectory(plan);
+    let wrote = false;
+    let completed = false;
+    const ownsCorrection = (): boolean =>
+      this.initialFragmentCurrent(job) && !signal.aborted && performance.now() < deadline;
+    job.root.dataset['readingPositionCorrection'] = 'running';
+    try {
+      while (ownsCorrection()) {
+        await this.initialFrame(signal);
+        if (!ownsCorrection()) return { wrote, reason: 'correction-interrupted' };
+        const current = this.readInitialFragment(job);
+        if (current?.element !== snapshot.element) return { wrote, reason: 'correction-geometry' };
+        const step = trajectory.next({
+          at: performance.now(),
+          x: scrollX,
+          y: scrollY,
+          geometry: current.geometry,
+          ready: current.ready,
+          visible: document.visibilityState === 'visible',
+        });
+        if (step.kind === 'aborted') return { wrote, reason: `correction-${step.reason}` };
+        // htmlのsmoothへ別のUA animationを要求せず、このReading軌道だけを進める。
+        if (!ownsCorrection()) return { wrote, reason: 'correction-interrupted' };
+        window.scrollTo({ left: step.x, top: step.y, behavior: 'instant' });
+        wrote = true;
+        if (!ownsCorrection()) return { wrote, reason: 'correction-interrupted' };
+        const after = this.readInitialFragment(job);
+        if (
+          !after?.ready ||
+          after.element !== snapshot.element ||
+          !sameFragmentGeometry(after.geometry, plan.geometry) ||
+          !trajectory.written(scrollX, scrollY)
+        )
+          return { wrote, reason: 'correction-invalidated' };
+        if (step.done) {
+          completed = true;
+          return { wrote, reason: 'native-arrival' };
+        }
+      }
+      return { wrote, reason: 'correction-interrupted' };
+    } finally {
+      // 外乱・取消時に停止用scrollや最後のsnapを追加しない。
+      if (this.job === job)
+        job.root.dataset['readingPositionCorrection'] = completed ? 'completed' : 'stopped';
+    }
+  }
+
+  private finishInitialFragment(job: ScrollJob, outcome: InitialFragmentOutcome): void {
+    if (this.job !== job) return;
+    if (
+      outcome.kind === 'accepted' &&
+      (!this.initialFragmentCurrent(job) ||
+        !job.fragmentProof?.isCurrent() ||
+        performance.now() >= outcome.deadline)
+    )
+      outcome = { kind: 'unavailable', reason: 'acceptance-invalidated' };
+    // 幾何getter等の再入でも、新jobを旧finallyから解放しない。
+    if (this.job !== job) return;
+    if (outcome.kind !== 'accepted') this.revokeInitialFragment(job);
+    const context = readContentContext();
+    if (outcome.kind === 'accepted' && job.fragmentProof) job.fragmentProof.final = true;
+    this.job = null;
+    // mutation/recoveryの保存抑止と、新jobの状態は古いfinallyで解放しない。
+    if (
+      context?.root !== job.root ||
+      context.contentEpoch !== job.epoch ||
+      context.intent !== job.intent ||
+      context.mutation ||
+      context.recoveryRequired
+    )
+      return;
+    this.restoring = false;
+    this.pendingIntent = null;
+    this.candidate = null;
+    this.candidateId = null;
+    job.root.dataset['readingPositionStatus'] =
+      outcome.kind === 'accepted' ? 'settled' : outcome.kind;
+    if (outcome.kind === 'unavailable') {
+      job.root.dataset['readingPositionReason'] = outcome.reason;
+      // 位置証明を発行せず、TOCの通常追跡だけを失敗結果から独立させる。
+      this.observeNativePosition(job.root, job.intent, 'initial-fragment', 'unavailable');
+    }
+    if (outcome.kind === 'accepted') {
+      job.root.dataset['readingPositionArrival'] = outcome.via;
+      // callback後のtarget/range/XYを検証した成功だけを履歴へ採る。
+      if (job.fragmentProof?.isCurrent() && performance.now() < outcome.deadline)
+        this.sampleCurrent();
+    }
+  }
+
   private async restore(job: ScrollJob): Promise<void> {
     const deadline = performance.now() + 5000;
     const expired = (): boolean => performance.now() >= deadline;
@@ -929,9 +1352,10 @@ export class ReadingPositionController {
     intent: NavigationIntent,
     policy: NativeReadingPositionObservation['policy'],
     phase: NativeReadingPositionObservation['phase'],
-  ): void {
+    provisional?: { readonly isCurrent: () => boolean },
+  ): boolean {
     const context = readContentContext();
-    if (context?.root !== root || context.mutation || context.recoveryRequired) return;
+    if (context?.root !== root || context.mutation || context.recoveryRequired) return false;
     const contentEpoch = context.contentEpoch;
     const shellCommitId = readCurrentShellCommitId();
     const entryId = readHistoryEntry()?.id ?? null;
@@ -957,11 +1381,13 @@ export class ReadingPositionController {
         current.displayedBinding.entryId === entryId &&
         current.displayedBinding.url === url &&
         current.addressBinding.entryId === entryId &&
-        current.addressBinding.url === url
+        current.addressBinding.url === url &&
+        (provisional?.isCurrent() ?? true)
       );
     };
-    this.notifyPositionObserver(() => {
+    const notified = this.notifyPositionObserver(() => {
       this.onNativeObservation({
+        ...(provisional ? { provisional: true } : {}),
         root,
         intent,
         contentEpoch,
@@ -975,7 +1401,8 @@ export class ReadingPositionController {
       });
     });
     // TOCの検証・巻戻しで実位置が変わっても、nativeへ独自補正せず実座標を採り直す。
-    if (phase === 'accepted' && isCurrent()) this.sampleCurrent();
+    if (phase === 'accepted' && !provisional && isCurrent()) this.sampleCurrent();
+    return notified && isCurrent();
   }
   private notifyPositionObserver(notify: () => void): boolean {
     try {
@@ -1139,6 +1566,7 @@ export class ReadingPositionController {
     this.sampleCurrent();
   }
   private cancel(): void {
+    if (this.job?.fragmentProof) this.job.fragmentProof.active = false;
     this.positionSequence += 1;
     if (this.geometryTimer !== null) clearTimeout(this.geometryTimer);
     this.geometryTimer = null;

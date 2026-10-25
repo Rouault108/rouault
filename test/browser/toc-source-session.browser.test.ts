@@ -172,6 +172,70 @@ const nativeObservation = (
 });
 
 describe('TocSourceSession の単一所有と予約・transaction 契約', () => {
+  it('初回位置がunavailableでもaccepted証明を作らず通常viewport追跡を有効にする', async () => {
+    const { session, position } = await setup();
+    const scheduling = captureScheduling();
+    session.observe({
+      ...nativeObservation(position, 1, () => session.isCurrent()),
+      policy: 'initial-fragment',
+      phase: 'unavailable',
+    });
+    assertCurrent(session.binding.nav, 'session-two');
+    expect(position.root.dataset['tocNativeSync']).toBe('unavailable');
+    expect(position.root.dataset['tocPositionSequence']).toBeUndefined();
+    window.scrollTo({ top: 2550, behavior: 'instant' });
+    window.dispatchEvent(new Event('scroll'));
+    scheduling.frames.splice(0).forEach((frame) => frame(performance.now()));
+    scheduling.drainMicrotasks();
+    assertCurrent(session.binding.nav, 'session-three');
+  });
+
+  it('失効した仮受理の後のunavailableは古い位置証明を通常追跡へ持ち込まない', async () => {
+    const { session, position } = await setup();
+    const scheduling = captureScheduling();
+    let current = true;
+    session.observe({
+      ...nativeObservation(position, 1, () => current),
+      policy: 'initial-fragment',
+      provisional: true,
+    });
+    expect(position.root.dataset['tocPositionProvisional']).toBe('true');
+    current = false;
+    session.observe({
+      ...nativeObservation(position, 2, () => session.isCurrent()),
+      policy: 'initial-fragment',
+      phase: 'unavailable',
+    });
+    expect(position.root.dataset['tocNativeSync']).toBe('unavailable');
+    expect(position.root.dataset['tocPositionSequence']).toBeUndefined();
+    expect(position.root.dataset['tocPositionProvisional']).toBeUndefined();
+    window.scrollTo({ top: 2550, behavior: 'instant' });
+    window.dispatchEvent(new Event('scroll'));
+    scheduling.frames.splice(0).forEach((frame) => frame(performance.now()));
+    scheduling.drainMicrotasks();
+    assertCurrent(session.binding.nav, 'session-three');
+  });
+
+  it('unavailableはactiveTracking=falseをscroll追跡へ変更しない', async () => {
+    const { position } = await setup();
+    const element = requireFixtureValue(controller);
+    disposeTocSourceSession(element);
+    element.setAttribute('capabilities-json', '{"activeTracking":false}');
+    const session = requireFixtureValue(getTocSourceSession(element));
+    const scheduling = captureScheduling();
+    session.observe({
+      ...nativeObservation(position, 1, () => session.isCurrent()),
+      policy: 'initial-fragment',
+      phase: 'unavailable',
+    });
+    const initial = active(session.binding.nav);
+    window.scrollTo({ top: 2550, behavior: 'instant' });
+    window.dispatchEvent(new Event('scroll'));
+    scheduling.frames.splice(0).forEach((frame) => frame(performance.now()));
+    scheduling.drainMicrotasks();
+    expect(active(session.binding.nav)).toEqual(initial);
+  });
+
   it('取得は副作用を起こさず、early受理から通常activationまで同じtrackerを保持する', async () => {
     const { session, position } = await setup();
     const scheduling = captureScheduling();

@@ -32,6 +32,24 @@ post-commitはjobを予約して戻り、hydration-readyをawaitしない。job�
 
 本人のwheel/touchmove/scroll key/Tab・Shift+Tab/pointer操作、新navigation、本人のTOC/tabs/search操作（URL no-opを含む）、pagehide/disposeで旧jobを取り消す。取消後にhash/top fallbackやfocus奪取をしない。featureはattach時のsource epochとdisplayed/address bindingをURL読取・projection・書込・await後に検査する。feature writerはtokenをHistory API直前に再照合し、成功API直後に新binding/tokenを採用する。after observerで失効した場合も成功entryを維持し、旧scroll/focus/projectionを続けない。TOC settle、tabs再同期、Search結果もcaptureしたtokenを再照合する。Back待機中の旧本文を根拠に宛先URLを正規化しない。本人feature intentは旧未commit router requestを失効し、automatic initialization/normalizationは現intentを維持する。
 
+## Fresh initial document fragment
+
+初回document navigationの明示fragmentは以下の専用規則を使う。`PerformanceNavigationTiming.type=navigate`かつ同entryのnavigation URLが現在のexact URLと一致し、fragmentがある場合だけを対象にする。保存XY候補、reload、Back/Forward初期表示、BFCache、通常router navigation、state-only、error/not-found、TOC clickの規則は変更しない。`replaceState`で後から作ったhashをnative初期移動の証拠にしない。
+
+同じReading jobがhydration待機より前からviewportをRAFで観測し、native移動をscroll書込で中断しない。準備済みのroot/epoch/shell、上方の寸法未確定画像、loading fontを確認し、固定したdocument-space見出し位置、共有CSS offset、viewport、range、clamp後の目標と実XYを比較する。実XYの変化または固定基準から1 CSS pxを超える幾何変化、readiness変化で静止窓を取り直す。document自身の`scrollend`を受けた窓は100ms、hintのない窓は200ms、いずれも3回以上の異なるRAF観測を要する。nested scrollendや古いhintは使わず、hiddenと50ms超のframe gapの時間を窓へ含めない。これはnative完了の証明ではなく受理候補の条件である。
+
+目標±2 CSS pxへ到達した候補だけを仮受理する。既存のaccepted通知には`provisional: true`と取消可能な`isCurrent()`を付け、通知callback後にも目標・range・実XYと全ownershipを再照合する。さらに独立した200ms・3RAF以上の窓で検証し、最終判定直前まで本人取消、intent、job/通知世代、root、epoch、shell、entry、exact URL、displayed/address bindingを確認する。TOCの通常activation/trackingとpassive座標保存はこの仮受理の成否から独立させる。
+
+`unavailable`通知は位置証明を持たず、検証済みshell下のTOC source sessionへ通常追跡を許す。accepted通知や成功sampleを捏造せず、presentation hydrationのtriggerは引き続きschedulerが所有する。
+
+native静止候補が未到達の場合、一回だけReading所有の残差補正を許す。2026-10-25のcloud Chromium 153の実document遷移では、font応答を600ms遅延するとnative-onlyが見出し停止線から8.1875 CSS px不足し、page errorなしで`unavailable(native-arrival)`となった。通常到達はnativeのまま維持し、このmissed-arrivalを補正の根拠とする。Windows Chrome 156の視覚品質確認をcloudの結果で代替しない。
+
+補正開始時の実測P0と新しくclampした終点を固定し、minimum-jerk `s(u)=10u³−15u⁴+6u⁵`を一つのRAF軌道として進める。候補値はV=800 CSS px/s、A=4000 CSS px/s²、Tmin=0.180s、`T=max(Tmin,1.875D/V,sqrt(5.773503D/A))`。duration上限は設けない。残りbudgetがT+500ms検証+50ms frame余裕に足りない場合は開始しない。各小stepは明示`instant`とし、CSS smoothに競合するUA animationを作らない。reduced motionは補間だけを省き、同じeligibility・budget・検証を維持する。
+
+補正中は前回post-write実測値、固定曲線、固定document-space幾何を毎frame照合する。1 CSS pxの外乱許容を各stepでリセットせず累積し、原点を動かさない。50ms超のRAF gap、外部移動、readiness/幾何変化、hidden、本人入力、owner失効で将来の書込を停止する。catchup、dt切詰め、停止用scroll、最後のsnap、二度目の補正、deadline延長は行わない。静止候補の後にもnativeが再開し得るため、その完了を保証したとは扱わない。停止後は自然に整列した位置だけを再観測・受理できる。数式だけで知覚上の滑らかさを保証しない。
+
+終端は`accepted(native/corrected)`、理由付き`unavailable`、`cancelled`、`superseded`とする。DOM上では成功だけが`readingPositionStatus=settled`かつ`readingPositionArrival=native/corrected`となる。target欠落、readiness未成立、未到達、callback後の失効・例外、補正budget不足・中断、内部失敗を成功に置換しない。全体の上限は5秒で、main thread停止中の実時間返却は保証できないが、期限を越えて再開した後にscroll書込・成功判定をしない。timeoutや通常returnをfinallyで一律settledにしない。このbounded failureは初回document fragmentだけに適用する。成功に伴う履歴sampleはcallback後の最終検証を通った場合だけ行い、旧finallyは新jobやmutation/recoveryの保存抑止を解放しない。
+
 ## Browser and accessibility
 
 失効結果はfeature writerから呼出し元へ伝える。tabs enhancerは失効後にindicator更新、tab railのscroll、`ui-tab-change`を続けず、URL normalization後の通知も再照合する。TOCの失効clickは既定動作を抑止したまま`owned:false`を返し、mobile panelのcloseとtriggerへのfocus復帰を実行しない。成功したhistory書込や、失効前の正当なprojectionをrollbackしない。
@@ -110,7 +128,6 @@ sidebarの実体保持は[Sidebar State Contract](sidebar-state.md#6-transaction
 ## Native位置の観測通知
 
 Readingはnative初期分類と実位置採用を分けてPostRenderへ通知する。通知先の例外は位置処理から隔離し、nativeにcommit receiptを捏造しない。pagehideで位置sequenceと旧load/rAFを失効させ、pageshowは新たに観測する。TOCの検証やrollbackでXYが変わった場合も独自scrollを追加せず、実座標を採り直す。TOCの表示成否と位置復元結果は別に扱う。詳細は[TOC source session ADR](../adr/toc-source-session-native-observation.md)。
-
 
 ### hashを持つ同期full traversalの先行復元
 
