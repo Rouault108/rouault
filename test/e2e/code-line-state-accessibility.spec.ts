@@ -339,3 +339,125 @@ test('line state semantics remain available across SSR, no-JS, group, and previe
     await context.close();
   }
 });
+
+const copyFocusEnvironments = [
+  { label: 'light / OS light', theme: 'light', colorScheme: 'light', forcedColors: 'none' },
+  { label: 'dark / OS dark', theme: 'dark', colorScheme: 'dark', forcedColors: 'none' },
+  { label: 'system / OS light', theme: 'system', colorScheme: 'light', forcedColors: 'none' },
+  { label: 'system / OS dark', theme: 'system', colorScheme: 'dark', forcedColors: 'none' },
+  { label: 'forced colors', theme: 'light', colorScheme: 'light', forcedColors: 'active' },
+] as const;
+
+const copyFocusSurfaces = [
+  { label: 'standalone', filename: 'line-state-standalone.ts' },
+  { label: 'group', filename: 'line-state-group-active.ts' },
+  { label: 'preview', filename: 'line-state-preview.html' },
+] as const;
+
+for (const environment of copyFocusEnvironments) {
+  test(`Copy button は ${environment.label} の production CSS で有効な focus token を使う`, async ({
+    page,
+  }) => {
+    await page.emulateMedia({
+      colorScheme: environment.colorScheme,
+      forcedColors: environment.forcedColors,
+    });
+    await page.goto(e2eNoteFixtures.code.directPath, { waitUntil: 'networkidle' });
+    await page.evaluate((value) => {
+      document.documentElement.dataset['theme'] = value;
+    }, environment.theme);
+    await expect(page.locator('html')).toHaveAttribute('data-theme', environment.theme);
+    if (environment.theme === 'system') {
+      const mapping = await page.evaluate((scheme) => {
+        const root = document.documentElement;
+        const system = getComputedStyle(root).getPropertyValue('--focus-ring-color').trim();
+        try {
+          root.dataset['theme'] = scheme;
+          return {
+            system,
+            explicit: getComputedStyle(root).getPropertyValue('--focus-ring-color').trim(),
+          };
+        } finally {
+          root.dataset['theme'] = 'system';
+        }
+      }, environment.colorScheme);
+      expect(mapping.system).not.toBe('');
+      expect(mapping.system).toBe(mapping.explicit);
+    }
+    for (const surface of copyFocusSurfaces) {
+      await test.step(surface.label, async () => {
+        const pre = page.locator(`pre[data-code-block][data-code-filename="${surface.filename}"]`);
+        await expect(pre).toBeVisible();
+        const owner =
+          surface.label === 'group'
+            ? pre.locator('xpath=ancestor::section[@data-code-group][1]')
+            : pre.locator('xpath=ancestor::*[@data-code-block-root][1]');
+        const button =
+          surface.label === 'group'
+            ? owner.locator(
+                ':scope > .code-group-header button[data-code-group-copy][data-copy-button]',
+              )
+            : owner
+                .locator('button.static-copy-button[data-copy-button][data-copy-target-id]')
+                .first();
+        await expect(button).toBeEnabled();
+        await expect(button).toBeVisible();
+        // 直前の操作対象へ戻してから、実際の Tab 移動で Copy へ入れることを固定する。
+        await button.focus();
+        await page.keyboard.press('Shift+Tab');
+        await expect(button).not.toBeFocused();
+        await page.keyboard.press('Tab');
+        await expect(button).toBeFocused();
+        const focus = await button.evaluate(async (element) => {
+          await Promise.all(element.getAnimations().map((animation) => animation.finished));
+          const probe = document.createElement('button');
+          probe.type = 'button';
+          probe.tabIndex = -1;
+          probe.style.cssText =
+            'outline: var(--focus-ring-width) solid var(--focus-ring-color); outline-offset: var(--focus-ring-offset);';
+          element.parentElement?.append(probe);
+          const actual = getComputedStyle(element);
+          const rgba = (color: string): number[] => {
+            const canvas = document.createElement('canvas');
+            canvas.width = canvas.height = 1;
+            const context = canvas.getContext('2d');
+            if (!context) throw new Error('Canvas 2D が必要です');
+            context.fillStyle = color;
+            context.fillRect(0, 0, 1, 1);
+            return Array.from(context.getImageData(0, 0, 1, 1).data);
+          };
+          const result = {
+            visible: element.matches(':focus-visible'),
+            forcedColors: matchMedia('(forced-colors: active)').matches,
+            osDark: matchMedia('(prefers-color-scheme: dark)').matches,
+            theme: document.documentElement.dataset['theme'] ?? null,
+            style: actual.outlineStyle,
+            width: actual.outlineWidth,
+            offset: actual.outlineOffset,
+            color: rgba(actual.outlineColor),
+          };
+          // forced colors の補正と focus animation は focus 状態にも依存する。
+          // 同じ button を同じ keyboard focus 状態で測り、色の比較を保持する。
+          probe.focus({ preventScroll: true });
+          await Promise.all(probe.getAnimations().map((animation) => animation.finished));
+          const expectedColor = rgba(getComputedStyle(probe).outlineColor);
+          probe.remove();
+          if (element instanceof HTMLElement) element.focus({ preventScroll: true });
+          return { ...result, expectedColor, restoredFocus: document.activeElement === element };
+        });
+
+        expect(focus.visible).toBe(true);
+        expect(focus.restoredFocus).toBe(true);
+        expect(focus.forcedColors).toBe(environment.forcedColors === 'active');
+        expect(focus.osDark).toBe(environment.colorScheme === 'dark');
+        expect(focus.theme).toBe(environment.theme);
+        expect(focus.style).toBe('solid');
+        expect(focus.width).toBe('2px');
+        expect(focus.offset).toBe('2px');
+        expect(focus.color).toEqual(focus.expectedColor);
+        // システムの Highlight は半透明にもなるため、可視性は非ゼロ alpha で固定する。
+        expect(focus.color[3]).toBeGreaterThan(0);
+      });
+    }
+  });
+}

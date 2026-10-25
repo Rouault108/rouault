@@ -1,0 +1,200 @@
+[
+  {
+    "file": "footer.css",
+    "selector": ".ui-footer[data-footer]",
+    "property": "--_footer-bg",
+    "reference": "--footer-bg",
+    "conditions": [],
+    "count": 1,
+    "contract": "docs/contracts/footer.md",
+    "evidence": "`--footer-bg`",
+    "reason": "既存の公開 CSS custom property 契約に定義された任意 override。未指定時だけ既定値を用いる。"
+  },
+  {
+    "file": "footer.css",
+    "selector": ".ui-footer[data-footer]",
+    "property": "--_footer-fg",
+    "reference": "--footer-fg",
+    "conditions": [],
+    "count": 1,
+    "contract": "docs/contracts/footer.md",
+    "evidence": "`--footer-fg`",
+    "reason": "既存の公開 CSS custom property 契約に定義された任意 override。未指定時だけ既定値を用いる。"
+  },
+  {
+    "file": "footer.css",
+    "selector": ".ui-footer[data-footer]",
+    "property": "--_footer-fg-strong",
+    "reference": "--footer-fg-strong",
+    "conditions": [],
+    "count": 1,
+    "contract": "docs/contracts/footer.md",
+    "evidence": "`--footer-fg-strong`",
+    "reason": "既存の公開 CSS custom property 契約に定義された任意 override。未指定時だけ既定値を用いる。"
+  },
+  {
+    "file": "footer.css",
+    "selector": ".ui-footer[data-footer]",
+    "property": "--_footer-fg-muted",
+    "reference": "--footer-fg-muted",
+    "conditions": [],
+    "count": 1,
+    "contract": "docs/contracts/footer.md",
+    "evidence": "`--footer-fg-muted`",
+    "reason": "既存の公開 CSS custom property 契約に定義された任意 override。未指定時だけ既定値を用いる。"
+  },
+  {
+    "file": "footer.css",
+    "selector": ".ui-footer[data-footer]",
+    "property": "--_footer-border",
+    "reference": "--footer-border",
+    "conditions": [],
+    "count": 1,
+    "contract": "docs/contracts/footer.md",
+    "evidence": "`--footer-border`",
+    "reason": "既存の公開 CSS custom property 契約に定義された任意 override。未指定時だけ既定値を用いる。"
+  },
+  {
+    "file": "footer.css",
+    "selector": ".ui-footer[data-footer]",
+    "property": "--_footer-border-width",
+    "reference": "--footer-border-width",
+    "conditions": [],
+    "count": 1,
+    "contract": "docs/contracts/footer.md",
+    "evidence": "`--footer-border-width`",
+    "reason": "既存の公開 CSS custom property 契約に定義された任意 override。未指定時だけ既定値を用いる。"
+  },
+  {
+    "file": "footer.css",
+    "selector": ".ui-footer[data-footer]",
+    "property": "--_footer-max-inline-size",
+    "reference": "--footer-max-inline-size",
+    "conditions": [],
+    "count": 1,
+    "contract": "docs/contracts/footer.md",
+    "evidence": "`--footer-max-inline-size`",
+    "reason": "既存の公開 CSS custom property 契約に定義された任意 override。未指定時だけ既定値を用いる。"
+  },
+  {
+    "file": "footer.css",
+    "selector": ".ui-footer[data-footer]",
+    "property": "--_footer-padding-block",
+    "reference": "--footer-padding-block",
+    "conditions": [],
+    "count": 1,
+    "contract": "docs/contracts/footer.md",
+    "evidence": "`--footer-padding-block`",
+    "reason": "既存の公開 CSS custom property 契約に定義された任意 override。未指定時だけ既定値を用いる。"
+  },
+  {
+    "file": "footer.css",
+    "selector": ".ui-footer[data-footer]",
+    "property": "--_footer-padding-inline",
+    "reference": "--footer-padding-inline",
+    "conditions": [],
+    "count": 1,
+    "contract": "docs/contracts/footer.md",
+    "evidence": "`--footer-padding-inline`",
+    "reason": "既存の公開 CSS custom property 契約に定義された任意 override。未指定時だけ既定値を用いる。"
+  },
+  {
+    "file": "footer.css",
+    "selector": ".ui-footer[data-footer]",
+    "property": "--_footer-gap",
+    "reference": "--footer-gap",
+    "conditions": [],
+    "count": 1,
+    "contract": "docs/contracts/footer.md",
+    "evidence": "`--footer-gap`",
+    "reason": "既存の公開 CSS custom property 契約に定義された任意 override。未指定時だけ既定値を用いる。"
+  },
+  {
+    "file": "footer.css",
+    "selector": ".ui-footer[data-footer]",
+    "property": "--_footer-separator-gap",
+    "reference": "--footer-separator-gap",
+    "conditions": [],
+    "count": 1,
+    "contract": "docs/contracts/footer.md",
+    "evidence": "`--footer-separator-gap`",
+    "reason": "既存の公開 CSS custom property 契約に定義された任意 override。未指定時だけ既定値を用いる。"
+  },
+  {
+    "file": "footer.css",
+    "selector": ".ui-footer[data-footer]",
+    "property": "--_footer-build-opacity",
+    "reference": "--footer-build-opacity",
+    "conditions": [],
+    "count": 1,
+    "contract": "docs/contracts/footer.md",
+    "evidence": "`--footer-build-opacity`",
+    "reason": "既存の公開 CSS custom property 契約に定義された任意 override。未指定時だけ既定値を用いる。"
+  },
+  {
+    "file": "footer.css",
+    "selector": ".ui-footer[data-footer]",
+    "property": "--_footer-build-fg",
+    "reference": "--footer-build-fg",
+    "conditions": [],
+    "count": 1,
+    "contract": "docs/contracts/footer.md",
+    "evidence": "`--footer-build-fg`",
+    "reason": "既存の公開 CSS custom property 契約に定義された任意 override。未指定時だけ既定値を用いる。"
+  },
+  {
+    "file": "footer.css",
+    "selector": ".ui-footer[data-footer]",
+    "property": "--_footer-link-underline-offset",
+    "reference": "--footer-link-underline-offset",
+    "conditions": [],
+    "count": 1,
+    "contract": "docs/contracts/footer.md",
+    "evidence": "`--footer-link-underline-offset`",
+    "reason": "既存の公開 CSS custom property 契約に定義された任意 override。未指定時だけ既定値を用いる。"
+  },
+  {
+    "file": "footer.css",
+    "selector": ".ui-footer[data-footer]",
+    "property": "--_footer-build-fg",
+    "reference": "--footer-build-fg",
+    "conditions": ["@supports (color: oklch(from black l c h / 0.5))"],
+    "count": 1,
+    "contract": "docs/contracts/footer.md",
+    "evidence": "`--footer-build-fg`",
+    "reason": "既存の公開 CSS custom property 契約に定義された任意 override。未指定時だけ既定値を用いる。"
+  },
+  {
+    "file": "tabs.css",
+    "selector": "[data-tabs-root]",
+    "property": "--_note-tabs-inline-bleed",
+    "reference": "--ui-tabs-inline-bleed",
+    "conditions": [],
+    "count": 1,
+    "contract": "docs/contracts/tabs.md",
+    "evidence": "`--ui-tabs-inline-bleed`",
+    "reason": "既存の公開 CSS custom property 契約に定義された任意 override。未指定時だけ既定値を用いる。"
+  },
+  {
+    "file": "tabs.css",
+    "selector": "[data-tabs-root] > [data-tab-panel]",
+    "property": "margin-block-start",
+    "reference": "--ui-tabs-panel-gap",
+    "conditions": [],
+    "count": 1,
+    "contract": "docs/contracts/tabs.md",
+    "evidence": "`--ui-tabs-panel-gap`",
+    "reason": "既存の公開 CSS custom property 契約に定義された任意 override。未指定時だけ既定値を用いる。"
+  },
+  {
+    "file": "tabs.css",
+    "selector": "[data-tabs-root][data-tabs-orientation='vertical'] > [data-tab-panel]",
+    "property": "margin-inline-start",
+    "reference": "--ui-tabs-panel-gap",
+    "conditions": [],
+    "count": 1,
+    "contract": "docs/contracts/tabs.md",
+    "evidence": "`--ui-tabs-panel-gap`",
+    "reason": "既存の公開 CSS custom property 契約に定義された任意 override。未指定時だけ既定値を用いる。"
+  }
+]

@@ -37,8 +37,12 @@ const semanticLineSignature = (line: Element | null): unknown => {
   };
 };
 
+const originalClipboard = Object.getOwnPropertyDescriptor(navigator, 'clipboard');
+
 describe('static-copy-button-enhancer', () => {
   afterEach(() => {
+    if (originalClipboard) Object.defineProperty(navigator, 'clipboard', originalClipboard);
+    else Reflect.deleteProperty(navigator, 'clipboard');
     document.body.replaceChildren();
   });
 
