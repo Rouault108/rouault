@@ -264,13 +264,33 @@ export function registerInitialFragmentArrivalTests(): void {
       expect(held.provisional).toBeUndefined();
       release();
       await page.waitForLoadState('load');
-      await expect
-        .poll(() =>
-          page.evaluate(
-            () => document.getElementById('main-content')?.dataset['readingPositionStatus'],
-          ),
-        )
-        .toBe('settled');
+      try {
+        await expect
+          .poll(() =>
+            page.evaluate(
+              () => document.getElementById('main-content')?.dataset['readingPositionStatus'],
+            ),
+          )
+          .toBe('settled');
+      } finally {
+        const state = await page.evaluate(() => {
+          const main = document.getElementById('main-content');
+          const heading = document.getElementById('cobol');
+          return {
+            status: main?.dataset['readingPositionStatus'],
+            reason: main?.dataset['readingPositionReason'],
+            correction: main?.dataset['readingPositionCorrection'],
+            y: scrollY,
+            headingTop: heading?.getBoundingClientRect().top,
+            fonts: document.fonts.status,
+            trace: window.__initialFragmentTrace,
+          };
+        });
+        await info.attach('adjacent-image-arrival-state', {
+          body: JSON.stringify(state, null, 2),
+          contentType: 'application/json',
+        });
+      }
       const arrived = await page.evaluate(() => {
         const heading = document.getElementById('cobol');
         const root = document.scrollingElement;

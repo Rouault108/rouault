@@ -138,24 +138,30 @@ describe('table static css contracts', () => {
     ]);
   });
 
-  it('horizontal overflow affordance は root layout selector に限定し shadow layer を合成すること', () => {
+  it('horizontal overflow affordance はscrollport背景に限定しblurを再描画しないこと', () => {
     expectCssIncludes(tableCss, [
-      '--_table-scroll-fade-left-shadow: inset 0 0 0 0 transparent',
-      '--_table-scroll-fade-right-shadow: inset 0 0 0 0 transparent',
+      '--_table-scroll-fade-left-image: none',
+      '--_table-scroll-fade-right-image: none',
       '--_table-scroll-fade-color: oklch(from var(--fg-default, oklch(20% 0 0)) l c h / 0.08)',
-      'box-shadow:\n    var(--_table-scroll-fade-left-shadow),\n    var(--_table-scroll-fade-right-shadow)',
+      'background-image: var(--_table-scroll-fade-left-image), var(--_table-scroll-fade-right-image)',
+      'background-position: left top, right top',
+      'background-size: 10px 100%',
+      'background-repeat: no-repeat',
+      'background-attachment: scroll',
       ':is(.prose, .about-prose) > [data-table-root][data-fade-left]',
       ':is(.prose, .about-prose) > [data-tabs-root] > [data-tab-panel] > [data-table-root][data-fade-left]',
       ':is(.prose, .about-prose) > [data-table-root][data-fade-right]',
       ':is(.prose, .about-prose) > [data-tabs-root] > [data-tab-panel] > [data-table-root][data-fade-right]',
-      '--_table-scroll-fade-left-shadow: inset 10px 0 10px -10px var(--_table-scroll-fade-color)',
-      '--_table-scroll-fade-right-shadow: inset -10px 0 10px -10px var(--_table-scroll-fade-color)',
+      '--_table-scroll-fade-left-image: linear-gradient(to right in srgb, var(--_table-scroll-fade-stops))',
+      '--_table-scroll-fade-right-image: linear-gradient(to left in srgb, var(--_table-scroll-fade-stops))',
       '@media (forced-colors: active)',
       '--_table-scroll-fade-left-shadow: inset 2px 0 0 0 CanvasText',
       '--_table-scroll-fade-right-shadow: inset -2px 0 0 0 CanvasText',
     ]);
 
     expectCssExcludes(tableCss, [
+      'inset 10px 0 10px -10px',
+      'inset -10px 0 10px -10px',
       'inset 14px 0 14px -14px',
       'inset -14px 0 14px -14px',
       'inset 18px 0 18px -18px',

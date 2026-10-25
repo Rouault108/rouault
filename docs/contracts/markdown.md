@@ -118,6 +118,8 @@ Markdown出力層の`table`は、scrollable static table surfaceとして扱う�
 
 横溢れ表のedge affordanceはruntime enhancementに限定する。`data-overflow` / `data-fade-left` / `data-fade-right`は、`data-table-root`上へ付与される一時的な表示状態であり、Markdown authoring APIではない。これらの属性は列が続く方向を静かに示すためだけに使い、DOM追加、row hover、row click、row selection、row navigation、interactive grid化、sort / filter、sticky header、top scroll rail、列固定、列並べ替えを意味しない。横溢れが解消された場合、runtimeはこれらの状態属性を削除する。
 
+edge fadeはscrollportに固定した左右10pxの背景gradientで描き、table内容と同じpaint順序で従来の弱い陰影を維持する。blur付きinset shadowは多数の表を持つWebKit文書でroot scrollの再描画を重くするため使わない。fade stateの更新、native scroll範囲、focus、semantic tableとrailのDOMは変更しない。forced-colorsではgradientを除き、既存のsystem colorによる端の表現とUAのnative control描画へ戻す。RTLでの物理的な左右の描画は保つが、enhancerのscrollLeft解釈に新しい方向方針を追加しない。
+
 top auxiliary scroll railは、横溢れし、かつtop rail eligibilityを満たすMarkdown table rootに対するruntime enhancementであり、Markdown authoring APIではない。PCマウス操作時に表の途中から横位置を変えやすくする補助UIであり、SSR table構造やMarkdown入力記法を変更しない。eligibilityはruntimeが所有する表示・操作補助の判定であり、authoring syntaxやcontent metadataとして公開しない。
 
 - top rail eligibilityを満たさない横溢れ表ではtop railを生成しない。その場合、`data-table-root`本体のnative horizontal scrollingとedge fadeを横scroll操作・affordanceの基盤とする。scrollbarのcompact density hintはRouault、exact renderingはUA / OSが所有する。
