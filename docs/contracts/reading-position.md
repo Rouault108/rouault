@@ -38,6 +38,8 @@ post-commitはjobを予約して戻り、hydration-readyをawaitしない。job�
 
 同じReading jobがhydration待機より前からviewportをRAFで観測し、native移動をscroll書込で中断しない。準備済みのroot/epoch/shell、上方の寸法未確定画像、loading fontを確認し、固定したdocument-space見出し位置、共有CSS offset、viewport、range、clamp後の目標と実XYを比較する。実XYの変化または固定基準から1 CSS pxを超える幾何変化、readiness変化で静止窓を取り直す。document自身の`scrollend`を受けた窓は100ms、hintのない窓は200ms、いずれも3回以上の異なるRAF観測を要する。nested scrollendや古いhintは使わず、hiddenと50ms超のframe gapの時間を窓へ含めない。これはnative完了の証明ではなく受理候補の条件である。
 
+この初回fragment経路の画像境界はscroll目標Yではなく見出しのdocument Yとする。CSS offsetの間隙や見出し直前の高さ0のpending画像を待機から落とさず、画像のload後の到達だけで待機の成立を推定しない。通常restore経路の画像判定は変更しない。
+
 目標±2 CSS pxへ到達した候補だけを仮受理する。既存のaccepted通知には`provisional: true`と取消可能な`isCurrent()`を付け、通知callback後にも目標・range・実XYと全ownershipを再照合する。さらに独立した200ms・3RAF以上の窓で検証し、最終判定直前まで本人取消、intent、job/通知世代、root、epoch、shell、entry、exact URL、displayed/address bindingを確認する。TOCの通常activation/trackingとpassive座標保存はこの仮受理の成否から独立させる。
 
 `unavailable`通知は位置証明を持たず、検証済みshell下のTOC source sessionへ通常追跡を許す。accepted通知や成功sampleを捏造せず、presentation hydrationのtriggerは引き続きschedulerが所有する。

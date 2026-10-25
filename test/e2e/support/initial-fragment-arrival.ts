@@ -190,6 +190,128 @@ export function registerInitialFragmentArrivalTests(): void {
       ).toEqual([]);
     });
   }
+  test('initial fragment: adjacent zero-height pending image blocks acceptance before load', async ({
+    page,
+    baseURL,
+  }, info) => {
+    const errors: string[] = [];
+    page.on('pageerror', (error) => errors.push(error.message));
+    await page.emulateMedia({ reducedMotion: 'no-preference' });
+    await page.addInitScript(installFragmentTrace);
+    let release!: () => void;
+    const gate = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    await page.route('**/initial-fragment-adjacent.svg', async (route) => {
+      await gate;
+      await route.fulfill({
+        contentType: 'image/svg+xml',
+        body: '<svg xmlns="http://www.w3.org/2000/svg" width="200" height="24"/>',
+      });
+    });
+    await page.route(
+      (url) => url.pathname === new URL(booksFragmentPath, baseURL).pathname,
+      async (route) => {
+        const response = await route.fetch();
+        const html = await response.text();
+        expect(html).toContain('<h3 id="cobol">');
+        await route.fulfill({
+          response,
+          body: html.replace(
+            '<h3 id="cobol">',
+            '<img id="initial-fragment-adjacent-image" src="/initial-fragment-adjacent.svg" alt="" style="display:block;width:200px"><h3 id="cobol" style="margin-top:0">',
+          ),
+        });
+      },
+    );
+    try {
+      await page.goto(new URL(booksFragmentPath, baseURL).href, { waitUntil: 'domcontentloaded' });
+      await page.waitForFunction(
+        () =>
+          document.getElementById('main-content')?.dataset['readingPositionStatus'] !== undefined,
+      );
+      // loadを先に待つと、待機を怠った早期settledをnative anchoringで隠してしまう。
+      await page.waitForTimeout(1200);
+      const held = await page.evaluate(() => {
+        const heading = document.getElementById('cobol');
+        const image = document.querySelector<HTMLImageElement>('#initial-fragment-adjacent-image');
+        if (!heading || !image) throw new Error('adjacent image fixture missing');
+        const documentY = heading.getBoundingClientRect().top + scrollY;
+        const offset =
+          Number.parseFloat(getComputedStyle(document.documentElement).scrollPaddingTop) +
+          Number.parseFloat(getComputedStyle(heading).scrollMarginTop);
+        return {
+          status: document.getElementById('main-content')?.dataset['readingPositionStatus'],
+          provisional: document.getElementById('main-content')?.dataset['tocPositionProvisional'],
+          complete: image.complete,
+          imageHeight: image.getBoundingClientRect().height,
+          imageY: image.getBoundingClientRect().top + scrollY,
+          documentY,
+          targetY: documentY - offset,
+          fonts: document.fonts.status,
+          trace: window.__initialFragmentTrace,
+        };
+      });
+      await info.attach('adjacent-image-before-load', {
+        body: JSON.stringify(held, null, 2),
+        contentType: 'application/json',
+      });
+      expect(held.complete).toBe(false);
+      expect(held.imageHeight).toBe(0);
+      expect(Math.abs(held.imageY - held.documentY)).toBeLessThanOrEqual(0.1);
+      expect(held.imageY).toBeGreaterThan(held.targetY);
+      expect(held.status).toBe('pending');
+      expect(held.provisional).toBeUndefined();
+      release();
+      await page.waitForLoadState('load');
+      await expect
+        .poll(() =>
+          page.evaluate(
+            () => document.getElementById('main-content')?.dataset['readingPositionStatus'],
+          ),
+        )
+        .toBe('settled');
+      const arrived = await page.evaluate(() => {
+        const heading = document.getElementById('cobol');
+        const root = document.scrollingElement;
+        if (!heading || !root) throw new Error('heading');
+        const offset =
+          Number.parseFloat(getComputedStyle(document.documentElement).scrollPaddingTop) +
+          Number.parseFloat(getComputedStyle(heading).scrollMarginTop);
+        const target = Math.max(
+          0,
+          Math.min(
+            root.scrollHeight - root.clientHeight,
+            heading.getBoundingClientRect().top + scrollY - offset,
+          ),
+        );
+        return {
+          error: Math.abs(scrollY - target),
+          trace: window.__initialFragmentTrace,
+          navigationType: (
+            performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming
+          ).type,
+        };
+      });
+      await info.attach('adjacent-image-after-load', {
+        body: JSON.stringify(arrived, null, 2),
+        contentType: 'application/json',
+      });
+      expect(errors).toEqual([]);
+      expect(arrived.navigationType).toBe('navigate');
+      expect(arrived.error).toBeLessThanOrEqual(2);
+      expect(
+        arrived.trace.calls.filter(
+          (call) =>
+            call.behavior === 'instant' &&
+            Math.abs(call.after - call.before) > (call.correction === 'running' ? 41 : 2),
+        ),
+      ).toEqual([]);
+    } finally {
+      release();
+    }
+  });
+
   test('initial fragment: unavailable does not disable ordinary TOC activation', async ({
     page,
     baseURL,

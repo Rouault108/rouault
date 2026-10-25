@@ -693,7 +693,7 @@ export class ReadingPositionController {
         !Array.from(job.root.querySelectorAll('img')).some(
           (image) =>
             !image.complete &&
-            image.getBoundingClientRect().top + scrollY <= target.y &&
+            image.getBoundingClientRect().top + scrollY <= documentY &&
             (!image.hasAttribute('width') || !image.hasAttribute('height')),
         ),
       geometry: {

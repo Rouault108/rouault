@@ -2671,6 +2671,44 @@ describe('fresh initial fragmentのnative観測と受理', () => {
     expect(scroll).not.toHaveBeenCalled();
   });
 
+  it('見出し直前の高さ0のpending画像もCSS offsetの間隙から除外しない', async () => {
+    const { content, scroll, write } = await prepare();
+    const heading = content.querySelector<HTMLElement>('#reading-heading');
+    if (!heading) throw new Error('heading');
+    const wrapper = document.createElement('div');
+    wrapper.style.paddingTop = '1200px';
+    const image = document.createElement('img');
+    image.style.cssText = 'display:block;width:200px';
+    Object.defineProperty(image, 'complete', { configurable: true, value: false });
+    heading.style.marginTop = '0px';
+    wrapper.append(image, heading);
+    content.append(wrapper);
+    heading.style.scrollMarginTop = '80px';
+    window.scrollTo({
+      top: heading.getBoundingClientRect().top + scrollY - readHeadingScrollOffset(heading).offset,
+      behavior: 'instant',
+    });
+    scroll.mockClear();
+    const imageY = image.getBoundingClientRect().top + scrollY;
+    const headingY = heading.getBoundingClientRect().top + scrollY;
+    expect(imageY).toBe(headingY);
+    expect(image.getBoundingClientRect().height).toBe(0);
+    await observeFor(600);
+    expect(content.dataset['readingPositionStatus']).toBe('pending');
+    expect(accepted).toHaveLength(0);
+    expect(write).not.toHaveBeenCalled();
+    Object.defineProperty(image, 'complete', { value: true });
+    image.style.height = '24px';
+    window.scrollTo({
+      top: heading.getBoundingClientRect().top + scrollY - readHeadingScrollOffset(heading).offset,
+      behavior: 'instant',
+    });
+    scroll.mockClear();
+    await observeFor(500);
+    expect(content.dataset['readingPositionStatus']).toBe('settled');
+    expect(scroll).not.toHaveBeenCalled();
+  });
+
   it.each(['native', 'position'] as const)(
     '%s callbackの例外で証明を取り消し、成功sampleしない',
     async (phase) => {
