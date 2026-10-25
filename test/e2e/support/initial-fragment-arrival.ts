@@ -1,7 +1,24 @@
 import { expect, test } from '@playwright/test';
 
 interface FragmentTrace {
-  readonly frames: { at: number; y: number; correction: string | undefined }[];
+  hydratedAt: number | null;
+  firstCorrection: {
+    at: number;
+    x: number;
+    y: number;
+    target: number;
+    fonts: FontFaceSetLoadStatus;
+    pendingUpperImages: number;
+  } | null;
+  readonly scrollEnds: number[];
+  readonly frames: {
+    at: number;
+    x: number;
+    y: number;
+    fonts: FontFaceSetLoadStatus;
+    visible: boolean;
+    correction: string | undefined;
+  }[];
   readonly calls: {
     before: number;
     after: number;
@@ -18,19 +35,41 @@ declare global {
 
 // nativeの移動はscroll APIを通らない。appによる実座標の書換えを別に記録する。
 function installFragmentTrace(): void {
-  const trace: FragmentTrace = { frames: [], calls: [] };
+  const trace: FragmentTrace = {
+    hydratedAt: null,
+    firstCorrection: null,
+    scrollEnds: [],
+    frames: [],
+    calls: [],
+  };
   window.__initialFragmentTrace = trace;
+  document.addEventListener('app-content:hydration-ready', (event) => {
+    const detail: unknown = event instanceof CustomEvent ? event.detail : null;
+    if (
+      detail &&
+      typeof detail === 'object' &&
+      'contentRoot' in detail &&
+      detail.contentRoot === document.getElementById('main-content')
+    )
+      trace.hydratedAt = performance.now();
+  });
+  document.addEventListener('scrollend', (event) => {
+    if (event.target === document) trace.scrollEnds.push(performance.now());
+  });
   const original = window.scrollTo;
   Object.defineProperty(window, 'scrollTo', {
     configurable: true,
     writable: true,
     value: (...args: unknown[]): void => {
       const before = scrollY;
+      const x = scrollX;
       const at = performance.now();
       Reflect.apply(original, window, args);
       const options: unknown = args[0];
+      const correction =
+        document.getElementById('main-content')?.dataset['readingPositionCorrection'];
       trace.calls.push({
-        correction: document.getElementById('main-content')?.dataset['readingPositionCorrection'],
+        correction,
         before,
         after: scrollY,
         at,
@@ -39,12 +78,40 @@ function installFragmentTrace(): void {
             ? options.behavior
             : undefined,
       });
+      if (correction === 'running' && trace.firstCorrection === null) {
+        // 書込前にlayoutを追加照会せず、最初のstep後に残差と準備条件を記録する。
+        const heading = document.getElementById('cobol');
+        const root = document.scrollingElement;
+        if (!heading || !root) throw new Error('fragment target');
+        const documentY = heading.getBoundingClientRect().top + scrollY;
+        const offset =
+          Number.parseFloat(getComputedStyle(document.documentElement).scrollPaddingTop) +
+          Number.parseFloat(getComputedStyle(heading).scrollMarginTop);
+        trace.firstCorrection = {
+          at,
+          x,
+          y: before,
+          target: Math.max(0, Math.min(root.scrollHeight - root.clientHeight, documentY - offset)),
+          fonts: document.fonts.status,
+          pendingUpperImages: Array.from(
+            document.querySelectorAll<HTMLImageElement>('main img'),
+          ).filter(
+            (image) =>
+              !image.complete &&
+              (!image.hasAttribute('width') || !image.hasAttribute('height')) &&
+              image.getBoundingClientRect().top + scrollY <= documentY,
+          ).length,
+        };
+      }
     },
   });
   const frame = (): void => {
     trace.frames.push({
       at: performance.now(),
+      x: scrollX,
       y: scrollY,
+      fonts: document.fonts.status,
+      visible: document.visibilityState === 'visible',
       correction: document.getElementById('main-content')?.dataset['readingPositionCorrection'],
     });
     if (performance.now() < 6500) requestAnimationFrame(frame);
@@ -52,11 +119,48 @@ function installFragmentTrace(): void {
   requestAnimationFrame(frame);
 }
 
+const expectEligibleResidual = (trace: FragmentTrace): void => {
+  const first = trace.firstCorrection;
+  expect(first, 'corrected arrival requires a measured native miss').not.toBeNull();
+  if (!first) return;
+  expect(Math.max(Math.abs(first.x), Math.abs(first.y - first.target))).toBeGreaterThan(2);
+  expect(first.fonts).toBe('loaded');
+  expect(first.pendingUpperImages).toBe(0);
+  expect(trace.hydratedAt).not.toBeNull();
+  const observations = trace.frames.filter(
+    (frame) => frame.at >= (trace.hydratedAt ?? Infinity) && frame.at < first.at,
+  );
+  const quiet: FragmentTrace['frames'] = [];
+  for (const frame of observations.reverse()) {
+    if (
+      frame.x !== first.x ||
+      frame.y !== first.y ||
+      frame.fonts !== 'loaded' ||
+      !frame.visible ||
+      (quiet[quiet.length - 1]?.at ?? first.at) - frame.at > 50
+    )
+      break;
+    quiet.push(frame);
+  }
+  expect(
+    quiet.length,
+    'residual starts after at least three quiet RAF observations',
+  ).toBeGreaterThanOrEqual(3);
+  const baseline = quiet[quiet.length - 1];
+  if (!baseline) return;
+  const hint = trace.scrollEnds.some((at) => at >= baseline.at && at <= first.at);
+  expect(
+    first.at - baseline.at,
+    'residual must not interrupt the moving native viewport',
+  ).toBeGreaterThanOrEqual(hint ? 100 : 200);
+};
+
 export const booksFragmentPath = `/notes/library/collection/${encodeURIComponent('計算機科学・ソフトウェア開発関連書籍')}#cobol`;
 
 export function registerInitialFragmentArrivalTests(): void {
   for (const { motion, readiness } of [
     { motion: 'no-preference', readiness: 'ordinary' },
+    { motion: 'no-preference', readiness: 'stable-font-metrics' },
     { motion: 'reduce', readiness: 'ordinary' },
     { motion: 'no-preference', readiness: 'late-client' },
     { motion: 'no-preference', readiness: 'upper-image' },
@@ -70,6 +174,21 @@ export function registerInitialFragmentArrivalTests(): void {
       page.on('pageerror', (error) => errors.push(error.message));
       await page.emulateMedia({ reducedMotion: motion });
       await page.addInitScript(installFragmentTrace);
+      if (readiness === 'stable-font-metrics')
+        await page.route(
+          (url) => url.pathname === new URL(booksFragmentPath, baseURL).pathname,
+          async (route) => {
+            const response = await route.fetch();
+            // native-only制御では、font swapによる正当な未到達と移動の中断を分離する。
+            await route.fulfill({
+              response,
+              body: (await response.text()).replace(
+                '</head>',
+                '<style>html * { font-family: monospace !important; }</style></head>',
+              ),
+            });
+          },
+        );
       if (readiness === 'late-client')
         await page.route('**/client-assets/client-*.js', async (route) => {
           await new Promise((resolve) => setTimeout(resolve, 600));
@@ -105,7 +224,6 @@ export function registerInitialFragmentArrivalTests(): void {
         );
       }
       await page.goto(new URL(booksFragmentPath, baseURL).href, { waitUntil: 'load' });
-      const main = page.locator('#main-content');
       await expect(page.locator('h3#cobol')).toHaveText('COBOL');
       // 大きいmainのlocator診断を各pollで作らず、測定中は状態だけを読む。
       await expect
@@ -135,10 +253,6 @@ export function registerInitialFragmentArrivalTests(): void {
           });
           throw error;
         });
-      await expect(main).toHaveAttribute(
-        'data-reading-position-arrival',
-        readiness === 'ordinary' ? 'native' : /^(native|corrected)$/,
-      );
       // 成功通知後にnativeが再開した場合も、通常の最終到達assertionを維持する。
       await page.waitForTimeout(300);
       const evidence = await page.evaluate(() => {
@@ -179,6 +293,10 @@ export function registerInitialFragmentArrivalTests(): void {
       expect(Math.abs(evidence.y - evidence.target)).toBeLessThanOrEqual(2);
       expect(Math.abs(evidence.x)).toBeLessThanOrEqual(2);
       expect(evidence.trace.frames.length).toBeGreaterThan(2);
+      const nativeOnly = readiness === 'stable-font-metrics' || motion === 'reduce';
+      expect(evidence.arrival).toMatch(nativeOnly ? /^native$/ : /^(native|corrected)$/);
+      if (evidence.arrival === 'corrected') expectEligibleResidual(evidence.trace);
+      else expect(evidence.trace.firstCorrection).toBeNull();
       expect(
         evidence.trace.calls.filter(
           (call) =>
@@ -320,6 +438,7 @@ export function registerInitialFragmentArrivalTests(): void {
       expect(errors).toEqual([]);
       expect(arrived.navigationType).toBe('navigate');
       expect(arrived.error).toBeLessThanOrEqual(2);
+      if (arrived.trace.firstCorrection) expectEligibleResidual(arrived.trace);
       expect(
         arrived.trace.calls.filter(
           (call) =>

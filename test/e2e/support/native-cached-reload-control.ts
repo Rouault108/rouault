@@ -119,6 +119,7 @@ export const measureNativeCachedReload = async (
   app: Page,
   position: 'hash' | 'middle' | 'end',
   state: unknown,
+  initialPosition: { readonly x: number; readonly y: number },
 ) => {
   const settings = await app.evaluate(() => ({
     userAgent: navigator.userAgent,
@@ -166,6 +167,12 @@ export const measureNativeCachedReload = async (
       history.scrollRestoration = 'manual';
     }, state);
     await prepareCachedReadingPosition(page, position);
+    // 比較対象はreloadであり、font swap後の初回native hash終点の一致は仮定しない。
+    // この座標は初回文書だけへ渡し、reload後には書込も位置補正も追加しない。
+    await page.evaluate(({ x, y }) => {
+      window.scrollTo({ left: x, top: y, behavior: 'instant' });
+    }, initialPosition);
+    await settleCachedReload(page);
     const before = await readCachedReload(page);
     const reloadResponses: Response[] = [];
     page.on('response', (response) => {

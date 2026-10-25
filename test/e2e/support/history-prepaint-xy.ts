@@ -389,7 +389,8 @@ export const registerHistoryPrepaintXYTests = (): void => {
             page.on('response', recordClientResponse);
             await observeCachedReload(page);
             await page.bringToFront();
-            const response = await page.goto(target);
+            // cold fragmentの可否は専用試験で検証し、ここではreload前の読書状態を準備する。
+            const response = await page.goto(target.split('#')[0] ?? target);
             if (!response) throw new Error('initial HTTP response');
             const staticIds = await page.evaluate(
               (html) => {
@@ -411,6 +412,9 @@ export const registerHistoryPrepaintXYTests = (): void => {
               await settleCachedReload(page);
             };
             const measure = () => readCachedReload(page);
+            await settle();
+            await page.evaluate((url) => location.replace(url), new URL(target, page.url()).href);
+            await expect(page).toHaveURL(new URL(target, response.url()).href);
             await settle();
             await prepareCachedReadingPosition(page, position);
             page.off('response', recordClientResponse);
@@ -473,7 +477,10 @@ export const registerHistoryPrepaintXYTests = (): void => {
               'warm-cache-position',
               JSON.stringify({ viewport, position, before, after }),
             );
-            const native = await measureNativeCachedReload(browser, page, position, before.state);
+            const native = await measureNativeCachedReload(browser, page, position, before.state, {
+              x: before.x,
+              y: before.y,
+            });
             console.log(
               'warm-cache-native-control',
               JSON.stringify({ viewport, position, native }),

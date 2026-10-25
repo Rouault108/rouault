@@ -44,7 +44,7 @@ post-commitはjobを予約して戻り、hydration-readyをawaitしない。job�
 
 `unavailable`通知は位置証明を持たず、検証済みshell下のTOC source sessionへ通常追跡を許す。accepted通知や成功sampleを捏造せず、presentation hydrationのtriggerは引き続きschedulerが所有する。
 
-native静止候補が未到達の場合、一回だけReading所有の残差補正を許す。2026-10-25のcloud Chromium 153の実document遷移では、font応答を600ms遅延するとnative-onlyが見出し停止線から8.1875 CSS px不足し、page errorなしで`unavailable(native-arrival)`となった。通常到達はnativeのまま維持し、このmissed-arrivalを補正の根拠とする。Windows Chrome 156の視覚品質確認をcloudの結果で代替しない。
+native静止候補が未到達の場合、一回だけReading所有の残差補正を許す。2026-10-25のcloud Chromium 153の実document遷移では、font応答を600ms遅延するとnative-onlyが見出し停止線から8.1875 CSS px不足し、page errorなしで`unavailable(native-arrival)`となった。nativeで既に到達した通常経路へ補正を加えず、このmissed-arrivalを補正の根拠とする。通常のcold loadでもfont swap後の停止線とnative終点がずれた場合は同じ残差規則を適用する。E2Eはcold loadに一律のnative受理を要求せず、補正開始前の未到達・準備済み・静止窓と最終到達を確認する。font metricsを固定した実document遷移を別に設け、自然に到達できるnative経路へ書込を追加しないことも固定する。Windows Chrome 156の視覚品質確認をcloudの結果で代替しない。
 
 補正開始時の実測P0と新しくclampした終点を固定し、minimum-jerk `s(u)=10u³−15u⁴+6u⁵`を一つのRAF軌道として進める。候補値はV=800 CSS px/s、A=4000 CSS px/s²、Tmin=0.180s、`T=max(Tmin,1.875D/V,sqrt(5.773503D/A))`。duration上限は設けない。残りbudgetがT+500ms検証+50ms frame余裕に足りない場合は開始しない。各小stepは明示`instant`とし、CSS smoothに競合するUA animationを作らない。reduced motionは補間だけを省き、同じeligibility・budget・検証を維持する。
 
