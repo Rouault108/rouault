@@ -25,6 +25,57 @@ describe('search-page visual', () => {
     cleanupSearchPageTest();
   });
 
+  it('実HTMLとCSSの入力枠md・詳細枠xlは開閉・幅・theme・root fontが変わっても四隅へ解決すること', async () => {
+    const root = await renderTagOrderFixture(staticResponse);
+    enhanceWithRuntime(root);
+    const details = expectElement(
+      root.querySelector<HTMLDetailsElement>('.filter-details'),
+      'details',
+    );
+    const html = document.documentElement;
+    const previousTheme = html.dataset['theme'];
+    const previousFontSize = html.style.fontSize;
+    try {
+      for (const fontSize of [16, 20]) {
+        html.style.fontSize = `${fontSize}px`;
+        for (const width of [320, 1280]) {
+          root.style.inlineSize = `${width}px`;
+          for (const theme of ['light', 'dark']) {
+            html.dataset['theme'] = theme;
+            for (const open of [false, true]) {
+              details.open = open;
+              for (const [selector, token, rem] of [
+                ['.search-input-field', '--radius-md', 0.375],
+                ['.filter-search-field', '--radius-md', 0.375],
+                ['.filter-details', '--radius-xl', 0.75],
+              ] as const) {
+                const element = expectElement(root.querySelector<HTMLElement>(selector), selector);
+                const style = getComputedStyle(element);
+                expect(style.getPropertyValue(token).trim()).toBe(`${rem}rem`);
+                const expected = rem * parseFloat(getComputedStyle(html).fontSize);
+                expect(expected).toBeGreaterThan(0);
+                for (const corner of [
+                  'borderTopLeftRadius',
+                  'borderTopRightRadius',
+                  'borderBottomLeftRadius',
+                  'borderBottomRightRadius',
+                ] as const) {
+                  expect(style[corner], `${selector}/${corner}/${theme}/${width}/${open}`).toBe(
+                    `${expected}px`,
+                  );
+                }
+              }
+            }
+          }
+        }
+      }
+    } finally {
+      html.style.fontSize = previousFontSize;
+      if (previousTheme === undefined) delete html.dataset['theme'];
+      else html.dataset['theme'] = previousTheme;
+    }
+  });
+
   it('light / dark の未選択・選択 checkbox 枠と check は合成後も識別でき、label は24pxの操作領域を持つこと', async () => {
     const response: ExploreSearchResponse = {
       ...staticResponse,

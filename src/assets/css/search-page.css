@@ -66,16 +66,10 @@
   min-block-size: 3rem;
   background: var(--bg-surface-2);
   border: var(--border-width) solid var(--border-muted);
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-md);
 }
 .filter-search-field {
   min-block-size: 2.5rem;
-  border-radius: var(--radius-md);
-}
-
-.search-input-field {
-  border: var(--border-width) solid var(--border-muted);
-  border-radius: var(--radius-lg);
 }
 .search-input-field::after,
 .filter-search-field::after,
@@ -210,7 +204,7 @@
 }
 .filter-details {
   border: var(--border-width) solid var(--border-muted);
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-xl);
 }
 .filter-details > summary,
 .filter-details__summary {

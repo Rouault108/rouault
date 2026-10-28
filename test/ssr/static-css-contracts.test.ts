@@ -1693,7 +1693,16 @@ describe('static CSS contracts', () => {
     const tokens = readCss('tokens.css');
     expect(tokens).toContain('--space-5: 1.25rem;');
     expectRuleToDeclare(css, '.search-controls', ['display: grid']);
-    expectRuleToDeclare(css, '.search-input-field', ['border:', 'border-radius:']);
+    for (const selector of ['.search-input-field', '.filter-search-field']) {
+      expectRuleToDeclare(css, selector, ['border:']);
+      expect(declarationValuesForSelector(css, selector, 'border-radius')).toEqual([
+        'var(--radius-md)',
+      ]);
+    }
+    expect(declarationValuesForSelector(css, '.filter-details', 'border-radius')).toEqual([
+      'var(--radius-xl)',
+    ]);
+    expect(css).not.toContain('--radius-lg');
     expectRuleToDeclare(css, '.search-page [hidden]', ['display: none !important']);
     expectRuleToDeclare(css, '.search-input-field::after', ['pointer-events: none']);
     expectRuleToDeclare(css, '.filter-search-field::after', ['pointer-events: none']);

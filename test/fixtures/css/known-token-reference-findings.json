@@ -1051,26 +1051,6 @@
   },
   {
     "file": "search-page.css",
-    "selector": ".search-input-field",
-    "property": "border-radius",
-    "reference": "--radius-lg",
-    "conditions": [],
-    "kind": "undefined",
-    "count": 2,
-    "reason": "既存の未定義参照。Copy button 以外の修正は今回の対象外。"
-  },
-  {
-    "file": "search-page.css",
-    "selector": ".filter-search-field",
-    "property": "border-radius",
-    "reference": "--radius-lg",
-    "conditions": [],
-    "kind": "undefined",
-    "count": 1,
-    "reason": "既存の未定義参照。Copy button 以外の修正は今回の対象外。"
-  },
-  {
-    "file": "search-page.css",
     "selector": ".search-input-control:focus-visible",
     "property": "outline",
     "reference": "--focus-default",
@@ -1124,16 +1104,6 @@
     "selector": ".filter-option-checkbox__input:focus-visible + .filter-option-checkbox__control",
     "property": "outline",
     "reference": "--focus-default",
-    "conditions": [],
-    "kind": "undefined",
-    "count": 1,
-    "reason": "既存の未定義参照。Copy button 以外の修正は今回の対象外。"
-  },
-  {
-    "file": "search-page.css",
-    "selector": ".filter-details",
-    "property": "border-radius",
-    "reference": "--radius-lg",
     "conditions": [],
     "kind": "undefined",
     "count": 1,

@@ -76,4 +76,6 @@ Componentは、まずSemanticまたはPattern tokenを参照する。Primitive t
 
 初期棚卸しの57参照は、fallbackのない未定義17件（`--focus-default` 12、`--fg-link` 1、`--radius-lg` 4）と未証明scope 40件（明示darkのshadow供給条件4、code surfaceのfunctional selector 20、menu / leadのDOM継承16）である。厳格化時のfallback付き95参照を含めた初期baselineは144項目・152参照だった。main `fa8d5e1a`統合後は、旧`--z-overlay`の2座標（各1参照）だけをfinding多重集合の厳密差分で除き、142項目・150参照となった。現在のfallback付き残件は93参照（未定義77、scope未証明16）であり、その他の残件・理由・件数は不変である。新規findingのbaseline再生成による容認は行わない。供給未証明・未定義・生成inline色等の理由を個別に記録し、他機能のAPIやCSSを無断で修正せず追跡する。
 
+検索画面の角丸参照修正では、`search-page.css`の未定義`--radius-lg`を入力枠md・詳細パネルxlへ置き換え、該当3項目・4参照だけを除いた。残件は139項目・146参照で、fallback付き93参照と対象外の理由・件数は維持する。これは新しい設計選択であり、元の意図を復元したとは扱わない。
+
 Copy buttonは`--focus-ring-width` / `--focus-ring-color` / `--focus-ring-offset`を使う。実browserのlight / dark / system、token overrideで計算済みoutlineとkeyboard focusを検証する。production E2EはsystemとOS colorScheme light / darkを明示して両分岐を確認し、light / dark / forced colorsも維持する。コード単体・グループ・previewそれぞれでnative Tab移動によるfocusと計算済みringを確認する。本文`main#main-content`へのlogical focusは操作対象のfocus ringと別契約であり、この修正の対象にしない。

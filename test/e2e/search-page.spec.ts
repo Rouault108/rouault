@@ -78,6 +78,118 @@ const expectChoiceState = async (
 };
 
 test.describe('Search Page', () => {
+  for (const width of [375, 1280]) {
+    for (const appearance of ['light', 'dark', 'forced-colors'] as const) {
+      test(`radius integration ${width}px ${appearance}: input, clear, filter and keyboard focus`, async ({
+        page,
+      }, testInfo) => {
+        await page.setViewportSize({ width, height: 900 });
+        await page.emulateMedia({
+          colorScheme: appearance === 'dark' ? 'dark' : 'light',
+          forcedColors: appearance === 'forced-colors' ? 'active' : 'none',
+          reducedMotion: 'reduce',
+        });
+        await waitForSearchPageReady(page);
+        await page.evaluate(
+          (theme) => {
+            document.documentElement.dataset['theme'] = theme;
+          },
+          appearance === 'dark' ? 'dark' : 'light',
+        );
+        const query = page.locator('[data-search-query-input]');
+        const details = page.locator('.filter-details');
+        const summary = details.locator(':scope > summary');
+        const filter = page.locator('[data-search-filter-input]');
+        const checkFrames = async () => {
+          for (const [selector, rem] of [
+            ['.search-input-field', 0.375],
+            ['.filter-search-field', 0.375],
+            ['.filter-details', 0.75],
+          ] as const) {
+            const measured = await page.locator(selector).evaluate((element) => {
+              const style = getComputedStyle(element);
+              return {
+                rootFont: parseFloat(getComputedStyle(document.documentElement).fontSize),
+                corners: [
+                  style.borderTopLeftRadius,
+                  style.borderTopRightRadius,
+                  style.borderBottomLeftRadius,
+                  style.borderBottomRightRadius,
+                ],
+                borderWidth: parseFloat(style.borderTopWidth),
+                borderStyle: style.borderTopStyle,
+                borderColor: style.borderTopColor,
+                background: style.backgroundColor,
+              };
+            });
+            const expected = rem * measured.rootFont;
+            expect(expected).toBeGreaterThan(0);
+            expect(measured.corners, selector).toEqual(Array<string>(4).fill(`${expected}px`));
+            expect(measured.borderWidth, selector).toBeGreaterThan(0);
+            expect(measured.borderStyle, selector).toBe('solid');
+            expect(measured.borderColor, selector).not.toBe(measured.background);
+          }
+        };
+        const checkFocus = async (target: Locator) => {
+          await tabUntilFocused(page, target);
+          await expect(target).toBeFocused();
+          await expect(target).toHaveCSS('outline-style', 'solid');
+          expect(
+            await target.evaluate((element) => parseFloat(getComputedStyle(element).outlineWidth)),
+          ).toBeGreaterThan(0);
+        };
+
+        await expect(details).not.toHaveAttribute('open');
+        await checkFrames();
+        await checkFocus(query);
+        await page.keyboard.type('router');
+        const card = page.locator('article.result-card').first();
+        const link = card.locator(':scope > a.result-link');
+        await expect(card).toBeVisible();
+        await tabUntilFocused(page, link);
+        await expect(card).toHaveCSS('outline-style', 'solid');
+        await expect(card).toHaveCSS('border-top-left-radius', '12px');
+        await page.locator('[data-search-query-clear]').click();
+        await expect(query).toHaveValue('');
+        await expect(query).toBeFocused();
+        await expect(page.locator('[data-search-page-results-section]')).toBeEmpty();
+        // 空queryは候補一覧を持たないため、タグ操作は結果のあるqueryで確認する。
+        await page.keyboard.type('router');
+        await expect(card).toBeVisible();
+
+        await checkFocus(summary);
+        await page.keyboard.press('Enter');
+        await expect(details).toHaveAttribute('open', '');
+        await checkFrames();
+        await checkFocus(filter);
+        const checkbox = page.locator('[data-search-tag-checkbox]:enabled').first();
+        const tag = await checkbox.inputValue();
+        await filter.fill(tag);
+        await expect(filter).toHaveValue(tag);
+        await page.locator('[data-search-filter-clear]').click();
+        await expect(filter).toHaveValue('');
+        await expect(filter).toBeFocused();
+        await checkbox.check();
+        await expect(page.locator('[data-selected-tags]')).toContainText(tag);
+        await checkFrames();
+        expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
+          true,
+        );
+        await testInfo.attach('search-radius-open', {
+          body: await page.screenshot({ path: testInfo.outputPath('search-radius-open.png') }),
+          contentType: 'image/png',
+        });
+        await summary.click();
+        await expect(details).not.toHaveAttribute('open');
+        await checkFrames();
+        await testInfo.attach('search-radius-closed', {
+          body: await page.screenshot({ path: testInfo.outputPath('search-radius-closed.png') }),
+          contentType: 'image/png',
+        });
+      });
+    }
+  }
+
   test('検索 input と tag filter input は左端寄りの実クリックから keyboard.type で入力できること', async ({
     page,
   }) => {

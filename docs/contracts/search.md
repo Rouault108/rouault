@@ -285,6 +285,11 @@ preventScrollはfocus起因のscrollだけを抑え、layout縮小によるscrol
 - triggerの`aria-expanded`、body scroll lock、focus return、native close completionはstatic DOM controllerが所有する。
 - unavailable中はquery / input value同期だけを許可し、loading / results / errorのsource stateを蓄積しない。
 
+#### Search Page Frame Radius
+
+- 検索入力枠とタグ絞り込み入力枠は`--radius-md`、タグ詳細パネルは`--radius-xl`を参照する。これは未定義の`--radius-lg`参照に対する新しい設計選択であり、旧意図の復元とは扱わない。
+- 詳細パネルの開閉、light / dark / forced colors、狭幅 / 広幅で境界とkeyboard focusを維持する。実HTMLとCSSのbrowser testは四隅の非ゼロ計算値をroot font換算で検証し、production E2Eは全stylesheet適用後の入力・clear・タグ選択・result card focusを検証する。
+
 #### Static Global Search Dialog Lifecycle
 
 - closeは`search-dialog:close-request`に集約する。native `cancel`は`preventDefault()`し、Escapeのclose-requestに正規化する。
