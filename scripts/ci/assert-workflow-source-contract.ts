@@ -354,6 +354,33 @@ const matrixCommandArguments = (
   return command.split(/\s+/u);
 };
 
+const assertPnpmSourceContract = async (source: string, packageJsonPath: string): Promise<void> => {
+  const manifest = await readJson(packageJsonPath);
+  assertCondition(isRecord(manifest), 'package.json must contain a JSON object');
+  const devEngines = isRecord(manifest) ? manifest['devEngines'] : undefined;
+  assertCondition(
+    !isRecord(devEngines) || !Object.hasOwn(devEngines, 'packageManager'),
+    'packageManager must be the sole pnpm version source; devEngines.packageManager is not allowed',
+  );
+  const workflow = requireWorkflowRecord(loadWorkflowYaml(source), 'workflow');
+  const jobs = requireWorkflowRecord(workflow['jobs'], 'jobs');
+  for (const [name, value] of Object.entries(jobs)) {
+    const job = requireWorkflowRecord(value, name);
+    for (const step of workflowRecords(job['steps'], `${name}.steps`)) {
+      if (typeof step['uses'] !== 'string' || !step['uses'].startsWith('pnpm/action-setup@'))
+        continue;
+      const options = step['with'];
+      assertCondition(
+        options === undefined ||
+          (isRecord(options) &&
+            !Object.hasOwn(options, 'version') &&
+            !Object.hasOwn(options, 'package_json_file')),
+        'pnpm/action-setup must use the repository packageManager without another version or manifest',
+      );
+    }
+  }
+};
+
 export const assertProductionE2EMatrixContract = (source: string): void => {
   const workflow = requireWorkflowRecord(loadWorkflowYaml(source), 'workflow');
   const jobs = requireWorkflowRecord(workflow['jobs'], 'jobs');
@@ -462,7 +489,7 @@ export const assertProductionE2EMatrixContract = (source: string): void => {
             'test "$PLAYWRIGHT_BROWSERS_PATH" = "/ms-playwright"',
             'command -v bash',
             'test "$(node --version)" = "v${NODE_VERSION}"',
-            'test "$(pnpm --version)" = "11.7.0"',
+            'node scripts/ci/assert-pnpm-version.mjs',
             `pnpm exec playwright install --dry-run ${target}`,
           ]) &&
         JSON.stringify(matrixCommandArguments(test['run'], entry)) ===
@@ -940,6 +967,7 @@ export const assertWorkflowSourceContract = async (
   const deploymentDocsPath = options.deploymentDocsPath ?? DEFAULT_DEPLOYMENT_DOCS_PATH;
   const workflowSource = await readFile(workflowPath, 'utf8');
   const workflowUses = collectWorkflowUses(workflowSource);
+  await assertPnpmSourceContract(workflowSource, packageJsonPath);
   const wranglerVersion = await assertWranglerPackageContract(packageJsonPath, lockfilePath);
 
   assertCondition(

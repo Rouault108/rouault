@@ -132,6 +132,22 @@ describe('production E2E matrix structural contract', () => {
   );
 
   const mutations: readonly [string, (fixture: MatrixFixture) => void][] = [
+    ...[
+      '',
+      '# node scripts/ci/assert-pnpm-version.mjs',
+      'echo node scripts/ci/assert-pnpm-version.mjs',
+      'node scripts/ci/assert-pnpm-version.mjs || true',
+      'if false; then node scripts/ci/assert-pnpm-version.mjs; fi',
+    ].map((replacement): [string, (fixture: MatrixFixture) => void] => [
+      `missing or disabled pnpm verification: ${replacement}`,
+      (f) => {
+        f.verification['run'] = String(f.verification['run']).replace(
+          'node scripts/ci/assert-pnpm-version.mjs',
+          replacement,
+        );
+        f.steps.push({ run: 'node scripts/ci/assert-pnpm-version.mjs' });
+      },
+    ]),
     [
       'mismatched container HOME',
       (f) => {
@@ -510,6 +526,8 @@ const writeWorkflowContractFixture = async (options: {
   readonly mediaObjectContractSource?: string;
   readonly productionPreflightScriptSource?: string;
   readonly packageWranglerVersion?: string;
+  readonly packageManager?: string;
+  readonly devEngines?: Readonly<Record<string, unknown>>;
   readonly lockWranglerSpecifier?: string;
   readonly lockWranglerVersion?: string;
   readonly evidenceWorkflowUsesSha?: string;
@@ -747,6 +765,8 @@ const writeWorkflowContractFixture = async (options: {
     packageJsonPath,
     JSON.stringify(
       {
+        packageManager: options.packageManager ?? `pnpm@11.2.3+sha512.${'a'.repeat(128)}`,
+        ...(options.devEngines === undefined ? {} : { devEngines: options.devEngines }),
         devDependencies: {
           wrangler: packageWranglerVersion,
         },
@@ -841,6 +861,42 @@ const writeWorkflowContractFixture = async (options: {
 };
 
 describe('workflow source contract', () => {
+  it('accepts changing only the manifest pnpm version', async () => {
+    const fixture = await writeWorkflowContractFixture({});
+    await expect(assertWorkflowSourceContract(fixture)).resolves.toBeDefined();
+    const manifest = JSON.parse(await readFile(fixture.packageJsonPath, 'utf8')) as Record<
+      string,
+      unknown
+    >;
+    manifest['packageManager'] = `pnpm@11.2.4+sha512.${'b'.repeat(128)}`;
+    await writeFile(fixture.packageJsonPath, JSON.stringify(manifest));
+    await expect(assertWorkflowSourceContract(fixture)).resolves.toBeDefined();
+  });
+
+  it('rejects a competing devEngines.packageManager', async () => {
+    const fixture = await writeWorkflowContractFixture({
+      devEngines: { packageManager: { name: 'pnpm', version: '11.2.3' } },
+    });
+    await expect(assertWorkflowSourceContract(fixture)).rejects.toThrow(
+      /sole pnpm version source/u,
+    );
+  });
+
+  it.each(['version: 11.2.3', 'package_json_file: alternate/package.json'])(
+    'rejects a competing pnpm setup input %s',
+    async (input) => {
+      const fixture = await writeMutatedWorkflow((source) =>
+        source.replace(
+          '      - uses: pnpm/action-setup@0e279bb959325dab635dd2c09392533439d90093',
+          `      - uses: pnpm/action-setup@0e279bb959325dab635dd2c09392533439d90093\n        with:\n          ${input}`,
+        ),
+      );
+      await expect(assertWorkflowSourceContract(fixture)).rejects.toThrow(
+        /without another version or manifest/u,
+      );
+    },
+  );
+
   it('documents the implemented production build label resolution order', async () => {
     const docs = await readFile('docs/guides/operations/deployment.md', 'utf8');
     const section = docs.split('## Production Build Label')[1]?.split('\n## ')[0] ?? '';

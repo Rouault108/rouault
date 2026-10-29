@@ -173,6 +173,10 @@ Production E2Eのmatrix化はcoverageを維持したままwall-clockを短縮す
 
 Job containerはroot実行のため、production E2Eだけで`HOME=/root`を指定する。Firefoxの起動前に実行UID、HOME値、HOME所有者の一致を検証し、browser sandbox設定は変更しない。
 
+pnpmの版指定はrepositoryの`package.json`の`packageManager`だけが所有し、`pnpm/action-setup`の`version`や`devEngines.packageManager`へ複製しない。既存のcontainer検証内で`node scripts/ci/assert-pnpm-version.mjs`を実行する。helperは自身が属するrepositoryのmanifestから固定版とSHA-512 hex形式を読み、同じrepositoryをcwdとして現在のPATH / envで解決される`pnpm --version`と比較する。Windowsでは固定の`pnpm.cmd --version`を`cmd.exe`で呼び出す。manifest不正、取得失敗、空・不正出力、版不一致は失敗とする。
+
+この検証は検査時点の実効版一致を保証する。過去のinstall版、Actionが配備した実体、配布物の暗号学的真正性を証明するものではない。hashの形式検査と、更新時の公式registry / tarballのintegrity照合は別の検証である。helper自身は取得・設定変更・修復を行わないが、呼び出されるCorepack / pnpmが版を取得・切替する可能性はある。
+
 `verify-production-deployment`はPRでは実行されないため、branch protectionのrequired status checkへ無条件に登録しない。
 
 ## Change Record

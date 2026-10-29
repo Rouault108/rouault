@@ -213,7 +213,7 @@ jobs:
           test "$PLAYWRIGHT_BROWSERS_PATH" = "/ms-playwright"
           command -v bash
           test "$(node --version)" = "v${NODE_VERSION}"
-          test "$(pnpm --version)" = "11.7.0"
+          node scripts/ci/assert-pnpm-version.mjs
           pnpm exec playwright install --dry-run ${{ matrix.browser }}
       - id: playwright-production
         run: pnpm run test:e2e:production ${{ matrix.projects }}
