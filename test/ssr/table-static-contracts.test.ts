@@ -279,6 +279,23 @@ describe('table static css contracts', () => {
     ]);
   });
 
+  it('列幅ヒントは0字のfont metricではなくemへ追従すること', () => {
+    for (const [token, width] of Object.entries({
+      narrow: '6.66em',
+      numeric: '6.66em',
+      medium: '11.1em',
+      wide: '17.76em',
+    })) {
+      const selector = `[data-table-root] col[data-table-col-width='${token}']`;
+      const start = tableCss.indexOf(selector);
+      const declaration = tableCss.slice(start, tableCss.indexOf('}', start));
+      expect(start).toBeGreaterThanOrEqual(0);
+      expect(declaration).toContain(`width: ${width}`);
+      expect(declaration).not.toMatch(/width:\s*[\d.]+ch/);
+    }
+    expectCssIncludes(tableCss, ["[data-table-root] col[data-table-col-width='fit']", 'width: 1%']);
+  });
+
   it('align attribute と numeric data の静的 CSS 契約を保持すること', () => {
     expectCssIncludes(tableCss, [
       "[data-table-root] > table th[align='center']",

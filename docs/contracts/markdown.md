@@ -171,6 +171,8 @@ runtime、final HTML、rehype normalizationはlost parser boundaryをrepairし�
 
 `column-widths`は固定トークン列であり、任意CSS値ではない。許可トークンは`auto` / `fit` / `narrow` / `medium` / `wide` / `numeric`とする。
 
+列幅ヒントの`narrow` / `numeric`は6.66em、`medium`は11.1em、`wide`は17.76emとし、colのfont-sizeへ追従させる。これは通常字体の表示を基準にした設計値であり、字体間の普遍換算ではない。`auto` / `fit`とauto table layoutは維持し、内容の最小幅によって実列幅が広がる場合がある。フォント読み込み中の移動やscroll到着を保証する値ではない。
+
 - `column-widths`は空白区切り、順序保持、重複許可とする。
 - comma区切り、未知トークン、空値はbuild errorとする。
 - `column-widths`の指定数はtable列数と一致しなければならない。

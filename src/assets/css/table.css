@@ -150,20 +150,21 @@
   width: 1%;
 }
 
+/* 通常字体の列幅を保ち、0字の字送りが変わっても幅ヒントをfont-sizeへ追従させる。 */
 [data-table-root] col[data-table-col-width='narrow'] {
-  width: 12ch;
+  width: 6.66em;
 }
 
 [data-table-root] col[data-table-col-width='medium'] {
-  width: 20ch;
+  width: 11.1em;
 }
 
 [data-table-root] col[data-table-col-width='wide'] {
-  width: 32ch;
+  width: 17.76em;
 }
 
 [data-table-root] col[data-table-col-width='numeric'] {
-  width: 12ch;
+  width: 6.66em;
 }
 
 [data-table-root] > table > caption {
