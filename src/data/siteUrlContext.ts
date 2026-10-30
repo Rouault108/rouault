@@ -16,6 +16,6 @@ export const loadSiteUrlContextData = (input: LoadSiteUrlContextDataInput): Site
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    throw new Error(`[siteUrlContext:${input.sourceLabel}] ${message}`);
+    throw new Error(`[siteUrlContext:${input.sourceLabel}] ${message}`, { cause: error });
   }
 };

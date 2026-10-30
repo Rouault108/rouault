@@ -24,6 +24,6 @@ export const loadBuildMetadataData = (input: LoadBuildMetadataDataInput): BuildM
     };
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    throw new Error(`[buildMetadata:${input.sourceLabel}] ${message}`);
+    throw new Error(`[buildMetadata:${input.sourceLabel}] ${message}`, { cause: error });
   }
 };

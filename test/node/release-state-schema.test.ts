@@ -373,6 +373,22 @@ describe('release state and media attempt schemas', () => {
     ).toBe('error:FilesystemError');
   });
 
+  it('keeps nested causes out of normalized failure evidence', () => {
+    const original = new Error('benign nested diagnostic');
+    const error = new Error('benign outer diagnostic', { cause: original });
+    const attempt = assertR2UploadAttemptManifest({
+      schemaVersion: 1,
+      attemptKind: 'r2-media-upload',
+      status: 'failed',
+      objectCount: 0,
+      uploadedObjects: [],
+      failureReason: toFailureReason(error),
+    });
+    expect(attempt.failureReason).toBe('error:Error');
+    expect(JSON.stringify(attempt)).not.toContain('diagnostic');
+    expect(attempt).not.toHaveProperty('cause');
+  });
+
   it('accepts release state resolution failure artifacts without object evidence', () => {
     expect(
       assertReleaseStateResolutionFailureArtifact({

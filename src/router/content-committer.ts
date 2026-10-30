@@ -245,6 +245,7 @@ export class ContentCommitter {
         throw new AggregateError(
           [normalizeError(error), rollbackError],
           'commit に失敗し、rollback にも失敗しました。',
+          { cause: error },
         );
       }
 

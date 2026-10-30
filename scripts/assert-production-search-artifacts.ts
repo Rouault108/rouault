@@ -75,6 +75,7 @@ const parseRequiredJson = (options: {
         options.repoRoot,
         options.filePath,
       )}: ${error instanceof Error ? error.message : String(error)}`,
+      { cause: error },
     );
   }
 };

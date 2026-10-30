@@ -28,7 +28,7 @@ const assertDirectoryExists = async (directoryPath: string, label: string): Prom
     }
   } catch (error) {
     if (error instanceof Error && 'code' in error && error.code === 'ENOENT') {
-      throw new Error(`${label} does not exist: ${directoryPath}`);
+      throw new Error(`${label} does not exist: ${directoryPath}`, { cause: error });
     }
     throw error;
   }

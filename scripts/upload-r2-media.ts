@@ -256,7 +256,7 @@ const createUploadedEvidence = (
     }),
   );
 
-const headObject = async (
+export const headObject = async (
   client: S3Client,
   credentials: R2Credentials,
   objectKey: string,
@@ -280,11 +280,13 @@ const headObject = async (
       }
     }
 
-    throw new Error(formatS3Error('inspect', credentials.bucketName, objectKey, error));
+    throw new Error(formatS3Error('inspect', credentials.bucketName, objectKey, error), {
+      cause: error,
+    });
   }
 };
 
-const putObject = async (
+export const putObject = async (
   client: S3Client,
   credentials: R2Credentials,
   target: UploadTarget,
@@ -304,7 +306,9 @@ const putObject = async (
       }),
     );
   } catch (error) {
-    throw new Error(formatS3Error('upload', credentials.bucketName, target.objectKey, error));
+    throw new Error(formatS3Error('upload', credentials.bucketName, target.objectKey, error), {
+      cause: error,
+    });
   }
 };
 

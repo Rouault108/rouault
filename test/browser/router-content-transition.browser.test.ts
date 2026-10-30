@@ -758,6 +758,57 @@ describe('Router content transition transaction integration', () => {
     },
   );
 
+  it.each([
+    { label: 'Error', createPrimary: () => new Error('primary commit fixture') },
+    { label: 'non-Error', createPrimary: () => ({ reason: 'primary commit fixture' }) },
+  ])('preserves commit and rollback causes for $label', async ({ createPrimary }) => {
+    const primary = createPrimary();
+    const rollbackError = new Error('rollback fixture');
+    const state = await setup({
+      prepareShell: (prepared) => ({
+        ...prepared,
+        commitTiming: 'unspecified',
+        async commit() {
+          await prepared.commit();
+          throw primary;
+        },
+        async rollback() {
+          await prepared.rollback();
+          throw rollbackError;
+        },
+      }),
+    });
+    const previousAddress = readAddress();
+    const previousEntry = readHistoryEntry();
+    const restored = vi.fn();
+    document.addEventListener('app-shell:restored', restored);
+    try {
+      const { result, transition } = await state.begin();
+      await transition.update();
+      const failed = await result;
+      expect(failed.kind).toBe('load-failure');
+      expect(failed.committed).toBe(false);
+      const aggregate = failed.error;
+      expect(aggregate).toBeInstanceOf(AggregateError);
+      if (!(aggregate instanceof AggregateError)) throw new Error('Expected both failures');
+      expect(aggregate.message).toBe('commit に失敗し、rollback にも失敗しました。');
+      expect(aggregate.cause).toBe(primary);
+      expect(aggregate.errors).toHaveLength(2);
+      if (primary instanceof Error) expect(aggregate.errors[0]).toBe(primary);
+      else expect(aggregate.errors[0]).toMatchObject({ message: String(primary) });
+      expect(aggregate.errors[1]).toBe(rollbackError);
+      expect(state.contentRollback).toHaveBeenCalledTimes(1);
+      expect(state.shellRollback).toHaveBeenCalledTimes(1);
+      expect(state.postCommit).not.toHaveBeenCalled();
+      expect(restored).not.toHaveBeenCalled();
+      expect(state.content.textContent).toContain('本文 A');
+      expect(readAddress()).toBe(previousAddress);
+      expect(readHistoryEntry()).toEqual(previousEntry);
+    } finally {
+      document.removeEventListener('app-shell:restored', restored);
+    }
+  });
+
   it('callback内の実commit失敗は一回rollbackして失敗結果を返し再commitしない', async () => {
     const error = new Error('shell mutation failed');
     const state = await setup({ shellFailure: error });

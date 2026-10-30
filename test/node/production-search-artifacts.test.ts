@@ -167,6 +167,26 @@ describe('production search artifact assertion', () => {
     }
   });
 
+  it('preserves the parser cause and catalog diagnostic for invalid JSON', async () => {
+    const repoRoot = await createFixtureRepo();
+    try {
+      await writeFile(path.join(repoRoot, 'dist', 'search-catalog.json'), '{', 'utf8');
+      await withProductionSiteEnv({ siteOrigin }, async () => {
+        const result = assertProductionSearchArtifacts({
+          repoRoot,
+          expectedItemsForTestOnly: expectedItems,
+        });
+        await expect(result).rejects.toThrow(/search catalog JSON is invalid/);
+        await expect(result).rejects.toMatchObject({
+          name: 'Error',
+          cause: expect.any(SyntaxError),
+        });
+      });
+    } finally {
+      await rm(repoRoot, { recursive: true, force: true });
+    }
+  });
+
   it('raw tags 欠落、raw tags 非 array、tags / genres 併存を失敗させること', async () => {
     const cases: readonly { readonly catalog: unknown; readonly message: RegExp }[] = [
       {
