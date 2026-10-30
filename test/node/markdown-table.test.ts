@@ -11,6 +11,7 @@ const table = '| Key | Value |\n| --- | --- |\n| `target` | 24px |\n';
 describe('document table contracts', () => {
   it.each([
     table,
+    table.replace(/\n/gu, '\r\n'),
     '|Key|Value|\n|---------|-----|\n|`target`|24px|\n',
     '| Key      | Value |\n| -------- | ----- |\n| `target` | 24px  |\n',
   ])('accepts padding and unaligned separator widths', (source) => {

@@ -41,7 +41,7 @@ const compile = (source: ContentInput) =>
 describe('content schema and compiler', () => {
   it('原本の二空白改行をinclude経由でsub/supとbrへ変換する', async () => {
     const snippet = fs.readFileSync('examples/snippets/markdown-basic/core.md', 'utf8');
-    expect(snippet).toContain('H~2~O  \nx^2^');
+    expect(snippet).toMatch(/H~2~O {2}\r?\nx\^2\^/u);
     const inputs = readContentInputs();
     const source = inputs.find((entry) => entry.sourceLabel === 'content/notes/testing/markdown-basic.md');
     if (!source) throw new Error('markdown-basicの採用原稿が見つかりません');
