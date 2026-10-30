@@ -2,7 +2,6 @@ import { defineConfig } from 'eslint/config';
 import eslint from '@eslint/js';
 import tseslint from 'typescript-eslint';
 import wc from 'eslint-plugin-wc';
-import prettier from 'eslint-config-prettier';
 import globals from 'globals';
 
 const wcRecommendedConfig = wc.configs?.['flat/recommended'];
@@ -98,5 +97,6 @@ export default defineConfig(
     },
   },
 
-  prettier,
+  // formatter移行で既存の有効規則を増減させない。
+  { rules: { 'no-unexpected-multiline': 'off' } },
 );

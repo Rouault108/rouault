@@ -39,6 +39,15 @@ const compile = (source: ContentInput) =>
   compileContentInput(source, createContentBuildContext([source], site)(source));
 
 describe('content schema and compiler', () => {
+  it('原本の二空白改行をinclude経由でsub/supとbrへ変換する', async () => {
+    const snippet = fs.readFileSync('examples/snippets/markdown-basic/core.md', 'utf8');
+    expect(snippet).toContain('H~2~O  \nx^2^');
+    const inputs = readContentInputs();
+    const source = inputs.find((entry) => entry.sourceLabel === 'content/notes/testing/markdown-basic.md');
+    if (!source) throw new Error('markdown-basicの採用原稿が見つかりません');
+    const result = await compileContentInput(source, createContentBuildContext(inputs, site)(source));
+    expect(result.note?.content).toContain('<p>H<sub>2</sub>O<br>\nx<sup>2</sup></p>');
+  });
   it('titleとenumを検証し、日付は既存ISO形式へ正規化する', () => {
     expect(() => validateContentMetadata({}, 'notes', 'test')).toThrow('title');
     expect(() => validateContentMetadata({ title: 'A', kind: 'unknown' }, 'notes', 'test')).toThrow(

@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 import { describe, expect, it } from 'vitest';
+import { findMarkdownTableRow, getMarkdownSection, parseMarkdownTable } from '../helpers/markdown-table.js';
 
 import {
   hasDeclarationForSelector,
@@ -19,6 +20,11 @@ const accessibilityDocs = readFileSync(
   resolve(process.cwd(), 'docs/design-system/accessibility.md'),
   'utf8',
 );
+
+const assertTargetSizeTable = (source: string): void => {
+  const table = parseMarkdownTable(getMarkdownSection(source, 'Target Size'), ['Token', 'Value']);
+  expect(findMarkdownTableRow(table, 'Token', '--control-min-touch')['Value']).toBe('24px');
+};
 
 describe('tokens css contract', () => {
   it('defines sidebar active surface through dedicated low-salience recipe', () => {
@@ -215,7 +221,25 @@ describe('tokens css contract', () => {
     expect(foundationsDocs).toContain('`--line-height-snug`');
     expect(foundationsDocs).toContain('`1.35`');
     expect(accessibilityDocs).toMatch(/最低\s*24×24px、推奨\s*44×44px/u);
-    expect(accessibilityDocs).toContain('| `--control-min-touch` | 24px |');
+    assertTargetSizeTable(accessibilityDocs);
+  });
+
+  it.each([
+    '|Token|Value|\n|---|---------|\n|`--control-min-touch`|24px|\n',
+    '| Token                 | Value |\n| --------------------- | ----- |\n| `--control-min-touch` | 24px |\n',
+  ])('accepts harmless target table formatting', (table) => {
+    expect(() => assertTargetSizeTable('### Target Size\n\n' + table)).not.toThrow();
+  });
+
+  it.each([
+    ['incorrect value', (source: string) => source.replace(/(\|\s*`--control-min-touch`\s*\|)\s*24px(\s*\|)/u, '$1 25px$2')],
+    ['missing token', (source: string) => source.replace(/^\|[^\n]*`--control-min-touch`[^\n]*\n/mu, '')],
+    ['duplicate token', (source: string) => source.replace(/^(\|[^\n]*`--control-min-touch`[^\n]*)$/mu, '$1\n$1')],
+    ['incorrect header', (source: string) => source.replace(/\|\s*Token\s*\|\s*Value\s*\|/u, '| Token | Wrong |')],
+    ['extra cell', (source: string) => source.replace(/^(\|[^\n]*`--control-min-touch`[^\n]*)$/mu, '$1 extra |')],
+    ['missing cell', (source: string) => source.replace(/^\|[^\n]*`--control-min-touch`[^\n]*$/mu, '| `--control-min-touch` |')],
+  ] as const)('rejects target table with %s', (_name, mutate) => {
+    expect(() => assertTargetSizeTable(mutate(accessibilityDocs))).toThrow();
   });
 
   it('does not point token and accessibility docs at a missing design-system index', () => {

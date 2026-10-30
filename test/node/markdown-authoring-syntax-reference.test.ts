@@ -2,6 +2,11 @@ import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
+  findMarkdownTableRow as findRow,
+  getMarkdownSection as getSection,
+  parseMarkdownTable,
+} from '../helpers/markdown-table.js';
+import {
   directiveGrammar,
   supportedDirectiveNames,
 } from '../../build/remark/directives/grammar/directive-grammar.js';
@@ -12,7 +17,7 @@ import type { DirectiveName } from '../../build/remark/directives/types.js';
 const referencePath = 'docs/references/markdown-authoring-syntax.md';
 const referenceAbsolutePath = resolve(process.cwd(), referencePath);
 
-const minimumMetaKeys = [
+const expectedMetaKeys = [
   'filename',
   'label',
   'group-key',
@@ -59,77 +64,13 @@ const expectedAuthoringStatus: Record<DirectiveName, string> = {
   'syntax-field': 'child-only',
 };
 
-interface MarkdownTable {
-  readonly headers: readonly string[];
-  readonly separator: readonly string[];
-  readonly rows: readonly Record<string, string>[];
-}
-
 const readText = (path: string): string => readFileSync(resolve(process.cwd(), path), 'utf8');
-
-const escapeRegExp = (value: string): string => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-
-const getSection = (source: string, heading: string): string => {
-  const headingPattern = new RegExp(`^(#{1,6})\\s+${escapeRegExp(heading)}\\s*$`, 'm');
-  const match = headingPattern.exec(source);
-  expect(match, `${heading} section should exist`).not.toBeNull();
-
-  const marker = match as RegExpExecArray;
-  const headingMarker = marker[1];
-  if (headingMarker === undefined) {
-    throw new Error(`${heading} heading marker should exist`);
-  }
-
-  const level = headingMarker.length;
-  const start = marker.index + marker[0].length;
-  const rest = source.slice(start);
-  const nextHeadingPattern = new RegExp(`^#{1,${level}}\\s+`, 'm');
-  const nextMatch = nextHeadingPattern.exec(rest);
-  return nextMatch ? rest.slice(0, nextMatch.index) : rest;
-};
-
-const parseMarkdownTable = (sectionSource: string): MarkdownTable => {
-  const lines = sectionSource.split(/\r?\n/);
-  const tableStart = lines.findIndex((line) => line.trim().startsWith('|'));
-  expect(tableStart, 'section should contain a Markdown table').toBeGreaterThanOrEqual(0);
-
-  const headerLine = lines[tableStart];
-  const separatorLine = lines[tableStart + 1];
-  expect(headerLine, 'table header should exist').toBeDefined();
-  expect(separatorLine, 'table separator should exist').toBeDefined();
-
-  const tableLines: string[] = [];
-  for (let index = tableStart; index < lines.length; index += 1) {
-    const line = lines[index];
-    if (line === undefined || !line.trim().startsWith('|')) {
-      break;
-    }
-    tableLines.push(line);
-  }
-
-  expect(tableLines.length, 'table should contain header, separator, and rows').toBeGreaterThan(2);
-
-  const headers = splitMarkdownTableRow(tableLines[0] ?? '');
-  const separator = splitMarkdownTableRow(tableLines[1] ?? '');
-  const rows = tableLines.slice(2).map((line) => {
-    const cells = splitMarkdownTableRow(line);
-    return Object.fromEntries(headers.map((header, index) => [header, cells[index] ?? '']));
-  });
-
-  return { headers, separator, rows };
-};
-
-const splitMarkdownTableRow = (line: string): string[] => {
-  const trimmed = line.trim();
-  const withoutOuterPipes = trimmed.replace(/^\|/, '').replace(/\|$/, '');
-  return withoutOuterPipes.split('|').map((cell) => cell.trim());
-};
 
 const stripBackticks = (value: string): string => value.replace(/`/g, '').trim();
 
 const parseListCell = (value: string): string[] => {
   const normalized = stripBackticks(value);
-  if (normalized === '' || normalized === 'none') {
+  if (normalized === 'none') {
     return [];
   }
   return normalized.split(',').map((item) => item.trim());
@@ -137,76 +78,25 @@ const parseListCell = (value: string): string[] => {
 
 const formatList = (values: readonly string[] | undefined): string[] => (values ? [...values] : []);
 
-const findRow = (table: MarkdownTable, column: string, value: string): Record<string, string> => {
-  const row = table.rows.find((candidate) => stripBackticks(candidate[column] ?? '') === value);
-  expect(row, `${value} row should exist in ${column}`).toBeDefined();
-  return row as Record<string, string>;
-};
-
-const assertRequiredTableColumns = (
-  table: MarkdownTable,
-  expectedHeaders: readonly string[],
-): void => {
-  expect(table.headers).toEqual(expectedHeaders);
-  expect(table.separator).toEqual(expectedHeaders.map(() => '---'));
-};
-
-describe('Markdown authoring syntax reference', () => {
-  it('exists and documents non-directive Markdown input extensions', () => {
-    expect(existsSync(referenceAbsolutePath)).toBe(true);
-
-    const reference = readText(referencePath);
-    const syntaxInventory = getSection(reference, 'Markdown Syntax Inventory');
-    expect(syntaxInventory).toContain('CommonMark / GFM');
-    expect(syntaxInventory).toContain('Math');
-
-    getSection(reference, 'CommonMark / GFM');
-    getSection(reference, 'Math');
-
-    const fencedCodeBlockMeta = getSection(reference, 'Fenced Code Block Meta Syntax');
+const assertMetaInventory = (reference: string): void => {
+  const fencedCodeBlockMeta = getSection(reference, 'Fenced Code Block Meta Syntax');
     const metaKeyInventory = getSection(fencedCodeBlockMeta, 'Meta Key Inventory');
-    const metaTable = parseMarkdownTable(metaKeyInventory);
-    assertRequiredTableColumns(metaTable, ['Key', 'Authoring key', 'Source / Notes']);
+    const metaTable = parseMarkdownTable(metaKeyInventory, ['Key', 'Authoring key', 'Source / Notes']);
 
     const metaKeys = metaTable.rows.map((row) => stripBackticks(row['Key'] ?? ''));
+    expect(metaKeys).toEqual(expectedMetaKeys);
     expect(metaKeys).not.toContain('data-shiki-meta');
-    for (const key of minimumMetaKeys) {
+    for (const key of expectedMetaKeys) {
       expect(metaKeys).toContain(key);
       const row = findRow(metaTable, 'Key', key);
       expect(row['Authoring key']).toBe('true');
     }
 
-    const lineStateConflict = getSection(fencedCodeBlockMeta, 'Code Line State Conflict');
-    expect(lineStateConflict).toContain('highlight-lines');
-    expect(lineStateConflict).toContain('highlight notation');
-    expect(lineStateConflict).toContain('同一highlight');
-    expect(lineStateConflict).toContain('`highlight + add`');
-    expect(lineStateConflict).toContain('`highlight + remove`');
-    expect(lineStateConflict).toContain('`add + remove`');
-    expect(lineStateConflict).toContain('silent precedence');
+};
 
-    const autoLinkCardTransform = getSection(reference, 'Auto Link Card Transform');
-    expect(autoLinkCardTransform).toContain('::link-card');
-    expect(autoLinkCardTransform).toContain('auto link-card');
-
-    const tableAuthoringExtension = getSection(reference, 'Table Authoring Extension');
-    expect(tableAuthoringExtension).toContain('::table');
-    expect(tableAuthoringExtension).toContain('column-widths');
-
-    const tableCellBreakEscape = getSection(reference, 'Table Cell Break Escape');
-    expect(tableCellBreakEscape).toContain('{{break}}');
-
-    const prohibitedSyntax = getSection(reference, 'Prohibited Syntax');
-    expect(prohibitedSyntax).toMatch(/raw HTML/i);
-    expect(prohibitedSyntax).toMatch(/dangerous URL/i);
-    expect(prohibitedSyntax).toMatch(/dangerous props/i);
-  });
-
-  it('keeps the Rouault Directive Inventory table synchronized with directive definitions', () => {
-    const reference = readText(referencePath);
+const assertDirectiveInventory = (reference: string): void => {
     const directiveInventory = getSection(reference, 'Rouault Directive Inventory');
-    const table = parseMarkdownTable(directiveInventory);
-    assertRequiredTableColumns(table, [
+    const table = parseMarkdownTable(directiveInventory, [
       'Directive',
       'Kind',
       'Allows children',
@@ -254,6 +144,73 @@ describe('Markdown authoring syntax reference', () => {
       expect(allowedAuthoringStatuses.has(authoringStatus)).toBe(true);
       expect(authoringStatus).toBe(expectedAuthoringStatus[name]);
     }
+};
+
+describe('Markdown authoring syntax reference', () => {
+  it('exists and documents non-directive Markdown input extensions', () => {
+    expect(existsSync(referenceAbsolutePath)).toBe(true);
+
+    const reference = readText(referencePath);
+    const syntaxInventory = getSection(reference, 'Markdown Syntax Inventory');
+    expect(syntaxInventory).toContain('CommonMark / GFM');
+    expect(syntaxInventory).toContain('Math');
+
+    getSection(reference, 'CommonMark / GFM');
+    getSection(reference, 'Math');
+
+    const fencedCodeBlockMeta = getSection(reference, 'Fenced Code Block Meta Syntax');
+    assertMetaInventory(reference);
+
+    const lineStateConflict = getSection(fencedCodeBlockMeta, 'Code Line State Conflict');
+    expect(lineStateConflict).toContain('highlight-lines');
+    expect(lineStateConflict).toContain('highlight notation');
+    expect(lineStateConflict).toContain('同一highlight');
+    expect(lineStateConflict).toContain('`highlight + add`');
+    expect(lineStateConflict).toContain('`highlight + remove`');
+    expect(lineStateConflict).toContain('`add + remove`');
+    expect(lineStateConflict).toContain('silent precedence');
+
+    const autoLinkCardTransform = getSection(reference, 'Auto Link Card Transform');
+    expect(autoLinkCardTransform).toContain('::link-card');
+    expect(autoLinkCardTransform).toContain('auto link-card');
+
+    const tableAuthoringExtension = getSection(reference, 'Table Authoring Extension');
+    expect(tableAuthoringExtension).toContain('::table');
+    expect(tableAuthoringExtension).toContain('column-widths');
+
+    const tableCellBreakEscape = getSection(reference, 'Table Cell Break Escape');
+    expect(tableCellBreakEscape).toContain('{{break}}');
+
+    const prohibitedSyntax = getSection(reference, 'Prohibited Syntax');
+    expect(prohibitedSyntax).toMatch(/raw HTML/i);
+    expect(prohibitedSyntax).toMatch(/dangerous URL/i);
+    expect(prohibitedSyntax).toMatch(/dangerous props/i);
+  });
+
+  it('keeps the Rouault Directive Inventory table synchronized with directive definitions', () => {
+    assertDirectiveInventory(readText(referencePath));
+  });
+
+  it.each([
+    ['missing metadata key', (source: string) => source.replace(/^\|\s*filename\s*\|[^\n]*\n/mu, '')],
+    ['duplicate metadata key', (source: string) => source.replace(/^(\|\s*filename\s*\|[^\n]*)$/mu, '$1\n$1')],
+    ['incorrect authoring flag', (source: string) => source.replace(/(\|\s*filename\s*\|)\s*true(\s*\|)/u, '$1 false$2')],
+    ['extra metadata cell', (source: string) => source.replace(/^(\|\s*filename\s*\|[^\n]*)$/mu, '$1 extra |')],
+    ['missing metadata cell', (source: string) => source.replace(/^\|\s*filename\s*\|[^\n]*$/mu, '| filename | true |')],
+  ] as const)('rejects %s', (_name, mutate) => {
+    expect(() => assertMetaInventory(mutate(readText(referencePath)))).toThrow();
+  });
+
+  it.each([
+    ['missing directive', (source: string) => source.replace(/^\|\s*callout\s*\|[^\n]*\n/mu, '')],
+    ['duplicate directive', (source: string) => source.replace(/^(\|\s*callout\s*\|[^\n]*)$/mu, '$1\n$1')],
+    ['incorrect directive kind', (source: string) => source.replace(/(\|\s*callout\s*\|)\s*container(\s*\|)/u, '$1 leaf$2')],
+    ['incorrect child metadata', (source: string) => source.replace(/(\|\s*callout\s*\|\s*container\s*\|)\s*true(\s*\|)/u, '$1 false$2')],
+    ['incorrect status', (source: string) => source.replace(/(\|\s*callout\s*\|\s*container\s*\|\s*true\s*\|)\s*recommended-top-level(\s*\|)/u, '$1 unknown$2')],
+    ['incorrect attribute inventory', (source: string) => source.replace('`kind`, `heading`,', '`kind`,')],
+    ['extra directive cell', (source: string) => source.replace(/^(\|\s*callout\s*\|[^\n]*)$/mu, '$1 extra |')],
+  ] as const)('rejects %s', (_name, mutate) => {
+    expect(() => assertDirectiveInventory(mutate(readText(referencePath)))).toThrow();
   });
 
   it('links the guide, output reference, contract, and docs README to the new reference', () => {

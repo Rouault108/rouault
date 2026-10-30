@@ -78,7 +78,7 @@ const sample = 1;
 
 #### Meta Key Inventory
 
-`Meta Key Inventory table`はこのsection内の最初のMarkdown表である。
+`Meta Key Inventory table`はこのsection内の最初のMarkdown表である。separator、列数、keyの一意性は後述の`Rouault Directive Inventory`の共通表記規則に従う。
 
 | Key               | Authoring key | Source / Notes                                                                                                                 |
 | --- | --- | --- |
@@ -115,7 +115,8 @@ const sample = 1;
 
 表記規則:
 
-- separatorは全列`---`とする。
+- separatorは全列で3個以上のハイフンとし、alignmentを指定するcolonは付けない。セルのpaddingとハイフン長は整形で変わってよい。
+- 各section直下でcode fence外の最初の表を検査する。headerの順序・列数と各行の列数を揃え、先頭列のkeyは空欄・重複を許さない。
 - なしは`none`と書く。
 - booleanは`true` / `false`と書く。
 - 複数値はbacktick付きcomma区切りで書く。

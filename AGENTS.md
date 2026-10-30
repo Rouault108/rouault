@@ -288,8 +288,8 @@ pnpm test                   # node + ssr + browser
 pnpm test:extended          # e2e:production + e2e:dev
 
 pnpm lint                   # ESLint
-pnpm lint:fix               # ESLint auto-fix + Prettier write
-pnpm format                 # Prettier write
+pnpm lint:fix               # ESLint auto-fix + Biome write
+pnpm format                 # Biome write
 pnpm typecheck              # app + nodeの型チェック
 pnpm validate:note-links    # note source link validation
 pnpm check                  # lint + typecheck + test + note link検証 + production/search import boundary検証
@@ -439,3 +439,5 @@ secretらしき値を見つけた場合は、値そのものを出力せず、�
 - 最低限、該当レイヤのテストを実行してください。
 - 仕様変更を伴うなら、READMEより先に`docs/`を更新してください。
 - AGENTSに書くべきか迷う内容は、原則としてAGENTSではなく`docs/`に置いてください。
+
+整形は`biome.json`を正本とし、[整形ガイド](docs/guides/formatting.md)に従ってください。Biomeのlint・assistは無効です。ESLintの型付き安全検査・WC検査とtscを整形移行へ混ぜて置換しないでください。

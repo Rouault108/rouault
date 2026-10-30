@@ -111,6 +111,10 @@ pnpm install
 pnpm dev
 ```
 
+### 整形とeditor
+
+整形はBiome、lintはESLint（型付き安全検査とWeb Components検査を含む）、型検査はtscが担当します。VS Codeでは`biomejs.biome`と`dbaeumer.vscode-eslint`を推奨します。formatterはBiomeだけを選び、同じファイルへ別のformatterを重ねないでください。対象・生成物・Markdownの例外・HTMLの空白保持は[整形ガイド](docs/guides/formatting.md)を参照してください。
+
 ## よく使うコマンド
 
 ```powershell
@@ -130,8 +134,8 @@ pnpm test                   # test:node + test:ssr + test:browser
 pnpm test:extended          # e2e:production + e2e:dev
 
 pnpm lint                   # ESLint
-pnpm lint:fix               # ESLintの自動修正 + Prettierによる整形・書き込み
-pnpm format                 # Prettierによる整形・書き込み
+pnpm lint:fix               # ESLintの自動修正 + Biomeによる整形・書き込み
+pnpm format                 # Biomeによる整形・書き込み
 pnpm typecheck              # アプリとNode.js用コードの型チェック
 pnpm validate:note-links    # ノート原稿内のリンク検証
 pnpm check                  # lint + typecheck + test + ノートのリンク検証 + 本番コード・検索のインポート境界検証

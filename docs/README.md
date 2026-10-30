@@ -89,6 +89,8 @@ Design System patternはUIの見え方と配置判断を扱う。Router、search
 
 ## Guides
 
+- `docs/guides/formatting.md`
+
 - `docs/guides/markdown-authoring.md`
 - `docs/guides/note-authoring.md`
 - `docs/guides/content-config.md`
