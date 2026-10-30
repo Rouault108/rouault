@@ -22,7 +22,8 @@ export interface SearchReturnToReadingEventDetail extends SearchReturnToReadingE
   readonly selectionMethod: 'keyboard' | 'pointer';
 }
 
-export interface ValidatedSearchReturnToReadingEventDetail extends SearchReturnToReadingEventContract {
+export interface ValidatedSearchReturnToReadingEventDetail
+  extends SearchReturnToReadingEventContract {
   readonly eventName: SearchReturnToReadingEventName;
   readonly renderHref: SearchRenderHref;
   readonly canonicalPathname: SearchCanonicalPathname;

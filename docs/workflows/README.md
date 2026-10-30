@@ -4,10 +4,10 @@
 
 ## 入口
 
-| 主題 | 入口 |
-|---|---|
-| 問題、回帰、CIエラー、テスト失敗、期待結果との差 | `problem-solving/quick-start.md` |
-| 機能追加、仕様変更、UI／UX変更、削除、移行、契約変更 | `feature-change/quick-start.md` |
+| 主題                                                 | 入口                             |
+| ---------------------------------------------------- | -------------------------------- |
+| 問題、回帰、CIエラー、テスト失敗、期待結果との差     | `problem-solving/quick-start.md` |
+| 機能追加、仕様変更、UI／UX変更、削除、移行、契約変更 | `feature-change/quick-start.md`  |
 
 混在する場合は、最初に既存Failureの原因をproblem-solvingで確定します。既存仕様・契約・責務境界内で回復できないと判定した場合だけ、Handoff Recordを作成してfeature-changeへ移行します。
 

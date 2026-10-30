@@ -1099,7 +1099,6 @@ describe('table railの同期準備と後続activation', () => {
   });
 });
 
-
 describe('static wrapper ID lifecycle', () => {
   it('preserves initial IDs across preparation abort, activation cleanup and reinitialization', async () => {
     const root = createEligibleTableFixture();

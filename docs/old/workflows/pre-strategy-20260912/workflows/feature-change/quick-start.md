@@ -56,10 +56,10 @@ ChatGPTによる差分精査
 
 最初に、依頼を次のどちらとして扱うかを決めます。
 
-| 分類 | 使うワークフロー | 典型例 |
-|---|---|---|
+| 分類     | 使うワークフロー  | 典型例                                                       |
+| -------- | ----------------- | ------------------------------------------------------------ |
 | 問題修正 | `problem-solving` | テスト失敗、CI失敗、回帰、不具合、期待結果と実際の結果のずれ |
-| 機能変更 | `feature-change` | 追加、変更、削除、仕様変更、契約変更、移行、内部構造変更 |
+| 機能変更 | `feature-change`  | 追加、変更、削除、仕様変更、契約変更、移行、内部構造変更     |
 
 混在している場合は、次の順に扱います。
 
@@ -85,38 +85,38 @@ ChatGPTによる差分精査
 
 機能変更では、次のID体系を使います。
 
-| ID | 意味 |
-|---|---|
-| Request ID | 何を変更したいか |
-| Decision ID | どの仕様・方針を採用するか |
-| Change ID | どのファイル・範囲を変更するか |
-| Acceptance ID | 何を満たせば受け入れるか |
-| Verification ID | どう検証するか |
+| ID              | 意味                           |
+| --------------- | ------------------------------ |
+| Request ID      | 何を変更したいか               |
+| Decision ID     | どの仕様・方針を採用するか     |
+| Change ID       | どのファイル・範囲を変更するか |
+| Acceptance ID   | 何を満たせば受け入れるか       |
+| Verification ID | どう検証するか                 |
 
 問題修正ワークフローの`Failure / Cause / Change / Success / Verification`を無理に使わないでください。機能変更では、原因ではなく採用判断が中心です。
 
 ## 4. 変更種別を判定する
 
-| 種別 | 説明 | 注意点 |
-|---|---|---|
-| add | 新機能追加 | 既存契約を壊さないか確認する |
-| change | 既存機能変更 | 互換性、URL、UX、アクセシビリティ、テスト影響を確認する |
-| remove | 機能削除 | Delete / Breaking Change Gateを使う |
-| refactor | 内部構造変更 | 外部挙動を変えるなら`change`として扱う |
-| contract-change | 公開契約変更 | 原則R3以上。Decision RecordとDelete / Breaking Change Gateを使う |
-| migration | データ・設定・URLなどの移行 | 旧形式、移行失敗時、ロールバックを確認する |
-| deprecation | 非推奨化 | 削除予定、警告、移行先を明示する |
+| 種別            | 説明                        | 注意点                                                           |
+| --------------- | --------------------------- | ---------------------------------------------------------------- |
+| add             | 新機能追加                  | 既存契約を壊さないか確認する                                     |
+| change          | 既存機能変更                | 互換性、URL、UX、アクセシビリティ、テスト影響を確認する          |
+| remove          | 機能削除                    | Delete / Breaking Change Gateを使う                              |
+| refactor        | 内部構造変更                | 外部挙動を変えるなら`change`として扱う                           |
+| contract-change | 公開契約変更                | 原則R3以上。Decision RecordとDelete / Breaking Change Gateを使う |
+| migration       | データ・設定・URLなどの移行 | 旧形式、移行失敗時、ロールバックを確認する                       |
+| deprecation     | 非推奨化                    | 削除予定、警告、移行先を明示する                                 |
 
 ## 5. R段階を暫定判定する
 
-| 段階 | 使う場面 | 日常運用での扱い |
-|---|---|---|
-| R0 | 誤字、コメント、docsのみ、挙動影響なし | diff確認で完了可 |
-| R1 | 仕様判断済みの小規模変更、少数ファイル | 簡易Change Planで進める |
-| R2-lite | 変更意図と境界が明確な日常的中規模変更 | Request / Decision / Change / Acceptance / Verification中心で進める |
-| R2-full | 複数案比較、影響範囲確認、契約確認が必要 | Change Brief / Decision / Change Planを分離 |
-| R3 | 仕様判断、契約変更、削除、移行、アクセシビリティ意味変更 | Decision Recordと反対仮説レビューを必須化 |
-| R4 | 一括レビュー不能、複数Phaseが必要 | Phase分割し、必要に応じてR4/A2検証の仕組みを使う |
+| 段階    | 使う場面                                                 | 日常運用での扱い                                                    |
+| ------- | -------------------------------------------------------- | ------------------------------------------------------------------- |
+| R0      | 誤字、コメント、docsのみ、挙動影響なし                   | diff確認で完了可                                                    |
+| R1      | 仕様判断済みの小規模変更、少数ファイル                   | 簡易Change Planで進める                                             |
+| R2-lite | 変更意図と境界が明確な日常的中規模変更                   | Request / Decision / Change / Acceptance / Verification中心で進める |
+| R2-full | 複数案比較、影響範囲確認、契約確認が必要                 | Change Brief / Decision / Change Planを分離                         |
+| R3      | 仕様判断、契約変更、削除、移行、アクセシビリティ意味変更 | Decision Recordと反対仮説レビューを必須化                           |
+| R4      | 一括レビュー不能、複数Phaseが必要                        | Phase分割し、必要に応じてR4/A2検証の仕組みを使う                    |
 
 迷ったら高めに置き、Evidenceで下げます。根拠なく軽く扱わないでください。
 
@@ -126,11 +126,11 @@ ChatGPTによる差分精査
 
 R段階を暫定判定した後、日常運用では次の粒度を選びます。安全性を下げるためではなく、不要な成果物を明示的に「不要」と判定するための整理です。
 
-| 運用モード | 対象 | 必須成果物 | 不要にできる成果物 |
-|---|---|---|---|
-| R1 mini | 仕様判断済みの小変更、少数ファイル、公開契約影響なし | Request ID、Decision ID、Change ID、Acceptance ID、Verification ID、簡易Change Plan | Decision Record、Delete / Breaking Change Gate、A1/A2 Evidence保全要件。ただし不要理由を記録する |
-| R2-lite standard | 日常的な中規模変更、変更意図と境界が明確 | 標準Change Plan、契約影響確認、テストコマンド、必要な手動確認 | R3成果物が不要な場合は不要理由を記録する |
-| R3 full | 仕様判断、削除、契約変更、移行、アクセシビリティ意味変更 | Decision Record、反対仮説レビュー、標準Change Plan、必要に応じてDelete / Breaking Change Gate | Delete / Breaking Change GateやA1/A2 Evidence保全要件が不要な場合は、削除・破壊的変更・A1/A2に該当しない根拠を明示する |
+| 運用モード       | 対象                                                     | 必須成果物                                                                                    | 不要にできる成果物                                                                                                     |
+| ---------------- | -------------------------------------------------------- | --------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| R1 mini          | 仕様判断済みの小変更、少数ファイル、公開契約影響なし     | Request ID、Decision ID、Change ID、Acceptance ID、Verification ID、簡易Change Plan           | Decision Record、Delete / Breaking Change Gate、A1/A2 Evidence保全要件。ただし不要理由を記録する                       |
+| R2-lite standard | 日常的な中規模変更、変更意図と境界が明確                 | 標準Change Plan、契約影響確認、テストコマンド、必要な手動確認                                 | R3成果物が不要な場合は不要理由を記録する                                                                               |
+| R3 full          | 仕様判断、削除、契約変更、移行、アクセシビリティ意味変更 | Decision Record、反対仮説レビュー、標準Change Plan、必要に応じてDelete / Breaking Change Gate | Delete / Breaking Change GateやA1/A2 Evidence保全要件が不要な場合は、削除・破壊的変更・A1/A2に該当しない根拠を明示する |
 
 成果物を作らない場合は、単に省略してはいけません。Change Planに次の形式で不要理由を残します。
 
@@ -142,11 +142,11 @@ R段階を暫定判定した後、日常運用では次の粒度を選びます�
 
 ## 6. Aレベルを別軸で判定する
 
-| Aレベル | 使う場面 |
-|---|---|
-| A0 | 通常Evidenceで十分 |
-| A1 | SHA-256、保存場所、CIログなど後日検証性が必要 |
-| A2 | private / restricted Evidence、redaction、保持・失効、Evidence Integrity Attestationが必要 |
+| Aレベル | 使う場面                                                                                   |
+| ------- | ------------------------------------------------------------------------------------------ |
+| A0      | 通常Evidenceで十分                                                                         |
+| A1      | SHA-256、保存場所、CIログなど後日検証性が必要                                              |
+| A2      | private / restricted Evidence、redaction、保持・失効、Evidence Integrity Attestationが必要 |
 
 R段階は変更リスク、Aレベルは証拠保全・監査保証です。混同しないでください。
 

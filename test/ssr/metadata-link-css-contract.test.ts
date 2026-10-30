@@ -162,9 +162,7 @@ describe('metadata muted text link CSS contract', () => {
     });
 
     it('places the relative-color decoration value inside the metadata supports rule', () => {
-      expect(linkPrimitivesCss).toContain(
-        '@supports (color: oklch(from white l c h / 0.65))',
-      );
+      expect(linkPrimitivesCss).toContain('@supports (color: oklch(from white l c h / 0.65))');
       expect(
         hasDeclarationForSelector(
           linkPrimitivesCss,
@@ -316,9 +314,9 @@ describe('metadata muted text link CSS contract', () => {
 
   describe('surface isolation', () => {
     it('limits the muted text link variant to metadata surface selectors', () => {
-      expect(hasRuleForSelector(linkPrimitivesCss, metadataMutedSelector, { scope: 'screen' })).toBe(
-        true,
-      );
+      expect(
+        hasRuleForSelector(linkPrimitivesCss, metadataMutedSelector, { scope: 'screen' }),
+      ).toBe(true);
       expect(
         lacksRuleForSelector(linkPrimitivesCss, '.link-text--muted[href]', { scope: 'screen' }),
       ).toBe(true);
@@ -363,8 +361,7 @@ describe('metadata muted text link CSS contract', () => {
       expect(metadataSurfaceSelectors.length).toBeGreaterThan(0);
       expect(
         metadataSurfaceSelectors.every(
-          (selector) =>
-            selector.includes('.link-text') && selector.includes('.link-text--muted'),
+          (selector) => selector.includes('.link-text') && selector.includes('.link-text--muted'),
         ),
       ).toBe(true);
       expect(linkPrimitivesCss).not.toContain('.article-header__source-link');

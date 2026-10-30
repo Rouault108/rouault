@@ -43,9 +43,14 @@ describe('content schema and compiler', () => {
     const snippet = fs.readFileSync('examples/snippets/markdown-basic/core.md', 'utf8');
     expect(snippet).toMatch(/H~2~O {2}\r?\nx\^2\^/u);
     const inputs = readContentInputs();
-    const source = inputs.find((entry) => entry.sourceLabel === 'content/notes/testing/markdown-basic.md');
+    const source = inputs.find(
+      (entry) => entry.sourceLabel === 'content/notes/testing/markdown-basic.md',
+    );
     if (!source) throw new Error('markdown-basicの採用原稿が見つかりません');
-    const result = await compileContentInput(source, createContentBuildContext(inputs, site)(source));
+    const result = await compileContentInput(
+      source,
+      createContentBuildContext(inputs, site)(source),
+    );
     expect(result.note?.content).toContain('<p>H<sub>2</sub>O<br>\nx<sup>2</sup></p>');
   });
   it('titleとenumを検証し、日付は既存ISO形式へ正規化する', () => {

@@ -55,7 +55,7 @@ ChatGPTによる差分精査
 | R2-lite | 原因と変更境界が明確な日常的中規模修正               | F1/C1/CH1/S1/V1中心で進める               |
 | R2-full | 原因調査、影響範囲、契約確認が必要                   | Issue Brief / Cause / Fix Planを分離      |
 | R3      | 仕様判断、契約変更、安全性、アクセシビリティ意味変更 | Decision Recordと反対仮説レビューを必須化 |
-| R4      | 一括レビュー不能、複数Phaseが必要                    | `r4-validation/`を例外的に使う           |
+| R4      | 一括レビュー不能、複数Phaseが必要                    | `r4-validation/`を例外的に使う            |
 
 迷ったら高めに置き、Evidenceで下げます。根拠なく軽く扱わないでください。
 

@@ -61,11 +61,11 @@ diff精査
 
 通常は変更リスクに応じて、次の粒度で進めます。
 
-| 運用モード | 対象 | 必須成果物 |
-|---|---|---|
-| R1 mini | 仕様判断済みの小変更、少数ファイル、公開契約影響なし | 簡易Change Plan、Acceptance ID、Verification ID |
-| R2-lite standard | 日常的な中規模変更、変更意図と境界が明確 | 標準Change Plan、契約影響確認、テスト・手動確認 |
-| R3 full | 仕様判断、削除、契約変更、移行、アクセシビリティ意味変更 | Decision Record、反対仮説レビュー、必要に応じてDelete / Breaking Change Gate |
+| 運用モード       | 対象                                                     | 必須成果物                                                                   |
+| ---------------- | -------------------------------------------------------- | ---------------------------------------------------------------------------- |
+| R1 mini          | 仕様判断済みの小変更、少数ファイル、公開契約影響なし     | 簡易Change Plan、Acceptance ID、Verification ID                              |
+| R2-lite standard | 日常的な中規模変更、変更意図と境界が明確                 | 標準Change Plan、契約影響確認、テスト・手動確認                              |
+| R3 full          | 仕様判断、削除、契約変更、移行、アクセシビリティ意味変更 | Decision Record、反対仮説レビュー、必要に応じてDelete / Breaking Change Gate |
 
 Decision Record、Delete / Breaking Change Gate、A1/A2 Evidence保全要件が不要な場合は、省略ではなく「不要」と判断した理由をChange Planに1行で記録します。
 

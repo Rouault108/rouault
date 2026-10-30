@@ -10,10 +10,10 @@ license: CC BY 4.0
 
 ## 要点
 
-* 全23パターンを、変更したい場所と守る契約から選ぶ。
-* Javaの言語機能・JDKにより、昔のクラス構造をそのまま書く必要は減っている。
-* 特定APIの非推奨と、設計パターンの価値を混同しない。
-* すべてのJava例はJava 21で独立実行できる。
+- 全23パターンを、変更したい場所と守る契約から選ぶ。
+- Javaの言語機能・JDKにより、昔のクラス構造をそのまま書く必要は減っている。
+- 特定APIの非推奨と、設計パターンの価値を混同しない。
+- すべてのJava例はJava 21で独立実行できる。
 
 ## 内容
 
@@ -34,31 +34,31 @@ GoFの23パターンは、オブジェクトの生成、構造、協調に繰り
 
 ### 全23種の比較早見
 
-| 分類   | パターン                    | 分離したいもの・解く問題      | 現代Javaでの読み替え・注意                             |
-| ---- | ----------------------- | ----------------- | ------------------------------------------- |
-| 生成   | Factory Method          | 利用手順と生成する具象型      | 単なるstatic factoryとは区別。継承の生成フック              |
-| 生成   | Abstract Factory        | 関連する製品群と利用側       | DIや設定でファミリーを選べるが、製品間の整合性は契約次第               |
-| 生成   | Builder                 | 複雑な組立て手順と完成物      | fluent builderはよく使う変形。recordだけでは多段組立てを代替しない |
-| 生成   | Prototype               | 生成元の具象型と複製処理      | copyメソッドでも実現。Cloneableの採用は必須ではない            |
-| 生成   | Singleton               | 一意なインスタンスと取得方法    | enumやDIスコープを検討。グローバル可変状態に注意                 |
-| 構造   | Adapter                 | 利用したい契約と既存APIの差   | 境界の変換として有効。DTO変換も意味の違いを意識                   |
-| 構造   | Bridge                  | 独立して増える二つの変化軸     | 継承の直積を委譲でほどく                                |
-| 構造   | Composite               | 単体と階層的集合の扱い       | 木の再帰処理。循環、親所有権、操作の意味に注意                     |
-| 構造   | Decorator               | 本体と追加機能           | ラッパーの組合せ。順序とリソース所有権が重要                      |
-| 構造   | Facade                  | 複雑なサブシステムと用途別の入口  | 薄いサービス境界に使える。巨大窓口にしない                       |
-| 構造   | Flyweight               | 大量オブジェクトと共有可能な状態  | 不変値を共有。計測なしのキャッシュ追加を避ける                     |
-| 構造   | Proxy                   | 本体へのアクセスと制御       | JDK動的Proxy、Spring AOP。自己呼出しなどの制約に注意         |
-| 振る舞い | Chain of Responsibility | 要求の送信元と処理担当・順序    | フィルター、ミドルウェア。処理の継続条件を明示                     |
-| 振る舞い | Command                 | 要求内容と実行時刻・実行者     | Runnable、キュー、Undo。実行要求の永続化は追加設計             |
-| 振る舞い | Interpreter             | 文法と評価規則           | 小さなDSL向け。複雑な文法にはパーサーを検討                     |
-| 振る舞い | Iterator                | 走査と内部表現           | Iterable、拡張for、Stream。Streamは完全な同義ではない      |
-| 振る舞い | Mediator                | 参加者同士の協調規則        | UIやユースケースの調停。巨大な仲介者を避ける                     |
-| 振る舞い | Memento                 | 内部状態と履歴管理         | 不変スナップショット。深いコピーと保存量に注意                     |
-| 振る舞い | Observer                | 状態変化と通知先          | 旧Observableは非推奨、型付きリスナーやイベントは有効             |
-| 振る舞い | State                   | 状態別の振る舞いとContext  | enumやsealed型を活用。単純なswitchで十分な場合も多い          |
-| 振る舞い | Strategy                | 目的と交換可能なアルゴリズム    | 関数型インターフェース、ラムダ、DI                          |
-| 振る舞い | Template Method         | 固定された手順と変更可能なステップ | 既存の骨格実装を理解。callbackによる委譲も比較                 |
-| 振る舞い | Visitor                 | 安定した要素型と増える操作     | sealed + pattern switchが条件付き代替              |
+| 分類     | パターン                | 分離したいもの・解く問題           | 現代Javaでの読み替え・注意                                         |
+| -------- | ----------------------- | ---------------------------------- | ------------------------------------------------------------------ |
+| 生成     | Factory Method          | 利用手順と生成する具象型           | 単なるstatic factoryとは区別。継承の生成フック                     |
+| 生成     | Abstract Factory        | 関連する製品群と利用側             | DIや設定でファミリーを選べるが、製品間の整合性は契約次第           |
+| 生成     | Builder                 | 複雑な組立て手順と完成物           | fluent builderはよく使う変形。recordだけでは多段組立てを代替しない |
+| 生成     | Prototype               | 生成元の具象型と複製処理           | copyメソッドでも実現。Cloneableの採用は必須ではない                |
+| 生成     | Singleton               | 一意なインスタンスと取得方法       | enumやDIスコープを検討。グローバル可変状態に注意                   |
+| 構造     | Adapter                 | 利用したい契約と既存APIの差        | 境界の変換として有効。DTO変換も意味の違いを意識                    |
+| 構造     | Bridge                  | 独立して増える二つの変化軸         | 継承の直積を委譲でほどく                                           |
+| 構造     | Composite               | 単体と階層的集合の扱い             | 木の再帰処理。循環、親所有権、操作の意味に注意                     |
+| 構造     | Decorator               | 本体と追加機能                     | ラッパーの組合せ。順序とリソース所有権が重要                       |
+| 構造     | Facade                  | 複雑なサブシステムと用途別の入口   | 薄いサービス境界に使える。巨大窓口にしない                         |
+| 構造     | Flyweight               | 大量オブジェクトと共有可能な状態   | 不変値を共有。計測なしのキャッシュ追加を避ける                     |
+| 構造     | Proxy                   | 本体へのアクセスと制御             | JDK動的Proxy、Spring AOP。自己呼出しなどの制約に注意               |
+| 振る舞い | Chain of Responsibility | 要求の送信元と処理担当・順序       | フィルター、ミドルウェア。処理の継続条件を明示                     |
+| 振る舞い | Command                 | 要求内容と実行時刻・実行者         | Runnable、キュー、Undo。実行要求の永続化は追加設計                 |
+| 振る舞い | Interpreter             | 文法と評価規則                     | 小さなDSL向け。複雑な文法にはパーサーを検討                        |
+| 振る舞い | Iterator                | 走査と内部表現                     | Iterable、拡張for、Stream。Streamは完全な同義ではない              |
+| 振る舞い | Mediator                | 参加者同士の協調規則               | UIやユースケースの調停。巨大な仲介者を避ける                       |
+| 振る舞い | Memento                 | 内部状態と履歴管理                 | 不変スナップショット。深いコピーと保存量に注意                     |
+| 振る舞い | Observer                | 状態変化と通知先                   | 旧Observableは非推奨、型付きリスナーやイベントは有効               |
+| 振る舞い | State                   | 状態別の振る舞いとContext          | enumやsealed型を活用。単純なswitchで十分な場合も多い               |
+| 振る舞い | Strategy                | 目的と交換可能なアルゴリズム       | 関数型インターフェース、ラムダ、DI                                 |
+| 振る舞い | Template Method         | 固定された手順と変更可能なステップ | 既存の骨格実装を理解。callbackによる委譲も比較                     |
+| 振る舞い | Visitor                 | 安定した要素型と増える操作         | sealed + pattern switchが条件付き代替                              |
 
 ### コードの実行方法と前提
 
@@ -85,10 +85,10 @@ Java 21のソースファイル実行を使うなら `java --source 21 StrategyD
 
 #### 構造と役割
 
-* Product：利用側が依存する製品の抽象型。例では `Exporter`。
-* ConcreteProduct：具体的な製品。`TextExporter` と `CsvExporter`。
-* Creator：Product を使う共通処理と、生成用メソッドを定義する `ReportJob`。
-* ConcreteCreator：生成用メソッドを実装する `TextJob` と `CsvJob`。
+- Product：利用側が依存する製品の抽象型。例では `Exporter`。
+- ConcreteProduct：具体的な製品。`TextExporter` と `CsvExporter`。
+- Creator：Product を使う共通処理と、生成用メソッドを定義する `ReportJob`。
+- ConcreteCreator：生成用メソッドを実装する `TextJob` と `CsvJob`。
 
 クライアントは Creator を選択し、共通処理を呼ぶ。共通処理が `createExporter()` を呼び、動的ディスパッチで具体的な生成処理が選ばれる。その後の処理は `Exporter` の契約だけを使う。生成メソッドは必ずしも抽象でなくてもよく、既定の製品を返す実装を親クラスに持たせる設計もある。
 
@@ -178,9 +178,9 @@ Java 8 以降なら `Supplier<Exporter>` とコンストラクタ参照で生成
 
 #### 似たパターンとの違い
 
-* 静的ファクトリ：`of()` や `valueOf()` など、コンストラクタ以外の名前付き生成入口。オーバーライドによる生成委譲とは別。
-* Simple Factory：引数の `switch` などで生成型を選ぶ一つの工場。GoF 23 パターンの独立した一項目ではない。
-* Abstract Factory：互換性のある複数種類の製品を一組で生成することが主題。内部の各生成操作を Factory Method で実装することはある。
+- 静的ファクトリ：`of()` や `valueOf()` など、コンストラクタ以外の名前付き生成入口。オーバーライドによる生成委譲とは別。
+- Simple Factory：引数の `switch` などで生成型を選ぶ一つの工場。GoF 23 パターンの独立した一項目ではない。
+- Abstract Factory：互換性のある複数種類の製品を一組で生成することが主題。内部の各生成操作を Factory Method で実装することはある。
 
 ### 2 Abstract Factory アブストラクトファクトリ
 
@@ -192,11 +192,11 @@ Java 8 以降なら `Supplier<Exporter>` とコンストラクタ参照で生成
 
 #### 構造と役割
 
-* AbstractFactory：製品の種類ごとの生成操作を定義する `UiFactory`。
-* ConcreteFactory：系列を決める `LightFactory` と `DarkFactory`。
-* AbstractProduct：製品の役割を表す `Button` と `Checkbox`。
-* ConcreteProduct：各系列・各役割の具体的な実装。
-* Client：具体クラスを知らず製品群を使う `Screen`。
+- AbstractFactory：製品の種類ごとの生成操作を定義する `UiFactory`。
+- ConcreteFactory：系列を決める `LightFactory` と `DarkFactory`。
+- AbstractProduct：製品の役割を表す `Button` と `Checkbox`。
+- ConcreteProduct：各系列・各役割の具体的な実装。
+- Client：具体クラスを知らず製品群を使う `Screen`。
 
 アプリケーションの組み立て地点で ConcreteFactory を一つ選ぶ。Client はそのファクトリから必要な製品を取得し、その後は抽象インターフェースを通じて操作する。画面を作り直して別のファクトリを渡せば、製品群をまとめて切り替えられる。
 
@@ -288,9 +288,9 @@ JDK では `DatatypeFactory` が XML データ型に対応する `Duration` と 
 
 #### 似たパターンとの違い
 
-* Factory Method：サブクラスへ生成を委ねる拡張点が中心。Abstract Factory は製品群とその整合性が中心。
-* Builder：複数段階の組み立てと、その結果の表現を分離する。Abstract Factory は通常、各操作で利用可能な製品を返す。
-* Facade：既存のサブシステムを使いやすくする窓口。関連製品の生成を切り替えることは必須でない。
+- Factory Method：サブクラスへ生成を委ねる拡張点が中心。Abstract Factory は製品群とその整合性が中心。
+- Builder：複数段階の組み立てと、その結果の表現を分離する。Abstract Factory は通常、各操作で利用可能な製品を返す。
+- Facade：既存のサブシステムを使いやすくする窓口。関連製品の生成を切り替えることは必須でない。
 
 ### 3 Builder ビルダー
 
@@ -302,10 +302,10 @@ GoF の Builder と、Java でよく見る `new Builder().name(...).build()` は
 
 #### 構造と役割
 
-* Builder：組み立て操作を定義する `ReportBuilder<T>`。
-* ConcreteBuilder：構造化帳票用の `StructuredBuilder` とテキスト用の `TextBuilder`。
-* Director：組み立て手順を知る `Director`。
-* Product：完成した `Report` または `String`。
+- Builder：組み立て操作を定義する `ReportBuilder<T>`。
+- ConcreteBuilder：構造化帳票用の `StructuredBuilder` とテキスト用の `TextBuilder`。
+- Director：組み立て手順を知る `Director`。
+- Product：完成した `Report` または `String`。
 
 クライアントが Builder を選び、Director に渡す。Director は抽象的な組み立て操作を順に呼び、最後に製品を受け取る。ジェネリクスにより、製品に共通の親型がなくても戻り値の型を保てる。Director をクライアント自身が担う設計も可能である。
 
@@ -412,9 +412,9 @@ Builder は現行 JDK でも使われる設計である。`HttpRequest.Builder` 
 
 #### 似たパターンとの違い
 
-* Abstract Factory：製品群の系列を切り替える。Builder は組み立て過程と完成表現を分離する。
-* Fluent Interface：メソッド連鎖などによる読みやすい API のスタイル。Builder でなくても実現できる。
-* Prototype：既存の完成品を複製する。Builder は手順や設定を積み上げて製品を構築する。`toBuilder()` は両方の発想を組み合わせた実装になり得る。
+- Abstract Factory：製品群の系列を切り替える。Builder は組み立て過程と完成表現を分離する。
+- Fluent Interface：メソッド連鎖などによる読みやすい API のスタイル。Builder でなくても実現できる。
+- Prototype：既存の完成品を複製する。Builder は手順や設定を積み上げて製品を構築する。`toBuilder()` は両方の発想を組み合わせた実装になり得る。
 
 ### 4 Prototype プロトタイプ
 
@@ -426,9 +426,9 @@ Builder は現行 JDK でも使われる設計である。`HttpRequest.Builder` 
 
 #### 構造と役割
 
-* Prototype：複製操作を宣言する `Template`。
-* ConcretePrototype：内部状態の正しい複製方法を知る `Document`。
-* Client：原型を選び、複製を編集する `main()`。
+- Prototype：複製操作を宣言する `Template`。
+- ConcretePrototype：内部状態の正しい複製方法を知る `Document`。
+- Client：原型を選び、複製を編集する `main()`。
 
 必要なら「見積書」「議事録」などの名前と原型を対応づけるレジストリを追加できる。Client はレジストリから原型を取得し、コピーを作ってから個別の変更を加える。レジストリは便利な構成要素だが、Prototype の必須要素ではない。
 
@@ -515,9 +515,9 @@ DB 接続、スレッド、ロック、ファイルハンドルなど、外部�
 
 #### 似たパターンとの違い
 
-* Builder：設定を段階的に組み立てる。Prototype は既存の状態を出発点にする。
-* Flyweight：共有して個数を減らす。Prototype は必要な部分を複製し独立した変更を可能にする。
-* Memento：後で状態を復元するために保存する。Prototype の目的は新しい製品の生成であり、復元先や履歴管理は必須でない。
+- Builder：設定を段階的に組み立てる。Prototype は既存の状態を出発点にする。
+- Flyweight：共有して個数を減らす。Prototype は必要な部分を複製し独立した変更を可能にする。
+- Memento：後で状態を復元するために保存する。Prototype の目的は新しい製品の生成であり、復元先や履歴管理は必須でない。
 
 ### 5 Singleton シングルトン
 
@@ -529,8 +529,8 @@ Java では一般に、同じクラスを定義するクラスローダーの範
 
 #### 構造と役割
 
-* Singleton：自身の生成と唯一のインスタンスへのアクセスを管理する型。
-* Client：そのインスタンスを利用する側。
+- Singleton：自身の生成と唯一のインスタンスへのアクセスを管理する型。
+- Client：そのインスタンスを利用する側。
 
 典型的なクラス実装ではコンストラクタを外部に公開せず、静的なフィールドと取得メソッドを置く。以下では単一要素の `enum` を使う。さらに利用側には抽象インターフェースを渡し、Singleton の取得箇所をアプリケーションの組み立て地点へ集める。
 
@@ -607,9 +607,9 @@ Singleton は言語 API の名称ではないため、JDK の `@Deprecated` の�
 
 #### 似たパターンとの違い
 
-* 静的ユーティリティ：インスタンスを持たず静的メソッドを使う。インターフェース越しにインスタンスを注入する設計とは異なる。
-* DI の共有スコープ：外部の管理者がインスタンス数と寿命を管理する。クラス自身が唯一性を強制する必要はない。
-* Flyweight：キーや内部状態に応じて複数の共有オブジェクトを使うことが一般的。単一インスタンスを要求しない。
+- 静的ユーティリティ：インスタンスを持たず静的メソッドを使う。インターフェース越しにインスタンスを注入する設計とは異なる。
+- DI の共有スコープ：外部の管理者がインスタンス数と寿命を管理する。クラス自身が唯一性を強制する必要はない。
+- Flyweight：キーや内部状態に応じて複数の共有オブジェクトを使うことが一般的。単一インスタンスを要求しない。
 
 ## 構造に関する7パターン
 
@@ -1208,10 +1208,10 @@ Decoratorは責務を任意に重ねる意図が中心で、Proxyは本体の代
 
 #### 構造と役割
 
-* Handler：処理を受け付ける共通契約と、次の候補への委譲を定める。
-* ConcreteHandler：自分が引き受ける条件と、具体的な処理を実装する。
-* Client：連鎖を組み立て、その入口へ要求を渡す。
-* Request：判定に必要な情報を運ぶ。後続が必要な情報を途中で壊さない契約が重要になる。
+- Handler：処理を受け付ける共通契約と、次の候補への委譲を定める。
+- ConcreteHandler：自分が引き受ける条件と、具体的な処理を実装する。
+- Client：連鎖を組み立て、その入口へ要求を渡す。
+- Request：判定に必要な情報を運ぶ。後続が必要な情報を途中で壊さない契約が重要になる。
 
 #### Java例
 
@@ -1304,11 +1304,11 @@ Strategyは選ばれた1つの方式へ処理を委ねる。Chain of Responsibil
 
 #### 構造と役割
 
-* Command：実行の契約を定める。必要なら取消しや説明情報も持つ。
-* ConcreteCommand：操作の引数とReceiverを保持し、実行時に呼び出す。
-* Receiver：音量変更など、本来の業務処理を行う。
-* Invoker：実行時期、キュー、履歴を扱う。本例では `History` が担当する。
-* Client：ReceiverとCommandを組み合わせてInvokerへ渡す。
+- Command：実行の契約を定める。必要なら取消しや説明情報も持つ。
+- ConcreteCommand：操作の引数とReceiverを保持し、実行時に呼び出す。
+- Receiver：音量変更など、本来の業務処理を行う。
+- Invoker：実行時期、キュー、履歴を扱う。本例では `History` が担当する。
+- Client：ReceiverとCommandを組み合わせてInvokerへ渡す。
 
 #### Java例
 
@@ -1420,11 +1420,11 @@ Strategyは「どう計算するか」の差し替えに重点を置く。Comman
 
 #### 構造と役割
 
-* AbstractExpression：式を評価する共通契約。本例では `Expr`。
-* TerminalExpression：これ以上分解しない定数や変数。本例では `Number` と `Variable`。
-* NonterminalExpression：子の式を組み合わせる演算。本例では `Add` と `Multiply`。
-* Context：変数の値など、評価時の環境。本例ではMap。
-* Client：構文木とContextを用意して評価を開始する。
+- AbstractExpression：式を評価する共通契約。本例では `Expr`。
+- TerminalExpression：これ以上分解しない定数や変数。本例では `Number` と `Variable`。
+- NonterminalExpression：子の式を組み合わせる演算。本例では `Add` と `Multiply`。
+- Context：変数の値など、評価時の環境。本例ではMap。
+- Client：構文木とContextを用意して評価を開始する。
 
 #### Java例
 
@@ -1504,11 +1504,11 @@ Compositeは木の構造を統一的に扱う考え方で、Interpreterの構文
 
 #### 構造と役割
 
-* Aggregate：Iteratorを生成する契約。Javaでは `Iterable<T>` が対応する。
-* ConcreteAggregate：具体的な集合。本例では `Bookshelf`。
-* Iterator：走査の共通契約。Java標準の `Iterator<T>` を使う。
-* ConcreteIterator：位置と、次の要素を得る方法を保持する。本例では匿名クラス。
-* Client：内部のListに触れずに要素を取得する。
+- Aggregate：Iteratorを生成する契約。Javaでは `Iterable<T>` が対応する。
+- ConcreteAggregate：具体的な集合。本例では `Bookshelf`。
+- Iterator：走査の共通契約。Java標準の `Iterator<T>` を使う。
+- ConcreteIterator：位置と、次の要素を得る方法を保持する。本例では匿名クラス。
+- Client：内部のListに触れずに要素を取得する。
 
 #### Java例
 
@@ -1593,10 +1593,10 @@ Visitorは各要素へ適用する操作の追加、Iteratorは要素を列挙�
 
 #### 構造と役割
 
-* Mediator：部品が仲介役へ通知する契約。本例では `changed()`。
-* ConcreteMediator：具体的な協調ルールを実装し、必要な部品を参照する。
-* Colleague：仲介される部品。本例では入力欄、同意欄、送信ボタン。
-* Client：部品と仲介役を結び付ける。小さな例では仲介役が部品も組み立てる。
+- Mediator：部品が仲介役へ通知する契約。本例では `changed()`。
+- ConcreteMediator：具体的な協調ルールを実装し、必要な部品を参照する。
+- Colleague：仲介される部品。本例では入力欄、同意欄、送信ボタン。
+- Client：部品と仲介役を結び付ける。小さな例では仲介役が部品も組み立てる。
 
 #### Java例
 
@@ -1698,9 +1698,9 @@ Observerは変更の通知関係を表し、Mediatorは複数参加者の協調�
 
 #### 構造と役割
 
-* Originator：保存する状態を持ち、Mementoを生成・復元する。本例では `Editor`。
-* Memento：復元に必要な状態を保持する。本例では外へ詳細を公開しない `Snapshot`。
-* Caretaker：Mementoの保存順や寿命を管理する。本例では `History`。状態の中身を解釈しない。
+- Originator：保存する状態を持ち、Mementoを生成・復元する。本例では `Editor`。
+- Memento：復元に必要な状態を保持する。本例では外へ詳細を公開しない `Snapshot`。
+- Caretaker：Mementoの保存順や寿命を管理する。本例では `History`。状態の中身を解釈しない。
 
 #### Java例
 
@@ -1802,10 +1802,10 @@ Commandは操作を記録し、Mementoは状態を記録する。Prototypeは複
 
 #### 構造と役割
 
-* Subject: 登録、解除、通知を管理する対象。
-* Observer: 通知を受ける共通契約。
-* ConcreteSubject: 実際の状態を保持する対象。
-* ConcreteObserver: 表示更新や集計などの処理を実行する受信者。
+- Subject: 登録、解除、通知を管理する対象。
+- Observer: 通知を受ける共通契約。
+- ConcreteSubject: 実際の状態を保持する対象。
+- ConcreteObserver: 表示更新や集計などの処理を実行する受信者。
 
 この例では `Prices` がSubject、`Consumer<PriceChanged>` がObserver、ラムダが具体的な受信者となる。購読を `AutoCloseable` にして解除責任を明示する。
 
@@ -1875,9 +1875,9 @@ Mediatorは複数オブジェクト間の協調規則を仲介者に集める。
 
 #### 構造と役割
 
-* Context: 現在のStateを保持し、操作を委譲する本体。
-* State: 状態に依存する操作の契約。
-* ConcreteState: その状態での処理と遷移を定義するもの。
+- Context: 現在のStateを保持し、操作を委譲する本体。
+- State: 状態に依存する操作の契約。
+- ConcreteState: その状態での処理と遷移を定義するもの。
 
 例では `Order` がContextで、`Stage` の各enum定数がStateとなる。状態オブジェクト自体には注文ごとの可変データを持たせず、安全に共有する。
 
@@ -1942,9 +1942,9 @@ Strategyは通常、外部から選択した方針を交換する。Stateは対�
 
 #### 構造と役割
 
-* Context: アルゴリズムを利用する側。
-* Strategy: 入出力と意味上の制約を定める共通契約。
-* ConcreteStrategy: 交換可能な具体的アルゴリズム。
+- Context: アルゴリズムを利用する側。
+- Strategy: 入出力と意味上の制約を定める共通契約。
+- ConcreteStrategy: 交換可能な具体的アルゴリズム。
 
 この例では `Checkout` がContext、`Shipping` がStrategy、二つのラムダがConcreteStrategyとなる。重量の単位はグラム、結果の単位は円で統一する。
 
@@ -2005,10 +2005,10 @@ Template Methodは継承で処理手順の一部を差し替え、Strategyは委
 
 #### 構造と役割
 
-* AbstractClass: Template Methodと抽象ステップを定義する。
-* Template Method: 決まった順序で各ステップを呼ぶ公開操作。
-* ConcreteClass: 必要なステップを実装する。
-* Hook: 既定動作を持ち、必要な場合だけ上書きする拡張点。
+- AbstractClass: Template Methodと抽象ステップを定義する。
+- Template Method: 決まった順序で各ステップを呼ぶ公開操作。
+- ConcreteClass: 必要なステップを実装する。
+- Hook: 既定動作を持ち、必要な場合だけ上書きする拡張点。
 
 例の `importAll` は `final` とし、検証してから保存する順序を維持する。 `afterImport` は任意のフックである。
 
@@ -2074,11 +2074,11 @@ Strategyはアルゴリズムの交換、Template Methodは骨格を維持した
 
 #### 構造と役割
 
-* Element: `accept` を持つ要素の契約。
-* ConcreteElement: 自分に対応する `visit` を呼ぶ具象要素。
-* Visitor: 各要素型に対応する操作の集合。
-* ConcreteVisitor: 評価など、一つの処理を実装するもの。
-* ObjectStructure: 要素を保持し、必要に応じて訪問・走査する構造。
+- Element: `accept` を持つ要素の契約。
+- ConcreteElement: 自分に対応する `visit` を呼ぶ具象要素。
+- Visitor: 各要素型に対応する操作の集合。
+- ConcreteVisitor: 評価など、一つの処理を実装するもの。
+- ObjectStructure: 要素を保持し、必要に応じて訪問・走査する構造。
 
 以下では同じ式を、古典的VisitorとJava 21のpattern switchの両方で評価する。
 
@@ -2143,30 +2143,30 @@ Iteratorは「次の要素を取得する」走査の契約、Visitorは「要�
 
 「このクラスにはStrategyが必要だ」から始めず、「送料の計算規則だけを店舗ごとに差し替えたい」のように書く。変化する場所が一つなら、必要な境界も小さくできる。
 
-* **作るものを変える**: 継承先が具象型を決めるならFactory Method、互換性のある製品群を選ぶならAbstract Factory、組立ての段階や表現を変えるならBuilder、見本を複製するならPrototype。
-* **相手との接続方法を変える**: 既存APIの形が違うならAdapter、利用手順が複雑ならFacade、同じ契約のままアクセスを制御するならProxy。
-* **構造を組み合わせる**: 木として扱うならComposite、追加機能を積むならDecorator、二つの分類軸を独立させるならBridge、大量の同一部分を共有するならFlyweight。
-* **振る舞いの選択を変える**: 呼出し側が方針を選ぶならStrategy、対象の現在状態に従って振る舞いが変わるならState、固定手順の一部を継承で変えるならTemplate Method。
-* **処理の届け方・時刻を変える**: 一対多の通知ならObserver、複数候補を順に渡すならChain of Responsibility、要求を保存・遅延・取消対象にするならCommand、参加者間の協調を集約するならMediator。
-* **データの扱いを分ける**: 走査を隠すならIterator、復元用の状態を隠すならMemento、安定した型群に操作を追加するならVisitor、小さな文法の評価を組み立てるならInterpreter。
+- **作るものを変える**: 継承先が具象型を決めるならFactory Method、互換性のある製品群を選ぶならAbstract Factory、組立ての段階や表現を変えるならBuilder、見本を複製するならPrototype。
+- **相手との接続方法を変える**: 既存APIの形が違うならAdapter、利用手順が複雑ならFacade、同じ契約のままアクセスを制御するならProxy。
+- **構造を組み合わせる**: 木として扱うならComposite、追加機能を積むならDecorator、二つの分類軸を独立させるならBridge、大量の同一部分を共有するならFlyweight。
+- **振る舞いの選択を変える**: 呼出し側が方針を選ぶならStrategy、対象の現在状態に従って振る舞いが変わるならState、固定手順の一部を継承で変えるならTemplate Method。
+- **処理の届け方・時刻を変える**: 一対多の通知ならObserver、複数候補を順に渡すならChain of Responsibility、要求を保存・遅延・取消対象にするならCommand、参加者間の協調を集約するならMediator。
+- **データの扱いを分ける**: 走査を隠すならIterator、復元用の状態を隠すならMemento、安定した型群に操作を追加するならVisitor、小さな文法の評価を組み立てるならInterpreter。
 
 Singletonだけは「どこからでも呼べるようにしたい」を導入理由にしない。一つにする必要がある資源の範囲と寿命を先に決め、コンストラクター注入やコンテナ管理で十分かを確認する。
 
 ### 混同しやすい組合せ
 
-| 比較                                | 見分ける質問                            |
-| --------------------------------- | --------------------------------- |
-| Factory Method と単なる生成メソッド         | 生成処理をサブクラスが上書きする拡張点があるか           |
-| Abstract Factory とBuilder         | 互換性のある製品群を選ぶのか、一つの完成物を段階的に組み立てるのか |
-| Adapter とBridge                   | 既存の不一致を埋めるのか、最初から独立する変化軸を分けるのか    |
-| Decorator とProxy                  | 機能を積み上げるのか、本体へのアクセスを代理・制御するのか     |
-| Facade とMediator                  | 利用者向けの簡単な入口か、参加者同士のやり取りの調停か       |
-| Strategy とState                   | 選んだ方針か、現在のライフサイクル状態か              |
-| Strategy とTemplate Method         | オブジェクトを差し替える委譲か、固定骨格の一部を変える継承か    |
-| Command とStrategy                 | 実行要求そのものを保持するのか、処理のやり方を渡すのか       |
-| Observer とChain of Responsibility | 複数受信者への通知か、順序付きで継続・停止する処理か        |
-| Memento とPrototype                | 復元用の状態を保管するのか、別のオブジェクトを作るため複製するのか |
-| Iterator とVisitor                 | どう走査するかを分離するのか、型ごとに何をするかを分離するのか   |
+| 比較                                | 見分ける質問                                                       |
+| ----------------------------------- | ------------------------------------------------------------------ |
+| Factory Method と単なる生成メソッド | 生成処理をサブクラスが上書きする拡張点があるか                     |
+| Abstract Factory とBuilder          | 互換性のある製品群を選ぶのか、一つの完成物を段階的に組み立てるのか |
+| Adapter とBridge                    | 既存の不一致を埋めるのか、最初から独立する変化軸を分けるのか       |
+| Decorator とProxy                   | 機能を積み上げるのか、本体へのアクセスを代理・制御するのか         |
+| Facade とMediator                   | 利用者向けの簡単な入口か、参加者同士のやり取りの調停か             |
+| Strategy とState                    | 選んだ方針か、現在のライフサイクル状態か                           |
+| Strategy とTemplate Method          | オブジェクトを差し替える委譲か、固定骨格の一部を変える継承か       |
+| Command とStrategy                  | 実行要求そのものを保持するのか、処理のやり方を渡すのか             |
+| Observer とChain of Responsibility  | 複数受信者への通知か、順序付きで継続・停止する処理か               |
+| Memento とPrototype                 | 復元用の状態を保管するのか、別のオブジェクトを作るため複製するのか |
+| Iterator とVisitor                  | どう走査するかを分離するのか、型ごとに何をするかを分離するのか     |
 
 同じクラスが複数の意図を持つことはある。例えば圧縮ラッパーにアクセス制御が加わればDecoratorとProxyの性質を併せ持つ。名前を一つに確定するより、契約と責任が明確かを優先する。
 

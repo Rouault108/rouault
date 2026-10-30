@@ -18,15 +18,15 @@ R3/A0
 
 R3理由:
 
-* code groupの既定visual contractを変更する。
-* `.prose` / `.about-prose`直下のcode group layout contractへ影響する。
-* CSS contract、code surface contract、既存ADRとの関係を更新する。
+- code groupの既定visual contractを変更する。
+- `.prose` / `.about-prose`直下のcode group layout contractへ影響する。
+- CSS contract、code surface contract、既存ADRとの関係を更新する。
 
 A0理由:
 
-* private/restricted Evidenceは扱わない。
-* content本文、secret、外部サービスを変更しない。
-* CSS、文書、SSR CSS contract testで検証可能である。
+- private/restricted Evidenceは扱わない。
+- content本文、secret、外部サービスを変更しない。
+- CSS、文書、SSR CSS contract testで検証可能である。
 
 ## Context
 
@@ -38,11 +38,11 @@ A0理由:
 
 `.prose` / `.about-prose`直下の`section[data-code-group]`は、既定では本文幅内に収める。
 
-* base defaultとして`--ui-code-group-width: 100%`と`--ui-code-group-margin-inline: 0`を維持する。
-* mobile / desktop media queryでは、top-level prose / about-prose code groupの`--ui-code-group-width`と`--ui-code-group-margin-inline`を再定義しない。
-* `section[data-code-group]`本体の`inline-size` / `margin-inline`は、引き続き`--ui-code-group-*`と`--ui-code-surface-breakout-*`fallbackを参照する。
-* group-owned code block reset、inline code block reset、tabs panel内contained resetは維持する。
-* DOM生成、ARIA semantics、enhancer、copy、syntax highlight、routing、data contractは変更しない。
+- base defaultとして`--ui-code-group-width: 100%`と`--ui-code-group-margin-inline: 0`を維持する。
+- mobile / desktop media queryでは、top-level prose / about-prose code groupの`--ui-code-group-width`と`--ui-code-group-margin-inline`を再定義しない。
+- `section[data-code-group]`本体の`inline-size` / `margin-inline`は、引き続き`--ui-code-group-*`と`--ui-code-surface-breakout-*`fallbackを参照する。
+- group-owned code block reset、inline code block reset、tabs panel内contained resetは維持する。
+- DOM生成、ARIA semantics、enhancer、copy、syntax highlight、routing、data contractは変更しない。
 
 ## Supersedes
 
@@ -78,19 +78,19 @@ A0理由:
 
 Affected contracts:
 
-* `docs/contracts/code-surfaces.md`
-* SSR CSS contract
-* `.prose` / `.about-prose`直下のcode group visual contract
+- `docs/contracts/code-surfaces.md`
+- SSR CSS contract
+- `.prose` / `.about-prose`直下のcode group visual contract
 
 Unaffected contracts:
 
-* Markdown parser / transformer
-* code group enhancer
-* copy button behavior
-* hydration
-* tab semantics
-* `data-code-*`属性の意味
-* content authoring format
+- Markdown parser / transformer
+- code group enhancer
+- copy button behavior
+- hydration
+- tab semantics
+- `data-code-*`属性の意味
+- content authoring format
 
 ## Compatibility impact
 
@@ -102,25 +102,25 @@ Unaffected contracts:
 
 ## Rouault-specific impact
 
-* 読書体験: code group外枠が本文幅と揃い、本文への集中を妨げにくくなる。
-* static-first: CSSだけで成立し、JSやruntime測定へ依存しない。
-* content資産: Markdown本文やfrontmatterへlayout都合を追加しない。
-* 責務境界: overflowは`pre[data-code-block]`とtablistが処理し、top-level code group外枠は既定で本文layoutへ従う。
-* accessibility: focus-visible、forced-colors、print、copy、enhanced tabsの責務は変更しない。
+- 読書体験: code group外枠が本文幅と揃い、本文への集中を妨げにくくなる。
+- static-first: CSSだけで成立し、JSやruntime測定へ依存しない。
+- content資産: Markdown本文やfrontmatterへlayout都合を追加しない。
+- 責務境界: overflowは`pre[data-code-block]`とtablistが処理し、top-level code group外枠は既定で本文layoutへ従う。
+- accessibility: focus-visible、forced-colors、print、copy、enhanced tabsの責務は変更しない。
 
 ## Delete/Breaking Change Gate
 
 Delete Gate:
 
-* 削除対象はmobile / desktop media query内のtop-level code group breakout overrideに限定する。
-* DOM、公開属性、enhancer、copy state machine、syntax highlightは削除しない。
-* `--ui-code-group-*`と`--ui-code-surface-breakout-*`fallbackは削除しない。
+- 削除対象はmobile / desktop media query内のtop-level code group breakout overrideに限定する。
+- DOM、公開属性、enhancer、copy state machine、syntax highlightは削除しない。
+- `--ui-code-group-*`と`--ui-code-surface-breakout-*`fallbackは削除しない。
 
 Breaking Change Gate:
 
-* 既定visual contractはbreaking changeとして扱う。
-* 変更範囲はR3/A0としてcontract、ADR、SSR CSS contract testで固定する。
-* 単独code blockのcontained contractは変更しない。
+- 既定visual contractはbreaking changeとして扱う。
+- 変更範囲はR3/A0としてcontract、ADR、SSR CSS contract testで固定する。
+- 単独code blockのcontained contractは変更しない。
 
 ## Rollback
 
@@ -128,16 +128,16 @@ Breaking Change Gate:
 
 ## Out of scope
 
-* DOM生成
-* enhancer
-* ARIA
-* copy
-* syntax highlight
-* routing
-* data contract
-* 単独code block幅仕様
-* code preview
-* `stateful-note-bridges.css`
+- DOM生成
+- enhancer
+- ARIA
+- copy
+- syntax highlight
+- routing
+- data contract
+- 単独code block幅仕様
+- code preview
+- `stateful-note-bridges.css`
 
 ## Acceptance ID
 

@@ -18,15 +18,15 @@ A level: A0
 
 R3理由:
 
-* Design System pattern contractを変更する。
-* `.prose` / `.about-prose`の読書面flow selector契約を追加する。
-* CSS token、SSR CSS contract、Design System文書、Markdown authoring guideへ影響する。
+- Design System pattern contractを変更する。
+- `.prose` / `.about-prose`の読書面flow selector契約を追加する。
+- CSS token、SSR CSS contract、Design System文書、Markdown authoring guideへ影響する。
 
 A0理由:
 
-* private/restricted Evidenceは扱わない。
-* content本文やsecretを変更しない。
-* 通常のdiff、テスト、手動確認で十分である。
+- private/restricted Evidenceは扱わない。
+- content本文やsecretを変更しない。
+- 通常のdiff、テスト、手動確認で十分である。
 
 ## Decision
 
@@ -36,11 +36,11 @@ Decision ID: D-READING-PARAGRAPH-FLOW-SEPARATION-001
 
 採用仕様:
 
-* `--reading-flow-space: var(--space-4);`を維持する。
-* `--reading-paragraph-space: var(--space-3);`を追加する。
-* `.prose` / `.about-prose`直下の`p + p`は`--reading-paragraph-space`を使う。
-* `.prose` / `.about-prose`配下の`ui-tabs` panel直下の`p + p`も同じtokenを使う。
-* 非段落block遷移は既存の`--reading-flow-space`を維持する。
+- `--reading-flow-space: var(--space-4);`を維持する。
+- `--reading-paragraph-space: var(--space-3);`を追加する。
+- `.prose` / `.about-prose`直下の`p + p`は`--reading-paragraph-space`を使う。
+- `.prose` / `.about-prose`配下の`ui-tabs` panel直下の`p + p`も同じtokenを使う。
+- 非段落block遷移は既存の`--reading-flow-space`を維持する。
 
 ## Rationale
 
@@ -58,8 +58,8 @@ About専用selectorで詰めると、読書面共通の問題をページ固有h
 
 理由:
 
-* 表、図、コード、引用、callout、リストなどのblock遷移余白まで詰まる。
-* 既存の読書面block rhythmの後方互換性を壊す。
+- 表、図、コード、引用、callout、リストなどのblock遷移余白まで詰まる。
+- 既存の読書面block rhythmの後方互換性を壊す。
 
 ### Alternative B: Add an About-only override
 
@@ -67,8 +67,8 @@ About専用selectorで詰めると、読書面共通の問題をページ固有h
 
 理由:
 
-* About専用hackになり、note本文の短文段落では同じ問題が残る。
-* `.prose` / `.about-prose`の読書面共通patternとして扱うほうが責務が明確である。
+- About専用hackになり、note本文の短文段落では同じ問題が残る。
+- `.prose` / `.about-prose`の読書面共通patternとして扱うほうが責務が明確である。
 
 ### Alternative C: Measure paragraph line count with JavaScript
 
@@ -76,54 +76,54 @@ About専用selectorで詰めると、読書面共通の問題をページ固有h
 
 理由:
 
-* static-first / no-JS baselineを弱める。
-* 段落の見た目をruntime測定へ依存させる必要がない。
+- static-first / no-JS baselineを弱める。
+- 段落の見た目をruntime測定へ依存させる必要がない。
 
 ## Contract impact
 
 Affected contracts:
 
-* Design System reading surface flow pattern
-* CSS token contract
-* SSR CSS contract
-* Markdown authoring guideの補足説明
+- Design System reading surface flow pattern
+- CSS token contract
+- SSR CSS contract
+- Markdown authoring guideの補足説明
 
 Unaffected contracts:
 
-* Markdown parser / transformer
-* About content structure
-* router / URL
-* ARIA
-* hydration
-* search
-* TOC
-* `--reading-body-size`
-* `--reading-body-line-height`
-* `--reading-measure`
+- Markdown parser / transformer
+- About content structure
+- router / URL
+- ARIA
+- hydration
+- search
+- TOC
+- `--reading-body-size`
+- `--reading-body-line-height`
+- `--reading-measure`
 
 ## Acceptance
 
-* A-READING-PARAGRAPH-FLOW-001: `.prose` / `.about-prose`直下の`p + p`が`--reading-paragraph-space`を使う。
-* A-READING-PARAGRAPH-FLOW-002: 非段落block遷移は`--reading-flow-space`を維持する。
-* A-READING-PARAGRAPH-FLOW-003: `ui-tabs` panel内の`p + p`も同じ契約になる。
-* A-READING-PARAGRAPH-FLOW-004: About専用hackを入れない。
-* A-READING-PARAGRAPH-FLOW-005: Markdown authoring guideに段落分割の補足を追加する。
-* A-READING-PARAGRAPH-FLOW-006: `docs/design-system/pattern-reading-surface.md`を追加する。
-* A-READING-PARAGRAPH-FLOW-007: `docs/design-system/patterns.md`から新規pattern文書へ導線を張る。
-* A-READING-PARAGRAPH-FLOW-008: `--reading-flow-space`互換性を壊さない。
-* A-READING-PARAGRAPH-FLOW-009: `docs/design-system/foundations.md`と`docs/adr/README.md`を変更しない。
+- A-READING-PARAGRAPH-FLOW-001: `.prose` / `.about-prose`直下の`p + p`が`--reading-paragraph-space`を使う。
+- A-READING-PARAGRAPH-FLOW-002: 非段落block遷移は`--reading-flow-space`を維持する。
+- A-READING-PARAGRAPH-FLOW-003: `ui-tabs` panel内の`p + p`も同じ契約になる。
+- A-READING-PARAGRAPH-FLOW-004: About専用hackを入れない。
+- A-READING-PARAGRAPH-FLOW-005: Markdown authoring guideに段落分割の補足を追加する。
+- A-READING-PARAGRAPH-FLOW-006: `docs/design-system/pattern-reading-surface.md`を追加する。
+- A-READING-PARAGRAPH-FLOW-007: `docs/design-system/patterns.md`から新規pattern文書へ導線を張る。
+- A-READING-PARAGRAPH-FLOW-008: `--reading-flow-space`互換性を壊さない。
+- A-READING-PARAGRAPH-FLOW-009: `docs/design-system/foundations.md`と`docs/adr/README.md`を変更しない。
 
 ## Verification
 
-* V-READING-PARAGRAPH-FLOW-001: CSS contract testで`--reading-paragraph-space`を検証する。
-* V-READING-PARAGRAPH-FLOW-002: CSS contract testで直下`p + p` ruleを検証する。
-* V-READING-PARAGRAPH-FLOW-003: CSS contract testで`ui-tabs` panel内`p + p` ruleを検証する。
-* V-READING-PARAGRAPH-FLOW-004: 既存汎用flow ruleが`--reading-flow-space`を維持することを検証する。
-* V-READING-PARAGRAPH-FLOW-005: Japanese/ASCII spacing repository policyを検証する。
-* V-READING-PARAGRAPH-FLOW-006: buildを検証する。
-* V-READING-PARAGRAPH-FLOW-007: `docs/design-system/patterns.md`と`docs/README.md`から新規Design System pattern文書へ到達できることを確認する。
-* V-READING-PARAGRAPH-FLOW-008: Aboutと短文段落ノートを手動確認する。
-* V-READING-PARAGRAPH-FLOW-009: `docs/design-system/foundations.md`と`docs/adr/README.md`に差分がないことを確認する。
+- V-READING-PARAGRAPH-FLOW-001: CSS contract testで`--reading-paragraph-space`を検証する。
+- V-READING-PARAGRAPH-FLOW-002: CSS contract testで直下`p + p` ruleを検証する。
+- V-READING-PARAGRAPH-FLOW-003: CSS contract testで`ui-tabs` panel内`p + p` ruleを検証する。
+- V-READING-PARAGRAPH-FLOW-004: 既存汎用flow ruleが`--reading-flow-space`を維持することを検証する。
+- V-READING-PARAGRAPH-FLOW-005: Japanese/ASCII spacing repository policyを検証する。
+- V-READING-PARAGRAPH-FLOW-006: buildを検証する。
+- V-READING-PARAGRAPH-FLOW-007: `docs/design-system/patterns.md`と`docs/README.md`から新規Design System pattern文書へ到達できることを確認する。
+- V-READING-PARAGRAPH-FLOW-008: Aboutと短文段落ノートを手動確認する。
+- V-READING-PARAGRAPH-FLOW-009: `docs/design-system/foundations.md`と`docs/adr/README.md`に差分がないことを確認する。
 
 ## Rollback
 
@@ -131,10 +131,10 @@ Unaffected contracts:
 
 ## Out of scope
 
-* About作者欄のcompact group化
-* 本文コピー変更
-* Markdown parser変更
-* line-height変更
-* CSSファイル再編
-* 全体flow-space圧縮
-* router / URL / ARIA / hydration / search / TOC変更
+- About作者欄のcompact group化
+- 本文コピー変更
+- Markdown parser変更
+- line-height変更
+- CSSファイル再編
+- 全体flow-space圧縮
+- router / URL / ARIA / hydration / search / TOC変更

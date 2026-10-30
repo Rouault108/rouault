@@ -2,7 +2,11 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 import { describe, expect, it } from 'vitest';
-import { findMarkdownTableRow, getMarkdownSection, parseMarkdownTable } from '../helpers/markdown-table.js';
+import {
+  findMarkdownTableRow,
+  getMarkdownSection,
+  parseMarkdownTable,
+} from '../helpers/markdown-table.js';
 
 import {
   hasDeclarationForSelector,
@@ -29,15 +33,9 @@ const assertTargetSizeTable = (source: string): void => {
 describe('tokens css contract', () => {
   it('defines sidebar active surface through dedicated low-salience recipe', () => {
     expect(
-      hasDeclarationForSelector(
-        tokensCss,
-        ':root',
-        '--sidebar-item-active-bg-alpha',
-        '0.045',
-        {
-          scope: 'base',
-        },
-      ),
+      hasDeclarationForSelector(tokensCss, ':root', '--sidebar-item-active-bg-alpha', '0.045', {
+        scope: 'base',
+      }),
     ).toBe(true);
     expect(
       hasDeclarationForSelector(
@@ -100,13 +98,9 @@ describe('tokens css contract', () => {
       }),
     ).toBe(true);
     expect(
-      hasDeclarationForSelector(
-        tokensCss,
-        ':root',
-        '--sidebar-item-active-bg-alpha',
-        '0.075',
-        { mediaPredicate: (params) => /prefers-color-scheme\s*:\s*dark/u.test(params) },
-      ),
+      hasDeclarationForSelector(tokensCss, ':root', '--sidebar-item-active-bg-alpha', '0.075', {
+        mediaPredicate: (params) => /prefers-color-scheme\s*:\s*dark/u.test(params),
+      }),
     ).toBe(true);
     expect(
       hasDeclarationForSelector(
@@ -232,12 +226,32 @@ describe('tokens css contract', () => {
   });
 
   it.each([
-    ['incorrect value', (source: string) => source.replace(/(\|\s*`--control-min-touch`\s*\|)\s*24px(\s*\|)/u, '$1 25px$2')],
-    ['missing token', (source: string) => source.replace(/^\|[^\n]*`--control-min-touch`[^\n]*\n/mu, '')],
-    ['duplicate token', (source: string) => source.replace(/^(\|[^\n]*`--control-min-touch`[^\n]*)$/mu, '$1\n$1')],
-    ['incorrect header', (source: string) => source.replace(/\|\s*Token\s*\|\s*Value\s*\|/u, '| Token | Wrong |')],
-    ['extra cell', (source: string) => source.replace(/^(\|[^\n]*`--control-min-touch`[^\n]*)$/mu, '$1 extra |')],
-    ['missing cell', (source: string) => source.replace(/^\|[^\n]*`--control-min-touch`[^\n]*$/mu, '| `--control-min-touch` |')],
+    [
+      'incorrect value',
+      (source: string) =>
+        source.replace(/(\|\s*`--control-min-touch`\s*\|)\s*24px(\s*\|)/u, '$1 25px$2'),
+    ],
+    [
+      'missing token',
+      (source: string) => source.replace(/^\|[^\n]*`--control-min-touch`[^\n]*\n/mu, ''),
+    ],
+    [
+      'duplicate token',
+      (source: string) => source.replace(/^(\|[^\n]*`--control-min-touch`[^\n]*)$/mu, '$1\n$1'),
+    ],
+    [
+      'incorrect header',
+      (source: string) => source.replace(/\|\s*Token\s*\|\s*Value\s*\|/u, '| Token | Wrong |'),
+    ],
+    [
+      'extra cell',
+      (source: string) => source.replace(/^(\|[^\n]*`--control-min-touch`[^\n]*)$/mu, '$1 extra |'),
+    ],
+    [
+      'missing cell',
+      (source: string) =>
+        source.replace(/^\|[^\n]*`--control-min-touch`[^\n]*$/mu, '| `--control-min-touch` |'),
+    ],
   ] as const)('rejects target table with %s', (_name, mutate) => {
     expect(() => assertTargetSizeTable(mutate(accessibilityDocs))).toThrow();
   });

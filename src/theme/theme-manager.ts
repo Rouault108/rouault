@@ -32,8 +32,7 @@ let themeBootstrapInitialized = false;
 
 export function isThemePreference(value: unknown): value is ThemePreference {
   return (
-    typeof value === 'string' &&
-    THEME_PREFERENCE_VALUES.some((preference) => preference === value)
+    typeof value === 'string' && THEME_PREFERENCE_VALUES.some((preference) => preference === value)
   );
 }
 

@@ -7,11 +7,7 @@ describe('browser test matrix', () => {
   });
 
   it('adds WebKit to the default CI matrix', () => {
-    expect(resolveBrowserTestBrowsers(undefined, true)).toEqual([
-      'chromium',
-      'firefox',
-      'webkit',
-    ]);
+    expect(resolveBrowserTestBrowsers(undefined, true)).toEqual(['chromium', 'firefox', 'webkit']);
   });
 
   it('uses an explicit local selection', () => {

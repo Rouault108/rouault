@@ -75,9 +75,7 @@ describe('SearchDialogSelectionModel', () => {
 
     model.moveActive(1);
 
-    expect(host.activeChanges).to.deep.equal([
-      { activeId: 'b', origin: 'keyboard-navigation' },
-    ]);
+    expect(host.activeChanges).to.deep.equal([{ activeId: 'b', origin: 'keyboard-navigation' }]);
   });
 
   it('active がない ArrowUp は host の開始 index に delta を二重加算しない', () => {
@@ -86,9 +84,7 @@ describe('SearchDialogSelectionModel', () => {
 
     model.moveActive(-1);
 
-    expect(host.activeChanges).to.deep.equal([
-      { activeId: 'c', origin: 'keyboard-navigation' },
-    ]);
+    expect(host.activeChanges).to.deep.equal([{ activeId: 'c', origin: 'keyboard-navigation' }]);
   });
 
   it('active がある Arrow 移動は keyboard-navigation origin で通知する', () => {
@@ -97,9 +93,7 @@ describe('SearchDialogSelectionModel', () => {
 
     model.moveActive(1);
 
-    expect(host.activeChanges).to.deep.equal([
-      { activeId: 'c', origin: 'keyboard-navigation' },
-    ]);
+    expect(host.activeChanges).to.deep.equal([{ activeId: 'c', origin: 'keyboard-navigation' }]);
   });
 
   it('setActiveByIndex は呼び出し元 origin を渡す', () => {

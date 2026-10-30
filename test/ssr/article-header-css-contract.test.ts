@@ -11,8 +11,7 @@ const { cssText } = readCssFile(cssPath);
 const root = postcss.parse(cssText, { from: cssPath });
 
 const baselineSelector = '.article-header__breadcrumbs';
-const enhancementSelector =
-  '.article-header__breadcrumbs:has(+ .article-header__heading)';
+const enhancementSelector = '.article-header__breadcrumbs:has(+ .article-header__heading)';
 const enhancementSupportsParams =
   'selector(.article-header__breadcrumbs:has(+ .article-header__heading))';
 
@@ -108,9 +107,10 @@ describe('article header breadcrumb spacing CSS contract', () => {
     for (const { rule } of matches) {
       if (rule === baselineRule) continue;
       for (const property of ['margin', 'margin-block', 'margin-block-end', 'margin-bottom']) {
-        expect(directDeclarationsForProperty(rule, property), `${rule.selector}: ${property}`).toEqual(
-          [],
-        );
+        expect(
+          directDeclarationsForProperty(rule, property),
+          `${rule.selector}: ${property}`,
+        ).toEqual([]);
       }
     }
 

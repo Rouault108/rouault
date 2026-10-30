@@ -311,7 +311,9 @@ describe('remarkRouaultDirectives', () => {
         remarkRouaultDirectives()(tree, { path: 'content/notes/sample.md' });
       };
 
-      expect(run).to.throw('code-group の sync-scope は 64文字以下の kebab-case 識別子だけ指定可能です');
+      expect(run).to.throw(
+        'code-group の sync-scope は 64文字以下の kebab-case 識別子だけ指定可能です',
+      );
     }
   });
 

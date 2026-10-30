@@ -77,7 +77,8 @@ export const parseMarkdownTable = (
   const rows = first.children.slice(1).map((row) => {
     const cells = row.children.map((cell) => nodeText(cell).trim());
     if (cells.length !== headers.length) throw new Error('table row column count is incorrect');
-    if (cells.some((cell) => cell === '')) throw new Error('table cells must not be empty; use none for absence');
+    if (cells.some((cell) => cell === ''))
+      throw new Error('table cells must not be empty; use none for absence');
     const key = cells[0];
     if (key === undefined || key === '' || keys.has(key)) {
       throw new Error('table row keys must be nonempty and unique');

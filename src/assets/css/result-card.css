@@ -21,9 +21,7 @@
 
 .page-shell .result-card:hover {
   border-color: var(--border-default);
-  background:
-    linear-gradient(var(--bg-hover), var(--bg-hover)),
-    var(--bg-surface-2);
+  background: linear-gradient(var(--bg-hover), var(--bg-hover)), var(--bg-surface-2);
   box-shadow: none;
 }
 

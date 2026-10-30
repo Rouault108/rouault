@@ -311,7 +311,7 @@ a > code {
 :is(.prose, .about-prose) mark[data-current-match='true'] {
   box-shadow:
     inset 0 -0.68em 0
-      color-mix(in oklch, var(--bg-highlight-current, var(--bg-highlight-subtle)) 72%, transparent),
+    color-mix(in oklch, var(--bg-highlight-current, var(--bg-highlight-subtle)) 72%, transparent),
     inset 0 -0.32em 0 color-mix(in oklch, var(--bg-highlight-subtle) 92%, transparent);
 }
 

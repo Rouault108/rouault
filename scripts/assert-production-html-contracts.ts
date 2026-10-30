@@ -211,8 +211,11 @@ const assertTableRootIds = (document: Parse5Node, repoPath: string): void => {
       if (id) ids.set(id, (ids.get(id) ?? 0) + 1);
       if (
         node.tagName === 'div' &&
-        node.attrs.some((attribute) => attribute.name === 'data-table-root' && attribute.value === 'true')
-      ) wrappers.push(node);
+        node.attrs.some(
+          (attribute) => attribute.name === 'data-table-root' && attribute.value === 'true',
+        )
+      )
+        wrappers.push(node);
     }
     // parse5のtemplate.contentは通常documentとは別scopeのまま扱う。
     for (const child of getChildNodes(node)) visit(child);

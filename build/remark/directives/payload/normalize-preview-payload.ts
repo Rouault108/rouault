@@ -187,8 +187,7 @@ export const normalizePreviewSandboxPayload = (
   const allowPopups =
     parseBooleanAttribute(attrs['allow-popups'], node, file, 'preview-sandbox', 'allow-popups') ===
     true;
-  const hasManualOnlyCapability =
-    allowForms || allowDownloads || allowPointerLock || allowPopups;
+  const hasManualOnlyCapability = allowForms || allowDownloads || allowPointerLock || allowPopups;
 
   if (hasManualOnlyCapability && (activationPolicy === 'visible' || activationPolicy === 'eager')) {
     throw toError(
@@ -230,8 +229,7 @@ export const normalizePreviewSandboxPayload = (
     allowJs,
     ...(normalizedActivationPolicy
       ? {
-          activationPolicy:
-            normalizedActivationPolicy as PreviewSandboxPayload['activationPolicy'],
+          activationPolicy: normalizedActivationPolicy as PreviewSandboxPayload['activationPolicy'],
         }
       : {}),
     ...(heightMode

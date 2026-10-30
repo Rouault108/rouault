@@ -11,15 +11,15 @@
 
 ## 2. URL Classification
 
-| 分類 | 例 | trailing slash | 所有Contract | 主な関数 |
-| --- | --- | --- | --- | --- |
-| Note permalink / note page navigation URL | `/notes/library/collection/foo` | なし | `url-policy.md`、`note-navigation.md` | note projection、`normalizeRouaultPathname()` |
-| Surface URL | `/about/`、`/corpora/`、`/corpora/{corpusKey}/` | あり | `url-policy.md`、該当page/surface contract | `normalizeRouaultPathname()` |
-| SearchStateUrl | `/search/`、`/search/?q=foo`、`/tags/{tag}/` | `/search/`と`/tags/{tag}/`はあり | `url-policy.md`、`search.md` | `normalizeSearchStateUrl()`、`buildSearchStateUrl()`、`buildUrlForSearchState()`、`buildTagPageUrl()` |
-| SearchCanonicalPathname | `/notes/foo/` | あり | `url-policy.md`、`search.md` | `normalizeSearchCanonicalPathname()`、`createSearchCanonicalPathname()` |
-| SearchRenderHref | `/notes/foo/`、`/rouault/notes/foo/` | SearchCanonicalPathnameに従う | `url-policy.md`、`search.md` | `buildSearchRenderHref()`、`buildSearchResultRenderHref()` |
-| Generated document route pathname / fetch target path | `/notes/foo/`、`/notes/foo/index.html` | route/fetch都合であり公開canonicalではない | `url-policy.md`、`router.md` | `normalizeGeneratedDocumentRoutePathname()`、`buildGeneratedDocumentRouteSet()`、`resolveRouaultContentPath()` |
-| Permanent URL | `/archives/{hash}` | Permanent URL Contractに従う | `permanent-url.md` | archive hash / route projection |
+| 分類                                                  | 例                                              | trailing slash                             | 所有Contract                               | 主な関数                                                                                                       |
+| ----------------------------------------------------- | ----------------------------------------------- | ------------------------------------------ | ------------------------------------------ | -------------------------------------------------------------------------------------------------------------- |
+| Note permalink / note page navigation URL             | `/notes/library/collection/foo`                 | なし                                       | `url-policy.md`、`note-navigation.md`      | note projection、`normalizeRouaultPathname()`                                                                  |
+| Surface URL                                           | `/about/`、`/corpora/`、`/corpora/{corpusKey}/` | あり                                       | `url-policy.md`、該当page/surface contract | `normalizeRouaultPathname()`                                                                                   |
+| SearchStateUrl                                        | `/search/`、`/search/?q=foo`、`/tags/{tag}/`    | `/search/`と`/tags/{tag}/`はあり           | `url-policy.md`、`search.md`               | `normalizeSearchStateUrl()`、`buildSearchStateUrl()`、`buildUrlForSearchState()`、`buildTagPageUrl()`          |
+| SearchCanonicalPathname                               | `/notes/foo/`                                   | あり                                       | `url-policy.md`、`search.md`               | `normalizeSearchCanonicalPathname()`、`createSearchCanonicalPathname()`                                        |
+| SearchRenderHref                                      | `/notes/foo/`、`/rouault/notes/foo/`            | SearchCanonicalPathnameに従う              | `url-policy.md`、`search.md`               | `buildSearchRenderHref()`、`buildSearchResultRenderHref()`                                                     |
+| Generated document route pathname / fetch target path | `/notes/foo/`、`/notes/foo/index.html`          | route/fetch都合であり公開canonicalではない | `url-policy.md`、`router.md`               | `normalizeGeneratedDocumentRoutePathname()`、`buildGeneratedDocumentRouteSet()`、`resolveRouaultContentPath()` |
+| Permanent URL                                         | `/archives/{hash}`                              | Permanent URL Contractに従う               | `permanent-url.md`                         | archive hash / route projection                                                                                |
 
 Surface URLの所有Contractは`url-policy.md`および該当page/surface contractである。すべてのSurface URLに常に個別Contractが存在する前提にしてはならない。
 

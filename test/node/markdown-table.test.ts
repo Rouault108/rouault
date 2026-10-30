@@ -53,11 +53,16 @@ describe('document table contracts', () => {
     expect(parseMarkdownTable(getMarkdownSection(source, 'Target'), headers).rows).toHaveLength(1);
     expect(() => getMarkdownSection('```md\n## Target\n' + table + '```\n', 'Target')).toThrow();
     expect(() => getMarkdownSection('## Target\n## Target\n' + table, 'Target')).toThrow();
-    expect(() => parseMarkdownTable(getMarkdownSection('## Target\n\n## Next\n' + table, 'Target'), headers)).toThrow();
+    expect(() =>
+      parseMarkdownTable(getMarkdownSection('## Target\n\n## Next\n' + table, 'Target'), headers),
+    ).toThrow();
   });
 
   it('requires the requested key exactly once and preserves escaped pipe values', () => {
-    const parsed = parseMarkdownTable('| Key | Value |\n| --- | --- |\n| target | `a\\|b` |\n', headers);
+    const parsed = parseMarkdownTable(
+      '| Key | Value |\n| --- | --- |\n| target | `a\\|b` |\n',
+      headers,
+    );
     expect(findMarkdownTableRow(parsed, 'Key', 'target')['Value']).toBe('a|b');
     expect(() => findMarkdownTableRow(parsed, 'Key', 'missing')).toThrow();
     const repeatedValue = parseMarkdownTable(table + '| another | 24px |\n', headers);

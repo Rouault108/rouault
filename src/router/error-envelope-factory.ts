@@ -12,7 +12,10 @@ import { applyBasePathToRenderHref } from '../../shared/url/normalize-rouault-ur
 import { DEFAULT_SIDEBAR_ID } from '../../shared/navigation/sidebar-shell-defaults.js';
 import { EMPTY_CORPUS_NAVIGATION_PROJECTION_PAYLOAD } from '../../shared/navigation/corpus-navigation-projection.js';
 import { renderLayoutHeaderHtml } from '../layouts/layout-header-html.js';
-import type { ErrorFallbackLoadDocumentResult, NavigationLoadFailureReason } from './router-types.js';
+import type {
+  ErrorFallbackLoadDocumentResult,
+  NavigationLoadFailureReason,
+} from './router-types.js';
 import {
   NavigationEnvelopeContractError,
   NavigationEnvelopeMetadataMismatchError,
@@ -57,10 +60,7 @@ export class ErrorEnvelopeFactory {
     };
   }
 
-  createHttpErrorResult(
-    status: number,
-    normalizedUrl: string,
-  ): ErrorFallbackLoadDocumentResult {
+  createHttpErrorResult(status: number, normalizedUrl: string): ErrorFallbackLoadDocumentResult {
     switch (status) {
       case 401:
         return this.createErrorResult('401 - 認証エラー', 'ログインが必要です。', 'auth', status);

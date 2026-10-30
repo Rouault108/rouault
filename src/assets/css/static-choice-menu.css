@@ -17,10 +17,8 @@
     --bg-hover,
     color-mix(in srgb, var(--bg-default) 88%, var(--fg-default) 12%)
   );
-  --static-choice-menu-focus-outline: var(
-    --focus-ring-width,
-    2px
-  ) solid var(--focus-ring-color, oklch(60% 0.15 250));
+  --static-choice-menu-focus-outline: var(--focus-ring-width, 2px) solid
+    var(--focus-ring-color, oklch(60% 0.15 250));
   --static-choice-menu-focus-outline-offset: var(--focus-ring-offset, 2px);
 }
 

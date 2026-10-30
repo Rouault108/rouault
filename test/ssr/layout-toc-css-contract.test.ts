@@ -90,12 +90,7 @@ describe('layout toc css contract', () => {
 
   it('honors hidden state for descendants inside the TOC surface only', () => {
     expect(
-      hasImportantDeclarationForSelector(
-        layoutTocCss,
-        '.layout-toc [hidden]',
-        'display',
-        'none',
-      ),
+      hasImportantDeclarationForSelector(layoutTocCss, '.layout-toc [hidden]', 'display', 'none'),
     ).toBe(true);
     expect(hasDeclarationForSelector(layoutTocCss, '.layout-toc__item', 'display', 'block')).toBe(
       true,
@@ -241,28 +236,13 @@ describe('layout toc css contract', () => {
       ),
     ).toBe(true);
     expect(
-      hasDeclarationForAllSelectors(
-        layoutTocCss,
-        currentTocRailSelectors,
-        'block-size',
-        'auto',
-      ),
+      hasDeclarationForAllSelectors(layoutTocCss, currentTocRailSelectors, 'block-size', 'auto'),
     ).toBe(true);
     expect(
-      hasDeclarationForAllSelectors(
-        layoutTocCss,
-        currentTocRailSelectors,
-        'transform',
-        'none',
-      ),
+      hasDeclarationForAllSelectors(layoutTocCss, currentTocRailSelectors, 'transform', 'none'),
     ).toBe(true);
     expect(
-      hasDeclarationForAllSelectors(
-        layoutTocCss,
-        currentTocRailSelectors,
-        'opacity',
-        '1',
-      ),
+      hasDeclarationForAllSelectors(layoutTocCss, currentTocRailSelectors, 'opacity', '1'),
     ).toBe(true);
     expect(
       hasDeclarationValueIncluding(
@@ -514,13 +494,9 @@ describe('layout toc css contract', () => {
       }),
     ).toBe(true);
     expect(
-      hasDeclarationForAllSelectors(
-        layoutTocCss,
-        currentTocSelectors,
-        'color',
-        'Highlight',
-        { scope: 'forced-colors' },
-      ),
+      hasDeclarationForAllSelectors(layoutTocCss, currentTocSelectors, 'color', 'Highlight', {
+        scope: 'forced-colors',
+      }),
     ).toBe(true);
     expect(
       hasDeclarationValueNotIncludingForAllSelectors(

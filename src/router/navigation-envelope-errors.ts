@@ -1,6 +1,4 @@
-export type NavigationEnvelopeContractErrorCode =
-  | 'schema-version-mismatch'
-  | 'invalid-envelope';
+export type NavigationEnvelopeContractErrorCode = 'schema-version-mismatch' | 'invalid-envelope';
 
 export class NavigationEnvelopeContractError extends Error {
   override name = 'NavigationEnvelopeContractError';

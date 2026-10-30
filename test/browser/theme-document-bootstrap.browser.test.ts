@@ -85,7 +85,10 @@ describe('theme document bootstrap', () => {
         const expectedRoot = document.createElement('html');
         applyThemePreference(readStoredThemePreference(window.localStorage), {
           root: expectedRoot,
-          mediaQueryList: createMediaQueryList('(prefers-color-scheme: dark)', testCase.prefersDark),
+          mediaQueryList: createMediaQueryList(
+            '(prefers-color-scheme: dark)',
+            testCase.prefersDark,
+          ),
           storage: window.localStorage,
           persist: false,
           emit: false,
@@ -131,11 +134,7 @@ describe('theme document bootstrap', () => {
       const storagePrototype = Object.getPrototypeOf(frameWindow.localStorage) as Storage;
       let setItemCount = 0;
       const originalSetItem = storagePrototype.setItem;
-      storagePrototype.setItem = function setItem(
-        this: Storage,
-        key: string,
-        value: string,
-      ): void {
+      storagePrototype.setItem = function setItem(this: Storage, key: string, value: string): void {
         setItemCount += 1;
         return originalSetItem.call(this, key, value);
       };

@@ -57,26 +57,26 @@
 }
 
 :where(
-    pre[data-code-block],
-    [data-code-block-root] pre[data-code-block]
-  ):hover::-webkit-scrollbar-thumb,
+  pre[data-code-block],
+  [data-code-block-root] pre[data-code-block]
+):hover::-webkit-scrollbar-thumb,
 :where(
-    pre[data-code-block],
-    [data-code-block-root] pre[data-code-block]
-  ):focus-visible::-webkit-scrollbar-thumb,
+  pre[data-code-block],
+  [data-code-block-root] pre[data-code-block]
+):focus-visible::-webkit-scrollbar-thumb,
 [data-code-block-root]:hover pre[data-code-block]::-webkit-scrollbar-thumb,
 [data-code-block-root]:focus-within pre[data-code-block]::-webkit-scrollbar-thumb {
   background-color: var(--scrollbar-thumb, var(--fg-control-affordance, oklch(60% 0 0)));
 }
 
 :where(
-    pre[data-code-block],
-    [data-code-block-root] pre[data-code-block]
-  ):hover::-webkit-scrollbar-thumb:hover,
+  pre[data-code-block],
+  [data-code-block-root] pre[data-code-block]
+):hover::-webkit-scrollbar-thumb:hover,
 :where(
-    pre[data-code-block],
-    [data-code-block-root] pre[data-code-block]
-  ):focus-visible::-webkit-scrollbar-thumb:hover,
+  pre[data-code-block],
+  [data-code-block-root] pre[data-code-block]
+):focus-visible::-webkit-scrollbar-thumb:hover,
 [data-code-block-root]:hover pre[data-code-block]::-webkit-scrollbar-thumb:hover,
 [data-code-block-root]:focus-within pre[data-code-block]::-webkit-scrollbar-thumb:hover {
   background-color: var(--scrollbar-thumb-hover, var(--fg-muted, oklch(45% 0 0)));
@@ -176,7 +176,8 @@
   --ui-code-state-marker-backing: var(--ui-code-state-marker-surface-background);
   position: relative;
   padding-inline-start: calc(
-    var(--ui-code-state-marker-rail-size) + var(--ui-code-state-marker-gap)
+    var(--ui-code-state-marker-rail-size) +
+    var(--ui-code-state-marker-gap)
   );
 }
 
@@ -194,7 +195,8 @@
   block-size: 1lh;
   box-sizing: border-box;
   margin-inline-start: calc(
-    -1 * (var(--ui-code-state-marker-rail-size) + var(--ui-code-state-marker-gap))
+    -1 *
+    (var(--ui-code-state-marker-rail-size) + var(--ui-code-state-marker-gap))
   );
   margin-inline-end: var(--ui-code-state-marker-gap);
   vertical-align: top;
@@ -288,7 +290,7 @@
   box-shadow:
     inset 0 0 0 var(--focus-ring-width, 2px) var(--focus-ring-color, oklch(60% 0.15 250)),
     inset 0 0 0 calc(var(--focus-ring-width, 2px) + 1px)
-      color-mix(in oklch, var(--focus-ring-color, oklch(60% 0.15 250)) 16%, transparent);
+    color-mix(in oklch, var(--focus-ring-color, oklch(60% 0.15 250)) 16%, transparent);
   border-radius: var(--radius-sm, 4px);
   animation: var(--animation-focus);
 }
@@ -317,8 +319,10 @@
   )[data-code-line-numbers='true'][data-code-has-line-state='true']
   .line {
   padding-inline-start: calc(
-    var(--space-8, 2rem) + var(--space-2, 0.5rem) + var(--ui-code-state-marker-rail-size) +
-      var(--ui-code-state-marker-gap)
+    var(--space-8, 2rem) +
+    var(--space-2, 0.5rem) +
+    var(--ui-code-state-marker-rail-size) +
+    var(--ui-code-state-marker-gap)
   );
 }
 
@@ -398,11 +402,12 @@
   --ui-code-copy-overlay-min-block-start: var(--space-1, 4px);
   --ui-code-copy-control-inline-rail: var(--space-2, 8px);
   --ui-code-copy-overlay-inline-end-clearance: calc(
-    var(--ui-code-copy-control-inline-rail) + var(--ui-code-copy-control-inline-size)
+    var(--ui-code-copy-control-inline-rail) +
+    var(--ui-code-copy-control-inline-size)
   );
   --ui-code-copy-overlay-code-padding-inline-end: calc(
     var(--ui-code-copy-overlay-code-padding-inline-end-base) +
-      var(--ui-code-copy-overlay-inline-end-clearance)
+    var(--ui-code-copy-overlay-inline-end-clearance)
   );
   /* overlay位置は単一長さ値tokenだけで計算し、padding shorthand依存を避ける。
    * focus outlineが欠けないよう最小block-startも保持する。 */
@@ -410,7 +415,7 @@
     var(--ui-code-copy-overlay-min-block-start),
     calc(
       var(--ui-code-copy-overlay-code-padding-block-start) -
-        var(--ui-code-copy-overlay-center-offset)
+      var(--ui-code-copy-overlay-center-offset)
     )
   );
 

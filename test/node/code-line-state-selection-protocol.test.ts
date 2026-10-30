@@ -137,11 +137,7 @@ describe('code line state selection protocol', () => {
   });
 
   it('write／rename failureでもtemporary artifactを残さない', async () => {
-    const writeFailurePath = codeSelectionArtifactPath(
-      'unit-write-failure',
-      PROJECT,
-      TEST_ROOT,
-    );
+    const writeFailurePath = codeSelectionArtifactPath('unit-write-failure', PROJECT, TEST_ROOT);
     const records = createExpectedRecords();
 
     await expect(
@@ -163,11 +159,7 @@ describe('code line state selection protocol', () => {
     ).rejects.toThrow(/synthetic write failure/u);
     expect(await readdir(path.dirname(writeFailurePath))).toEqual([]);
 
-    const renameFailurePath = codeSelectionArtifactPath(
-      'unit-rename-failure',
-      PROJECT,
-      TEST_ROOT,
-    );
+    const renameFailurePath = codeSelectionArtifactPath('unit-rename-failure', PROJECT, TEST_ROOT);
     await expect(
       writeCodeSelectionBaseline(renameFailurePath, PROJECT, records, {
         fileOperations: {

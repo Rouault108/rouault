@@ -141,9 +141,7 @@ describe('rehypeStaticCodeGroups', () => {
     expect(firstPanel?.children?.[0]?.properties?.['data-code-copy-source']).toBe('true');
     expect(firstPanel?.children?.[0]?.children).toEqual([]);
     expect(firstPanel?.children?.[0]?.content?.type).toBe('root');
-    expect(firstPanel?.children?.[0]?.content?.children?.[0]?.value).toBe(
-      'const valid = true;',
-    );
+    expect(firstPanel?.children?.[0]?.content?.children?.[0]?.value).toBe('const valid = true;');
     const firstCopySourceHtml = toHtml(
       firstPanel?.children?.[0] as unknown as Parameters<typeof toHtml>[0],
     );
@@ -173,9 +171,7 @@ describe('rehypeStaticCodeGroups', () => {
     expect(secondPanel?.children?.[0]?.properties?.['data-code-copy-source']).toBe('true');
     expect(secondPanel?.children?.[0]?.children).toEqual([]);
     expect(secondPanel?.children?.[0]?.content?.type).toBe('root');
-    expect(secondPanel?.children?.[0]?.content?.children?.[0]?.value).toBe(
-      'const invalid = true;',
-    );
+    expect(secondPanel?.children?.[0]?.content?.children?.[0]?.value).toBe('const invalid = true;');
     const secondCopySourceHtml = toHtml(
       secondPanel?.children?.[0] as unknown as Parameters<typeof toHtml>[0],
     );

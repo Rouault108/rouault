@@ -41,7 +41,8 @@
 
   padding-block-end: var(--_note-tabs-focus-clearance);
   margin-block-end: calc(
-    -1 * (var(--_note-tabs-focus-clearance) + (0.5 * var(--border-width-thick, 2px)))
+    -1 *
+    (var(--_note-tabs-focus-clearance) + (0.5 * var(--border-width-thick, 2px)))
   );
 
   padding-inline: var(--_note-tabs-focus-clearance);

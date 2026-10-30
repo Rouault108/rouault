@@ -79,26 +79,68 @@ export class StaticHeaderMenuController {
 
   private bindListeners(): void {
     const { signal } = this.listenerController;
-    document.addEventListener('click', (event) => { this.handleClick(event); }, { signal });
-    document.addEventListener('keydown', (event) => { this.handleKeydown(event); }, { signal });
-    document.addEventListener('pointerdown', (event) => { this.handlePointerdown(event); }, {
-      signal,
-    });
-    document.addEventListener('scroll', (event) => { this.handleScroll(event); }, {
-      capture: true,
-      signal,
-    });
-    window.addEventListener('scroll', (event) => { this.handleScroll(event); }, {
-      capture: true,
-      signal,
-    });
+    document.addEventListener(
+      'click',
+      (event) => {
+        this.handleClick(event);
+      },
+      { signal },
+    );
+    document.addEventListener(
+      'keydown',
+      (event) => {
+        this.handleKeydown(event);
+      },
+      { signal },
+    );
+    document.addEventListener(
+      'pointerdown',
+      (event) => {
+        this.handlePointerdown(event);
+      },
+      {
+        signal,
+      },
+    );
+    document.addEventListener(
+      'scroll',
+      (event) => {
+        this.handleScroll(event);
+      },
+      {
+        capture: true,
+        signal,
+      },
+    );
+    window.addEventListener(
+      'scroll',
+      (event) => {
+        this.handleScroll(event);
+      },
+      {
+        capture: true,
+        signal,
+      },
+    );
     for (const eventName of APP_SHELL_EVENTS) {
-      document.addEventListener(eventName, () => { this.closeAll(undefined, 'shell'); }, { signal });
+      document.addEventListener(
+        eventName,
+        () => {
+          this.closeAll(undefined, 'shell');
+        },
+        { signal },
+      );
     }
-    document.addEventListener('toggle', (event) => { this.handleToggle(event); }, {
-      capture: true,
-      signal,
-    });
+    document.addEventListener(
+      'toggle',
+      (event) => {
+        this.handleToggle(event);
+      },
+      {
+        capture: true,
+        signal,
+      },
+    );
   }
 
   private handleClick(event: MouseEvent): void {

@@ -327,10 +327,9 @@ describe('result card static CSS contract', () => {
     expect(hoverIndex, 'hover ルールは fallback focus-visible より前に置く').toBeLessThan(
       fallbackIndex,
     );
-    expect(
-      fallbackIndex,
-      'fallback focus-visible は :has() 投影より前に置く',
-    ).toBeLessThan(supportsIndex);
+    expect(fallbackIndex, 'fallback focus-visible は :has() 投影より前に置く').toBeLessThan(
+      supportsIndex,
+    );
     expect(supportsIndex, ':has() 投影は forced-colors 補正より前に置く').toBeLessThan(
       forcedColorsIndex,
     );
@@ -344,9 +343,7 @@ describe('result card static CSS contract', () => {
 
     expect(cardBlock).toContain('overflow: hidden');
     expect(cardBlock).toContain('background: var(--bg-surface-2)');
-    expect(cardBlock).toContain(
-      'border: var(--border-width, 1px) solid var(--border-default)',
-    );
+    expect(cardBlock).toContain('border: var(--border-width, 1px) solid var(--border-default)');
     expect(cardBlock).toContain('transition:');
     expect(cardBlock).not.toContain('box-shadow');
     expect(cardBlock).not.toContain('--border-muted');

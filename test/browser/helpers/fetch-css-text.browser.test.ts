@@ -65,8 +65,8 @@ describe('browser CSS text response contract', () => {
     expect(mainStyle).toBeInstanceOf(HTMLStyleElement);
     expect(mainStyle?.textContent).not.toContain('__vite__updateStyle');
     expect(mainStyle?.textContent).not.toMatch(/@import\s+(?:url\()?['"]?\.?\//iu);
-    expect(getComputedStyle(document.documentElement).getPropertyValue('--chroma-neutral').trim()).toBe(
-      '0',
-    );
+    expect(
+      getComputedStyle(document.documentElement).getPropertyValue('--chroma-neutral').trim(),
+    ).toBe('0');
   });
 });

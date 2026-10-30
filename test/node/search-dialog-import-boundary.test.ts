@@ -60,12 +60,8 @@ describe('search dialog import boundary', () => {
     const enhancer = readSource('src/client/post-hydrate/search-dialog-enhancer.ts');
     expect(enhancer).not.toContain('dispatchSearchDialogEvent');
     expect(enhancer).toContain("event.detail === 0 ? 'keyboard' : 'pointer'");
-    expect(enhancer).toContain(
-      'controller?.tryOpen({ trigger: anchor }) === true',
-    );
-    expect(enhancer).toContain(
-      'controller?.tryOpen({ trigger: anchor, modality }) === true',
-    );
+    expect(enhancer).toContain('controller?.tryOpen({ trigger: anchor }) === true');
+    expect(enhancer).toContain('controller?.tryOpen({ trigger: anchor, modality }) === true');
     expect(enhancer).toContain('event.preventDefault()');
   });
 

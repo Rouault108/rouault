@@ -101,7 +101,7 @@ Header search triggerは、旧`ui-search-trigger`の完全復元ではなく、�
 | `ui-dropdown`の完全なmenu role contract                              | Restoreしない。     | Corpusはnavigation disclosure、themeはbutton groupとして扱うため。                                                                      |
 | `role="menu"` / `role="menuitem"` / roving tabindex                  | 採用しない。        | 現行構造の意味論、native Tab order、fallback link contractと衝突するため。                                                              |
 | Corpus linkのSpace activation                                        | 原則restoreしない。 | Corpus itemはnative linkとして扱い、Enter activationを基本とするため。                                                                  |
-| TOC triggerのbutton化                                                | Restoreしない。     | static TOC rootへのfragment fallback linkを維持するため。                                                                                             |
+| TOC triggerのbutton化                                                | Restoreしない。     | static TOC rootへのfragment fallback linkを維持するため。                                                                               |
 | Search triggerのanchor fallback廃止                                  | 廃止しない。        | `/search/` fallbackを維持するため。                                                                                                     |
 
 ## 6. Public Contract

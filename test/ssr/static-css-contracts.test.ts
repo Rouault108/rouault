@@ -698,48 +698,33 @@ describe('static CSS contracts', () => {
     const css = readCss('translation.css');
 
     expectRuleToDeclare(css, '[data-translation-overlay]', ['margin: 0']);
-    expectRuleToDeclare(
-      css,
-      '[data-translation-overlay] > summary',
-      [
-        'display: inline',
-        'background: transparent',
-        'font: inherit',
-        'cursor: pointer',
-        'list-style: none',
-        'text-decoration-line: underline',
-      ],
-    );
-    expectRuleToDeclare(
-      css,
-      '[data-translation-overlay] > [data-translation-content]',
-      [
-        'padding: var(--space-3, 12px) var(--space-4, 16px)',
-        'background: var(--bg-surface-1)',
-        'color: var(--fg-default)',
-        'line-height: var(--line-height-relaxed, 1.75)',
-      ],
-    );
+    expectRuleToDeclare(css, '[data-translation-overlay] > summary', [
+      'display: inline',
+      'background: transparent',
+      'font: inherit',
+      'cursor: pointer',
+      'list-style: none',
+      'text-decoration-line: underline',
+    ]);
+    expectRuleToDeclare(css, '[data-translation-overlay] > [data-translation-content]', [
+      'padding: var(--space-3, 12px) var(--space-4, 16px)',
+      'background: var(--bg-surface-1)',
+      'color: var(--fg-default)',
+      'line-height: var(--line-height-relaxed, 1.75)',
+    ]);
 
     const forcedColors = atRuleBlock(css, '@media (forced-colors: active)');
-    expectRuleToDeclare(
-      forcedColors,
-      '[data-translation-overlay] > summary',
-      ['color: LinkText'],
-    );
-    expectRuleToDeclare(
-      forcedColors,
-      '[data-translation-overlay] > [data-translation-content]',
-      ['background: Canvas', 'color: CanvasText'],
-    );
+    expectRuleToDeclare(forcedColors, '[data-translation-overlay] > summary', ['color: LinkText']);
+    expectRuleToDeclare(forcedColors, '[data-translation-overlay] > [data-translation-content]', [
+      'background: Canvas',
+      'color: CanvasText',
+    ]);
 
     const print = atRuleBlock(css, '@media print');
     expectRuleToDeclare(print, '[data-translation-overlay]', ['display: block']);
-    expectRuleToDeclare(
-      print,
-      '[data-translation-overlay] > [data-translation-content]',
-      ['display: block'],
-    );
+    expectRuleToDeclare(print, '[data-translation-overlay] > [data-translation-content]', [
+      'display: block',
+    ]);
 
     expect(css).to.contain('.translation-static');
     expect(css).not.to.contain('[data-translation-fallback] [data-part');
@@ -2688,7 +2673,7 @@ describe('static CSS contracts', () => {
       bridge,
       'tabs panel code surface variable reset',
       (selector) =>
-        selector.includes("[data-tabs-root]>[data-tab-panel]") &&
+        selector.includes('[data-tabs-root]>[data-tab-panel]') &&
         selector.includes('pre[data-code-block]') &&
         selector.includes('section[data-code-group]') &&
         selector.includes('[data-code-block-root]'),

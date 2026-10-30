@@ -11,7 +11,7 @@ const root = postcss.parse(css);
 
 const readingRootScopes = [
   ':is(.prose,.about-prose)>[data-callout]',
-  ":is(.prose,.about-prose)>[data-tabs-root]>[data-tab-panel]>[data-callout]",
+  ':is(.prose,.about-prose)>[data-tabs-root]>[data-tab-panel]>[data-callout]',
 ] as const;
 
 const visualDeclarationProperties = [
@@ -234,10 +234,10 @@ describe('callout CSS contract', () => {
     expect(selectors).toContain(':is(.prose,.about-prose)>[data-callout]>.callout-icon');
     expect(selectors).toContain(':is(.prose,.about-prose)>[data-callout]>[data-callout-icon-svg]');
     expect(selectors).toContain(
-      ":is(.prose,.about-prose)>[data-tabs-root]>[data-tab-panel]>[data-callout]>.callout-icon",
+      ':is(.prose,.about-prose)>[data-tabs-root]>[data-tab-panel]>[data-callout]>.callout-icon',
     );
     expect(selectors).toContain(
-      ":is(.prose,.about-prose)>[data-tabs-root]>[data-tab-panel]>[data-callout]>[data-callout-icon-svg]",
+      ':is(.prose,.about-prose)>[data-tabs-root]>[data-tab-panel]>[data-callout]>[data-callout-icon-svg]',
     );
   });
 

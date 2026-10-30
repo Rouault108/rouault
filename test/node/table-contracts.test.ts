@@ -121,7 +121,11 @@ describe('table node contracts', () => {
     });
 
     const table = first?.children?.[0];
-    expect(table?.children?.map((child) => child.tagName)).toEqual(['caption', 'colgroup', 'tbody']);
+    expect(table?.children?.map((child) => child.tagName)).toEqual([
+      'caption',
+      'colgroup',
+      'tbody',
+    ]);
     expect(
       table?.children?.[1]?.children?.map((child) => child.properties?.['data-table-col-width']),
     ).toEqual(['auto', 'narrow']);

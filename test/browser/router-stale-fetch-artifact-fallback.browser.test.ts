@@ -86,10 +86,7 @@ const appendStaticHeader = (): void => {
 };
 
 const setupCurrentDocument = (
-  options: {
-    readonly buildId?: string | null;
-    readonly generatedAt?: string | null;
-  } = {},
+  options: { readonly buildId?: string | null; readonly generatedAt?: string | null } = {},
 ): HTMLElement => {
   document.head.querySelectorAll('meta[name^="rouault-"]').forEach((meta) => meta.remove());
   document.body.replaceChildren();

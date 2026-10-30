@@ -637,11 +637,7 @@ describe('header theme quiet declaration contract', () => {
         'COLOR_RECORD_COUNT',
       ],
       [
-        replaceExactlyOnce(
-          VALID_HEADER_DECLARATION_CONTRACT_FIXTURE,
-          `\n${N6_BLOCK}`,
-          '',
-        ),
+        replaceExactlyOnce(VALID_HEADER_DECLARATION_CONTRACT_FIXTURE, `\n${N6_BLOCK}`, ''),
         'COLOR_RECORD_COUNT',
       ],
       [

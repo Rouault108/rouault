@@ -34,11 +34,21 @@ describe('final HTML search projection', () => {
     );
     if (!html) throw new Error('native output missing');
     const result = project(html);
-    for (const content of ['PanelOne', 'PanelTwo', 'OriginalDocument', 'TranslatedDocument', 'PreviewDocument', 'CodeDocument', 'VideoDocument']) {
+    for (const content of [
+      'PanelOne',
+      'PanelTwo',
+      'OriginalDocument',
+      'TranslatedDocument',
+      'PreviewDocument',
+      'CodeDocument',
+      'VideoDocument',
+    ]) {
       expect(result.body).toContain(content);
       expect(result.body.split(content)).toHaveLength(2);
     }
-    expect(result.body).not.toMatch(/NavigationOnly|ToolbarOperationOnly|InertPayloadOnly|JavaScript|プレビューを|再試行/u);
+    expect(result.body).not.toMatch(
+      /NavigationOnly|ToolbarOperationOnly|InertPayloadOnly|JavaScript|プレビューを|再試行/u,
+    );
     expect(result.passages.find((passage) => passage.text === 'PanelTwo')?.anchorId).toBe('two');
   });
   it('外側blockquote内の見出しもmetadataへ分離し本文に重複させない', () => {

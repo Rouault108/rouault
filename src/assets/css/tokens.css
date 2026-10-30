@@ -553,7 +553,9 @@
   --note-reading-max-inline-size: 54rem;
   --note-shell-absent-max-width: min(100%, 72rem);
   --note-shell-max-width: calc(
-    var(--note-reading-max-inline-size) + var(--note-toc-width) + var(--note-shell-column-gap)
+    var(--note-reading-max-inline-size) +
+    var(--note-toc-width) +
+    var(--note-shell-column-gap)
   );
   --note-fixed-frame-max-width: calc(var(--note-sidebar-width) + var(--note-shell-max-width));
 

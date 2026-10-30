@@ -4,9 +4,7 @@
     "slug": "example",
     "permalink": "/notes/example/",
     "description": "説明",
-    "genre": [
-      "tag"
-    ]
+    "genre": ["tag"]
   },
   "html": "<main data-note-static-surface><h2 id=\"h\">値型</h2><p>コピー boxing コピー</p><p>株式会社</p></main>",
   "manifest": {
@@ -63,15 +61,8 @@
         "title": "株式会社",
         "description": "説明",
         "pathLabel": "notes / example",
-        "keywords": [
-          "example",
-          "tag",
-          "株式会社",
-          "説明"
-        ],
-        "tags": [
-          "tag"
-        ],
+        "keywords": ["example", "tag", "株式会社", "説明"],
+        "tags": ["tag"],
         "date": ""
       }
     ]
@@ -87,9 +78,7 @@
         "documentId": "/notes/example/",
         "canonicalPathname": "/notes/example/",
         "order": 0,
-        "headingPath": [
-          "値型"
-        ],
+        "headingPath": ["値型"],
         "anchorId": "h",
         "currentHeading": "値型",
         "ancestorHeading": ""
@@ -99,9 +88,7 @@
         "documentId": "/notes/example/",
         "canonicalPathname": "/notes/example/",
         "order": 1,
-        "headingPath": [
-          "値型"
-        ],
+        "headingPath": ["値型"],
         "anchorId": "h",
         "currentHeading": "値型",
         "ancestorHeading": ""

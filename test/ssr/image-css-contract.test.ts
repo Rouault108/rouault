@@ -57,9 +57,9 @@ const isForbiddenBroadImageSelector = (selector: string): boolean => {
 
 describe('image css contract', () => {
   it('本文画像 surface style は direct child 構造だけへ適用すること', () => {
-    expect(
-      hasDeclarationForSelector(cssText, 'figure[data-image] > img', 'width', '100%'),
-    ).toBe(true);
+    expect(hasDeclarationForSelector(cssText, 'figure[data-image] > img', 'width', '100%')).toBe(
+      true,
+    );
     expect(
       hasDeclarationForSelector(
         cssText,
@@ -190,8 +190,7 @@ describe('image css contract', () => {
   });
 
   it('右上 affordance は icon 側へ配置し、print / forced-colors に対応すること', () => {
-    const iconSelector =
-      'figure[data-image] [data-image-zoom-trigger] .image-zoom-trigger__icon';
+    const iconSelector = 'figure[data-image] [data-image-zoom-trigger] .image-zoom-trigger__icon';
 
     expect(hasDeclarationForSelector(cssText, iconSelector, 'position', 'absolute')).toBe(true);
     expect(hasDeclarationPropertyForSelector(cssText, iconSelector, 'inset-block-start')).toBe(

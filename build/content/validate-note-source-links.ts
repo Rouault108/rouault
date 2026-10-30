@@ -221,7 +221,9 @@ export function collectNoteSourceLinksFromTree(
         sourceFilePath: options.sourceFilePath,
         sourceFileDisplayPath: options.sourceFileDisplayPath,
         position: toPosition(node, options.bodyStartLine),
-        ...(node.rouaultExpansionSource ? { expansionSource: { ...node.rouaultExpansionSource } } : {}),
+        ...(node.rouaultExpansionSource
+          ? { expansionSource: { ...node.rouaultExpansionSource } }
+          : {}),
       });
       return;
     }
@@ -238,7 +240,9 @@ export function collectNoteSourceLinksFromTree(
           sourceFilePath: options.sourceFilePath,
           sourceFileDisplayPath: options.sourceFileDisplayPath,
           position: toPosition(node, options.bodyStartLine),
-        ...(node.rouaultExpansionSource ? { expansionSource: { ...node.rouaultExpansionSource } } : {}),
+          ...(node.rouaultExpansionSource
+            ? { expansionSource: { ...node.rouaultExpansionSource } }
+            : {}),
           definitionPosition: toPosition(definition, options.bodyStartLine),
           definitionIdentifier: identifier,
         });
@@ -262,7 +266,9 @@ export function collectNoteSourceLinksFromTree(
         sourceFilePath: options.sourceFilePath,
         sourceFileDisplayPath: options.sourceFileDisplayPath,
         position: toPosition(node, options.bodyStartLine),
-        ...(node.rouaultExpansionSource ? { expansionSource: { ...node.rouaultExpansionSource } } : {}),
+        ...(node.rouaultExpansionSource
+          ? { expansionSource: { ...node.rouaultExpansionSource } }
+          : {}),
         directiveName,
         directiveAttributeName: attributeName,
         directiveUrlPolicy,

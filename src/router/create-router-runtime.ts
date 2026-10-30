@@ -61,7 +61,9 @@ export const createRouterRuntime = (runtimeOptions: CreateRouterRuntimeOptions):
   });
   const linkInterceptor = new RouterLinkInterceptor({
     location,
-    onNativeAddressChange: (change) => { runtimeOptions.adoptSameDocumentAddress(change); },
+    onNativeAddressChange: (change) => {
+      runtimeOptions.adoptSameDocumentAddress(change);
+    },
     siteUrlContext: runtimeOptions.urlDependencies.siteUrlContext,
     getCurrentUrl: () => runtimeOptions.getCurrentUrl(),
     requestNavigation: (request) => runtimeOptions.requestNavigation(request),

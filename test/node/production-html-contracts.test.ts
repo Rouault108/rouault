@@ -492,9 +492,7 @@ describe('production HTML artifact contracts', () => {
       });
     });
   });
-
 });
-
 
 describe('production table wrapper IDs', () => {
   it.each([
@@ -504,13 +502,23 @@ describe('production table wrapper IDs', () => {
   ])('rejects missing or page-frame duplicate IDs: %s', async (html) => {
     await withRepoFixture(async (repoRoot) => {
       await writeDistFile(repoRoot, 'index.html', wrapCanonicalAppShellDocument(html));
-      await expect(assertProductionHtmlContracts({ repoRoot })).rejects.toThrow('must be nonempty and unique across the entire page');
+      await expect(assertProductionHtmlContracts({ repoRoot })).rejects.toThrow(
+        'must be nonempty and unique across the entire page',
+      );
     });
   });
   it('accepts exact case-sensitive IDs and a separate inert template scope', async () => {
     await withRepoFixture(async (repoRoot) => {
-      await writeDistFile(repoRoot, 'index.html', wrapCanonicalAppShellDocument('<header id="Exact-ID"></header><div data-table-root="true" id="exact-id"><table></table></div><template><div data-table-root="true" id="exact-id"></div></template>'));
-      await expect(assertProductionHtmlContracts({ repoRoot })).resolves.toMatchObject({ htmlFiles: ['dist/index.html'] });
+      await writeDistFile(
+        repoRoot,
+        'index.html',
+        wrapCanonicalAppShellDocument(
+          '<header id="Exact-ID"></header><div data-table-root="true" id="exact-id"><table></table></div><template><div data-table-root="true" id="exact-id"></div></template>',
+        ),
+      );
+      await expect(assertProductionHtmlContracts({ repoRoot })).resolves.toMatchObject({
+        htmlFiles: ['dist/index.html'],
+      });
     });
   });
 });

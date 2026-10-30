@@ -477,7 +477,7 @@ header[data-layout-header] .corpus-trigger-text {
     .layout-header__compact-center {
     --_header-center-start-inset: calc(
       var(--note-sidebar-width, var(--sidebar-width, 248px)) +
-        var(--note-sidebar-main-gap, var(--note-shell-column-gap, 32px))
+      var(--note-sidebar-main-gap, var(--note-shell-column-gap, 32px))
     );
   }
 
@@ -491,7 +491,7 @@ header[data-layout-header] .corpus-trigger-text {
     .layout-header__compact-center {
     --_header-center-end-inset: calc(
       var(--note-toc-width, clamp(15rem, 18vw, 17rem)) +
-        var(--note-shell-column-gap, var(--space-8, 32px))
+      var(--note-shell-column-gap, var(--space-8, 32px))
     );
   }
 }

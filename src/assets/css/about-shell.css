@@ -23,8 +23,9 @@
   width: min(
     100%,
     calc(
-      var(--about-content-max-inline-size, 52rem) + var(--about-content-padding-inline) +
-        var(--about-content-padding-inline)
+      var(--about-content-max-inline-size, 52rem) +
+      var(--about-content-padding-inline) +
+      var(--about-content-padding-inline)
     )
   );
   margin-inline: auto;

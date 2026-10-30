@@ -80,8 +80,12 @@ describe('CorporaOverviewTemplate', () => {
     expect(rendered).toContain('<div class="meta-row corpora-overview__meta">');
     expect(rendered).toContain('2件のコーパス');
     expect(rendered).toContain('3件のノート');
-    expect(rendered).toContain('<span>最新更新 <time datetime="2026-03-10">2026-03-10</time></span>');
-    expect(rendered).toContain('<h2 id="corpora-list-title" class="corpora-overview__section-title">公開コーパス</h2>');
+    expect(rendered).toContain(
+      '<span>最新更新 <time datetime="2026-03-10">2026-03-10</time></span>',
+    );
+    expect(rendered).toContain(
+      '<h2 id="corpora-list-title" class="corpora-overview__section-title">公開コーパス</h2>',
+    );
     expect(rendered).toContain('閲覧単位を選び、そのまとまりに属するノートへ進みます。');
     expect(rendered).toContain('href="/corpora/music/"');
     expect(rendered).not.toContain('href="/notes/music/harmony/"');

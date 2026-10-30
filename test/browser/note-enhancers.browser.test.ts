@@ -375,7 +375,9 @@ describe('note progressive enhancers', () => {
     expect(dialog?.querySelector('[data-image-lightbox-surface]')).to.not.equal(null);
     expect(figureChildren.at(-1)?.tagName.toLowerCase()).to.equal('figcaption');
     expect(figureChildren.indexOf(expectPresent(dialog, 'dialog'))).to.equal(
-      figureChildren.indexOf(expectPresent(caption?.parentElement?.parentElement, 'caption dialog')),
+      figureChildren.indexOf(
+        expectPresent(caption?.parentElement?.parentElement, 'caption dialog'),
+      ),
     );
     expect(image?.getAttribute('src')).to.contain('/static/example.png');
     expect(image?.getAttribute('alt')).to.equal('zoom target');
@@ -533,26 +535,29 @@ describe('note progressive enhancers', () => {
   });
 
   it('image lightbox enhancer は showModal 失敗時に scroll lock を戻し trigger を隠すこと', () => {
-    withShowModalDescriptor(function showModalFailure() {
-      throw new Error('showModal failed');
-    }, () => {
-      const root = createImageRoot();
-      document.body.append(root);
+    withShowModalDescriptor(
+      function showModalFailure() {
+        throw new Error('showModal failed');
+      },
+      () => {
+        const root = createImageRoot();
+        document.body.append(root);
 
-      enhanceImageLightboxes(root);
+        enhanceImageLightboxes(root);
 
-      const trigger = expectPresent(
-        root.querySelector<HTMLButtonElement>('button[data-image-zoom-trigger]'),
-        'image trigger',
-      );
+        const trigger = expectPresent(
+          root.querySelector<HTMLButtonElement>('button[data-image-zoom-trigger]'),
+          'image trigger',
+        );
 
-      expect(trigger.hidden).to.equal(false);
-      trigger.click();
+        expect(trigger.hidden).to.equal(false);
+        trigger.click();
 
-      expect(trigger.hidden).to.equal(true);
-      expect(document.documentElement.style.overflow).to.equal('');
-      expect(document.body.style.overflow).to.equal('');
-    });
+        expect(trigger.hidden).to.equal(true);
+        expect(document.documentElement.style.overflow).to.equal('');
+        expect(document.body.style.overflow).to.equal('');
+      },
+    );
   });
 
   it('image lightbox enhancer は canonical でない既存 dialog を操作可能化しないこと', () => {

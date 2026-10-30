@@ -19,7 +19,9 @@ describe('native note controls', () => {
   it('EMPTYのnative disabledがclickを抑止する', async () => {
     const root = await nativeNoteFixture(element('ui-video'));
     activateVideo(root, fixtureAbortController(root).signal);
-    const button = requireFixtureValue(root.querySelector<HTMLButtonElement>('[data-video-action="play"]'));
+    const button = requireFixtureValue(
+      root.querySelector<HTMLButtonElement>('[data-video-action="play"]'),
+    );
     let clicks = 0;
     button.addEventListener('click', () => {
       clicks += 1;
@@ -31,7 +33,9 @@ describe('native note controls', () => {
 
   it('Code Previewのmenu triggerはnative buttonにaria-controls/haspopupを持つ', async () => {
     const root = await nativeNoteFixture(element('ui-code-preview', { controls: 'theme' }));
-    const trigger = requireFixtureValue(root.querySelector<HTMLButtonElement>('[aria-haspopup="menu"]'));
+    const trigger = requireFixtureValue(
+      root.querySelector<HTMLButtonElement>('[aria-haspopup="menu"]'),
+    );
     expect(trigger).toBeInstanceOf(HTMLButtonElement);
     expect(trigger.getAttribute('aria-expanded')).toBe('false');
     const panel = root.querySelector('[role="menu"]');

@@ -75,8 +75,7 @@ describe('renderTocHtml', () => {
     const nav = root
       ? findElement(
           root,
-          (element) =>
-            element.tagName === 'nav' && getAttribute(element, 'class') === 'layout-toc',
+          (element) => element.tagName === 'nav' && getAttribute(element, 'class') === 'layout-toc',
         )
       : null;
 

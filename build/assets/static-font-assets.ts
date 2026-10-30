@@ -13,8 +13,7 @@ export const NOTO_SANS_JP_FONT_SOURCE_DIR_ABSOLUTE_PATH = path.resolve(
   'node_modules/@fontsource-variable/noto-sans-jp/files',
 );
 
-export const NOTO_SANS_JP_FONT_DIR_REPO_PATH =
-  '.generated/static-assets/assets/fonts/noto-sans-jp';
+export const NOTO_SANS_JP_FONT_DIR_REPO_PATH = '.generated/static-assets/assets/fonts/noto-sans-jp';
 
 export const NOTO_SANS_JP_FONT_DIR_ABSOLUTE_PATH = path.resolve(
   process.cwd(),

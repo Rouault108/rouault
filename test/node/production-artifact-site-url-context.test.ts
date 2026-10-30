@@ -80,10 +80,7 @@ const createHtml = (
 };
 
 const writeFixture = async (
-  options: {
-    readonly html?: string;
-    readonly manifest?: string | null;
-  } = {},
+  options: { readonly html?: string; readonly manifest?: string | null } = {},
 ): Promise<void> => {
   await mkdir(path.join(tmpRoot, 'dist'), { recursive: true });
   await writeFile(path.join(tmpRoot, 'dist/index.html'), options.html ?? createHtml(), 'utf8');

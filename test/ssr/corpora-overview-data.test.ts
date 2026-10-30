@@ -113,8 +113,6 @@ describe('buildCorporaOverviewProjection', () => {
 
     expect(overview.noteCount).toBe(2);
     expect(overview.latestUpdatedDate).toBe('2026-04-01');
-    expect(overview.corpora.find((corpus) => corpus.key === 'undated')?.latestUpdatedDate).toBe(
-      '',
-    );
+    expect(overview.corpora.find((corpus) => corpus.key === 'undated')?.latestUpdatedDate).toBe('');
   });
 });

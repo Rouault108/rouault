@@ -71,8 +71,10 @@
   min-block-size: var(--toc-item-min-block-size, var(--control-height-sm, 24px));
   padding-block: var(--toc-item-padding-block, var(--nav-item-padding-block, var(--space-1, 4px)));
   padding-inline-start: calc(
-    var(--_toc-rail-offset-inline) + var(--_toc-level-offset) + var(--_toc-indicator-width) +
-      var(--_toc-rail-gap)
+    var(--_toc-rail-offset-inline) +
+    var(--_toc-level-offset) +
+    var(--_toc-indicator-width) +
+    var(--_toc-rail-gap)
   );
   padding-inline-end: var(--_toc-padding-inline-end);
   color: var(--toc-item-fg, var(--fg-muted, oklch(48% 0 0)));
@@ -120,8 +122,11 @@
   z-index: 0;
   inset-block: var(--_toc-active-inset-block);
   inset-inline-start: calc(
-    var(--_toc-rail-offset-inline) + var(--_toc-level-offset) + var(--_toc-indicator-width) +
-      var(--_toc-rail-gap) - var(--_toc-active-surface-bleed-inline-start)
+    var(--_toc-rail-offset-inline) +
+    var(--_toc-level-offset) +
+    var(--_toc-indicator-width) +
+    var(--_toc-rail-gap) -
+    var(--_toc-active-surface-bleed-inline-start)
   );
   inset-inline-end: 0;
   border-radius: var(--toc-item-active-radius, var(--radius-sm, 4px));

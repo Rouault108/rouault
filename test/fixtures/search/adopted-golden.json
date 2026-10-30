@@ -422,9 +422,7 @@
       "id": "Q-025",
       "q": "資本論",
       "mode": "explore",
-      "tags": [
-        "Collection"
-      ],
+      "tags": ["Collection"],
       "tagMode": "and",
       "sort": "relevance",
       "critical": false,

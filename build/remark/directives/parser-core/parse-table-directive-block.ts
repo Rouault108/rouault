@@ -33,9 +33,7 @@ const isClosingMarkerCell = (cell: MdastNode): boolean => {
 
   const [onlyChild] = meaningfulChildren;
   return (
-    onlyChild?.type === 'text' &&
-    typeof onlyChild.value === 'string' &&
-    onlyChild.value === '::'
+    onlyChild?.type === 'text' && typeof onlyChild.value === 'string' && onlyChild.value === '::'
   );
 };
 
@@ -63,10 +61,7 @@ const isMeaningfulTableRow = (row: MdastNode): boolean => {
   );
 };
 
-const removeClosingMarkerRow = (
-  tableNode: MdastNode,
-  markerRowIndex: number,
-): MdastNode => ({
+const removeClosingMarkerRow = (tableNode: MdastNode, markerRowIndex: number): MdastNode => ({
   ...tableNode,
   children: (tableNode.children ?? []).filter((_, index) => index !== markerRowIndex),
 });
@@ -82,7 +77,9 @@ const recoverAbsorbedClosingMarker = (
     return null;
   }
 
-  const laterMeaningfulRow = rows.slice(markerRowIndex + 1).find((row) => isMeaningfulTableRow(row));
+  const laterMeaningfulRow = rows
+    .slice(markerRowIndex + 1)
+    .find((row) => isMeaningfulTableRow(row));
   if (laterMeaningfulRow) {
     throw toError(
       file,

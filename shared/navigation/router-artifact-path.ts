@@ -25,9 +25,7 @@ export const resolveRouterArtifactStoragePathname = (contentPathname: string): s
 };
 
 export const resolveRouterArtifactPathname = (contentPathname: string): string => {
-  const artifactContentPathname = encodeURI(
-    resolveRouterArtifactStoragePathname(contentPathname),
-  );
+  const artifactContentPathname = encodeURI(resolveRouterArtifactStoragePathname(contentPathname));
 
   return artifactContentPathname === '/'
     ? `${ROUTER_ARTIFACT_ROOT_PATHNAME}/index.router.json`

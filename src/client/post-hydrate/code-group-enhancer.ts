@@ -100,12 +100,15 @@ const propagateSelectionWithinScope = (
       continue;
     }
 
-    syncSelection({
-      group: target,
-      tabs,
-      panels,
-      copyButton: findCopyButton(target),
-    }, nextKey);
+    syncSelection(
+      {
+        group: target,
+        tabs,
+        panels,
+        copyButton: findCopyButton(target),
+      },
+      nextKey,
+    );
   }
 };
 

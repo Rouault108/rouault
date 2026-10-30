@@ -2,10 +2,7 @@ import { spawnSync } from 'node:child_process';
 import process from 'node:process';
 
 import { resolveDevelopmentBuildMetadata } from '../build/metadata/build-metadata.js';
-import {
-  createPnpmInvocation,
-  RunBuildProcessConfigurationError,
-} from './run-build-process.js';
+import { createPnpmInvocation, RunBuildProcessConfigurationError } from './run-build-process.js';
 import type { RunBuildStep } from './run-build-process.js';
 
 const CLIENT_BUILD_STEPS = [

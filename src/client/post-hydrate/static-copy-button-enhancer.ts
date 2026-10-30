@@ -96,10 +96,7 @@ const getClipboard = (): Clipboard | null => {
 const hasProgressiveDisabledState = (button: HTMLButtonElement): boolean =>
   !button.disabled || button.dataset['copyDisabledReason'] === PROGRESSIVE_DISABLED_REASON;
 
-const disableCopyButton = (
-  button: HTMLButtonElement,
-  reason: CopyDisabledReason,
-): void => {
+const disableCopyButton = (button: HTMLButtonElement, reason: CopyDisabledReason): void => {
   button.disabled = true;
   button.dataset['copyDisabledReason'] = reason;
   setCopyState(button, 'idle');

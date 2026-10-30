@@ -24,8 +24,7 @@ export class SearchDialogVirtualizer {
 
     const visibleCount = Math.max(1, Math.ceil(listHeight / VIRTUAL_ROW_HEIGHT_PX));
     const windowSize = Math.min(total, visibleCount + VIRTUAL_OVERSCAN * 2);
-    const rawStart =
-      Math.floor(Math.max(0, scrollTop) / VIRTUAL_ROW_HEIGHT_PX) - VIRTUAL_OVERSCAN;
+    const rawStart = Math.floor(Math.max(0, scrollTop) / VIRTUAL_ROW_HEIGHT_PX) - VIRTUAL_OVERSCAN;
     const maxStart = Math.max(0, total - windowSize);
     const start = Math.min(maxStart, Math.max(0, rawStart));
     const end = Math.min(total, start + windowSize);
@@ -43,15 +42,8 @@ export class SearchDialogVirtualizer {
     if (total <= 0) return { start: 0, end: 0 };
 
     const normalizedScrollTop = Math.max(0, scrollTop);
-    const start = clamp(
-      Math.floor(normalizedScrollTop / VIRTUAL_ROW_HEIGHT_PX),
-      0,
-      total - 1,
-    );
-    const visibleCount = Math.max(
-      1,
-      Math.ceil(Math.max(0, listHeight) / VIRTUAL_ROW_HEIGHT_PX),
-    );
+    const start = clamp(Math.floor(normalizedScrollTop / VIRTUAL_ROW_HEIGHT_PX), 0, total - 1);
+    const visibleCount = Math.max(1, Math.ceil(Math.max(0, listHeight) / VIRTUAL_ROW_HEIGHT_PX));
     const end = clamp(start + visibleCount, start + 1, total);
 
     return { start, end };

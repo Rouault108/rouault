@@ -919,7 +919,9 @@ describe('検証済み履歴経路の表示状態', () => {
         ...(condition === 'missing-receipt' ? {} : { receipt }),
       });
 
-      expect(content.dataset['readingPositionPrepaint']).toBe(condition === 'visible' ? 'applied' : 'unavailable');
+      expect(content.dataset['readingPositionPrepaint']).toBe(
+        condition === 'visible' ? 'applied' : 'unavailable',
+      );
       expect(notifications).toHaveBeenCalledTimes(early ? 1 : 0);
       expect(scroll).toHaveBeenCalledTimes(early ? 1 : 0);
       expect(animate).toHaveBeenCalledTimes(early ? 1 : 0);
@@ -2002,13 +2004,15 @@ describe('同期受理した履歴本文のraw XY先行適用', () => {
       initializeContentContext(content);
       adoptContentBinding(readAddress());
     }
-    if (condition === 'hash-existing') content.insertAdjacentHTML('afterbegin', '<h2 id="saved-heading">stale hash at top</h2>');
+    if (condition === 'hash-existing')
+      content.insertAdjacentHTML('afterbegin', '<h2 id="saved-heading">stale hash at top</h2>');
     const savedUrl = readAddress();
     const errors = vi.fn();
     let observe = false;
     const notifications = vi.fn(() => {
       if (!observe || notifications.mock.calls.length > 1) return;
-      if (condition === 'notify-shift') window.scrollTo({ left: 80, top: 500, behavior: 'instant' });
+      if (condition === 'notify-shift')
+        window.scrollTo({ left: 80, top: 500, behavior: 'instant' });
       if (condition === 'notify-range') content.style.height = '7000px';
       if (condition === 'notify-owner-loss') {
         beginNavigationIntent('navigation', savedUrl);
@@ -2045,7 +2049,8 @@ describe('同期受理した履歴本文のraw XY先行適用', () => {
     const intent = beginNavigationIntent('traverse', savedUrl);
     const epoch = beginContentMutation(content);
     content.innerHTML = savedHtml;
-    if (condition === 'hash-existing') content.insertAdjacentHTML('afterbegin', '<h2 id="saved-heading">stale hash at top</h2>');
+    if (condition === 'hash-existing')
+      content.insertAdjacentHTML('afterbegin', '<h2 id="saved-heading">stale hash at top</h2>');
     adoptContentBinding(savedUrl);
     setContentReadiness({
       contentEpoch: epoch,
@@ -2079,7 +2084,8 @@ describe('同期受理した履歴本文のraw XY先行適用', () => {
       ...(condition === 'async-commit' ? {} : { commitTiming: 'synchronous' as const }),
     };
     const receipt = condition === 'mutable-receipt' ? receiptValue : Object.freeze(receiptValue);
-    if (condition === 'already-aligned') window.scrollTo({ left: 80, top: 650, behavior: 'instant' });
+    if (condition === 'already-aligned')
+      window.scrollTo({ left: 80, top: 650, behavior: 'instant' });
     notifications.mockClear();
     observe = true;
     const reads = vi.spyOn(ReadingPositionStore.prototype, 'read');
@@ -2100,10 +2106,22 @@ describe('同期受理した履歴本文のraw XY先行適用', () => {
       ...(condition === 'missing-receipt' ? {} : { receipt }),
       ...(qualified ? { prepaintCandidate: qualified } : {}),
     });
-    const arrived = ['table', 'unknown-surface', 'hash', 'hash-existing', 'already-aligned', 'notify-shift', 'notify-range', 'notify-owner-loss', 'notify-throw'].includes(condition);
+    const arrived = [
+      'table',
+      'unknown-surface',
+      'hash',
+      'hash-existing',
+      'already-aligned',
+      'notify-shift',
+      'notify-range',
+      'notify-owner-loss',
+      'notify-throw',
+    ].includes(condition);
     const early = arrived && !condition.startsWith('notify-');
     expect(reads).not.toHaveBeenCalled();
-    expect(scroll).toHaveBeenCalledTimes(condition === 'already-aligned' ? 0 : condition === 'notify-shift' ? 2 : arrived ? 1 : 0);
+    expect(scroll).toHaveBeenCalledTimes(
+      condition === 'already-aligned' ? 0 : condition === 'notify-shift' ? 2 : arrived ? 1 : 0,
+    );
     expect(content.dataset['readingPositionPrepaint'] === 'applied').toBe(early);
     if (condition === 'notify-owner-loss') {
       expect(content.dataset['readingPositionStatus']).toBe('new-owner');
@@ -2140,7 +2158,8 @@ describe('同期受理した履歴本文のraw XY先行適用', () => {
       expect(Math.abs(scrollX - 80)).toBeLessThanOrEqual(2);
       expect(Math.abs(scrollY - 650)).toBeLessThanOrEqual(2);
       expect(reader).toMatchObject({ candidate: null, restoring: false });
-      if (condition.startsWith('notify-')) expect(notifications.mock.calls.length).toBeGreaterThanOrEqual(2);
+      if (condition.startsWith('notify-'))
+        expect(notifications.mock.calls.length).toBeGreaterThanOrEqual(2);
       else expect(scroll).toHaveBeenCalledTimes(condition === 'already-aligned' ? 0 : 1);
     }
     expect(errors).toHaveBeenCalledTimes(condition === 'notify-throw' ? 1 : 0);
@@ -2255,7 +2274,6 @@ describe('明示hashの停止位置とCSS offset', () => {
     expect(Math.abs(scrollY - 650)).toBeLessThanOrEqual(2);
   });
 });
-
 
 describe('post-commit geometry/focus ownership before schedule', () => {
   it.each([
