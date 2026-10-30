@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
+import postcss, { type Declaration } from 'postcss';
 import { describe, expect, it } from 'vitest';
 import {
   findMarkdownTableRow,
@@ -31,6 +32,100 @@ const assertTargetSizeTable = (source: string): void => {
 };
 
 describe('tokens css contract', () => {
+  it('defines each dark shadow primitive once in unconditional root scope', () => {
+    const ast = postcss.parse(tokensCss);
+    const shadows = [
+      ['sm', '0 1px 2px oklch(0% 0 0 / 0.3)'],
+      ['md', '0 4px 8px oklch(0% 0 0 / 0.4)'],
+      ['lg', '0 8px 16px oklch(0% 0 0 / 0.5)'],
+      ['glow', '0 0 12px oklch(65% 0.18 var(--hue-primary) / 0.5)'],
+    ] as const;
+    for (const [size, value] of shadows) {
+      const property = `--shadow-dark-${size}`;
+      const declarations: Declaration[] = [];
+      ast.walkDecls(property, (declaration) => {
+        declarations.push(declaration);
+      });
+      expect(declarations, property).toHaveLength(1);
+      expect(declarations[0]?.important, property).toBeFalsy();
+      expect(
+        hasDeclarationForSelector(tokensCss, ':root', property, value, {
+          tokenRuleAncestry: 'root',
+        }),
+        property,
+      ).toBe(true);
+      for (const options of [
+        { tokenRuleAncestry: 'root-os-dark-media' },
+        { tokenRuleAncestry: 'root' },
+      ] as const) {
+        const selector =
+          options.tokenRuleAncestry === 'root' ? ":root[data-theme='dark']" : ':root';
+        expect(
+          hasDeclarationForSelector(
+            tokensCss,
+            selector,
+            `--elevation-${size}`,
+            `var(${property})`,
+            options,
+          ),
+        ).toBe(true);
+      }
+    }
+  });
+
+  it('preserves light elevations and the shared extra-large shadow', () => {
+    const shadows = [
+      ['sm', '0 1px 2px oklch(0% 0 0 / 0.05)'],
+      ['md', '0 4px 6px -1px oklch(0% 0 0 / 0.1)'],
+      ['lg', '0 10px 15px -3px oklch(0% 0 0 / 0.1)'],
+      ['xl', '0 20px 25px -5px oklch(0% 0 0 / 0.1)'],
+      ['glow', '0 0 8px oklch(55% 0.22 var(--hue-primary) / 0.6)'],
+    ] as const;
+    for (const [size, value] of shadows) {
+      expect(
+        hasDeclarationForSelector(tokensCss, ':root', `--shadow-${size}`, value, {
+          tokenRuleAncestry: 'root',
+        }),
+      ).toBe(true);
+      expect(
+        hasDeclarationForSelector(
+          tokensCss,
+          ':root',
+          `--elevation-${size}`,
+          `var(--shadow-${size})`,
+          {
+            tokenRuleAncestry: 'root',
+          },
+        ),
+      ).toBe(true);
+      if (size !== 'xl') {
+        expect(
+          hasDeclarationForSelector(
+            tokensCss,
+            ":root[data-theme='light']",
+            `--elevation-${size}`,
+            `var(--shadow-${size})`,
+            {
+              tokenRuleAncestry: 'root',
+            },
+          ),
+        ).toBe(true);
+      }
+    }
+    for (const selector of [":root[data-theme='light']", ":root[data-theme='dark']"]) {
+      expect(
+        lacksDeclarationPropertyForSelector(tokensCss, selector, '--elevation-xl', {
+          tokenRuleAncestry: 'root',
+        }),
+      ).toBe(true);
+    }
+    expect(
+      lacksDeclarationPropertyForSelector(tokensCss, ':root', '--elevation-xl', {
+        tokenRuleAncestry: 'root-os-dark-media',
+      }),
+    ).toBe(true);
+  });
+
   it('defines sidebar active surface through dedicated low-salience recipe', () => {
     expect(
       hasDeclarationForSelector(tokensCss, ':root', '--sidebar-item-active-bg-alpha', '0.045', {

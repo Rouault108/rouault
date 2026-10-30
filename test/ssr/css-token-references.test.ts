@@ -41,6 +41,29 @@ const sort = (items: readonly unknown[]): string[] =>
   items.map((item) => JSON.stringify(item)).sort();
 
 describe('source CSS token reference integrity', () => {
+  it('明示 dark の4 elevation 参照を OS 条件に依存しない公開 token として解決する', () => {
+    const audit = auditTokenReferences(sources(), runtime, overrides);
+    const references = ['sm', 'md', 'lg', 'glow'].map((size) => `--shadow-dark-${size}`);
+    expect(audit.findings.filter((item) => references.includes(item.reference))).toEqual([]);
+    expect(
+      audit.references.filter(
+        (item) =>
+          item.file === 'tokens.css' &&
+          item.selector === ":root[data-theme='dark']" &&
+          references.includes(item.reference),
+      ),
+    ).toEqual(
+      ['sm', 'md', 'lg', 'glow'].map((size) => ({
+        file: 'tokens.css',
+        selector: ":root[data-theme='dark']",
+        property: `--elevation-${size}`,
+        reference: `--shadow-dark-${size}`,
+        conditions: [],
+        category: 'public',
+      })),
+    );
+  });
+
   it('未定義・未証明 scope・循環を検出し、説明付き既知残件の箇所と件数だけを許容する', () => {
     const result = auditTokenReferences(sources(), runtime, overrides);
     const expected = known.flatMap(({ count, reason, ...finding }) => {

@@ -1340,46 +1340,6 @@
     "reason": "既存の fallback 付き未定義 token 参照。命名の旧契約・typo・任意 override のどれかを断定する根拠がないため正常とは扱わない。Copy focus 以外の修正へ広げず箇所と条件・件数を固定。"
   },
   {
-    "file": "tokens.css",
-    "selector": ":root[data-theme='dark']",
-    "property": "--elevation-sm",
-    "reference": "--shadow-dark-sm",
-    "conditions": [],
-    "kind": "unproven-scope",
-    "count": 1,
-    "reason": "dark 明示指定の参照先は OS dark media 内だけに定義される。条件成立を保証できない既存残件。"
-  },
-  {
-    "file": "tokens.css",
-    "selector": ":root[data-theme='dark']",
-    "property": "--elevation-md",
-    "reference": "--shadow-dark-md",
-    "conditions": [],
-    "kind": "unproven-scope",
-    "count": 1,
-    "reason": "dark 明示指定の参照先は OS dark media 内だけに定義される。条件成立を保証できない既存残件。"
-  },
-  {
-    "file": "tokens.css",
-    "selector": ":root[data-theme='dark']",
-    "property": "--elevation-lg",
-    "reference": "--shadow-dark-lg",
-    "conditions": [],
-    "kind": "unproven-scope",
-    "count": 1,
-    "reason": "dark 明示指定の参照先は OS dark media 内だけに定義される。条件成立を保証できない既存残件。"
-  },
-  {
-    "file": "tokens.css",
-    "selector": ":root[data-theme='dark']",
-    "property": "--elevation-glow",
-    "reference": "--shadow-dark-glow",
-    "conditions": [],
-    "kind": "unproven-scope",
-    "count": 1,
-    "reason": "dark 明示指定の参照先は OS dark media 内だけに定義される。条件成立を保証できない既存残件。"
-  },
-  {
     "file": "video.css",
     "selector": "[data-video-root] .play-button",
     "property": "border",

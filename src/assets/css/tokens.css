@@ -278,6 +278,15 @@
   --shadow-glow: 0 0 8px oklch(55% 0.22 var(--hue-primary) / 0.6);
 
   /* =========================================================================
+   * Primitive Tokens - Shadows (Dark Mode)
+   * OS が light でも明示 dark の elevation から参照できる共通定義。
+   * ========================================================================= */
+  --shadow-dark-sm: 0 1px 2px oklch(0% 0 0 / 0.3);
+  --shadow-dark-md: 0 4px 8px oklch(0% 0 0 / 0.4);
+  --shadow-dark-lg: 0 8px 16px oklch(0% 0 0 / 0.5);
+  --shadow-dark-glow: 0 0 12px oklch(65% 0.18 var(--hue-primary) / 0.5);
+
+  /* =========================================================================
    * Semantic Tokens - Elevation (Light Mode)
    * ========================================================================= */
   --elevation-sm: var(--shadow-sm);
@@ -731,14 +740,6 @@
     --border-danger: oklch(35% 0.1 25);
     --border-warning: oklch(35% 0.1 85);
     --border-on-inverted: oklch(from var(--bg-default) l c h / 0.1);
-
-    /* =========================================================================
-     * Primitive Tokens - Shadows (Dark Mode)
-     * ========================================================================= */
-    --shadow-dark-sm: 0 1px 2px oklch(0% 0 0 / 0.3);
-    --shadow-dark-md: 0 4px 8px oklch(0% 0 0 / 0.4);
-    --shadow-dark-lg: 0 8px 16px oklch(0% 0 0 / 0.5);
-    --shadow-dark-glow: 0 0 12px oklch(65% 0.18 var(--hue-primary) / 0.5);
 
     /* =========================================================================
      * Semantic Tokens - Elevation (Dark Mode)
