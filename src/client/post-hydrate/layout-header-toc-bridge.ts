@@ -5,7 +5,6 @@ import {
 } from '../../components/layout/layout-toc-runtime-store.js';
 import { readCurrentShellCommitId } from '../../components/app/shell/app-shell-lifecycle.js';
 import type {
-  AppContentHydrationReadyDetail,
   AppShellRestoredDetail,
   AppShellValidatedDetail,
   RuntimeDomLinkValidationContext,
@@ -302,8 +301,7 @@ export const enhanceLayoutHeaderTocBridge = (signal: AbortSignal): void => {
   );
   document.addEventListener(
     'app-content:hydration-ready',
-    (event) => {
-      void (event as CustomEvent<AppContentHydrationReadyDetail>).detail;
+    () => {
       const shellCommitId = state.validatedShellCommitId;
       refresh();
       if (shellCommitId !== null) {

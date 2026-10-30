@@ -256,7 +256,7 @@ test('line state semantics remain available across SSR, no-JS, group, and previe
   test.slow();
 
   const noJavaScriptContext = await browser.newContext({ javaScriptEnabled: false });
-  let noJavaScriptGroupSignature: unknown[] = [];
+  let noJavaScriptGroupSignature: unknown[];
   try {
     const page = await noJavaScriptContext.newPage();
     await page.goto(e2eNoteFixtures.code.directPath, { waitUntil: 'networkidle' });

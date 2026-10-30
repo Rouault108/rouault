@@ -232,7 +232,7 @@ describe('通常 full navigation の初回適用と安定化', () => {
         },
       );
       let tail = -1;
-      let raf = 0;
+      let raf: number;
       const sample = (): void => {
         const name =
           content.querySelector<HTMLElement>('[data-reading-page]')?.dataset['readingPage'];

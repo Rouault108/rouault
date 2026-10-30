@@ -38,8 +38,7 @@ const cleanupEnhancement = (enhancement: ActiveEnhancement): void => {
   enhancement.controller?.dispose();
 };
 
-export const enhanceSearchDialog = (root: ParentNode = document, signal?: AbortSignal): void => {
-  void root;
+export const enhanceSearchDialog = (_root: ParentNode = document, signal?: AbortSignal): void => {
   if (signal?.aborted === true) return;
 
   enhancementGeneration += 1;

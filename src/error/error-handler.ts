@@ -121,7 +121,7 @@ export function generateErrorHTML(error: AppError): string {
  */
 export function logError(error: AppError, context?: string): void {
   // ブラウザ環境では process.env が存在しないため、try-catch で安全に判定
-  let isDevelopment = false;
+  let isDevelopment: boolean;
   try {
     isDevelopment = process.env['NODE_ENV'] === 'development';
   } catch {

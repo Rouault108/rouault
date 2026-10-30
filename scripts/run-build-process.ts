@@ -138,13 +138,13 @@ const defineRunBuildSteps = <const T extends readonly RunBuildStep[]>(steps: T):
     Object.freeze(step);
   }
 
-  return Object.freeze(steps) as T;
+  return Object.freeze(steps);
 };
 
 const defineProductionBuildPnpmArgs = <const T extends readonly string[]>(pnpmArgs: T): T => {
   validatePnpmArgs(pnpmArgs, 'production build');
 
-  return Object.freeze(pnpmArgs) as T;
+  return Object.freeze(pnpmArgs);
 };
 
 export const RUN_BUILD_STEPS = defineRunBuildSteps([

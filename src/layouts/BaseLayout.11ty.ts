@@ -91,8 +91,7 @@ const isStringArray = (value: unknown): value is readonly string[] =>
 const normalizeClientBundle = (
   value: unknown,
 ): { scriptSrc: string; styleSrcs: readonly string[] } => {
-  const candidate: ClientBundleView =
-    typeof value === 'object' && value !== null ? (value as ClientBundleView) : {};
+  const candidate: ClientBundleView = typeof value === 'object' && value !== null ? value : {};
 
   return {
     scriptSrc:

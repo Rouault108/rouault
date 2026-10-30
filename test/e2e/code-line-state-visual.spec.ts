@@ -441,7 +441,7 @@ const measureLine = async (
       selectionTarget = clone;
     }
 
-    let selectedText = '';
+    let selectedText: string;
     try {
       selectedText = readSelectedText(selectionTarget);
     } finally {

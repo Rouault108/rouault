@@ -141,7 +141,7 @@ const hydrateCurrentContent = async (
   }
   await Promise.resolve();
   if (!isCurrent()) return;
-  let degraded = false;
+  let degraded: boolean;
   try {
     const diagnostics = await hydrationScheduler.hydrateContent(mainContent, {
       dispatchTarget: routerDocumentHost,

@@ -200,7 +200,7 @@ export class TocActiveTracker {
       window.addEventListener('keydown', this._onKeydown);
       window.addEventListener('resize', this._onResize);
       window.addEventListener('pageshow', this._onViewportChange);
-      document.addEventListener('ui-tab-change', this._onTabChange as EventListener);
+      document.addEventListener('ui-tab-change', this._onTabChange);
       document.fonts.addEventListener('loadingdone', this._onViewportChange);
       document.fonts.addEventListener('loadingerror', this._onViewportChange);
       this._contentRoot = findContentRoot(this._contentRootId);
@@ -296,7 +296,7 @@ export class TocActiveTracker {
     document.fonts.removeEventListener('loadingerror', this._onViewportChange);
     this._contentRoot?.removeEventListener('load', this._onImageLayout, true);
     this._contentRoot?.removeEventListener('error', this._onImageLayout, true);
-    document.removeEventListener('ui-tab-change', this._onTabChange as EventListener);
+    document.removeEventListener('ui-tab-change', this._onTabChange);
     this._teardownMutationObserver();
     this._refreshScheduled = false;
     this._viewportSyncScheduled = false;

@@ -49,7 +49,7 @@ export class TabsUrlSyncController {
     window.addEventListener('popstate', this.onLocationStateChange);
     window.addEventListener('hashchange', this.onLocationStateChange);
     if (this.changeEventName !== null) {
-      window.addEventListener(this.changeEventName, this.onLocationStateChange as EventListener);
+      window.addEventListener(this.changeEventName, this.onLocationStateChange);
     }
   }
 
@@ -62,7 +62,7 @@ export class TabsUrlSyncController {
     window.removeEventListener('popstate', this.onLocationStateChange);
     window.removeEventListener('hashchange', this.onLocationStateChange);
     if (this.changeEventName !== null) {
-      window.removeEventListener(this.changeEventName, this.onLocationStateChange as EventListener);
+      window.removeEventListener(this.changeEventName, this.onLocationStateChange);
       this.changeEventName = null;
     }
     if (this.locationSyncRafId !== null) {

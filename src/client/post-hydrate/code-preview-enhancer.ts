@@ -238,7 +238,7 @@ export const activateCodePreview = (
       new CommandMenuController(menu, lifetime.signal, (value) => {
         const control = menu.dataset['codePreviewControl'];
         let key: keyof CodePreviewState;
-        let next = state;
+        let next: CodePreviewState;
         if (control === 'theme' && (value === 'page' || value === 'light' || value === 'dark')) {
           key = 'previewTheme';
           next = { ...state, previewTheme: value };
