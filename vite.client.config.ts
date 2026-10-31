@@ -10,7 +10,7 @@ export default defineConfig({
   base: `${resolveDevelopmentSiteUrlContext().basePath}/`,
   worker: {
     format: 'es',
-    rollupOptions: {
+    rolldownOptions: {
       output: {
         entryFileNames: 'client-assets/[name]-[hash].js',
         chunkFileNames: 'client-assets/[name]-[hash].js',
@@ -34,7 +34,7 @@ export default defineConfig({
     outDir: '.generated/client',
     emptyOutDir: true,
     manifest: true,
-    rollupOptions: {
+    rolldownOptions: {
       input: {
         client: path.resolve(process.cwd(), 'src/client.ts'),
         style: path.resolve(process.cwd(), 'src/assets/css/main.css'),
