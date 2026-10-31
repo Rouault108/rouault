@@ -55,18 +55,20 @@ dynamic fetch / CSSOM / srcdocの集合は静的棚卸しだけでは完結し�
 `Suzume.create({ wasmPath })`がそのURLをfetch・compileする。
 Worker応答だけに`script-src 'self' 'wasm-unsafe-eval'; connect-src 'self' blob:`を置き、親へ拡張しない。
 
-親のruleは生成HTMLが存在するルート群、Workerは実際のhash付きentryの完全pathへ生成し、重複一致を拒否する。
-`/*`に親policyを付けてWorker応答にも合成させる方式は使わない。
-この候補のcoverageは生成済み文書ルートに限定する。任意の未知URLに対する404 fallback、
-新しいルート群、redirectの応答は未確定であり、本番配信前の追加gateである。
+親のruleはbase path付きglobal rule、Workerは実際のhash付きentryの完全pathへ生成する。
+Worker ruleはRO headerをdetachしてから専用policyをsetする。生成器はreset漏れ・順序不正・重複を拒否する。
+未知pathや欠損assetのapp 404にも親policyを適用し、base path外へは拡張しない。
+Cloudflare公開固定版のunset→set順序をローカルresolverで再現するが、実配信の保証とは扱わない。
+runner ruleは未採用のため生成しない。将来のrunnerにはROと別にenforceのHTTP sandboxが必須となる。
 path prefixをscript認可境界と見なさない。
 
 ## 観測
 
 隔離previewは凍結manifest / fragmentの整合を起動時に確認し、同じrule集合から実HTTPの
 `Content-Security-Policy-Report-Only`を返す。生成fragmentの限定的なpath/splatだけを扱い、
-複数一致時のcomma結合を再現する。Cloudflare全機能のemulatorとはしない。
+複数一致時のcomma結合とWorkerでのdetach/setを再現する。Cloudflare全機能のemulatorとはしない。
 Cache-Controlは通常previewの既存middlewareを再利用する。隔離serverではnosniffを明示し、JS/WASM/HTML/mediaのMIMEを確認する。
+凍結404本文のSHAも起動時に確認する。ViteのHTML内部rewriteを考慮し、既知HTMLは通常配信へ通して欠損URLだけを404/no-storeにする。
 このローカル再現はCloudflare実HTTPの証明ではない。
 
 `test/e2e/csp-report-only.ts`は専用Playwright configで明示実行する。
@@ -88,7 +90,7 @@ Report-Onlyなので既存previewは継続実行する。違反を消すため�
 ## 後段ゲート
 
 - [提供された設計1.1との照合記録](../references/csp-stage-one-design-1.1-audit-2026-10-31.md)を参照する。
-  Library materializeではなく親からの正当な本文引渡しとして照合する。省略された第6〜7章の全文照合は未確認。
+  Library materializeではなく親からの正当な本文引渡しとして照合した。第6〜7章も3部の連続した追補で受領済み。
 - 各対象browserで違反event、Worker RO対応とnegative controlを確認する。起動失敗は未実施扱いとする。
 - 実際のproduction origin / media設定、全配信資源、動的機能を再棚卸しする。
 - 将来の配信承認後、Cloudflare実HTTPで最終URL・status・raw headerの本数/結合・hashを確認する。

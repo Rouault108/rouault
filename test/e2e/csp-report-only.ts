@@ -367,6 +367,7 @@ test('all entry classes share one policy and preserve no-JS content; soft naviga
   try {
     for (const entry of entries) {
       const response = await request.get(entry);
+      expect(response.status()).toBe(200);
       expect(response.headers()['content-security-policy-report-only']).toBe(policy);
       expect(response.headers()['content-type']).toMatch(/text\/html/u);
       await staticPage.goto('http://127.0.0.1:4173' + entry);
@@ -386,4 +387,45 @@ test('all entry classes share one policy and preserve no-JS content; soft naviga
   expect(await page.evaluate(() => performance.timeOrigin)).toBe(origin);
   expect(await records(page)).toEqual([]);
   await attach(page, info, 'entry-and-navigation', 'router', 'fixture');
+});
+
+test('unknown paths receive app 404 with global policy; 304 retains the correct response-class policy', async ({
+  page,
+  request,
+}, info) => {
+  await observe(page, info.project.name);
+  const top = await request.get('/');
+  const parent = top.headers()['content-security-policy-report-only'];
+  const fallback = await readFile('dist/404.html', 'utf8');
+  for (const route of [
+    '/csp-missing-document/nested',
+    '/client-assets/missing-worker.js',
+    '/__preview/unregistered/missing',
+  ]) {
+    const response = await request.get(route);
+    expect(response.status()).toBe(404);
+    expect(response.headers()['content-security-policy-report-only']).toBe(parent);
+    expect(response.headers()['cache-control']).toBe('no-store');
+    expect(response.headers()['content-type']).toContain('text/html');
+    expect(await response.text()).toBe(fallback);
+  }
+  const root304 = await request.get('/', {
+    headers: { 'If-None-Match': top.headers()['etag'] ?? '' },
+  });
+  expect(root304.status()).toBe(304);
+  expect(root304.headers()['content-security-policy-report-only']).toBe(parent);
+  const manifest = await collectCspStageOne('dist');
+  const worker = manifest.rules.find(({ context }) => context === 'worker');
+  if (!worker) throw new Error('Worker');
+  const entry = await request.get(worker.pattern);
+  const worker304 = await request.get(worker.pattern, {
+    headers: { 'If-None-Match': entry.headers()['etag'] ?? '' },
+  });
+  expect(worker304.status()).toBe(304);
+  expect(worker304.headers()['content-security-policy-report-only']).toBe(worker.policy);
+  expect(worker.policy).not.toBe(parent);
+  await page.goto('/csp-missing-document/nested');
+  await expect(page.locator('main')).toBeVisible();
+  expect(await records(page)).toEqual([]);
+  await attach(page, info, 'unknown-404-and-304', 'router', 'fixture');
 });

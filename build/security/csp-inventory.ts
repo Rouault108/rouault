@@ -59,7 +59,7 @@ export interface CspStageOneManifest {
   clientManifestDigest: string;
   mediaAliases: CspMediaAlias[];
   runtimeContracts: { owner: string; permission: string; reason: string }[];
-  rules: { pattern: string; policy: string; context: 'document' | 'worker' }[];
+  rules: { pattern: string; policy: string; context: 'document' | 'worker'; reset?: boolean }[];
 }
 export interface InventoryOptions {
   viteManifestFile?: string;
@@ -399,7 +399,6 @@ export const collectCspStageOne = async (
   let siteOrigin: string | undefined;
   let basePath: string | undefined;
   let buildId: string | undefined;
-  const patterns = new Set<string>();
   for (const file of files.filter((file) => file.endsWith('.html'))) {
     const html = await readFile(path.join(dist, file), 'utf8');
     const metadata = new Map<string, string>();
@@ -428,11 +427,6 @@ export const collectCspStageOne = async (
     basePath = base;
     buildId = id;
     documents.push(inventoryCspDocument(html, file, `${origin}${base}/${file}`, { mediaOrigin }));
-    if (file.includes('/')) patterns.add(`${base}/${file.split('/')[0]}/*`);
-    else {
-      patterns.add(`${base}/${file}`);
-      patterns.add(`${base}/${file === 'index.html' ? '' : file.slice(0, -5)}`);
-    }
   }
   if (!siteOrigin || basePath === undefined || !buildId || !documents.length)
     throw new Error('[csp] no generated HTML');
@@ -574,19 +568,20 @@ export const collectCspStageOne = async (
     mediaOrigin,
   );
   const policy = serializeCspPolicy(model);
-  const rules: CspStageOneManifest['rules'] = [...patterns]
-    .sort()
-    .map((pattern) => ({ pattern, policy, context: 'document' }));
+  const rules: CspStageOneManifest['rules'] = [
+    { pattern: `${basePath}/*`, policy, context: 'document' },
+  ];
   rules.push({
     pattern: `${basePath}/${bundle.worker}`,
     policy: serializeCspPolicy(WORKER_POLICY),
     context: 'worker',
+    reset: true,
   });
   return {
     schema: 2,
     mode: 'report-only',
     policyVersion: CSP_POLICY_VERSION,
-    policyDigest: policyDigest(model),
+    policyDigest: policyDigest(model, { siteOrigin, basePath }),
     buildId,
     siteOrigin,
     basePath,

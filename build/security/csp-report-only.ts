@@ -33,8 +33,12 @@ export const renderCspHeaders = (manifest: CspStageOneManifest): string => {
       rule.pattern.split('*').length > 2
     )
       throw new Error('[csp] invalid header rule pattern');
+    if (rule.reset && rule.context !== 'worker') throw new Error('[csp] unexpected policy reset');
+    if (rule.context === 'worker' && rule.pattern.includes('*'))
+      throw new Error('[csp] Worker rule must be exact');
     if (
       rule.context === 'worker' &&
+      !rule.reset &&
       manifest.rules.some(
         (parent) => parent.context === 'document' && matchesCspPath(parent.pattern, rule.pattern),
       )
@@ -43,15 +47,38 @@ export const renderCspHeaders = (manifest: CspStageOneManifest): string => {
   }
   if (new Set(manifest.rules.map(({ pattern }) => pattern)).size !== manifest.rules.length)
     throw new Error('[csp] duplicate header rule');
+  for (const rule of manifest.rules) {
+    if (
+      rule.context === 'worker' &&
+      resolveCspReportOnly(manifest.rules, rule.pattern) !== rule.policy
+    )
+      throw new Error('[csp] invalid Worker reset order/composition');
+  }
   if (manifest.rules.length > 100) throw new Error('[csp] Cloudflare 100 rule limit exceeded');
   const source =
     '# ISOLATED VALIDATION ONLY: do not copy into dist/_headers without delivery approval\n' +
     manifest.rules
-      .map(({ pattern, policy }) => `${pattern}\n  ${CSP_REPORT_ONLY_HEADER}: ${policy}\n`)
+      .map(
+        ({ pattern, policy, reset }) =>
+          `${pattern}\n${reset ? `  ! ${CSP_REPORT_ONLY_HEADER}\n` : ''}  ${CSP_REPORT_ONLY_HEADER}: ${policy}\n`,
+      )
       .join('\n');
   if (source.split('\n').some((line) => line.length > 2000))
     throw new Error('[csp] Cloudflare 2000 character line limit exceeded');
   return source;
+};
+
+export const resolveCspReportOnly = (
+  rules: CspStageOneManifest['rules'],
+  pathname: string,
+): string | null => {
+  const policies: string[] = [];
+  for (const rule of rules) {
+    if (!matchesCspPath(rule.pattern, pathname)) continue;
+    if (rule.reset) policies.length = 0;
+    policies.push(rule.policy);
+  }
+  return policies.length ? policies.join(', ') : null;
 };
 
 export const verifyCspStageOne = async (

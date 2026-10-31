@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto';
 
-export const CSP_POLICY_VERSION = 'rouault-csp-stage1-v2';
+export const CSP_POLICY_VERSION = 'rouault-csp-stage1-v3';
 export const CSP_REPORT_ONLY_HEADER = 'Content-Security-Policy-Report-Only';
 export type CspDirective =
   | 'default-src'
@@ -68,11 +68,16 @@ export const WORKER_POLICY: CspPolicy = {
   'worker-src': ["'none'"],
   'object-src': ["'none'"],
 };
-export const policyDigest = (document: CspPolicy): string =>
+export const policyDigest = (
+  document: CspPolicy,
+  binding: { siteOrigin: string; basePath: string },
+): string =>
   createHash('sha256')
     .update(
       JSON.stringify({
         version: CSP_POLICY_VERSION,
+        binding,
+        headerScope: 'global-with-worker-reset',
         mode: 'report-only',
         document,
         worker: WORKER_POLICY,

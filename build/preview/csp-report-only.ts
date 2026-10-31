@@ -1,7 +1,7 @@
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import {
   CSP_REPORT_ONLY_HEADER,
-  matchesCspPath,
+  resolveCspReportOnly,
   type CspStageOneManifest,
 } from '../security/csp-report-only.js';
 
@@ -11,9 +11,8 @@ export const createCspReportOnlyMiddleware =
   (request: IncomingMessage, response: ServerResponse, next: () => void): void => {
     if (request.method === 'GET' || request.method === 'HEAD') {
       const pathname = new URL(request.url ?? '/', 'http://preview.local').pathname;
-      const policies = manifest.rules.filter(({ pattern }) => matchesCspPath(pattern, pathname));
-      if (policies.length)
-        response.setHeader(CSP_REPORT_ONLY_HEADER, policies.map(({ policy }) => policy).join(', '));
+      const policy = resolveCspReportOnly(manifest.rules, pathname);
+      if (policy !== null) response.setHeader(CSP_REPORT_ONLY_HEADER, policy);
     }
     next();
   };

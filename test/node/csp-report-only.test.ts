@@ -12,6 +12,7 @@ import {
   documentPolicy,
   inventoryCspDocument,
   matchesCspPath,
+  resolveCspReportOnly,
   renderCspHeaders,
   readVerifiedCspStageOne,
   verifyCspStageOne,
@@ -229,7 +230,7 @@ describe('isolated CSP Stage 1', () => {
       ).toThrow('no fragment');
     }));
 
-  it('uses base path, finite disjoint rules and Pages limits without writing enforce headers', async () =>
+  it('uses prefixed global coverage, Worker reset and Pages limits without enforce headers', async () =>
     fixture(async (dist, viteManifestFile) => {
       await writeFile(path.join(dist, 'index.html'), html('', '/nested'));
       await writeFile(
@@ -241,7 +242,18 @@ describe('isolated CSP Stage 1', () => {
         manifest.rules
           .filter(({ pattern }) => matchesCspPath(pattern, '/nested/client-assets/lexical-hash.js'))
           .map(({ context }) => context),
-      ).toEqual(['worker']);
+      ).toEqual(['document', 'worker']);
+      expect(resolveCspReportOnly(manifest.rules, '/nested/client-assets/lexical-hash.js')).toBe(
+        workerPolicy,
+      );
+      expect(resolveCspReportOnly(manifest.rules, '/nested/unknown-path')).toBe(
+        manifest.rules[0]?.policy,
+      );
+      expect(resolveCspReportOnly(manifest.rules, '/unprefixed')).toBeNull();
+      expect(renderCspHeaders(manifest)).toContain('  ! Content-Security-Policy-Report-Only\n');
+      expect(() => renderCspHeaders({ ...manifest, rules: [...manifest.rules].reverse() })).toThrow(
+        'reset order',
+      );
       expect(renderCspHeaders(manifest)).not.toMatch(/\n\s+Content-Security-Policy:/u);
       expect(() =>
         renderCspHeaders({
@@ -262,7 +274,9 @@ describe('isolated CSP Stage 1', () => {
       expect(() =>
         renderCspHeaders({
           ...manifest,
-          rules: [{ pattern: '/*', policy: workerPolicy, context: 'document' }, ...manifest.rules],
+          rules: manifest.rules.map((rule) =>
+            rule.context === 'worker' ? { ...rule, reset: false } : rule,
+          ),
         }),
       ).toThrow('overlap');
     }));
