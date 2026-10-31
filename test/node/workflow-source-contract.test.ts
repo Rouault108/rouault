@@ -86,6 +86,9 @@ const matrixFixture = async () => {
   const steps = readRecords(job['steps']);
   job['steps'] = steps;
   const test = workflowRecord(steps.find((step) => step['id'] === 'playwright-production'));
+  const cspTest = workflowRecord(steps.find((step) => step['id'] === 'playwright-csp'));
+  const cspValidator = workflowRecord(steps.find((step) => step['id'] === 'verify-csp-results'));
+  const cspUpload = workflowRecord(steps.find((step) => step['name'] === 'preserve CSP results'));
   const verification = workflowRecord(steps.find((step) => step['id'] === 'verify-e2e-container'));
   const upload = workflowRecord(
     steps.find((step) => step['name'] === 'preserve production E2E diagnostics'),
@@ -106,6 +109,9 @@ const matrixFixture = async () => {
     entries,
     steps,
     test,
+    cspTest,
+    cspValidator,
+    cspUpload,
     verification,
     upload,
     options,
@@ -132,6 +138,55 @@ describe('production E2E matrix structural contract', () => {
   );
 
   const mutations: readonly [string, (fixture: MatrixFixture) => void][] = [
+    [
+      'CSP failure suppression',
+      (f) => {
+        f.cspTest['continue-on-error'] = true;
+      },
+    ],
+    [
+      'CSP validator failure suppression',
+      (f) => {
+        f.cspValidator['continue-on-error'] = true;
+      },
+    ],
+    [
+      'CSP conditional skip',
+      (f) => {
+        f.cspTest['if'] = '${{ false }}';
+      },
+    ],
+    [
+      'CSP missing validator',
+      (f) => {
+        f.steps.splice(f.steps.indexOf(f.cspValidator), 1);
+      },
+    ],
+    [
+      'CSP wrong engine',
+      (f) => {
+        f.cspTest['run'] = 'pnpm run test:csp-stage1 --project=chromium-csp';
+      },
+    ],
+    [
+      'CSP test filter',
+      (f) => {
+        f.cspTest['run'] =
+          'pnpm run test:csp-stage1 --project=${{ matrix.target }}-csp --grep theme';
+      },
+    ],
+    [
+      'CSP swallowed failure',
+      (f) => {
+        f.cspTest['run'] = 'pnpm run test:csp-stage1 --project=${{ matrix.target }}-csp || true';
+      },
+    ],
+    [
+      'CSP missing evidence',
+      (f) => {
+        f.steps.splice(f.steps.indexOf(f.cspUpload), 1);
+      },
+    ],
     ...[
       '',
       '# node scripts/ci/assert-pnpm-version.mjs',
@@ -1163,9 +1218,9 @@ describe('workflow source contract', () => {
     expect(report.actionEvidence.every((evidence) => evidence.runsUsing === 'node24')).toBe(true);
     expect(report.workflowPath).toBe('.github/workflows/ci-cd.yml');
     expect(report.wranglerVersion).toBe('4.100.0');
-    expect(report.workflowUses).toHaveLength(46);
+    expect(report.workflowUses).toHaveLength(47);
     const source = await readFile('.github/workflows/ci-cd.yml', 'utf8');
-    expect(source.match(/^[\t ]*(?:-[\t ]+)?uses:/gmu)).toHaveLength(46);
+    expect(source.match(/^[\t ]*(?:-[\t ]+)?uses:/gmu)).toHaveLength(47);
     const reviewed = new Set(
       report.actionEvidence.map((item) => `${item.actionName}@${item.reviewedCommitSha}`),
     );

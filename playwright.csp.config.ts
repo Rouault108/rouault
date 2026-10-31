@@ -22,6 +22,9 @@ export default defineConfig({
     timeout: 120_000,
     env: {
       ROUAULT_SITE_ORIGIN: 'http://127.0.0.1:4173',
+      // CIの配信設定を継承せず、外部送信なしのroot fixtureへ固定する。
+      ROUAULT_BASE_PATH: '',
+      ROUAULT_MEDIA_BASE_URL: '',
       ROUAULT_MEMO_FIXTURES: '1',
       ROUAULT_BUILD_LABEL: 'csp stage1',
     },

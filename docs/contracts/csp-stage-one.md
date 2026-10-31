@@ -9,7 +9,8 @@ policyは`build/security/csp-policy.ts`、inventoryは`csp-inventory.ts`、資�
 
 通常の`build` / `build:production`、`vite.preview.config.ts`、配信用`_headers`にはCSPを追加しない。
 生成先は非配信の`.generated/csp/manifest.json`と`.generated/csp/report-only.headers`のみ。
-CI workflow、本番公開、preview runner、sandbox token、外部report collectorは変更しない。
+本番公開、preview runner、sandbox token、外部report collectorは変更しない。
+明示承認されたCI継続検証として、既存production E2E matrixに専用試験を追加する。
 
 ## 生成と検証
 
@@ -72,7 +73,13 @@ Cache-Controlは通常previewの既存middlewareを再利用する。隔離serve
 このローカル再現はCloudflare実HTTPの証明ではない。
 
 `test/e2e/csp-report-only.ts`は専用Playwright configで明示実行する。
-通常E2Eの既定`*.spec.ts` / `*.test.ts`には含めず、既存CI設定は変更しない。
+通常E2Eの既定`*.spec.ts` / `*.test.ts`には含めない。
+CIでは既存production E2Eの各engineで、通常試験の後に`test:csp-stage1 --project={engine}-csp`を独立stepとして実行する。
+既存の固定Playwright container・Node・pnpm版を共用し、追加installは行わない。
+JSON結果を検証し、選択engineでの全試験の初回成功を必須とする。skip・flaky・retry・期待された失敗・空結果は拒否する。
+専用stepまたは結果検証の失敗はmatrix jobを失敗させ、既存の`ci-required`へ伝わる。
+成功・失敗時の`.generated/csp/browser-results.json`は`rouault-csp-{engine}-results`へ7日保存し、通常E2Eのartifactと分ける。
+通常試験の失敗等で専用stepがskipされた場合は、専用試験成功とは数えない。
 Nodeのhash・policy・HTTP検証は既存Node suiteへ含む。
 browser試験は外部client runtimeを止めたtheme bootstrapの実行、未知inlineの違反eventと継続実行、
 Worker専用HTTP policy、実検索/WASMとCatalog不使用、Worker policyを狭めた対照、404・srcdocを扱う。

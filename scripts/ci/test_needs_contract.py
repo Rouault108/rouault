@@ -252,6 +252,25 @@ class ValidatePrebuildNeedsTest(unittest.TestCase):
 
 
 class ValidateRequiredNeedsTest(unittest.TestCase):
+    def test_csp_failure_or_missing_matrix_result_fails_required_gate(self) -> None:
+        for result in ("failure", "cancelled", "skipped", "missing"):
+            with self.subTest(result=result):
+                needs = required_needs(
+                    detect_job=detect(False, True, True),
+                    build_production="success",
+                    extended_tests="success",
+                )
+                if result == "missing":
+                    del needs["test-e2e-production"]
+                else:
+                    needs["test-e2e-production"] = job(result)
+                env = {
+                    "GITHUB_EVENT_NAME": "workflow_dispatch",
+                    "GITHUB_REF": "refs/heads/verify/csp-stage1-20261031",
+                }
+                with patch.dict("os.environ", with_needs(needs, env), clear=True):
+                    self.assertEqual(validate_required_needs.main(), 1)
+
     def test_content_only_requires_build_and_skips_extended_tests(self) -> None:
         needs = required_needs(
             detect_job=detect(True, False, True),

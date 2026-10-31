@@ -439,11 +439,25 @@ export const assertProductionE2EMatrixContract = (source: string): void => {
   const steps = workflowRecords(job['steps'], 'Production E2E matrix steps');
   const tests = steps.filter((step) => step['id'] === 'playwright-production');
   const verifications = steps.filter((step) => step['id'] === 'verify-e2e-container');
+  const cspTests = steps.filter((step) => step['id'] === 'playwright-csp');
+  const cspValidators = steps.filter((step) => step['id'] === 'verify-csp-results');
   assertCondition(
-    tests.length === 1 && verifications.length === 1,
+    tests.length === 1 &&
+      verifications.length === 1 &&
+      cspTests.length === 1 &&
+      cspValidators.length === 1,
     'Production E2E matrix needs one test and one pinned-container verification step',
   );
   const test = requireWorkflowRecord(tests[0], 'Production E2E matrix test');
+  const cspTest = requireWorkflowRecord(cspTests[0], 'CSP matrix test');
+  const cspValidator = requireWorkflowRecord(cspValidators[0], 'CSP result validator');
+  assertCondition(
+    !Object.hasOwn(cspTest, 'if') &&
+      !Object.hasOwn(cspValidator, 'if') &&
+      steps.indexOf(test) < steps.indexOf(cspTest) &&
+      steps.indexOf(cspTest) < steps.indexOf(cspValidator),
+    'CSP tests and complete-result validation must run after ordinary E2E without conditional skips',
+  );
   const verification = requireWorkflowRecord(
     verifications[0],
     'Production E2E matrix container verification',
@@ -473,6 +487,19 @@ export const assertProductionE2EMatrixContract = (source: string): void => {
   for (const entry of entries) {
     const target = String(entry['target']);
     const projects = expectedProjects[target] ?? [];
+    assertCondition(
+      JSON.stringify(matrixCommandArguments(cspTest['run'], entry)) ===
+        JSON.stringify(['pnpm', 'run', 'test:csp-stage1', `--project=${target}-csp`]) &&
+        JSON.stringify(matrixCommandArguments(cspValidator['run'], entry)) ===
+          JSON.stringify([
+            'pnpm',
+            'exec',
+            'tsx',
+            'scripts/ci/assert-csp-browser-results.ts',
+            `${target}-csp`,
+          ]),
+      'CSP matrix must run and validate the exact dedicated project for every engine',
+    );
     const verificationLines = String(verification['run'])
       .replace(/\$\{\{\s*matrix\.browser\s*\}\}/gu, String(entry['browser']))
       .split(/\r?\n/u)
@@ -507,10 +534,29 @@ export const assertProductionE2EMatrixContract = (source: string): void => {
       typeof step['uses'] === 'string' && /^(?:\.\/)?actions\/upload-artifact@/u.test(step['uses']),
   );
   assertCondition(
-    uploads.length === 1,
-    'production E2E diagnostics must have one failure-only upload',
+    uploads.length === 2,
+    'production E2E and CSP results must have separate uploads',
   );
-  const upload = requireWorkflowRecord(uploads[0], 'production E2E diagnostics upload');
+  const upload = requireWorkflowRecord(
+    uploads.find((step) => step['name'] === 'preserve production E2E diagnostics'),
+    'production E2E diagnostics upload',
+  );
+  const cspUpload = requireWorkflowRecord(
+    uploads.find((step) => step['name'] === 'preserve CSP results'),
+    'CSP results upload',
+  );
+  const cspOptions = requireWorkflowRecord(cspUpload['with'], 'CSP results options');
+  assertCondition(
+    normalizeWorkflowExpression(cspUpload['if']) ===
+      "${{ always() && (steps.playwright-csp.outcome == 'success' || steps.playwright-csp.outcome == 'failure') }}" &&
+      steps.indexOf(cspValidator) < steps.indexOf(cspUpload) &&
+      cspOptions['name'] === 'rouault-csp-${{ matrix.target }}-results' &&
+      cspOptions['path'] === '.generated/csp/browser-results.json' &&
+      cspOptions['include-hidden-files'] === true &&
+      cspOptions['retention-days'] === 7 &&
+      cspOptions['if-no-files-found'] === 'error',
+    'CSP evidence must preserve each engine result on success or failure without mixing ordinary diagnostics',
+  );
   const options = requireWorkflowRecord(upload['with'], 'production E2E diagnostics options');
   assertCondition(
     upload['name'] === 'preserve production E2E diagnostics' &&

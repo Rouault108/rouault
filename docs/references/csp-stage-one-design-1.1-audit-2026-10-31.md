@@ -11,7 +11,8 @@ consumer側のLibrary read / prepare_materializeは未提供であり、material
 
 設計の基点`fe5ec8b0`と実装開始時のmain`790625bc`を区別する。
 今回の照合対象は初回実装`a3c59ab2`、第1回補正`cddc3a95`、および第7章追補後の補正差分である。
-runner、enforce、公開、CI変更、collectorはこの作業の対象外である。
+初回照合ではrunner、enforce、公開、CI変更、collectorを対象外とした。
+その後の明示承認により、既存CIへの専用3engine試験の組込みだけを追加した。
 
 ## 初回候補からの補正
 
@@ -65,21 +66,22 @@ aliasのMIME、nosniff、ETag、200/304、未知path拒否、bytes改変拒否�
 
 Node/pnpmのrepo pinは24.14.1 / 11.28.9のまま。
 選択executorのNodeは24.19.0であり変更していない。pnpmはworkspace内Corepack shimで11.28.9を選択した。
-既存CIはNode 24.14.1を使う。CSP専用browser試験をこのCIへ追加する設定変更は行わない。
+既存CIはNode 24.14.1を使う。明示承認後、production E2E matrixにCSP専用browser stepと結果検証を追加した。
+専用結果はengine別JSON artifactで区別し、通常WebKitの成功を専用試験の成功とは扱わない。
 厳密に同じNode pinでのローカル専用server試験は、実行環境整備後の確認事項として区別する。
 
 ## 未実施・不足の区別
 
-| 項目                                                | 残る理由・次のgate                                                                                      |
-| --------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
-| CSP専用WebKit                                       | 共有ライブラリ不足。公式install-depsのdry-runもAPT設定の読取り制約・package未解決で停止。OS変更は未実行 |
-| 対応hostname / runner prefix / capability profile   | Stage 0の合意未実施。未登録hostnameを対応済みとしない                                                   |
-| runner/protocol/HTTP sandbox/Blob author JS         | 第6章の後段実装。現行srcdocを改修していない                                                             |
-| local enforce・悪性操作の実拒否・全cache回帰        | 第8.2章の段階2。ROの継続実行を防御完了とは扱わない                                                      |
-| 404 fallback・redirect・profile resetの実配信       | ローカルの未知pathとWorker resetは検証済み。Cloudflare実HTTPと将来runner profileは別途確認が必要       |
-| production/media実効値・Transform/Cache/Functions等 | 権限内の配信観測が必要。ローカル成功では代替しない                                                      |
-| 200/304の実配信合成・minify/挿入・旧tab             | 段階3以後の配信前gate。header/body/hashの一致を実応答で確認                                             |
-| 切戻しartifact・公開・本番enforcement               | 段階4の別承認。自動昇格しない                                                                           |
+| 項目                                                | 残る理由・次のgate                                                                                 |
+| --------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| CSP専用WebKitのローカル実行                         | 共有ライブラリ不足。APT設定の読取り制約・package未解決が残り、OS変更は未実行。専用CI結果と区別する |
+| 対応hostname / runner prefix / capability profile   | Stage 0の合意未実施。未登録hostnameを対応済みとしない                                              |
+| runner/protocol/HTTP sandbox/Blob author JS         | 第6章の後段実装。現行srcdocを改修していない                                                        |
+| local enforce・悪性操作の実拒否・全cache回帰        | 第8.2章の段階2。ROの継続実行を防御完了とは扱わない                                                 |
+| 404 fallback・redirect・profile resetの実配信       | ローカルの未知pathとWorker resetは検証済み。Cloudflare実HTTPと将来runner profileは別途確認が必要   |
+| production/media実効値・Transform/Cache/Functions等 | 権限内の配信観測が必要。ローカル成功では代替しない                                                 |
+| 200/304の実配信合成・minify/挿入・旧tab             | 段階3以後の配信前gate。header/body/hashの一致を実応答で確認                                        |
+| 切戻しartifact・公開・本番enforcement               | 段階4の別承認。自動昇格しない                                                                      |
 
 初回検証の履歴は[初回記録](csp-stage-one-validation-2026-10-31.md)に残す。
 設計本文不足による未照合は解消した。上記の第1段階対象は照合済みであり、全engine・後段の受入条件や防御導入完了までを宣言するものではない。

@@ -167,11 +167,16 @@ Cloudflare Pages projectでは次を確認する。
 - `prebuild-gate`は、変更分類に応じてbuild前のprerequisite jobが成功または正しくskippedになっていることを検証する。
 - `ci-required`は、PR merge gateのrequired status checkとして扱う。
 - `test-e2e-production`は、CI上ではChromium、Firefox、WebKit（desktop + mobile）の3-entry matrixとして実行する。既存のE2E実行条件を満たすrunでは全variationの成功を必要とし、対象外runのjob skipを維持する。`ci-required`は引き続き同じjob IDをrequired inputとして扱う。
+- 同じmatrixで通常試験の後にCSP専用の`chromium-csp` / `firefox-csp` / `webkit-csp`を別stepで実行する。専用試験とJSON結果検証も成功必須で、失敗を抑制しない。専用WebKitはdesktopのRO検証であり、通常のdesktop/mobile試験と区別する。
 - `verify-production-deployment`は、`main` push後のproduction deploy監視jobとして扱う。
 
 Production E2Eのmatrix化はcoverageを維持したままwall-clockを短縮するためのorchestration変更である。各variationは`mcr.microsoft.com/playwright:v1.63.0-resolute@sha256:b022639ae9197f864040f92eef7b57c6d4b47db2190f77c909d8a5d902dd4b7e`を`--ipc=host`付きjob containerとして使い、browserやOS packageをjob内で再installしない。Nodeはworkflowの`NODE_VERSION`、pnpmは`packageManager`のexact versionを維持し、container内のbrowser path、bash、Node、pnpm、対象browser解決をtest前に検証する。failure diagnosticsは失敗したvariationのtarget固有artifactへ、`playwright-report/`と`test-results/`だけを7日保存する。成功時のdiagnostics artifactは追加しない。
 
 Job containerはroot実行のため、production E2Eだけで`HOME=/root`を指定する。Firefoxの起動前に実行UID、HOME値、HOME所有者の一致を検証し、browser sandbox設定は変更しない。
+
+CSP試験は同じ固定containerを使い、専用configがproduction buildと隔離RO serverを起動する。通常配信artifactへCSPを追加しない。
+専用JSON結果は成功・失敗時に`rouault-csp-{engine}-results`として7日保存する。通常試験のfailure diagnosticsとは別の証跡であり、必要な結果が欠落すればjobを失敗させる。
+`scripts/ci/assert-csp-browser-results.ts`がengine、試験数、各実行結果を照合し、空結果・skip・失敗・flaky・retryを拒否する。
 
 pnpmの版指定はrepositoryの`package.json`の`packageManager`だけが所有し、`pnpm/action-setup`の`version`や`devEngines.packageManager`へ複製しない。既存のcontainer検証内で`node scripts/ci/assert-pnpm-version.mjs`を実行する。helperは自身が属するrepositoryのmanifestから固定版とSHA-512 hex形式を読み、同じrepositoryをcwdとして現在のPATH / envで解決される`pnpm --version`と比較する。Windowsでは固定の`pnpm.cmd --version`を`cmd.exe`で呼び出す。manifest不正、取得失敗、空・不正出力、版不一致は失敗とする。
 
