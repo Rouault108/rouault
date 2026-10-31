@@ -1,4 +1,4 @@
-# CSP Stage 1 隔離検証記録（2026-10-31）
+# CSP Stage 1隔離検証記録（2026-10-31）
 
 基点は`790625bcaff40e940b85dde96db7796a75f2b755`。契約は[Stage 1](../contracts/csp-stage-one.md)。
 本記録はローカルproduction条件での検証を示し、本番観測・enforce・全訪問者の観測を示さない。
