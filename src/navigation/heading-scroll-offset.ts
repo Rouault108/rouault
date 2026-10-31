@@ -9,7 +9,7 @@ export const resolveHeadingScrollOffset = (padding: string, margin: string) => {
   return { scrollPaddingTop, scrollMarginTop, offset: scrollPaddingTop + scrollMarginTop };
 };
 
-export const readHeadingScrollOffset = (target: HTMLElement) => {
+export const readHeadingScrollOffset = (target: Element) => {
   const document = target.ownerDocument;
   const view = document.defaultView;
   // hashとTOCの位置ownerは、同じCSS上の停止線を読み、個別のheader補正を重ねない。
