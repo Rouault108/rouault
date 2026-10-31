@@ -10,6 +10,7 @@ interface FragmentCall {
 interface FragmentFrame {
   at: number;
   status: string | null;
+  x: number;
   y: number;
   error: number | null;
 }
@@ -129,7 +130,13 @@ const installProbe = async (
           );
           error = scrollY - desired;
         }
-        probe.frames.push({ at: performance.now(), status: status(), y: scrollY, error });
+        probe.frames.push({
+          at: performance.now(),
+          status: status(),
+          x: scrollX,
+          y: scrollY,
+          error,
+        });
         frame = requestAnimationFrame(sample);
       };
       const timer = window.setTimeout(() => probe.finish('duration-cap'), 15000);
@@ -216,6 +223,39 @@ export const registerInitialFragmentArrivalTests = (): void => {
         if (scenario === 'layout') expect(data.changedAt).not.toBeNull();
       });
     }
+    test('空fragment直接アクセスは通常motionでinstant補正せず文書先頭に到達する', async ({
+      page,
+    }, info) => {
+      test.setTimeout(20000);
+      await installProbe(page, '', 'direct');
+      try {
+        await page.goto(`${e2eNoteFixtures.tocReadableLongHeading.directPath}#`, {
+          timeout: 15000,
+        });
+        await expect(page.locator('main#main-content')).toHaveAttribute(
+          'data-reading-position-status',
+          'settled',
+        );
+        await expect
+          .poll(async () =>
+            page.evaluate(() => {
+              const sample = window.__initialFragmentArrival.frames.at(-1);
+              return sample?.status === 'settled'
+                ? Math.max(Math.abs(sample.x), Math.abs(sample.y))
+                : Number.POSITIVE_INFINITY;
+            }),
+          )
+          .toBeLessThanOrEqual(2);
+      } catch (error) {
+        await finishProbe(page, info, 'initial-fragment-empty-failure');
+        throw error;
+      }
+      const data = await finishProbe(page, info, 'initial-fragment-empty');
+      expect(data.frames.at(-1)?.status).toBe('settled');
+      expect(Math.abs(data.frames.at(-1)?.x ?? Number.POSITIVE_INFINITY)).toBeLessThanOrEqual(2);
+      expect(Math.abs(data.frames.at(-1)?.y ?? Number.POSITIVE_INFINITY)).toBeLessThanOrEqual(2);
+      expect(data.calls.filter((call) => call.behavior === 'instant')).toEqual([]);
+    });
     test('初回pending中の本人入力は取消し、旧jobから後続scrollを出さない', async ({
       page,
     }, info) => {

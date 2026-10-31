@@ -49,6 +49,7 @@ interface Request {
   readonly sequence: number;
   readonly position: readonly number[] | null;
   readonly current: (verifyStructure?: boolean) => boolean;
+  readonly rollbackCurrent?: (verifyStructure?: boolean) => boolean;
 }
 const sessions = new WeakMap<HTMLElement, TocSourceSession>();
 let nativeObservation: NativeReadingPositionObservation | null = null;
@@ -285,6 +286,7 @@ export class TocSourceSession {
         position.sequence,
         undefined,
         true,
+        position.phase === 'candidate',
       ),
     );
     if (this.isCurrent() && position.isCurrent()) {
@@ -318,6 +320,7 @@ export class TocSourceSession {
     sequence = 0,
     requestedId?: string,
     positionBound = false,
+    initialCandidate = false,
   ): Request {
     this.tracker.syncInitialHashSelectionPolicy();
     const initialSelectionPolicy = this.initialSelectionPolicy();
@@ -328,6 +331,9 @@ export class TocSourceSession {
     const url = readAddress();
     const policyRevision = this.policyRevision;
     const trackerRevision = this.tracker.policyRevision;
+    const shellCommitId = initialCandidate ? readCurrentShellCommitId() : null;
+    const shellProof = initialCandidate ? readValidatedShellProof() : null;
+    const earlyAuthority = this.earlyAuthority;
     return {
       strict,
       positionBound,
@@ -336,6 +342,36 @@ export class TocSourceSession {
       position: strict ? readPosition() : null,
       ...(requestedId === undefined ? {} : { requestedId }),
       key: JSON.stringify([epoch, intent?.intentId, entry, url, policyRevision, trackerRevision]),
+      ...(initialCandidate
+        ? {
+            // 候補の期限は受理を止めるが、同ownerの未確定DOMを戻す権限は失わせない。
+            rollbackCurrent: (verifyStructure = true): boolean => {
+              const next = readContentContext();
+              return (
+                this.isCurrent(verifyStructure) &&
+                this.positionProof === proof &&
+                this.earlyAuthority === earlyAuthority &&
+                readCurrentShellCommitId() === shellCommitId &&
+                (shellProof === null || sameValidatedShell(shellProof)) &&
+                next?.root === this.binding.root &&
+                next.contentEpoch === epoch &&
+                next.intent === intent &&
+                !intent?.signal.aborted &&
+                !next.mutation &&
+                !next.recoveryRequired &&
+                next.displayedBinding.url === url &&
+                next.addressBinding.url === url &&
+                next.displayedBinding.entryId === entry &&
+                next.addressBinding.entryId === entry &&
+                readAddress() === url &&
+                (readHistoryEntry()?.id ?? null) === entry &&
+                this.policyRevision === policyRevision &&
+                this.tracker.policyRevision === trackerRevision &&
+                this.initialSelectionPolicy() === initialSelectionPolicy
+              );
+            },
+          }
+        : {}),
       current: (verifyStructure = true) => {
         const next = readContentContext();
         return (
@@ -424,6 +460,16 @@ export class TocSourceSession {
           s.root.isConnected &&
           (s.nav === this.binding.nav || this.surfaces.has(s)),
       );
+    const rollbackCurrent = (): boolean =>
+      request.rollbackCurrent
+        ? request.rollbackCurrent() &&
+          surfaces.every(
+            (s) =>
+              s.nav.isConnected &&
+              s.root.isConnected &&
+              (s.nav === this.binding.nav || this.surfaces.has(s)),
+          )
+        : current();
     const owns = (element: HTMLElement): boolean =>
       captured.has(element) &&
       surfaces.some((s) => element === s.root || element === s.nav || s.nav.contains(element));
@@ -533,7 +579,7 @@ export class TocSourceSession {
       if (result !== 'accepted') {
         for (const change of journal) {
           try {
-            if (!current()) break;
+            if (!rollbackCurrent()) break;
             if (!owns(change.element)) continue;
             if (change.name === 'class:is-active') {
               if (String(change.element.classList.contains('is-active')) === change.written)
@@ -548,7 +594,7 @@ export class TocSourceSession {
           }
         }
         try {
-          if (current() && beforePosition && !samePosition(beforePosition, readPosition()))
+          if (rollbackCurrent() && beforePosition && !samePosition(beforePosition, readPosition()))
             this.binding.root.dataset['tocPositionPreserved'] = 'false';
         } catch (error) {
           diagnose(error);

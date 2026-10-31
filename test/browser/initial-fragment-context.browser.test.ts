@@ -103,6 +103,61 @@ describe('初回fragmentの入力policyとfeature binding採用', () => {
     expect(currentPolicy()).toMatchObject({ eligible: true, inputRevision: 2, suppressed: true });
   });
 
+  it.each([false, true])('空fragmentはentry新規採用=%sでも初回runnerへ届く', async (freshEntry) => {
+    const content = requireFixtureValue(root);
+    content.id = 'main-content';
+    content.style.height = '6000px';
+    history.replaceState(freshEntry ? {} : baselineState, '', '/notes/initial-empty#');
+    expect(location.href.endsWith('#')).toBe(true);
+    expect(readAddress()).toBe('/notes/initial-empty');
+    const contentEpoch = initializeContentContext(content);
+    setContentReadiness({
+      contentEpoch,
+      root: content,
+      shellCommitId: 0,
+      status: 'settled',
+      started: true,
+    });
+    window.scrollTo({ top: 400, behavior: 'instant' });
+    const scroll = vi.spyOn(window, 'scrollTo');
+    const observations: NativeReadingPositionObservation[] = [];
+    const errors: unknown[] = [];
+    const reader = new ReadingPositionController(
+      (error) => errors.push(error),
+      undefined,
+      (observation) => observations.push(observation),
+    );
+    try {
+      expect(matchMedia('(prefers-reduced-motion: reduce)').matches).toBe(false);
+      reader.start(content);
+      expect(currentPolicy()?.eligible).toBe(true);
+      await expect
+        .poll(() => content.dataset['readingPositionStatus'], { timeout: 5000 })
+        .toBe('settled');
+      expect(observations.filter((observation) => observation.phase === 'classified')).toHaveLength(
+        1,
+      );
+      const arrival = observations.find((observation) => observation.phase === 'arrived')?.arrival;
+      expect(arrival?.targetKind).toBe('document-top');
+      expect(arrival?.binding.url).toBe('/notes/initial-empty');
+      expect(Math.abs(scrollY)).toBeLessThanOrEqual(2);
+      expect(
+        scroll.mock.calls.some((args) => {
+          const options: unknown = args[0];
+          return (
+            options !== null &&
+            typeof options === 'object' &&
+            'behavior' in options &&
+            options.behavior === 'instant'
+          );
+        }),
+      ).toBe(false);
+      expect(errors).toEqual([]);
+    } finally {
+      reader.dispose();
+    }
+  });
+
   it.each(['initialization', 'normalization'] as const)(
     '%sの成功した同entry replaceではobserverより前に入力policyを新URLへ引き継ぐ',
     (cause) => {

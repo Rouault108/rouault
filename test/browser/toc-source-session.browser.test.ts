@@ -277,6 +277,51 @@ describe('TocSourceSession の単一所有と予約・transaction 契約', () =>
     assertCurrent(session.binding.nav, 'session-three');
   });
 
+  it.each(['same-owner', 'new-owner'] as const)(
+    'candidate期限跨ぎの部分writeは%sの所有を照合してcleanupする',
+    async (ownership) => {
+      const { session, observation } = await setupInitial();
+      recordValidatedShellProof(await shellDetail(readAddress()), document);
+      captureScheduling();
+      vi.spyOn(console, 'error').mockImplementation(() => undefined);
+      let now = 4999;
+      vi.spyOn(performance, 'now').mockImplementation(() => now);
+      const before = session.binding.toc.outerHTML;
+      const listener = vi.fn();
+      session.subscribe(listener);
+      listener.mockClear();
+      const link = requireFixtureValue(
+        session.binding.nav.querySelector<HTMLElement>('a[data-heading-id="session-two"]'),
+      );
+      const write = link.setAttribute.bind(link);
+      let crossedDeadline = false;
+      vi.spyOn(link, 'setAttribute').mockImplementation((name, value) => {
+        write(name, value);
+        if (name !== 'data-active' || crossedDeadline) return;
+        crossedDeadline = true;
+        now = 5001;
+        if (ownership === 'new-owner') {
+          beginNavigationIntent('native-navigation', readAddress(), 'native');
+          // 新ownerが同じ値を採用しても、旧journalはその状態を戻してはいけない。
+          write('aria-current', 'location');
+          write('data-active', 'true');
+          link.classList.add('is-active');
+        }
+      });
+      expect(
+        observeNativeTocPosition({
+          ...observation,
+          isCurrent: () => now < 5000 && session.isCurrent(),
+        }),
+      ).toBe('superseded');
+      expect(crossedDeadline).toBe(true);
+      expect(session.snapshot).toBeNull();
+      expect(listener).not.toHaveBeenCalled();
+      if (ownership === 'same-owner') expect(session.binding.toc.outerHTML).toBe(before);
+      else assertCurrent(session.binding.nav, 'session-two');
+    },
+  );
+
   it('初回arrivedは既存sessionへの記録だけでDOM再取引と再通知を起こさない', async () => {
     const { session, observation, binding } = await setupInitial();
     const scheduling = captureScheduling();

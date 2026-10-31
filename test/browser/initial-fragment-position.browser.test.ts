@@ -401,6 +401,36 @@ describe('managed初回fragmentの移動と受理境界', () => {
     expect(harness.writes).toEqual([{ left: 0, top: 1000, behavior: 'smooth' }]);
   });
 
+  it('hash targetの既存表示markerをgeometry読取り前に保ち、属性再入後は所有を再確認する', async () => {
+    const harness = await createHarness();
+    const original = harness.target.setAttribute.bind(harness.target);
+    const attribute = vi.spyOn(harness.target, 'setAttribute').mockImplementation((name, value) => {
+      original(name, value);
+      if (name === 'data-router-hash-target') harness.goal(1400);
+    });
+    harness.frames(3);
+    expect(harness.target.getAttribute('data-router-hash-target')).toBe('true');
+    expect(attribute).toHaveBeenCalledTimes(1);
+    expect(harness.writes).toEqual([{ left: 0, top: 1400, behavior: 'smooth' }]);
+    harness.actual(1400);
+    harness.frames(3);
+    await harness.done;
+    expect(harness.outcomes[0]?.outcome).toBe('arrived');
+  });
+
+  it('hash marker属性書込みへの同期取消後はgeometry更新もscroll要求も続けない', async () => {
+    const harness = await createHarness();
+    const original = harness.target.setAttribute.bind(harness.target);
+    vi.spyOn(harness.target, 'setAttribute').mockImplementation((name, value) => {
+      original(name, value);
+      if (name === 'data-router-hash-target') harness.controller.abort();
+    });
+    harness.frames(3);
+    await harness.done;
+    expect(harness.outcomes).toEqual([{ outcome: 'cancelled' }]);
+    expect(harness.writes).toEqual([]);
+  });
+
   it.each(['pending', 'hidden'] as const)(
     '%s中の共通期限でも一度だけunavailableになる',
     async (condition) => {

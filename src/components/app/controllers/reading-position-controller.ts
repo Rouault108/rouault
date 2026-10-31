@@ -66,6 +66,7 @@ interface ScrollJob {
   readonly receipt?: NavigationCommitReceipt;
   readonly prepaintGeometryReady?: boolean;
   readonly initialFragment: boolean;
+  readonly initialFragmentUrl: string | null;
   readonly startedAt: number;
   readonly generation: number;
   initialTerminal: 'pending' | InitialFragmentOutcome;
@@ -151,6 +152,8 @@ export class ReadingPositionController {
   ) {}
 
   start(root: HTMLElement): void {
+    // entry採用が空の#を正規化しても、初回の移動先意図は保持する。
+    const initialDocumentUrl = window.location.href;
     adoptHistoryEntry();
     adoptContentBinding(readAddress());
     this.renderedId = readHistoryEntry()?.id ?? null;
@@ -428,7 +431,7 @@ export class ReadingPositionController {
     }
     this.mode('manual');
     const intent = beginNavigationIntent('initial', readAddress());
-    if (!readAddress().includes('#'))
+    if (!initialDocumentUrl.includes('#'))
       this.observeNativePosition(root, intent, 'initial-fragment', 'classified');
     if (hasInitialIntervention()) this.interruptedIntent = intent.intentId;
     this.schedule({
@@ -438,6 +441,7 @@ export class ReadingPositionController {
       stateOnly: false,
       error: false,
       shellCommitId: readCurrentShellCommitId(),
+      initialFragmentUrl: initialDocumentUrl,
     });
   }
 
@@ -486,6 +490,7 @@ export class ReadingPositionController {
     receipt?: NavigationCommitReceipt;
     prepaintGeometryReady?: boolean;
     prepaintCandidate?: ReadingPosition;
+    initialFragmentUrl?: string;
   }): void {
     if (this.disposed || options.intent.signal.aborted) return;
     this.cancel();
@@ -509,12 +514,13 @@ export class ReadingPositionController {
     this.renderedUrl = options.url;
     this.sample = null;
     if (!options.stateOnly) this.renderedError = options.error;
+    const initialFragmentUrl = options.initialFragmentUrl ?? options.url;
     const initialFragment =
       options.intent.cause === 'initial' &&
       !options.receipt &&
       !options.stateOnly &&
       !options.error &&
-      options.url.includes('#');
+      initialFragmentUrl.includes('#');
     if (initialFragment)
       registerInitialFragmentSelectionPolicy({
         root: options.root,
@@ -540,6 +546,7 @@ export class ReadingPositionController {
       epoch: context.contentEpoch,
       controller,
       initialFragment,
+      initialFragmentUrl: initialFragment ? initialFragmentUrl : null,
       initialTerminal: 'pending',
       startedAt: performance.now(),
       generation: ++this.jobGeneration,
@@ -656,6 +663,7 @@ export class ReadingPositionController {
   private async restore(job: ScrollJob): Promise<void> {
     if (job.initialFragment) {
       await runInitialFragmentPosition({
+        targetUrl: job.initialFragmentUrl ?? job.url,
         binding: {
           root: job.root,
           contentEpoch: job.epoch,

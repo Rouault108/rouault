@@ -47,6 +47,7 @@ interface Sample {
 }
 interface Options {
   readonly binding: InitialFragmentBinding;
+  readonly targetUrl?: string;
   readonly startedAt: number;
   readonly signal: AbortSignal;
   readonly current: () => boolean;
@@ -184,7 +185,11 @@ export const runInitialFragmentPosition = (options: Options): Promise<void> =>
         finish('cancelled');
         return null;
       }
-      const target = resolveInitialFragmentTarget(document, binding.root, binding.url);
+      const target = resolveInitialFragmentTarget(
+        document,
+        binding.root,
+        options.targetUrl ?? binding.url,
+      );
       let element: Element | null = null;
       let kind: Sample['targetKind'];
       let x = 0,
@@ -199,6 +204,10 @@ export const runInitialFragmentPosition = (options: Options): Promise<void> =>
           return null;
         }
         wasRenderable = true;
+        if (element.getAttribute('data-router-hash-target') !== 'true') {
+          element.setAttribute('data-router-hash-target', 'true');
+          if (!valid()) return null;
+        }
         const rect = element.getBoundingClientRect();
         const offset = readHeadingScrollOffset(element);
         rectValues = [rect.left + scrollX, rect.top + scrollY, rect.width, rect.height];
