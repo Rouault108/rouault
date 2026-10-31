@@ -72,12 +72,11 @@ Node/pnpmのrepo pinは24.14.1 / 11.28.9のまま。
 
 | 項目                                                | 残る理由・次のgate                                                                                      |
 | --------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
-| 省略された第6〜7章                                  | 提供本文の不足。特にheader/reset/配信条件の全文照合には該当部分の再引渡しが必要                         |
 | CSP専用WebKit                                       | 共有ライブラリ不足。公式install-depsのdry-runもAPT設定の読取り制約・package未解決で停止。OS変更は未実行 |
 | 対応hostname / runner prefix / capability profile   | Stage 0の合意未実施。未登録hostnameを対応済みとしない                                                   |
 | runner/protocol/HTTP sandbox/Blob author JS         | 第6章の後段実装。現行srcdocを改修していない                                                             |
 | local enforce・悪性操作の実拒否・全cache回帰        | 第8.2章の段階2。ROの継続実行を防御完了とは扱わない                                                      |
-| 任意URLの404 fallback・redirect・profile reset      | 現候補は生成済みルートを対象。Cloudflare実HTTPで追加検証が必要                                          |
+| 404 fallback・redirect・profile resetの実配信       | ローカルの未知pathとWorker resetは検証済み。Cloudflare実HTTPと将来runner profileは別途確認が必要       |
 | production/media実効値・Transform/Cache/Functions等 | 権限内の配信観測が必要。ローカル成功では代替しない                                                      |
 | 200/304の実配信合成・minify/挿入・旧tab             | 段階3以後の配信前gate。header/body/hashの一致を実応答で確認                                             |
 | 切戻しartifact・公開・本番enforcement               | 段階4の別承認。自動昇格しない                                                                           |
