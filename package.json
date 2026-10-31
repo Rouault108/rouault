@@ -67,7 +67,7 @@
     "shiki": "3.21.0"
   },
   "devDependencies": {
-    "@11ty/eleventy": "3.1.2",
+    "@11ty/eleventy": "3.1.7",
     "@11ty/eleventy-plugin-vite": "7.0.0",
     "@aws-sdk/client-s3": "3.1024.0",
     "@biomejs/biome": "2.6.4",
