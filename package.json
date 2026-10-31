@@ -52,7 +52,10 @@
     "assert-production-import-boundary": "pnpm exec tsx scripts/assert-production-import-boundary.ts",
     "assert-search-import-boundary": "pnpm exec tsx scripts/assert-search-import-boundary.ts",
     "assert-link-contract-acceptance": "pnpm exec tsx scripts/assert-link-contract-acceptance.ts",
-    "assert-workflow-source-contract": "pnpm exec tsx scripts/ci/assert-workflow-source-contract.ts"
+    "assert-workflow-source-contract": "pnpm exec tsx scripts/ci/assert-workflow-source-contract.ts",
+    "generate:csp-stage1": "pnpm exec tsx scripts/generate-csp-stage-one.ts",
+    "test:csp-stage1": "pnpm exec playwright test --config playwright.csp.config.ts",
+    "verify:csp-stage1": "pnpm exec tsx scripts/verify-csp-stage-one.ts"
   },
   "dependencies": {
     "@floating-ui/dom": "1.7.5",
