@@ -201,8 +201,10 @@ export const registerInitialFragmentArrivalTests = (): void => {
           await expect
             .poll(async () =>
               page.evaluate(() => {
-                const frames = window.__initialFragmentArrival.frames;
-                return Math.abs(frames.at(-1)?.error ?? Number.POSITIVE_INFINITY);
+                const sample = window.__initialFragmentArrival.frames.at(-1);
+                return sample?.status === 'settled'
+                  ? Math.abs(sample.error ?? Number.POSITIVE_INFINITY)
+                  : Number.POSITIVE_INFINITY;
               }),
             )
             .toBeLessThanOrEqual(2);
