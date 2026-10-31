@@ -1,6 +1,7 @@
 .vscode
 .agent
 .velite
+.vitest/
 .generated/
 dist
 node_modules

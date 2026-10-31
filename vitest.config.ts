@@ -63,10 +63,6 @@ const createBrowserTestProject = (
       enabled: true,
       headless: true,
       ui: false,
-      api: {
-        host: '127.0.0.1',
-        strictPort: false,
-      },
       connectTimeout: 90_000,
       // 旧WTR/Playwrightのdesktop contractを維持し、Vitest既定のmobile幅へ依存しない。
       viewport: {
@@ -104,6 +100,10 @@ const browserTestProjects = [
 
 export default defineConfig({
   test: {
+    api: {
+      host: '127.0.0.1',
+      strictPort: false,
+    },
     projects: [
       {
         test: {
