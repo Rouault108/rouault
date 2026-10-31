@@ -1,5 +1,9 @@
 # CSP Stage 1隔離検証記録（2026-10-31）
 
+本書は`a3c59ab2`時点の初回候補の履歴である。設計1.1提供後の補正と現行結果は
+[設計照合記録](csp-stage-one-design-1.1-audit-2026-10-31.md)を参照する。
+以下のstyle/base/frame候補、診断形式、設計本文未取得という記載も初回時点の状態を示す。
+
 基点は`790625bcaff40e940b85dde96db7796a75f2b755`。契約は[Stage 1](../contracts/csp-stage-one.md)。
 本記録はローカルproduction条件での検証を示し、本番観測・enforce・全訪問者の観測を示さない。
 

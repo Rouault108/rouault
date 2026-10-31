@@ -9,7 +9,6 @@ import { buildThemeChromeBootstrapScript } from '../../src/theme/theme-chrome-bo
 import { escapeInlineExecutableScriptText } from '../../src/layouts/html-output.js';
 import {
   collectCspStageOne,
-  cssResourceUrls,
   documentPolicy,
   inventoryCspDocument,
   matchesCspPath,
@@ -18,142 +17,258 @@ import {
   verifyCspStageOne,
   workerPolicy,
 } from '../../build/security/csp-report-only.js';
+import { cssResourceUrls, srcsetUrls } from '../../build/security/csp-resources.js';
+import { createDocumentPolicy, serializeCspPolicy } from '../../build/security/csp-policy.js';
 import { createCspReportOnlyMiddleware } from '../../build/preview/csp-report-only.js';
 
 const bodies = [buildThemeDocumentBootstrapScript(), buildThemeChromeBootstrapScript()].map(
   escapeInlineExecutableScriptText,
 );
-const html = (content = '', base = '') => `<html><head>
-  <meta name="rouault-site-origin" content="https://rouault.invalid">
-  <meta name="rouault-base-path" content="${base}">
-  <script>${bodies[0]}</script></head><body><script>${bodies[1]}</script>${content}</body></html>`;
+const html = (content = '', base = '') =>
+  `<html><head><meta name="rouault-site-origin" content="https://rouault.invalid"><meta name="rouault-base-path" content="${base}"><meta name="rouault-build-id" content="fixture"><script>${bodies[0]}</script><script type="module" src="${base}/client-assets/client.js"></script></head><body><script>${bodies[1]}</script>${content}</body></html>`;
+const rootUrl = 'https://rouault.invalid/';
+const fixture = async (run: (dist: string, manifestFile: string) => Promise<void>) => {
+  const dist = await mkdtemp(path.join(tmpdir(), 'rouault-csp-'));
+  const manifestFile = path.join(dist, 'vite-manifest.json');
+  await mkdir(path.join(dist, 'client-assets'));
+  await writeFile(path.join(dist, 'index.html'), html());
+  await writeFile(
+    path.join(dist, 'client-assets/client.js'),
+    'new Worker(new URL("/client-assets/lexical-hash.js",import.meta.url),{type:"module"});',
+  );
+  await writeFile(path.join(dist, 'client-assets/lexical-hash.js'), 'export {};');
+  await writeFile(
+    manifestFile,
+    JSON.stringify({ 'src/client.ts': { file: 'client-assets/client.js', isEntry: true } }),
+  );
+  try {
+    await run(dist, manifestFile);
+  } finally {
+    await rm(dist, { recursive: true, force: true });
+  }
+};
 
 describe('isolated CSP Stage 1', () => {
-  it('resolves effective base URLs and CSS fonts/imports without expanding policy automatically', () => {
+  it('hashes emitted text without authorizing inert JSON or template scripts', () => {
     const inventory = inventoryCspDocument(
-      html('<base href="https://media.invalid/nested/"><img src="image.png">'),
-      'index.html',
-      'https://rouault.invalid/',
-    );
-    expect(inventory.resources[0]?.url).toBe('https://media.invalid/nested/image.png');
-    expect(
-      cssResourceUrls(
-        '@import "https://css.invalid/a.css"; @font-face { src: url(../fonts/a.woff2) }',
-        'https://rouault.invalid/css/main.css',
+      html(
+        '<template data-preview-kind="html">&lt;script&gt;demo()&lt;/script&gt;</template><script type="application/json">{}</script><span style="color:red"></span>',
       ),
-    ).toEqual(['https://rouault.invalid/fonts/a.woff2', 'https://css.invalid/a.css']);
-  });
-  it('hashes the emitted executable text, excluding inert JSON and template payloads', () => {
-    const inventory = inventoryCspDocument(
-      html(`<template data-preview-kind="html"><script>demo()</script></template>
-      <script type="application/json">{"example":1}</script><span style="color:red" onclick="demo()"></span>
-      <link rel="stylesheet" href="/style.css"><img src="https://media.invalid/a.png">`),
       'index.html',
-      'https://rouault.invalid/',
+      rootUrl,
     );
     expect(inventory.inlineScriptHashes).toEqual(
       bodies.map((body) => `'sha256-${createHash('sha256').update(body).digest('base64')}'`),
     );
-    expect(inventory.styleAttributes).toBe(1);
-    expect(inventory.eventHandlers).toBe(1);
     expect(inventory.previewPayloads).toBe(1);
-    expect(inventory.resources.map(({ origin }) => origin)).toEqual([
-      'https://rouault.invalid',
-      'https://media.invalid',
-    ]);
+    expect(inventory.styleAttributes).toBe(1);
     expect(
-      inventoryCspDocument(html().replaceAll('\n', '\r\n'), 'crlf.html', 'https://rouault.invalid/')
+      inventoryCspDocument(html().replaceAll('\n', '\r\n'), 'crlf.html', rootUrl)
         .inlineScriptHashes,
     ).toEqual(inventory.inlineScriptHashes);
   });
 
-  it('rejects a modified bootstrap, extra executable script and missing bootstrap before generating permission', () => {
+  it('rejects modified/missing/extra executable bootstrap, nonce, event handler, javascript URL and base', () => {
     for (const source of [
       html().replace('const root', 'let root'),
       html('<script>extra()</script>'),
       html().replace(`<script>${bodies[0]}</script>`, ''),
-    ]) {
-      expect(() =>
-        inventoryCspDocument(source, 'tampered.html', 'https://rouault.invalid/'),
-      ).toThrow('two emitted theme');
-    }
+      html('<b nonce="fixed"></b>'),
+      html('<b onclick="demo()"></b>'),
+      html('<a href="javascript:demo()">x</a>'),
+      html('<base href="/changed/">'),
+      html('<iframe srcdoc="&lt;script&gt;bad()&lt;/script&gt;"></iframe>'),
+      html('<object data="/unexpected.html"></object>'),
+    ])
+      expect(() => inventoryCspDocument(source, 'bad.html', rootUrl)).toThrow();
   });
 
-  it('keeps WASM/blob permissions exclusively in the Worker and style attributes separate from scripts', () => {
-    const parent = documentPolicy(["'sha256-example='"], 'https://media.invalid');
-    expect(parent).not.toContain('wasm-unsafe-eval');
-    expect(parent).not.toContain('blob:');
-    expect(parent).not.toContain("script-src 'unsafe-inline'");
-    expect(parent).not.toContain("'unsafe-eval'");
-    expect(parent).not.toContain('nonce-');
-    expect(parent).toContain("style-src-attr 'unsafe-inline'");
-    expect(parent).toContain("img-src 'self' https://media.invalid");
+  it('classifies stylesheet, template, srcset, font and approved media origins without URL query/body persistence', () => {
+    const inventory = inventoryCspDocument(
+      html(
+        '<link rel="preload" as="font" href="/font.woff2"><img srcset="/a.png 1x, /b.png 2x"><template data-preview-kind="html">&lt;img src="https://media.invalid/c.png"&gt;</template>',
+      ),
+      'index.html',
+      rootUrl,
+      { mediaOrigin: 'https://media.invalid' },
+    );
+    expect(
+      inventory.resources.filter(({ kind }) => kind !== 'script').map(({ kind }) => kind),
+    ).toEqual(['font', 'image', 'image', 'image']);
+    expect(inventory.resources.at(-1)).toMatchObject({
+      origin: 'https://media.invalid',
+      pathname: '/c.png',
+      scope: 'template',
+      reason: 'explicit-ROUAULT_MEDIA_BASE_URL',
+    });
+    expect(
+      cssResourceUrls(
+        '@IMPORT "https://css.invalid/a.css"; @font-face{src:url(../fonts/a.woff2)}',
+        'https://rouault.invalid/css/main.css',
+      ),
+    ).toEqual(['https://rouault.invalid/fonts/a.woff2', 'https://css.invalid/a.css']);
+    expect(srcsetUrls('data:image/png;base64,AAAA 1x, /b.png 2x')).toEqual([
+      'data:image/png;base64,AAAA',
+      '/b.png',
+    ]);
+    expect(() =>
+      inventoryCspDocument(html('<img src="/a.png?private=value#fragment">'), 'bad.html', rootUrl),
+    ).toThrow('query');
+  });
+
+  it('rejects unknown origins, external HTTP, arbitrary script/data, SVG data and oversized data image', () => {
+    for (const resource of [
+      '<img src="https://unapproved.invalid/a.png">',
+      '<img src="http://unapproved.invalid/a.png">',
+      '<script src="https://media.invalid/a.js"></script>',
+      '<img src="data:image/svg+xml;base64,AAAA">',
+      `<img src="data:image/png;base64,${'AAAA'.repeat(12000)}">`,
+      '<iframe src="/runner/"></iframe>',
+    ])
+      expect(() =>
+        inventoryCspDocument(html(resource), 'bad.html', rootUrl, {
+          mediaOrigin: 'https://media.invalid',
+        }),
+      ).toThrow();
+    const approved = inventoryCspDocument(
+      html('<img src="data:image/png;base64,AAAA">'),
+      'data.html',
+      rootUrl,
+    );
+    expect(approved.resources.find(({ kind }) => kind === 'image')).toMatchObject({
+      origin: 'data:',
+      pathname: '',
+    });
+    expect(JSON.stringify(approved.resources)).not.toContain('AAAA');
+  });
+
+  it('matches design 1.1 parent/style exceptions and keeps WASM/blob exclusively in Worker', () => {
+    const policy = createDocumentPolicy(
+      bodies.map((body) => `'sha256-${createHash('sha256').update(body).digest('base64')}'`),
+      'https://media.invalid',
+    );
+    expect(policy['script-src']).not.toContain("'unsafe-inline'");
+    expect(policy['script-src']).not.toContain("'unsafe-eval'");
+    expect(policy['style-src-elem']).toEqual(["'self'", "'unsafe-inline'"]);
+    for (const directive of [
+      'base-uri',
+      'form-action',
+      'frame-ancestors',
+      'manifest-src',
+      'frame-src',
+    ] as const)
+      expect(policy[directive]).toEqual(["'none'"]);
+    expect(policy['img-src']).toEqual(["'self'", 'data:', 'https://media.invalid']);
+    const parent = documentPolicy([], null);
+    expect(parent).not.toMatch(/wasm-unsafe-eval|blob:|report-uri|report-to|nonce-/u);
     expect(workerPolicy).toContain("script-src 'self' 'wasm-unsafe-eval'");
     expect(workerPolicy).toContain("connect-src 'self' blob:");
-    expect(parent + workerPolicy).not.toMatch(/report-uri|report-to/u);
+    expect(() => serializeCspPolicy({ 'script-src': [] })).toThrow();
+    expect(() => serializeCspPolicy({ 'script-src': ["'none'", "'self'"] })).toThrow();
+    expect(() => serializeCspPolicy({ 'script-src': ['{HASH}'] })).toThrow();
   });
 
-  it('freezes output and separates prefixed document rules from the exact hashed Worker', async () => {
-    const dist = await mkdtemp(path.join(tmpdir(), 'rouault-csp-'));
-    try {
-      await mkdir(path.join(dist, 'notes'), { recursive: true });
-      await mkdir(path.join(dist, 'client-assets'), { recursive: true });
+  it('freezes build/policy/hash owners, Vite graph, assets and envelope resource inventory', async () =>
+    fixture(async (dist, viteManifestFile) => {
+      await mkdir(path.join(dist, '__router/notes'), { recursive: true });
+      await writeFile(path.join(dist, 'image.png'), 'fixture');
+      await writeFile(
+        path.join(dist, '__router/notes/index.router.json'),
+        JSON.stringify({
+          buildId: 'fixture',
+          document: { html: '<article><img src="/image.png"></article>' },
+          shell: { headerHtml: '<header>fixture</header>' },
+        }),
+      );
+      const options = { viteManifestFile };
+      const manifest = await collectCspStageOne(dist, null, options);
+      expect(manifest.envelopes).toHaveLength(1);
+      expect(manifest.hashOwners.map(({ owner }) => owner)).toEqual([
+        'theme-document',
+        'theme-chrome',
+      ]);
+      expect(manifest.policyDigest).toMatch(/^[a-f0-9]{64}$/u);
+      expect(manifest.buildId).toBe('fixture');
+      expect(manifest.assets.map(({ file }) => file)).toContain('client-assets/lexical-hash.js');
+      const frozen = path.join(dist, 'frozen.json');
+      await writeFile(frozen, JSON.stringify(manifest));
+      await expect(readVerifiedCspStageOne(dist, frozen, options)).resolves.toEqual(manifest);
+      await verifyCspStageOne(dist, manifest, options);
+      await writeFile(
+        path.join(dist, 'client-assets/lexical-hash.js'),
+        'export {};\n// changed bytes',
+      );
+      await expect(verifyCspStageOne(dist, manifest, options)).rejects.toThrow('frozen inventory');
+      await expect(readVerifiedCspStageOne(dist, frozen, options)).rejects.toThrow(
+        'stale inventory',
+      );
+    }));
+
+  it('rejects an unowned executable, dynamic Worker, unknown bundle, and executable envelope', async () =>
+    fixture(async (dist, viteManifestFile) => {
+      const options = { viteManifestFile };
+      await writeFile(
+        path.join(dist, 'index.html'),
+        html('<script src="/unexpected.js"></script>'),
+      );
+      await writeFile(path.join(dist, 'unexpected.js'), 'export {};');
+      await expect(collectCspStageOne(dist, null, options)).rejects.toThrow(
+        'unexpected executable',
+      );
+      await writeFile(path.join(dist, 'index.html'), html());
+      await writeFile(path.join(dist, 'client-assets/client.js'), 'new Worker(dynamicUrl);');
+      await expect(collectCspStageOne(dist, null, options)).rejects.toThrow('Worker constructor');
+      await writeFile(
+        path.join(dist, 'client-assets/client.js'),
+        'new Worker(new URL("/client-assets/lexical-hash.js",import.meta.url),{type:"module"});',
+      );
+      await writeFile(path.join(dist, 'client-assets/unknown.js'), 'export {};');
+      await expect(collectCspStageOne(dist, null, options)).rejects.toThrow('not accounted');
+      expect(() =>
+        inventoryCspDocument('<script>bad()</script>', 'fragment', rootUrl, { fragment: true }),
+      ).toThrow('no fragment');
+    }));
+
+  it('uses base path, finite disjoint rules and Pages limits without writing enforce headers', async () =>
+    fixture(async (dist, viteManifestFile) => {
       await writeFile(path.join(dist, 'index.html'), html('', '/nested'));
-      await writeFile(path.join(dist, 'notes/index.html'), html('', '/nested'));
-      await writeFile(path.join(dist, 'client-assets/worker-build.js'), 'export {};');
-      const manifest = await collectCspStageOne(dist);
-      const manifestFile = path.join(dist, 'manifest.json');
-      await writeFile(manifestFile, JSON.stringify(manifest));
-      await expect(readVerifiedCspStageOne(dist, manifestFile)).resolves.toEqual(manifest);
+      await writeFile(
+        path.join(dist, 'client-assets/client.js'),
+        'new Worker(new URL("/nested/client-assets/lexical-hash.js",import.meta.url),{type:"module"});',
+      );
+      const manifest = await collectCspStageOne(dist, null, { viteManifestFile });
       expect(
-        manifest.rules.filter(({ pattern }) => matchesCspPath(pattern, '/nested/notes/')),
-      ).toHaveLength(1);
-      const workers = manifest.rules.filter(({ pattern }) =>
-        matchesCspPath(pattern, '/nested/client-assets/worker-build.js'),
-      );
-      expect(workers).toHaveLength(1);
-      expect(workers[0]?.context).toBe('worker');
+        manifest.rules
+          .filter(({ pattern }) => matchesCspPath(pattern, '/nested/client-assets/lexical-hash.js'))
+          .map(({ context }) => context),
+      ).toEqual(['worker']);
       expect(renderCspHeaders(manifest)).not.toMatch(/\n\s+Content-Security-Policy:/u);
-      await verifyCspStageOne(dist, manifest);
-      await writeFile(
-        path.join(dist, 'notes/index.html'),
-        html('<img src="/changed.png">', '/nested'),
-      );
-      await expect(verifyCspStageOne(dist, manifest)).rejects.toThrow('frozen inventory');
-      await expect(readVerifiedCspStageOne(dist, manifestFile)).rejects.toThrow('stale inventory');
-      await writeFile(
-        path.join(dist, 'notes/index.html'),
-        html().replace('const root', 'let root'),
-      );
-      await expect(verifyCspStageOne(dist, manifest)).rejects.toThrow();
       expect(() =>
         renderCspHeaders({
           ...manifest,
-          rules: Array.from({ length: 101 }, () => ({
-            pattern: '/',
+          rules: Array.from({ length: 101 }, (_, i) => ({
+            pattern: `/route-${String(i)}`,
             policy: workerPolicy,
-            context: 'worker' as const,
+            context: 'document' as const,
           })),
         }),
       ).toThrow('100 rule');
       expect(() =>
         renderCspHeaders({
           ...manifest,
-          rules: [{ pattern: '/', context: 'document', policy: 'a'.repeat(2000) }],
+          rules: [{ pattern: '/', policy: 'a'.repeat(2000), context: 'document' }],
         }),
       ).toThrow('2000 character');
-    } finally {
-      await rm(dist, { recursive: true, force: true });
-    }
-  });
+      expect(() =>
+        renderCspHeaders({
+          ...manifest,
+          rules: [{ pattern: '/*', policy: workerPolicy, context: 'document' }, ...manifest.rules],
+        }),
+      ).toThrow('overlap');
+    }));
 
-  it('sends actual HTTP Report-Only headers on GET/HEAD, with Pages-style duplicate composition', async () => {
+  it('sends real HTTP RO headers on GET/HEAD with Pages duplicate composition', async () => {
     const middleware = createCspReportOnlyMiddleware({
-      schema: 1,
-      siteOrigin: 'https://rouault.invalid',
-      mediaOrigin: null,
-      documents: [],
-      stylesheetResources: [],
       rules: [
         { pattern: '/notes/*', policy: "script-src 'self'", context: 'document' },
         { pattern: '/notes/example', policy: "object-src 'none'", context: 'document' },
@@ -163,9 +278,9 @@ describe('isolated CSP Stage 1', () => {
     await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
     try {
       const address = server.address();
-      if (!address || typeof address === 'string') throw new Error('Missing HTTP address');
+      if (!address || typeof address === 'string') throw new Error('HTTP address');
       for (const method of ['GET', 'HEAD', 'POST']) {
-        const response = await fetch(`http://127.0.0.1:${address.port}/notes/example?x=1`, {
+        const response = await fetch(`http://127.0.0.1:${String(address.port)}/notes/example?x=1`, {
           method,
         });
         expect(response.headers.get('content-security-policy-report-only')).toBe(

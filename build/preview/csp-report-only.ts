@@ -7,7 +7,7 @@ import {
 
 // 隔離検証入口のみで使用する。複数一致を黙って上書きせず、Cloudflareのcomma結合を再現する。
 export const createCspReportOnlyMiddleware =
-  (manifest: CspStageOneManifest) =>
+  (manifest: Pick<CspStageOneManifest, 'rules'>) =>
   (request: IncomingMessage, response: ServerResponse, next: () => void): void => {
     if (request.method === 'GET' || request.method === 'HEAD') {
       const pathname = new URL(request.url ?? '/', 'http://preview.local').pathname;

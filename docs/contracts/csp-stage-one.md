@@ -3,7 +3,8 @@
 ## 範囲と正本
 
 ヘッダー候補生成、テーマbootstrapの実出力hash検証、production buildを使った隔離browser観測を所有する。
-実装は`build/security/csp-report-only.ts`、ローカル配信は`vite.csp-preview.config.ts`、
+policyは`build/security/csp-policy.ts`、inventoryは`csp-inventory.ts`、資源分類は`csp-resources.ts`が所有する。
+検証入口は`build/security/csp-report-only.ts`、ローカル配信は`vite.csp-preview.config.ts`、
 検証入口は`package.json`を正本とする。第1段階は防御完了を意味しない。
 
 通常の`build` / `build:production`、`vite.preview.config.ts`、配信用`_headers`にはCSPを追加しない。
@@ -29,15 +30,26 @@ hash改変、script追加・欠落、凍結後の資源変更はnegative testで
 
 ## ポリシーと棚卸し
 
-親文書は`default-src 'none'`から、same-origin scriptと承認済みhash2本、same-origin CSS/font/connect/Worker/frameを明示する。
+親文書は`default-src 'none'`から、same-origin scriptと承認済みhash2本、same-origin CSS/font/connect/Workerを明示する。
 `script-src-attr 'none'`と`object-src 'none'`を置く。scriptの`unsafe-inline` / `unsafe-eval`は許可しない。
 style属性はShiki、KaTeX、layout custom property、CSSOMによる更新と別に評価し、
-候補では`style-src-attr 'unsafe-inline'`を明示する。style要素の広いinline許可は加えない。
+設計1.1の初期例外に合わせ`style-src` / `style-src-elem`はselfとunsafe-inline、
+`style-src-attr`はunsafe-inlineを明示する。style制約の強化は別段階とする。
+`base-uri` / `form-action` / `frame-ancestors` / `manifest-src`はnoneとする。
+runner profileは未採用のため`frame-src`も空集合のnoneとし、採用済みrunner許可を装わない。
+画像のdata許可は既存PNG/JPEG/GIF/WebP・base64・32KiB検証を通るものだけとする。
 画像・mediaの外部許可は明示された`ROUAULT_MEDIA_BASE_URL`のHTTPS originだけから生成する。
 棚卸しで見つけた外部originを自動許可しない。
 
-manifestは文書ごとの実行inline hash、資源URLと実効origin（最初のbaseを反映）、
-style属性/要素数、on属性数、inert preview payload数と、生成CSSの`url()` / `@import`資源を保存する。
+manifest（schema 2）はmode/version/digest/buildId、hash owner、route class、資源のorigin/pathname/種類/理由を記録する。
+query、fragment、本文、script sample、local absolute pathは記録しない。
+最終HTMLとnavigation envelope、実際に展開するinert HTML/CSS template、参照されるCSSのurl/importを分類する。
+Vite manifestのentry/chunk/importと、出力JSのmodule Worker/URL assetを照合する。
+未知script/src、Worker、外部HTTP、未承認origin、nonce/on属性、javascript URL、不正data画像は検証失敗とする。
+未参照のpassthrough CSSはsourceとのbytes一致を確認した非稼働資産として記録し、実行資源と混同しない。
+同一originの画像URLがmedia objectを指す場合、既存media manifest・物理bytes・SHAを照合する。
+ローカル出力の物理pathと公開object URLの差は、隔離serverだけが検証済みaliasで解決する。
+通常preview、製品の画像resolver、配信artifactは変更しない。
 dynamic fetch / CSSOM / srcdocの集合は静的棚卸しだけでは完結しないためbrowser観測とsource確認を併用する。
 現在の通常bundle・CSS/font・検索artifactはsame-origin、検索Workerは検証済みWASM bytesをBlob URLへ変換し、
 `Suzume.create({ wasmPath })`がそのURLをfetch・compileする。
@@ -54,23 +66,29 @@ path prefixをscript認可境界と見なさない。
 隔離previewは凍結manifest / fragmentの整合を起動時に確認し、同じrule集合から実HTTPの
 `Content-Security-Policy-Report-Only`を返す。生成fragmentの限定的なpath/splatだけを扱い、
 複数一致時のcomma結合を再現する。Cloudflare全機能のemulatorとはしない。
-Cache-Controlは通常previewの既存middlewareを再利用する。
+Cache-Controlは通常previewの既存middlewareを再利用する。隔離serverではnosniffを明示し、JS/WASM/HTML/mediaのMIMEを確認する。
+このローカル再現はCloudflare実HTTPの証明ではない。
 
 `test/e2e/csp-report-only.ts`は専用Playwright configで明示実行する。
 通常E2Eの既定`*.spec.ts` / `*.test.ts`には含めず、既存CI設定は変更しない。
 Nodeのhash・policy・HTTP検証は既存Node suiteへ含む。
 browser試験は外部client runtimeを止めたtheme bootstrapの実行、未知inlineの違反eventと継続実行、
 Worker専用HTTP policy、実検索/WASMとCatalog不使用、Worker policyを狭めた対照、404・srcdocを扱う。
-`securitypolicyviolation`のdirective / blockedURI / dispositionとconsoleをローカルtest attachmentへ残す。
+`securitypolicyviolation`とconsoleを初期load前から観測し、保存前に最小schemaを検証する。
+保存するのはbuildId/browser/route class/directive/disposition/blocked originまたはscheme/statusと、owner/分類のみ。
+生console、完全URL、query、fragment、検索語、本文、script sampleはattachmentへ保存しない。
+RO試験の想定外HTTP(S) originはharnessで送信前に止め、試験失敗とする。
 opaque srcdocのeventは親へbubbleしないためconsoleも必要である。
 report-uri / report-to / 外部送信先は追加しない。全訪問者の観測や本番観測が済んだとは扱わない。
 
-404のinline style、現行srcdocのhelper/author JS・style要素等は既知違反として残す。
+404のinline styleは設計1.1で明示した初期style例外である。
+現行srcdocのhelper/author JS・base/frame等はknown-legacy-preview、権限を狭める対照はfixtureとして分類する。
 Report-Onlyなので既存previewは継続実行する。違反を消すための親policy拡張は行わない。
 
 ## 後段ゲート
 
-- Library設計1.1の実ファイル確認とこの実装との照合を終える。未取得なら設計準拠完了としない。
+- [提供された設計1.1との照合記録](../references/csp-stage-one-design-1.1-audit-2026-10-31.md)を参照する。
+  Library materializeではなく親からの正当な本文引渡しとして照合する。省略された第6〜7章の全文照合は未確認。
 - 各対象browserで違反event、Worker RO対応とnegative controlを確認する。起動失敗は未実施扱いとする。
 - 実際のproduction origin / media設定、全配信資源、動的機能を再棚卸しする。
 - 将来の配信承認後、Cloudflare実HTTPで最終URL・status・raw headerの本数/結合・hashを確認する。
