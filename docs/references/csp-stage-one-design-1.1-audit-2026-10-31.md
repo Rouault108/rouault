@@ -88,3 +88,21 @@ Node/pnpmのrepo pinは24.14.1 / 11.28.9のまま。
 
 第7章のreset順序はCloudflareの[固定公開実装](https://github.com/cloudflare/workers-sdk/blob/3f14c760aba638b3ef4ade1a1c5b935e64ddcc64/packages/pages-shared/asset-server/handler.ts#L525)でも照合した。
 実装はrule順にunset後setを行い、同名setの合成を扱う。ローカルの一致は現在のPages実応答を保証しない。
+
+## 固定WebKitの追加診断
+
+`79105d33` / CI `41250064466`では専用WebKitが8成功・2失敗・0skipだった。
+ユーザー提供ZIP（Library `libfile_f82dc8c0bfe0819183f2ab11f8ed7ace` version0、
+SHA-256 `8d4365b1fd2232ac8a61f35bfcbd6cacd6f5682da9abbfd9f3388cc10487b971`）の本文引渡しで失敗を照合した。
+失敗はWorker ROのイベント検知待ちと、report-to未指定警告を違反扱いするconsole assertionである。
+
+[Playwright 1.63.0の基点](https://github.com/microsoft/playwright/blob/v1.63.0/browser_patches/webkit/UPSTREAM_CONFIG.sh)の
+[CSP処理](https://github.com/WebKit/WebKit/blob/4d05d732e5a84f32675bef4cc135a2e7a9269a87/Source/WebCore/page/csp/ContentSecurityPolicy.cpp#L922)は
+Workerでconsoleを出した後、イベント配送前に戻る。WASMの禁止flagはenforce policyだけが設定する。
+[JSCの入口](https://github.com/WebKit/WebKit/blob/4d05d732e5a84f32675bef4cc135a2e7a9269a87/Source/JavaScriptCore/wasm/js/JSWebAssembly.cpp#L139)はそのflagを確認する。
+これは固定ソースからの分析であり、console経路やROの能力を実測済みとは扱わない。
+
+追加fixtureは7条件を各engineで分離測定し、native consoleの分類・Worker event・Blob fetch・WASM compileの実結果を記録する。
+console canaryで観測経路を確認し、report-to警告は独立分類して残す。
+既存の失敗した受入条件、policy、固定browser/containerは変更しない。
+診断fixtureのenforceは製品enforceでもRO受入の代替でもない。受入条件変更は別判断とする。

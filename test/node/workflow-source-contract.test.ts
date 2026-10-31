@@ -88,6 +88,9 @@ const matrixFixture = async () => {
   const test = workflowRecord(steps.find((step) => step['id'] === 'playwright-production'));
   const cspTest = workflowRecord(steps.find((step) => step['id'] === 'playwright-csp'));
   const cspValidator = workflowRecord(steps.find((step) => step['id'] === 'verify-csp-results'));
+  const diagnosticSummary = workflowRecord(
+    steps.find((step) => step['id'] === 'summarize-csp-worker-diagnostics'),
+  );
   const cspUpload = workflowRecord(steps.find((step) => step['name'] === 'preserve CSP results'));
   const verification = workflowRecord(steps.find((step) => step['id'] === 'verify-e2e-container'));
   const upload = workflowRecord(
@@ -111,6 +114,7 @@ const matrixFixture = async () => {
     test,
     cspTest,
     cspValidator,
+    diagnosticSummary,
     cspUpload,
     verification,
     upload,
@@ -138,6 +142,25 @@ describe('production E2E matrix structural contract', () => {
   );
 
   const mutations: readonly [string, (fixture: MatrixFixture) => void][] = [
+    [
+      'hidden diagnostic failure',
+      (f) => {
+        f.diagnosticSummary['continue-on-error'] = true;
+      },
+    ],
+    [
+      'diagnostic skipped after CSP failure',
+      (f) => {
+        delete f.diagnosticSummary['if'];
+      },
+    ],
+    [
+      'wrong diagnostic engine',
+      (f) => {
+        f.diagnosticSummary['run'] =
+          'pnpm exec tsx scripts/ci/summarize-csp-worker-diagnostics.ts chromium-csp';
+      },
+    ],
     [
       'CSP failure suppression',
       (f) => {

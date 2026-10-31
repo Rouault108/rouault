@@ -3,7 +3,7 @@ import { defineConfig, devices } from '@playwright/test';
 // 通常E2Eと本番配信にpolicyを混ぜず、明示実行だけで使う隔離入口。
 export default defineConfig({
   testDir: './test/e2e',
-  testMatch: 'csp-report-only.ts',
+  testMatch: ['csp-report-only.ts', 'csp-worker-diagnostics.ts'],
   timeout: 30_000,
   retries: 0,
   workers: 1,

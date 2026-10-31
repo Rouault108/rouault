@@ -441,16 +441,30 @@ export const assertProductionE2EMatrixContract = (source: string): void => {
   const verifications = steps.filter((step) => step['id'] === 'verify-e2e-container');
   const cspTests = steps.filter((step) => step['id'] === 'playwright-csp');
   const cspValidators = steps.filter((step) => step['id'] === 'verify-csp-results');
+  const diagnosticSummaries = steps.filter(
+    (step) => step['id'] === 'summarize-csp-worker-diagnostics',
+  );
   assertCondition(
     tests.length === 1 &&
       verifications.length === 1 &&
       cspTests.length === 1 &&
-      cspValidators.length === 1,
+      cspValidators.length === 1 &&
+      diagnosticSummaries.length === 1,
     'Production E2E matrix needs one test and one pinned-container verification step',
   );
   const test = requireWorkflowRecord(tests[0], 'Production E2E matrix test');
   const cspTest = requireWorkflowRecord(cspTests[0], 'CSP matrix test');
   const cspValidator = requireWorkflowRecord(cspValidators[0], 'CSP result validator');
+  const diagnosticSummary = requireWorkflowRecord(
+    diagnosticSummaries[0],
+    'Worker diagnostic summary',
+  );
+  assertCondition(
+    normalizeWorkflowExpression(diagnosticSummary['if']) ===
+      "${{ always() && (steps.playwright-csp.outcome == 'success' || steps.playwright-csp.outcome == 'failure') }}" &&
+      steps.indexOf(cspValidator) < steps.indexOf(diagnosticSummary),
+    'Independent Worker diagnostics must be reported after CSP failure without replacing acceptance',
+  );
   assertCondition(
     !Object.hasOwn(cspTest, 'if') &&
       !Object.hasOwn(cspValidator, 'if') &&
@@ -487,6 +501,17 @@ export const assertProductionE2EMatrixContract = (source: string): void => {
   for (const entry of entries) {
     const target = String(entry['target']);
     const projects = expectedProjects[target] ?? [];
+    assertCondition(
+      JSON.stringify(matrixCommandArguments(diagnosticSummary['run'], entry)) ===
+        JSON.stringify([
+          'pnpm',
+          'exec',
+          'tsx',
+          'scripts/ci/summarize-csp-worker-diagnostics.ts',
+          `${target}-csp`,
+        ]),
+      'Worker diagnostic summary must use the matching engine',
+    );
     assertCondition(
       JSON.stringify(matrixCommandArguments(cspTest['run'], entry)) ===
         JSON.stringify(['pnpm', 'run', 'test:csp-stage1', `--project=${target}-csp`]) &&

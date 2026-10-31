@@ -80,6 +80,12 @@ JSON結果を検証し、選択engineでの全試験の初回成功を必須と�
 専用stepまたは結果検証の失敗はmatrix jobを失敗させ、既存の`ci-required`へ伝わる。
 成功・失敗時の`.generated/csp/browser-results.json`は`rouault-csp-{engine}-results`へ7日保存し、通常E2Eのartifactと分ける。
 通常試験の失敗等で専用stepがskipされた場合は、専用試験成功とは数えない。
+`csp-worker-diagnostics.ts`は受入試験とは別の追加診断である。固定版loopback Workerの7条件で、
+native console、Worker event、Blob fetch、WASM compileを分離し、イベント観測windowは250msとする。
+policyなし・RO・診断用enforceを比較するが、このenforceは一時的なloopback fixture応答だけに閉じる。
+受入試験の失敗は残し、イベント未観測やRO実行継続を合格へ読み替えない。
+最小schemaの診断はJSON attachmentとengine別CI noticeへ保存する。生console、完全URL、query、sampleは保存しない。
+元の専用試験が失敗しても診断summaryを出し、`ci-required`の失敗を維持する。
 Nodeのhash・policy・HTTP検証は既存Node suiteへ含む。
 browser試験は外部client runtimeを止めたtheme bootstrapの実行、未知inlineの違反eventと継続実行、
 Worker専用HTTP policy、実検索/WASMとCatalog不使用、Worker policyを狭めた対照、404・srcdocを扱う。

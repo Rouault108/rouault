@@ -235,6 +235,10 @@ jobs:
       - id: verify-csp-results
         name: require complete CSP results
         run: pnpm exec tsx scripts/ci/assert-csp-browser-results.ts ${{ matrix.target }}-csp
+      - id: summarize-csp-worker-diagnostics
+        name: summarize independent Worker diagnostics
+        if: ${{ always() && (steps.playwright-csp.outcome == 'success' || steps.playwright-csp.outcome == 'failure') }}
+        run: pnpm exec tsx scripts/ci/summarize-csp-worker-diagnostics.ts ${{ matrix.target }}-csp
       - name: preserve CSP results
         if: ${{ always() && (steps.playwright-csp.outcome == 'success' || steps.playwright-csp.outcome == 'failure') }}
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
