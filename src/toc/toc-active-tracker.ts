@@ -39,6 +39,7 @@ export interface TocActiveTrackerOptions {
   getVisibleHeadings?: () => readonly Heading[];
   requestSnapshot?: (preferHash: boolean) => void;
   coordinatePriority?: () => boolean;
+  initialHashSelectionPolicy?: () => { readonly key: string; readonly suppressed: boolean } | null;
   isCurrent?: () => boolean;
   onError?: (error: unknown) => void;
   onSnapshotChange?: (headings: Heading[], activeId: string) => void;
@@ -138,6 +139,8 @@ export class TocActiveTracker {
   private _programmaticNavigation: TocProgrammaticNavigation | null = null;
   private _hashNavigationHold: TocHashNavigationHold | null = null;
   private _suppressedHashActivePreservationId: string | null = null;
+  private _initialHashPolicyKey: string | null = null;
+  private _initialHashSuppressed = false;
 
   constructor(options: TocActiveTrackerOptions) {
     this._options = options;
@@ -161,6 +164,21 @@ export class TocActiveTracker {
 
   get policyRevision(): number {
     return this._policyRevision;
+  }
+
+  // 本人入力による初回抑止は、通常操作のholdや抑止とは別に所有する。
+  syncInitialHashSelectionPolicy(): void {
+    const policy = this._options.initialHashSelectionPolicy?.() ?? null;
+    const key = policy?.key ?? null;
+    const suppressed = policy?.suppressed ?? false;
+    if (key === this._initialHashPolicyKey && suppressed === this._initialHashSuppressed) return;
+    this._initialHashPolicyKey = key;
+    this._initialHashSuppressed = suppressed;
+    this._policyRevision += 1;
+    if (suppressed) {
+      this._pendingInitialHash = null;
+      if (this._hashNavigationHold?.source === 'initial') this._cancelHashNavigationHold();
+    }
   }
 
   private _headings(): readonly Heading[] {
@@ -216,8 +234,9 @@ export class TocActiveTracker {
   start(): void {
     if (this._initialStarted || typeof window === 'undefined') return;
     this._initialStarted = true;
+    this.syncInitialHashSelectionPolicy();
     const needsInitialHold = !this._hasSnapshot;
-    if (needsInitialHold && !this._priority())
+    if (needsInitialHold && !this._priority() && !this._initialHashSuppressed)
       this._pendingInitialHash = decodeHash(window.location.hash) || null;
     try {
       this.observe();
@@ -368,6 +387,7 @@ export class TocActiveTracker {
   }
 
   refresh(): void {
+    this.syncInitialHashSelectionPolicy();
     this._contentRoot = findContentRoot(this._contentRootId);
     this._setupMutationObserver();
     this._revealCurrentHashTarget();
@@ -403,6 +423,7 @@ export class TocActiveTracker {
   }
 
   invalidateNavigationIntent(): void {
+    this.syncInitialHashSelectionPolicy();
     this._pendingInitialHash = null;
     this.cancelProgrammaticNavigation('new-navigation');
     this._cancelHashNavigationHold();
@@ -460,6 +481,7 @@ export class TocActiveTracker {
 
   private _requestSnapshot(preferHash = false): void {
     if (!this._live()) return;
+    this.syncInitialHashSelectionPolicy();
     this._reconcileNavigationInput();
     if (this._options.requestSnapshot) {
       this._options.requestSnapshot(preferHash);
@@ -489,7 +511,12 @@ export class TocActiveTracker {
     let activeId = snapshot.activeId;
     if (requestedId !== undefined && visible(requestedId)) activeId = requestedId;
     else if (visible(forcedId)) activeId = forcedId;
-    else if (preferHash && this._suppressedHashActivePreservationId !== hash && visible(hash))
+    else if (
+      preferHash &&
+      !this._initialHashSuppressed &&
+      this._suppressedHashActivePreservationId !== hash &&
+      visible(hash)
+    )
       activeId = hash;
     else if (visible(holdId)) activeId = holdId;
     else if (
@@ -501,6 +528,7 @@ export class TocActiveTracker {
   }
 
   private _revealCurrentHashTarget(): void {
+    if (this._initialHashSuppressed) return;
     const hash = this._priority() ? '' : decodeHash(window.location.hash);
     const targetHeading = this._allHeadings.find((heading) => heading.id === hash);
     if (this._contentRoot && targetHeading?.scopeSelections?.length) {
@@ -516,10 +544,12 @@ export class TocActiveTracker {
   }
 
   private _beginHashNavigationHoldFromCurrentHash(source: 'initial' | 'hashchange'): void {
+    this.syncInitialHashSelectionPolicy();
     this._policyRevision += 1;
     if (
       source === 'initial' &&
-      this._suppressedHashActivePreservationId === decodeHash(window.location.hash)
+      (this._initialHashSuppressed ||
+        this._suppressedHashActivePreservationId === decodeHash(window.location.hash))
     )
       return;
     this._cancelHashNavigationHold();
@@ -611,10 +641,12 @@ export class TocActiveTracker {
   }
 
   private _syncInitialHashActiveId(): void {
+    this.syncInitialHashSelectionPolicy();
     const hash = this._pendingInitialHash;
     if (hash === null) return;
     if (
       this._priority() ||
+      this._initialHashSuppressed ||
       hash !== decodeHash(window.location.hash) ||
       this._suppressedHashActivePreservationId === hash
     ) {
@@ -662,6 +694,7 @@ export class TocActiveTracker {
   }
 
   private _shouldPreserveCurrentHashActiveId(): boolean {
+    if (this._initialHashSuppressed) return false;
     const hash = this._priority() ? '' : decodeHash(window.location.hash);
     if (hash.length === 0) {
       return false;
@@ -767,6 +800,7 @@ export class TocActiveTracker {
   }
 
   private _onHashChange = (): void => {
+    this.syncInitialHashSelectionPolicy();
     this._pendingInitialHash = null;
     this._suppressedHashActivePreservationId = null;
     this.cancelProgrammaticNavigation('hashchange');

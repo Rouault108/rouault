@@ -2,12 +2,15 @@ import {
   readContentContext,
   subscribeContentContext,
   hasCoordinatePriority,
+  readInitialFragmentSelectionPolicy,
+  type InitialFragmentSelectionPolicy,
 } from '../navigation/content-navigation-context.js';
 import { readAddress, readHistoryEntry } from '../navigation/history-entry.js';
 import { ownsAcceptedHistoryCommit } from '../components/app/controllers/accepted-history-commit.js';
 import type {
   AcceptedReadingPosition,
   NativeReadingPositionObservation,
+  InitialFragmentArrival,
 } from '../components/app/controllers/reading-position-controller.js';
 import {
   readValidatedShellProof,
@@ -84,6 +87,7 @@ export class TocSourceSession {
   private nativePolicy: NativeReadingPositionObservation | null = null;
   private positionProof: (() => boolean) | null = null;
   private earlyAuthority: (() => boolean) | null = null;
+  private initialArrival: InitialFragmentArrival | null = null;
   private readonly surfaces = new Set<Surface>();
   private readonly listeners = new Set<() => void>();
   private stopContext: (() => void) | null = null;
@@ -98,6 +102,21 @@ export class TocSourceSession {
       getVisibleHeadings: () => this.snapshot?.visibleHeadings ?? [],
       isCurrent: () => this.isCurrent(),
       coordinatePriority: () => this.coordinatePriority(),
+      initialHashSelectionPolicy: () => {
+        const policy = this.initialSelectionPolicy();
+        return policy
+          ? {
+              key: JSON.stringify([
+                policy.contentEpoch,
+                policy.shellCommitId,
+                policy.intentId,
+                policy.entryId,
+                policy.url,
+              ]),
+              suppressed: policy.suppressed,
+            }
+          : null;
+      },
       requestSnapshot: (preferHash) => {
         this.onTrackerRequest(preferHash);
       },
@@ -110,6 +129,12 @@ export class TocSourceSession {
       sessions.get(this.binding.controller) === this &&
       this.binding.isCurrent(verifyStructure)
     );
+  }
+  get arrival(): InitialFragmentArrival | null {
+    return this.initialArrival;
+  }
+  private initialSelectionPolicy(): InitialFragmentSelectionPolicy | null {
+    return readInitialFragmentSelectionPolicy(this.binding.root, readCurrentShellCommitId());
   }
   private coordinatePriority(): boolean {
     const policy = this.nativePolicy;
@@ -224,8 +249,17 @@ export class TocSourceSession {
   observe(
     position: NativeReadingPositionObservation,
     authority: () => boolean = position.isCurrent,
-  ): void {
-    if (!position.isCurrent() || position.root !== this.binding.root) return;
+  ): TocPositionSyncResult | undefined {
+    if (!position.isCurrent() || position.root !== this.binding.root) return 'superseded';
+    if (
+      (position.phase === 'candidate' || position.phase === 'arrived') &&
+      (position.policy !== 'initial-fragment' || position.intent.cause !== 'initial')
+    )
+      return 'superseded';
+    if (position.phase === 'arrived') {
+      if (this.isCurrent() && position.arrival) this.initialArrival = position.arrival;
+      return;
+    }
     if (
       this.nativePolicy?.isCurrent() &&
       this.nativePolicy.root === position.root &&
@@ -238,10 +272,10 @@ export class TocSourceSession {
       this.nativePolicy = position;
       this.policyRevision += 1;
     }
-    if (position.phase !== 'accepted') return;
+    if (position.phase !== 'accepted' && position.phase !== 'candidate') return;
     this.positionProof = position.isCurrent;
     this.earlyAuthority = authority;
-    this.writeFault = false;
+    if (position.phase === 'accepted') this.writeFault = false;
     this.connect();
     const result = this.request(
       this.capture(
@@ -257,6 +291,7 @@ export class TocSourceSession {
       this.binding.root.dataset['tocNativeSync'] = result;
       this.binding.root.dataset['tocPositionSequence'] = String(position.sequence);
     }
+    return result;
   }
   accept(position: AcceptedReadingPosition): TocPositionSyncResult {
     const current = (): boolean =>
@@ -284,6 +319,8 @@ export class TocSourceSession {
     requestedId?: string,
     positionBound = false,
   ): Request {
+    this.tracker.syncInitialHashSelectionPolicy();
+    const initialSelectionPolicy = this.initialSelectionPolicy();
     const context = readContentContext();
     const intent = context?.intent;
     const epoch = context?.contentEpoch;
@@ -317,7 +354,8 @@ export class TocSourceSession {
           readAddress() === url &&
           (readHistoryEntry()?.id ?? null) === entry &&
           this.policyRevision === policyRevision &&
-          this.tracker.policyRevision === trackerRevision
+          this.tracker.policyRevision === trackerRevision &&
+          this.initialSelectionPolicy() === initialSelectionPolicy
         );
       },
     };
@@ -632,7 +670,67 @@ const connectNativeObservation = (): void => {
     diagnose(error);
   }
 };
-export const observeNativeTocPosition = (observation: NativeReadingPositionObservation): void => {
+export const observeNativeTocPosition = (
+  observation: NativeReadingPositionObservation,
+): TocPositionSyncResult | undefined => {
+  if (
+    (observation.phase === 'candidate' || observation.phase === 'arrived') &&
+    (observation.policy !== 'initial-fragment' || observation.intent.cause !== 'initial')
+  )
+    return 'superseded';
+  if (observation.phase === 'arrived') {
+    if (!observation.isCurrent()) return;
+    const controller = observation.root.querySelector<HTMLElement>('layout-toc-controller');
+    if (controller) sessions.get(controller)?.observe(observation);
+    return;
+  }
+  if (observation.phase === 'candidate') {
+    if (!observation.isCurrent()) return 'superseded';
+    const proof = readValidatedShellProof();
+    if (
+      observation.entryId === null ||
+      proof?.shellCommitId !== observation.shellCommitId ||
+      proof.document !== observation.root.ownerDocument
+    )
+      return 'skipped';
+    const controller = observation.root.querySelector<HTMLElement>('layout-toc-controller');
+    if (!controller) return 'skipped';
+    const authority = (): boolean => {
+      const context = readContentContext();
+      return (
+        sameValidatedShell(proof) &&
+        observation.root.isConnected &&
+        document.getElementById('main-content') === observation.root &&
+        context?.root === observation.root &&
+        context.contentEpoch === observation.contentEpoch &&
+        context.intent?.intentId === observation.intent.intentId &&
+        !observation.intent.signal.aborted &&
+        !context.mutation &&
+        !context.recoveryRequired &&
+        readAddress() === observation.url &&
+        (readHistoryEntry()?.id ?? null) === observation.entryId &&
+        context.displayedBinding.entryId === observation.entryId &&
+        context.displayedBinding.url === observation.url &&
+        context.addressBinding.entryId === observation.entryId &&
+        context.addressBinding.url === observation.url
+      );
+    };
+    try {
+      const session = getTocSourceSession(controller);
+      return (
+        session?.observe(
+          {
+            ...observation,
+            isCurrent: () => observation.isCurrent() && authority(),
+          },
+          authority,
+        ) ?? 'skipped'
+      );
+    } catch (error) {
+      diagnose(error);
+      return 'rejected-before';
+    }
+  }
   if (
     !observation.isCurrent() ||
     (nativeObservation?.isCurrent() &&
@@ -649,5 +747,6 @@ export const observeNativeTocPosition = (observation: NativeReadingPositionObser
     const controller = observation.root.querySelector<HTMLElement>('layout-toc-controller');
     if (controller) sessions.get(controller)?.observe(observation);
   }
+  return undefined;
 };
 subscribeValidatedShellProof(connectNativeObservation);

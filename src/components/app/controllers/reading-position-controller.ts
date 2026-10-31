@@ -9,6 +9,9 @@ import {
   beginNavigationIntent,
   markCoordinatePriority,
   hasInitialIntervention,
+  registerInitialFragmentSelectionPolicy,
+  recordInitialFragmentInput,
+  clearInitialFragmentSelectionPolicy,
   readContentContext,
   subscribeContentContext,
   type NavigationIntent,
@@ -28,6 +31,12 @@ import type { AppShellValidatedDetail } from '../shell/app-shell-events.js';
 import type { NavigationCommitReceipt } from '../../../router/router-types.js';
 import { HistoryPresentationCoordinator } from './history-presentation-coordinator.js';
 import { ownsAcceptedHistoryCommit } from './accepted-history-commit.js';
+import {
+  runInitialFragmentPosition,
+  type InitialFragmentArrival,
+  type InitialFragmentOutcome,
+} from './initial-fragment-position.js';
+export type { InitialFragmentArrival } from './initial-fragment-position.js';
 import {
   captureHistoryGeometry,
   readHistoryGeometryAnchor,
@@ -56,6 +65,10 @@ interface ScrollJob {
   readonly entryId: string | null;
   readonly receipt?: NavigationCommitReceipt;
   readonly prepaintGeometryReady?: boolean;
+  readonly initialFragment: boolean;
+  readonly startedAt: number;
+  readonly generation: number;
+  initialTerminal: 'pending' | InitialFragmentOutcome;
   presentation: PresentationEligibility;
   candidate: ReadingPosition | null;
   url: string;
@@ -82,7 +95,8 @@ export interface NativeReadingPositionObservation {
   readonly url: string;
   readonly sequence: number;
   readonly policy: 'native-viewport' | 'initial-fragment';
-  readonly phase: 'classified' | 'accepted';
+  readonly phase: 'classified' | 'accepted' | 'candidate' | 'arrived';
+  readonly arrival?: InitialFragmentArrival;
   readonly isCurrent: () => boolean;
 }
 const interventionKeys = new Set([
@@ -111,6 +125,7 @@ export class ReadingPositionController {
   private disposed = false;
   private nativeGeneration = 0;
   private positionSequence = 0;
+  private jobGeneration = 0;
   private interruptedIntent = -1;
   private pendingIntent: number | null = null;
   private originalMode: ScrollRestoration = history.scrollRestoration;
@@ -130,7 +145,7 @@ export class ReadingPositionController {
     },
     private readonly onNativeObservation: (
       observation: NativeReadingPositionObservation,
-    ) => void = () => {
+    ) => unknown = () => {
       /* native位置の観測先を持たない利用者は既存の位置採用だけを行う。 */
     },
   ) {}
@@ -229,6 +244,7 @@ export class ReadingPositionController {
     window.addEventListener(
       'pagehide',
       () => {
+        clearInitialFragmentSelectionPolicy();
         this.checkpoint();
         this.cancel();
         this.nativeGeneration += 1;
@@ -309,6 +325,31 @@ export class ReadingPositionController {
           }
           this.renderedId = change.entry?.id ?? null;
           this.renderedUrl = change.url;
+          const initial = this.job;
+          if (initial?.initialFragment && initial.url !== change.url) {
+            const adopted = readContentContext();
+            this.cancel();
+            // 正規化の新binding側が取消を投影する。旧位置証明のURLは引き継がない。
+            const now = readContentContext();
+            if (
+              adopted &&
+              now === adopted &&
+              now.root === initial.root &&
+              now.intent?.intentId === initial.intent.intentId &&
+              now.contentEpoch === initial.epoch &&
+              !now.mutation &&
+              !now.recoveryRequired &&
+              initial.generation === this.jobGeneration &&
+              readCurrentShellCommitId() === initial.shellCommitId &&
+              now.displayedBinding.url === change.url &&
+              now.addressBinding.url === change.url &&
+              now.displayedBinding.entryId === initial.entryId &&
+              now.addressBinding.entryId === initial.entryId &&
+              readAddress() === change.url &&
+              !this.job
+            )
+              initial.root.dataset['readingPositionStatus'] = 'cancelled';
+          }
           if (!this.restoring) this.sampleCurrent();
         },
       ),
@@ -387,7 +428,8 @@ export class ReadingPositionController {
     }
     this.mode('manual');
     const intent = beginNavigationIntent('initial', readAddress());
-    this.observeNativePosition(root, intent, 'initial-fragment', 'classified');
+    if (!readAddress().includes('#'))
+      this.observeNativePosition(root, intent, 'initial-fragment', 'classified');
     if (hasInitialIntervention()) this.interruptedIntent = intent.intentId;
     this.schedule({
       intent,
@@ -467,6 +509,21 @@ export class ReadingPositionController {
     this.renderedUrl = options.url;
     this.sample = null;
     if (!options.stateOnly) this.renderedError = options.error;
+    const initialFragment =
+      options.intent.cause === 'initial' &&
+      !options.receipt &&
+      !options.stateOnly &&
+      !options.error &&
+      options.url.includes('#');
+    if (initialFragment)
+      registerInitialFragmentSelectionPolicy({
+        root: options.root,
+        contentEpoch: context.contentEpoch,
+        shellCommitId: options.shellCommitId,
+        intentId: options.intent.intentId,
+        entryId: this.renderedId,
+        url: options.url,
+      });
     if (!this.shouldFocus(options.intent)) {
       this.pendingIntent = null;
       this.restoring = false;
@@ -482,6 +539,10 @@ export class ReadingPositionController {
       error: options.error || this.renderedError,
       epoch: context.contentEpoch,
       controller,
+      initialFragment,
+      initialTerminal: 'pending',
+      startedAt: performance.now(),
+      generation: ++this.jobGeneration,
       candidate: options.error
         ? null
         : this.candidateId === this.renderedId
@@ -497,15 +558,29 @@ export class ReadingPositionController {
       controller.abort();
     };
     options.intent.signal.addEventListener('abort', cancel, { once: true });
+    if (initialFragment) {
+      this.notifyPositionObserver(() => {
+        this.initialObservation(
+          job,
+          'classified',
+          () => job.initialTerminal === 'pending' && this.current(job),
+        );
+      });
+    }
     let failed = false;
     void this.restore(job)
       .catch((error: unknown) => {
         failed = true;
+        if (job.initialFragment) this.finishInitialJob(job, 'unavailable');
         this.cancelJobPresentation(job, 'position-failed');
         this.reportError(error);
       })
       .finally(() => {
         options.intent.signal.removeEventListener('abort', cancel);
+        if (job.initialFragment) {
+          if (job.initialTerminal === 'pending') this.finishInitialJob(job, 'cancelled');
+          return;
+        }
         if (this.job !== job) return;
         this.job = null;
         if (!controller.signal.aborted) {
@@ -579,6 +654,33 @@ export class ReadingPositionController {
     );
   }
   private async restore(job: ScrollJob): Promise<void> {
+    if (job.initialFragment) {
+      await runInitialFragmentPosition({
+        binding: {
+          root: job.root,
+          contentEpoch: job.epoch,
+          shellCommitId: job.shellCommitId,
+          intentId: job.intent.intentId,
+          entryId: job.entryId,
+          url: job.url,
+        },
+        startedAt: job.startedAt,
+        signal: job.controller.signal,
+        current: () =>
+          job.initialTerminal === 'pending' && this.current(job) && this.ownsInitialBinding(job),
+        onCandidate: (isCurrent) => {
+          const result = this.initialObservation(job, 'candidate', isCurrent);
+          return typeof result === 'string' ? result : 'skipped';
+        },
+        onFinish: (outcome, arrival) => {
+          this.finishInitialJob(job, outcome, arrival);
+        },
+        onError: (error) => {
+          this.reportError(error);
+        },
+      });
+      return;
+    }
     const deadline = performance.now() + 5000;
     const expired = (): boolean => performance.now() >= deadline;
     const readinessController = new AbortController();
@@ -726,6 +828,78 @@ export class ReadingPositionController {
       readinessController.abort();
       job.controller.signal.removeEventListener('abort', abortReady);
     }
+  }
+  private ownsInitialBinding(job: ScrollJob, cancelling = false): boolean {
+    const context = readContentContext();
+    return (
+      !this.disposed &&
+      (!job.intent.signal.aborted || cancelling) &&
+      job.root.isConnected &&
+      job.root.ownerDocument === document &&
+      context?.root === job.root &&
+      context.contentEpoch === job.epoch &&
+      context.intent?.intentId === job.intent.intentId &&
+      !context.mutation &&
+      !context.recoveryRequired &&
+      readCurrentShellCommitId() === job.shellCommitId &&
+      readAddress() === job.url &&
+      (readHistoryEntry()?.id ?? null) === job.entryId &&
+      context.displayedBinding.entryId === job.entryId &&
+      context.displayedBinding.url === job.url &&
+      context.addressBinding.entryId === job.entryId &&
+      context.addressBinding.url === job.url
+    );
+  }
+  private initialObservation(
+    job: ScrollJob,
+    phase: 'classified' | 'candidate' | 'arrived',
+    isCurrent: () => boolean,
+    arrival?: InitialFragmentArrival,
+  ): unknown {
+    if (!isCurrent()) return;
+    return this.onNativeObservation({
+      root: job.root,
+      intent: job.intent,
+      contentEpoch: job.epoch,
+      shellCommitId: job.shellCommitId,
+      entryId: job.entryId,
+      url: job.url,
+      sequence: ++this.positionSequence,
+      policy: 'initial-fragment',
+      phase,
+      isCurrent,
+      ...(arrival ? { arrival } : {}),
+    });
+  }
+  private finishInitialJob(
+    job: ScrollJob,
+    outcome: InitialFragmentOutcome,
+    arrival?: InitialFragmentArrival,
+  ): void {
+    if (job.initialTerminal !== 'pending') return;
+    job.initialTerminal = outcome;
+    // intentのabort通知は新context採用より先に届く。同じ旧bindingに限り取消表示を残す。
+    const owned = this.job === job && this.ownsInitialBinding(job, outcome === 'cancelled');
+    if (this.job === job) {
+      this.job = null;
+      this.restoring = false;
+      this.pendingIntent = null;
+      this.candidate = null;
+      this.candidateId = null;
+    }
+    if (!owned) return;
+    job.root.dataset['readingPositionStatus'] = outcome === 'arrived' ? 'settled' : outcome;
+    // 受理後の購読者は新ownerを採用し得る。終端記録は変更せず旧後続だけを止める。
+    if (
+      outcome !== 'arrived' ||
+      !arrival ||
+      job.generation !== this.jobGeneration ||
+      !this.ownsInitialBinding(job)
+    )
+      return;
+    this.sampleCurrent();
+    if (job.generation !== this.jobGeneration || !this.ownsInitialBinding(job)) return;
+    this.initialObservation(job, 'arrived', () => this.ownsInitialBinding(job), arrival);
   }
   private restoreRawHistoryBeforePaint(job: ScrollJob): PositionEvidence | null {
     const outcome = (status: 'unavailable' | 'skipped'): null => {
@@ -1129,23 +1303,31 @@ export class ReadingPositionController {
       this.store.write(this.renderedId, this.sample);
   }
   private intervene(): void {
+    recordInitialFragmentInput(readCurrentShellCommitId());
     if (!this.job && !this.restoring && this.pendingIntent === null) return;
     this.interruptedIntent = readContentContext()?.intent?.intentId ?? -1;
     this.pendingIntent = null;
-    this.cancel();
     this.candidate = null;
     this.candidateId = null;
     this.restoring = false;
-    this.sampleCurrent();
+    this.cancel();
+    if (!this.job) this.sampleCurrent();
   }
   private cancel(): void {
+    const job = this.job;
     this.positionSequence += 1;
     if (this.geometryTimer !== null) clearTimeout(this.geometryTimer);
     this.geometryTimer = null;
+    if (job?.initialFragment) {
+      this.finishInitialJob(job, 'cancelled');
+      job.controller.abort();
+      this.cancelPresentation('position-job-cancelled');
+      return;
+    }
     this.cancelPresentation('position-job-cancelled');
-    if (this.job) this.job.root.dataset['readingPositionStatus'] = 'cancelled';
-    this.job?.controller.abort();
-    this.job = null;
+    if (job && this.job === job) job.root.dataset['readingPositionStatus'] = 'cancelled';
+    job?.controller.abort();
+    if (this.job === job) this.job = null;
   }
   private mode(mode: ScrollRestoration): void {
     history.scrollRestoration = mode;
