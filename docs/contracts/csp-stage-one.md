@@ -153,7 +153,7 @@ Document・enforce・別API/fixture・native Safari・未知環境・observer故
 新context/Workerごとに許可あり/なしを対比し、streaming自身のfulfilledとbytes試行0回をA-W1とする。
 A-W2は正常bytes/importsを維持してnative streamingへ非対応MIMEを与える予定対照から、
 既存glueのbytes fallbackを選ぶ。選択理由・native API別結果・digest・imports契約を保存する。
-importsは実glue由来の`a.{a,b,c,d,e}`関数集合、契約IDは`suzume-0.9.11-emscripten-a-abcde-v1`である。
+`importsSource: suzume-0.9.11-generated-glue`を保存し、importsは実glue由来の`a.{a,b,c,d,e}`関数集合、契約IDは`suzume-0.9.11-emscripten-a-abcde-v1`である。
 A-W3/W4はWASM許可だけを除き、streaming拒否後のbytes再試行も記録し、いずれかの成功はfailとする。
 親Documentでも同じglue/正常bytesの両APIの許可対照と拒否を独立実行する。
 WASM許可とJS eval/Function/文字列timerの拒否を分け、JS許可の隔離対照も取る。

@@ -8,6 +8,7 @@ import {
 } from './csp-evidence-values.js';
 
 export const CSP_WASM_OBSERVER = 'suzume-api-1.4-v1';
+export const CSP_IMPORTS_SOURCE = 'suzume-0.9.11-generated-glue';
 export const CSP_IMPORTS_CONTRACT = 'suzume-0.9.11-emscripten-a-abcde-v1';
 export const CSP_WASM_CASES = [
   'worker-stream-allow',
@@ -52,6 +53,7 @@ export interface WasmMeasurement {
   selection: 'streaming' | 'bytes';
   plannedReason: 'none' | 'non-streaming-mime';
   importsContract: typeof CSP_IMPORTS_CONTRACT;
+  importsSource: typeof CSP_IMPORTS_SOURCE;
   calls: WasmCall[];
   js: {
     eval: 'allowed' | 'rejected';
@@ -97,13 +99,15 @@ export const readWasmMeasurement = (value: unknown): WasmMeasurement => {
     'selection',
     'plannedReason',
     'importsContract',
+    'importsSource',
     'calls',
     'js',
   ]);
   if (
     m['schema'] !== 1 ||
     m['observer'] !== CSP_WASM_OBSERVER ||
-    m['importsContract'] !== CSP_IMPORTS_CONTRACT
+    m['importsContract'] !== CSP_IMPORTS_CONTRACT ||
+    m['importsSource'] !== CSP_IMPORTS_SOURCE
   )
     throw new Error('invalid-evidence');
   const js = object(m['js']);
@@ -112,6 +116,7 @@ export const readWasmMeasurement = (value: unknown): WasmMeasurement => {
     schema: 1,
     observer: CSP_WASM_OBSERVER,
     importsContract: CSP_IMPORTS_CONTRACT,
+    importsSource: CSP_IMPORTS_SOURCE,
     ready: flag(m['ready']),
     selection: enumeration(m['selection'], ['streaming', 'bytes']),
     plannedReason: enumeration(m['plannedReason'], ['none', 'non-streaming-mime']),

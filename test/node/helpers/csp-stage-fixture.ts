@@ -12,6 +12,7 @@ import {
   CSP_WASM_CASES,
   CSP_WASM_OBSERVER,
   CSP_IMPORTS_CONTRACT,
+  CSP_IMPORTS_SOURCE,
   wasmCasePolicy,
   type WasmEvidenceRow,
   type WasmCall,
@@ -74,6 +75,7 @@ export const stageInputFixture = (engine: CspEngine = 'webkit-csp') => {
         selection: bytes ? 'bytes' : 'streaming',
         plannedReason: bytes ? 'non-streaming-mime' : 'none',
         importsContract: CSP_IMPORTS_CONTRACT,
+        importsSource: CSP_IMPORTS_SOURCE,
         calls: denied
           ? [
               call('streaming', 'rejected', 'CompileError'),

@@ -115,6 +115,15 @@ describe('CSP 1.4 independent acceptance axes and finite stage registry', () => 
       expect(evaluateWasmProtection(f.wasm.rows).some((r) => r.status === 'fail')).toBe(true);
     },
   );
+  it('rejects missing or changed imports supplier instead of inferring it from API success', () => {
+    for (const value of [undefined, 'unknown']) {
+      const f = stageInputFixture();
+      const row = required(f.wasm.rows[1]);
+      if (!row.measurement) throw new Error('fixture');
+      Reflect.set(row.measurement, 'importsSource', value);
+      expect(() => assembleCspAcceptance(f)).toThrow();
+    }
+  });
   it.each([
     'context',
     'directive',

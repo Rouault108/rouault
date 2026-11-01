@@ -1,11 +1,15 @@
-import { CSP_IMPORTS_CONTRACT, CSP_WASM_OBSERVER } from '../../../scripts/ci/csp-wasm-evidence.js';
+import {
+  CSP_IMPORTS_CONTRACT,
+  CSP_IMPORTS_SOURCE,
+  CSP_WASM_OBSERVER,
+} from '../../../scripts/ci/csp-wasm-evidence.js';
 import { PROVIDER_WASM_SHA256 } from '../../../shared/search/lexical-provider-config.js';
 
 // HTTPで許可された通常scriptから呼ぶ。計測は元のAPIのPromise/例外をそのまま返す。
 export const wasmInstrumentation = (selection: 'streaming' | 'bytes', measurementFault = false) =>
-  `const cspSelection=${JSON.stringify(selection)}; const cspObserver=${JSON.stringify(CSP_WASM_OBSERVER)}; const cspImports=${JSON.stringify(CSP_IMPORTS_CONTRACT)}; const cspExpectedDigest=${JSON.stringify(PROVIDER_WASM_SHA256)}; const cspMeasurementFault=${String(measurementFault)};` +
+  `const cspSelection=${JSON.stringify(selection)}; const cspObserver=${JSON.stringify(CSP_WASM_OBSERVER)}; const cspImports=${JSON.stringify(CSP_IMPORTS_CONTRACT)}; const cspImportsSource=${JSON.stringify(CSP_IMPORTS_SOURCE)}; const cspExpectedDigest=${JSON.stringify(PROVIDER_WASM_SHA256)}; const cspMeasurementFault=${String(measurementFault)};` +
   String.raw`
-const cspMeasure={schema:1,observer:cspObserver,ready:true,selection:cspSelection,plannedReason:cspSelection==='bytes'?'non-streaming-mime':'none',importsContract:cspImports,calls:[],js:{eval:'rejected',function:'rejected',timer:'pending'}};
+const cspMeasure={schema:1,observer:cspObserver,ready:true,selection:cspSelection,plannedReason:cspSelection==='bytes'?'non-streaming-mime':'none',importsContract:cspImports,importsSource:cspImportsSource,calls:[],js:{eval:'rejected',function:'rejected',timer:'pending'}};
 if(!cspMeasurementFault) Object.defineProperty(globalThis,'__cspWasmMeasure',{value:cspMeasure});
 // Workerの通常の終了より先に、通知observerと独立した最小計測値を同originへ配送する。
 const cspChannel=new BroadcastChannel('rouault-csp-wasm-measure-v1');
