@@ -19,7 +19,12 @@ import {
   digest,
   suzumeFixtureBytes,
 } from './support/csp-wasm-fixture.js';
-import { classifyWasmConsole } from './support/csp-wasm-instrumentation.js';
+import {
+  classifyWasmConsole,
+  readNativeConsoleErrors,
+  type WasmConsoleScope,
+  type WasmConsoleRecord,
+} from './support/csp-wasm-console.js';
 import { wasmFixtureFingerprint } from '../../scripts/ci/csp-fixture-bindings.js';
 
 const binding = (info: TestInfo, browser: Browser, manifest: CspStageOneManifest) => ({
@@ -40,10 +45,16 @@ const prepare = async (
   context: BrowserContext,
   origin: string,
   diagnosticOff: boolean,
-  roPolicy: string | null = null,
-  expectedCatalog = false,
+  scope: Omit<WasmConsoleScope, 'measurement' | 'errors' | 'sourceVerified'>,
 ) => {
   const state = { external: false, unknown: false, notifications: 0, workerRequests: 0 };
+  let expectedPage: import('@playwright/test').Page | null = null;
+  let expectedWorker: import('@playwright/test').Worker | null = null;
+  const records: {
+    message: import('@playwright/test').ConsoleMessage;
+    record: Omit<WasmConsoleRecord, 'owner'>;
+  }[] = [];
+  const pending: Promise<void>[] = [];
   await context.route(
     (url) => /^https?:$/u.test(url.protocol) && url.origin !== origin,
     (route) => {
@@ -53,17 +64,33 @@ const prepare = async (
   );
   if (!diagnosticOff)
     context.on('console', (message) => {
-      // 許可除去対照でアプリ自身が出す既知のCatalog診断。CSP通知へは数えない。
-      if (
-        expectedCatalog &&
-        message.type() === 'warning' &&
-        message.text().startsWith('Search page completed with degraded diagnostics.') &&
-        message.location().url.startsWith(origin + '/client-assets/')
-      )
+      if (records.length >= 100 || message.text().length > 16384) {
+        state.unknown = true;
         return;
-      const category = classifyWasmConsole(message.text(), roPolicy);
-      if (category === 'unknown') state.unknown = true;
-      if (category === 'wasm-notification') state.notifications++;
+      }
+      const record = {
+        text: message.text(),
+        type: message.type(),
+        args: message.args().length,
+        url: message.location().url,
+        line: message.location().lineNumber,
+        catalogPrefix: false,
+      };
+      records.push({ message, record });
+      const first = message.args()[0];
+      if (record.args === 2 && first)
+        pending.push(
+          first
+            .evaluate((value) => value === 'Search page completed with degraded diagnostics.')
+            .then(
+              (matches) => {
+                record.catalogPrefix = matches;
+              },
+              () => {
+                state.unknown = true;
+              },
+            ),
+        );
     });
   await context.addInitScript(() => {
     const state: { last: unknown } = { last: null };
@@ -72,8 +99,58 @@ const prepare = async (
     channel.onmessage = (event) => {
       state.last = event.data;
     };
+    const witness: { last: unknown } = { last: null };
+    Object.defineProperty(globalThis, '__cspWasmConsoleWitness', { value: witness });
+    const diagnostic = new BroadcastChannel('rouault-csp-wasm-console-v2');
+    diagnostic.onmessage = (event) => {
+      witness.last = event.data;
+    };
   });
-  return state;
+  return Object.assign(state, {
+    bindPage(page: import('@playwright/test').Page) {
+      expectedPage = page;
+      page.on('worker', (worker) => {
+        if (expectedWorker || worker.url() !== scope.codeUrl) state.unknown = true;
+        else expectedWorker = worker;
+      });
+    },
+    async finish(
+      page: import('@playwright/test').Page,
+      measurement: WasmConsoleScope['measurement'] | null,
+      sourceVerified: boolean,
+    ) {
+      if (diagnosticOff) return;
+      await page.waitForTimeout(100);
+      await Promise.all(pending);
+      if (!measurement || !sourceVerified) {
+        state.unknown = true;
+        return;
+      }
+      const errors = readNativeConsoleErrors(
+        await page.evaluate(() => {
+          const direct: unknown = Reflect.get(globalThis, '__cspWasmConsoleErrors');
+          const box: unknown = Reflect.get(globalThis, '__cspWasmConsoleWitness');
+          return direct ?? (box && typeof box === 'object' && 'last' in box ? box.last : null);
+        }),
+      );
+      for (const { message, record } of records) {
+        const owner =
+          message.page() !== expectedPage
+            ? 'unknown'
+            : message.worker() === null
+              ? 'document'
+              : message.worker() === expectedWorker
+                ? 'worker'
+                : 'unknown';
+        const category = classifyWasmConsole(
+          { ...record, owner },
+          { ...scope, measurement, errors, sourceVerified },
+        );
+        if (category === 'unknown') state.unknown = true;
+        if (category === 'wasm-notification') state.notifications++;
+      }
+    },
+  });
 };
 const snapshot = async (page: import('@playwright/test').Page) =>
   page.evaluate(() => {
@@ -121,13 +198,22 @@ const workerProbe = async (
     extraHTTPHeaders: { 'X-Rouault-Csp-Wasm-Case': caseId },
   });
   const diagnosticOff = caseId === 'worker-diagnostic-off' || caseId === 'worker-shared-fault';
-  const state = await prepare(
-    context,
-    'http://127.0.0.1:4173',
-    diagnosticOff,
-    parent.policy,
-    caseId.endsWith('deny'),
-  );
+  const state = await prepare(context, 'http://127.0.0.1:4173', diagnosticOff, {
+    caseId: CSP_WASM_CASES.includes(caseId as WasmCase)
+      ? (caseId as WasmCase)
+      : 'worker-stream-allow',
+    engine: (browser.browserType().name() + '-csp') as WasmConsoleScope['engine'],
+    policy: expected.policy,
+    parentPolicy: parent.policy,
+    codeUrl: 'http://127.0.0.1:4173' + worker.pattern,
+    code: expected.body,
+    glueUrls: manifest.assets
+      .filter((a) => /^client-assets\/suzume-[\w-]+\.js$/u.test(a.file))
+      .map((a) => 'http://127.0.0.1:4173/' + a.file),
+    appUrl:
+      'http://127.0.0.1:4173/' +
+      manifest.assets.find((a) => /^client-assets\/client-[\w-]+\.js$/u.test(a.file))?.file,
+  });
   let catalog = false;
   context.on('request', (request) => {
     const url = new URL(request.url());
@@ -145,6 +231,7 @@ const workerProbe = async (
       headers['content-type']?.includes('javascript') === true &&
       headers['x-content-type-options'] === 'nosniff';
     const page = await context.newPage();
+    state.bindPage(page);
     const navigation = await page.goto('/search/?' + new URLSearchParams({ q: 'TypeScript' }));
     const parentVerified =
       navigation?.headers()['content-security-policy-report-only'] === parent.policy &&
@@ -156,6 +243,7 @@ const workerProbe = async (
       visible = false;
     }
     const measurement = await measured(page, caseId === 'worker-shared-fault');
+    await state.finish(page, measurement, httpVerified && parentVerified && fixtureVerified);
     return readWasmRow({
       caseId: CSP_WASM_CASES.includes(caseId as WasmCase) ? caseId : 'worker-stream-allow',
       policy: digest(expected.policy),
@@ -191,6 +279,7 @@ const documentProbe = async (
   browser: Browser,
   manifest: CspStageOneManifest,
   caseId: WasmCase,
+  consoleFault?: 'wasm-spoof' | 'image-csp' | 'short-csp',
 ): Promise<WasmEvidenceRow> => {
   const parent = manifest.rules.find((r) => r.context === 'document');
   if (!parent) throw new Error('wasm-policy-missing');
@@ -199,9 +288,20 @@ const documentProbe = async (
     allowWasm: !caseId.endsWith('deny'),
     allowJs: caseId === 'document-js-control',
     selection: caseId.includes('bytes') ? 'bytes' : 'streaming',
+    ...(consoleFault ? { consoleFault } : {}),
   });
   const context = await browser.newContext({ locale: 'en-US' });
-  const state = await prepare(context, fixture.origin, false);
+  const sourceResponse = await context.request.get(fixture.origin + '/page.js');
+  const state = await prepare(context, fixture.origin, false, {
+    caseId,
+    engine: (browser.browserType().name() + '-csp') as WasmConsoleScope['engine'],
+    policy: fixture.policy,
+    parentPolicy: null,
+    codeUrl: fixture.origin + '/page.js',
+    code: await sourceResponse.text(),
+    glueUrls: [fixture.origin + '/suzume.js'],
+    appUrl: null,
+  });
   try {
     const response = await context.request.get(fixture.origin);
     const source = await context.request.get(fixture.origin + '/page.js');
@@ -216,6 +316,7 @@ const documentProbe = async (
       digest(await source.body()) === fixture.pageDigest &&
       digest(await wasm.body()) === digest(expected.wasm);
     const page = await context.newPage();
+    state.bindPage(page);
     await page.goto(fixture.origin);
     await expect
       .poll(() =>
@@ -230,6 +331,7 @@ const documentProbe = async (
       .poll(() => snapshot(page).then((value) => readWasmMeasurement(value).js.timer !== 'pending'))
       .toBe(true);
     const finalMeasurement = readWasmMeasurement(await snapshot(page));
+    await state.finish(page, finalMeasurement, httpVerified && fixtureVerified);
     const initialized = await page.evaluate(() => {
       const r: unknown = Reflect.get(globalThis, '__cspDocumentResult');
       return !!r && typeof r === 'object' && 'initialized' in r && r.initialized === true;
@@ -294,6 +396,14 @@ test('diagnostic-only and shared measurement faults have different effects', asy
   const shared = await workerProbe(browser, manifest, 'worker-shared-fault');
   expect(wasmEvidenceHealthy(independent)).toBe(true);
   expect(wasmEvidenceHealthy(shared)).toBe(false);
+  const baseline = await documentProbe(browser, manifest, 'document-stream-deny');
+  expect(baseline.diagnostic.unknownConsole).toBe(false);
+  for (const fault of ['wasm-spoof', 'image-csp', 'short-csp'] as const) {
+    const spoof = await documentProbe(browser, manifest, 'document-stream-deny', fault);
+    expect(spoof.diagnostic.unknownConsole).toBe(true);
+    expect(spoof.diagnostic.notifications).toBe(baseline.diagnostic.notifications);
+    expect(wasmEvidenceHealthy(spoof)).toBe(false);
+  }
   await writeFile(
     `.generated/csp/wasm-faults-${info.project.name}.json`,
     JSON.stringify({

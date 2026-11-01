@@ -4,6 +4,7 @@ import { createHash } from 'node:crypto';
 import { createRequire } from 'node:module';
 import { dirname, join } from 'node:path';
 import { PROVIDER_WASM_SHA256 } from '../../../shared/search/lexical-provider-config.js';
+import { firefoxConsoleText, scriptDirective, consoleApiLine } from './csp-wasm-console.js';
 import { wasmInstrumentation } from './csp-wasm-instrumentation.js';
 
 export const wasmPolicy = (parent: string, allowWasm: boolean, allowJs = false): string =>
@@ -32,16 +33,34 @@ export const startDocumentWasmFixture = async (options: {
   allowJs: boolean;
   selection: 'streaming' | 'bytes';
   measurementFault?: boolean;
+  consoleFault?: 'wasm-spoof' | 'image-csp' | 'short-csp';
 }) => {
   const { wasm, glue } = await suzumeFixtureBytes();
   const policy = wasmPolicy(options.parentPolicy, options.allowWasm, options.allowJs);
-  const pageSource =
+  const consoleFault = options.consoleFault;
+  const baseSource =
     `import createModule from './suzume.js';\n${wasmInstrumentation(options.selection, options.measurementFault)}\n` +
     String.raw`
 globalThis.__cspDocumentResult={initialized:false,done:false};
 try{const module=await createModule({locateFile:path=>path.endsWith('.wasm')?'/suzume.wasm':path});globalThis.__cspDocumentResult.initialized=module.UTF8ToString(module._suzume_version())==='0.9.11';}catch{}
 globalThis.__cspDocumentResult.done=true;
 `;
+  const faultText =
+    consoleFault === 'wasm-spoof'
+      ? firefoxConsoleText(
+          scriptDirective(policy),
+          'wasm',
+          'http://fixture.invalid/page.js',
+          consoleApiLine({ code: baseSource, engine: 'firefox-csp' }, 'streaming'),
+        )
+      : consoleFault === 'image-csp'
+        ? "Refused to load image 'http://fixture.invalid/image.png' because it violates the Content Security Policy directive: img-src 'none'"
+        : 'unsafe-eval';
+  const pageSource =
+    baseSource +
+    (consoleFault
+      ? `\nconsole.error(${JSON.stringify(faultText)}.replaceAll('http://fixture.invalid',location.origin));`
+      : '');
   const server = createServer((request, response) => {
     response.setHeader('Cache-Control', 'no-store');
     response.setHeader('X-Content-Type-Options', 'nosniff');

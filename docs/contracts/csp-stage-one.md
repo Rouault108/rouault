@@ -170,7 +170,17 @@ A計測はBroadcastChannelの最小snapshot、通知診断はconsole分類とし
 診断だけの切断を故障注入し、Aが独立して測定できる場合だけunavailableを記録して非阻害とする。
 共通計測故障・summary欠損・未知console・誤分類・証跡不整合は停止する。
 JSONには生console/完全URL/本文等を追加せず、strict schemaの漏出負対照を維持する。
-既知Catalog警告は意図した許可除去caseとapp chunk由来の場合だけ分類し、CSP通知には数えない。
+実使用WASMのconsole分類は`test/e2e/support/csp-wasm-console.ts`が所有する。
+case、engine、完全なscript-src通知形式、実際のPage/Worker元オブジェクト、
+検証済みHTTP script URLとAPI呼出し行を照合する。取得不能な発生元はunknownのままとする。
+JavaScript文字列評価の拒否とWASM通知を分け、unsafe-eval単語や他directiveのCSP文言を包括受理しない。
+Suzume glueは同じnative APIの例外と完全一致する既知メッセージだけを、そのglueのURL/位置で分類する。
+この照合用の例外文字列は別channelのRAM内だけで扱い、Aのschema・artifact・stdoutへ保存しない。
+分類前の待機は有界100msとし、console件数・文字列長・例外集合も制限する。
+既知Catalog警告は許可除去case、正確なapp entry URL/行、引数形と先頭引数の一致を要求し、通知に数えない。
+未知source、短縮語、画像制限等の対象外CSP、通常consoleによるnative形式の模倣は負対照で拒否する。
+console自体を署名付きの情報とは扱わず、任意のauthor JSが共存する画面一般への真正性保証へ広げない。
+固定WebKitの隔離RO観測・例外と実使用WASM診断は別系統であり、この分類修正でRO例外を拡張しない。
 
 ## 段階と配信phase
 

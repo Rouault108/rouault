@@ -7,6 +7,7 @@ export const wasmFixtureFingerprint = async (): Promise<string> =>
       await Promise.all(
         [
           'test/e2e/support/csp-wasm-instrumentation.ts',
+          'test/e2e/support/csp-wasm-console.ts',
           'test/e2e/support/csp-wasm-fixture.ts',
           'test/e2e/support/csp-wasm-worker-http.ts',
         ].map((file) => readFile(file)),
