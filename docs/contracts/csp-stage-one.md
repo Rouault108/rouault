@@ -174,6 +174,8 @@ JSONには生console/完全URL/本文等を追加せず、strict schemaの漏出
 case、engine、完全なscript-src通知形式、実際のPage/Worker元オブジェクト、
 検証済みHTTP script URLとAPI呼出し行を照合する。取得不能な発生元はunknownのままとする。
 JavaScript文字列評価の拒否とWASM通知を分け、unsafe-eval単語や他directiveのCSP文言を包括受理しない。
+固定WebKitの文字列timerは、固定上流`4d05d732`の`allowEval`が生成する完全なscript-src文言を
+timerの呼出し位置・native引数形・実拒否結果・HTTP policyと照合する。eval/FunctionやWASMへ流用しない。
 Suzume glueは同じnative APIの例外と完全一致する既知メッセージだけを、そのglueのURL/位置で分類する。
 この照合用の例外文字列は別channelのRAM内だけで扱い、Aのschema・artifact・stdoutへ保存しない。
 分類前の待機は有界100msとし、console件数・文字列長・例外集合も制限する。

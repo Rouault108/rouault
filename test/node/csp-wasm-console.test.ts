@@ -3,6 +3,7 @@ import {
   classifyWasmConsole,
   firefoxConsoleText,
   chromiumEvalConsoleText,
+  webkitTimerConsoleText,
   consoleApiLine,
   scriptDirective,
   readNativeConsoleErrors,
@@ -107,6 +108,33 @@ describe('case-bound real WASM console classification', () => {
     record.line = consoleApiLine(scope, 'timer');
     record.args = 1;
     expect(classifyWasmConsole(record, scope)).toBe('unknown');
+  });
+  it.each([
+    'valid',
+    'api',
+    'arguments',
+    'owner',
+    'source',
+    'policy',
+    'outcome',
+    'directive',
+    'short',
+  ])('binds the fixed WebKit native timer rejection to its actual API: %s', (mutation) => {
+    const { scope, record } = fixture('webkit-csp');
+    record.text = webkitTimerConsoleText();
+    record.args = 0;
+    record.line = consoleApiLine(scope, 'timer');
+    if (mutation === 'api') record.line = consoleApiLine(scope, 'eval');
+    if (mutation === 'arguments') record.args = 1;
+    if (mutation === 'owner') record.owner = 'unknown';
+    if (mutation === 'source') record.url = '';
+    if (mutation === 'outcome') scope.measurement.js.timer = 'allowed';
+    if (mutation === 'directive') record.text = record.text.replace('script-src', 'img-src');
+    if (mutation === 'short') record.text = 'unsafe-eval';
+    if (mutation === 'policy') scope.policy = "script-src 'self' 'unsafe-eval'";
+    expect(classifyWasmConsole(record, scope)).toBe(
+      mutation === 'valid' ? 'js-rejection' : 'unknown',
+    );
   });
   it('correlates glue with the actual native API error, source and case', () => {
     const { scope, record } = fixture();

@@ -69,6 +69,10 @@ export const firefoxConsoleText = (
 };
 export const chromiumEvalConsoleText = (directive: string): string =>
   `Evaluating a string as JavaScript violates the following Content Security Policy directive because 'unsafe-eval' is not an allowed source of script: "${directive}".\n The action has been blocked.`;
+// 固定WebKitのallowEval(LogToConsole::Yes)は文字列timerにこの完全形式を使う。
+// 4d05d732 / ContentSecurityPolicy.cpp:allowEval, consoleMessageForViolation。
+export const webkitTimerConsoleText = (): string =>
+  "Refused to execute a script because 'unsafe-eval' and 'trusted-types-eval' does not appear in the script-src directive of the Content Security Policy.";
 const needles: Record<ConsoleApi, string> = {
   streaming: 'cspNativeStreaming.call',
   bytes: 'cspNativeBytes.call',
@@ -169,16 +173,15 @@ export const classifyWasmConsole = (
       record.text === firefoxConsoleText(directive, 'js', record.url, record.line)
     )
       return 'js-rejection';
-    if (scope.engine === 'webkit-csp' && record.args === 0) {
-      const text = `Refused to evaluate a string as JavaScript because 'unsafe-eval' is not an allowed source of script in the following Content Security Policy directive: "${directive}".`;
-      if (
-        record.text === text &&
-        scope.errors.some(
-          (e) => ['eval', 'function', 'timer'].includes(e.api) && e.detail === `EvalError: ${text}`,
-        )
-      )
-        return 'js-rejection';
-    }
+    if (
+      scope.engine === 'webkit-csp' &&
+      record.args === 0 &&
+      record.line === consoleApiLine(scope, 'timer') &&
+      scope.measurement.js.timer === 'rejected' &&
+      !directive.split(/\s+/u).some((x) => ["'unsafe-eval'", "'trusted-types-eval'"].includes(x)) &&
+      record.text === webkitTimerConsoleText()
+    )
+      return 'js-rejection';
   }
   if (
     scope.caseId.endsWith('deny') &&
