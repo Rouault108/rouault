@@ -22,6 +22,7 @@ import {
   evidenceObject as object,
   evidenceKeys as keys,
   evidenceSequence as sequence,
+  evidenceFlag as flag,
 } from './csp-evidence-values.js';
 
 export interface CandidateIdentity {
@@ -330,6 +331,7 @@ export const assembleCspAcceptance = (
     throw new Error('document-cases');
   for (const row of docRows) {
     keys(row, ['id', 'key', 'observed', 'healthy', 'unknownConsole', 'baseObserved']);
+    for (const field of ['observed', 'healthy', 'unknownConsole', 'baseObserved']) flag(row[field]);
     if (row['healthy'] !== true || row['unknownConsole'] !== false) integrity = false;
   }
   const wasm = envelope(input.wasm, 'real-suzume-evidence', identity, [
@@ -370,6 +372,8 @@ export const assembleCspAcceptance = (
   for (const field of ENV)
     if (faults[field] !== observed[field]) throw new Error('fault-environment');
   if (faults['fixtureDigest'] !== input.wasmFixtureDigest) throw new Error('fault-fixture');
+  flag(faults['diagnosticOnlyDetected']);
+  flag(faults['sharedFaultRejected']);
   if (faults['diagnosticOnlyDetected'] !== true || faults['sharedFaultRejected'] !== true)
     integrity = false;
   const registry = notificationRegistry(

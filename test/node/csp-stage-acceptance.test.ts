@@ -215,6 +215,14 @@ describe('CSP 1.4 independent acceptance axes and finite stage registry', () => 
       expect(() => assembleCspAcceptance(f)).toThrow();
     }
   });
+  it.each(['observed', 'healthy', 'unknownConsole', 'baseObserved'])(
+    'rejects malformed Document %s as evidence failure, never capability unmet',
+    (field) => {
+      const f = stageInputFixture();
+      Reflect.set(required(f.documentObservation.rows[0]), field, 'true');
+      expect(() => assembleCspAcceptance(f)).toThrow();
+    },
+  );
   it('preserves observer failure rather than converting it to the known unmet', () => {
     const f = stageInputFixture();
     required(f.workerObservation.rows[0]).listenerReady = false;
