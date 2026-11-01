@@ -259,6 +259,18 @@ describe('CSP 1.4 independent acceptance axes and finite stage registry', () => 
     });
     expect(stage1(evidence).status).toBe('stop');
   });
+  it('retains required B for operations and does not extend the stages 1-4 exception to stage 5', () => {
+    const { evidence } = assembleCspAcceptance(stageInputFixture());
+    completeSyntheticA(evidence);
+    const decision = evaluateCspStage(evidence, {
+      stage: 5,
+      phase: 'internal',
+      publicationApproved: false,
+    });
+    expect(decision.status).toBe('stop');
+    expect(decision.exceptions).toEqual([]);
+    expect(decision.requiredNotifications).toContain('worker-wasm-ro-wasm');
+  });
   it('keeps pre-deploy, public approval, and post-deploy acceptance separate', () => {
     const { evidence } = assembleCspAcceptance(stageInputFixture());
     completeSyntheticA(evidence);

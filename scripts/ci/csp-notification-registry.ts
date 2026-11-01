@@ -83,7 +83,7 @@ export const notificationRegistry = (
       group,
       key: { ...key, ...base },
       role: required ? 'required-capability' : 'diagnostic-only',
-      stages: required ? [1, 2, 3, 4] : [],
+      stages: required ? [1, 2, 3, 4, 5] : [],
       phases: required ? ['internal', 'pre-deploy', 'post-deploy'] : [],
       artifacts,
       controls,
