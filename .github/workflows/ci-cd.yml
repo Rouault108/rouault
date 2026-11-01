@@ -284,9 +284,9 @@ jobs:
         name: require complete CSP results
         run: pnpm exec tsx scripts/ci/assert-csp-browser-results.ts ${{ matrix.target }}-csp
       - id: verify-csp-coverage
-        name: require CSP observation coverage
+        name: evaluate Stage 1 acceptance and preserve raw coverage
         if: ${{ always() && (steps.playwright-csp.outcome == 'success' || steps.playwright-csp.outcome == 'failure') }}
-        run: pnpm exec tsx scripts/ci/assert-csp-coverage.ts ${{ matrix.target }}-csp
+        run: pnpm exec tsx scripts/ci/evaluate-csp-stage.ts ${{ matrix.target }}-csp
       - id: summarize-csp-worker-diagnostics
         name: summarize independent Worker diagnostics
         if: ${{ always() && (steps.playwright-csp.outcome == 'success' || steps.playwright-csp.outcome == 'failure') }}
@@ -301,6 +301,11 @@ jobs:
             .generated/csp/worker-observation-*.json
             .generated/csp/worker-diagnostics-*.json
             .generated/csp/coverage-*.json
+            .generated/csp/worker-bindings-*.json
+            .generated/csp/document-ro-*.json
+            .generated/csp/wasm-*.json
+            .generated/csp/notification-registry-*.json
+            .generated/csp/acceptance-*.json
           include-hidden-files: true
           retention-days: 7
           if-no-files-found: error
@@ -313,7 +318,7 @@ jobs:
     needs: [detect-changes, test-csp]
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
-      - name: validate mandatory CSP coverage
+      - name: validate mandatory CSP Stage 1 results
         env:
           NEEDS_JSON: ${{ toJson(needs) }}
         run: python3 scripts/ci/validate_csp_needs.py

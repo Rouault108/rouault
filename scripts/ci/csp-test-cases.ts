@@ -20,5 +20,7 @@ export const CSP_TEST_CASES: Readonly<Record<string, string>> = {
   'Worker RO observation with controls; capability evaluation is separate': 'worker-observation',
   'failure privacy controls redact assertion, source, DOM, stdout and report': 'failure-privacy',
   'observer faults are detected independently of notification gaps': 'observer-faults',
+  'real Suzume API evidence keeps streaming, bytes and notifications independent': 'real-wasm',
+  'diagnostic-only and shared measurement faults have different effects': 'wasm-faults',
 };
 export const CSP_REQUIRED_CASE_IDS = Object.values(CSP_TEST_CASES);

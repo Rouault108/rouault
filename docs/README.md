@@ -73,6 +73,7 @@ Design System patternはUIの見え方と配置判断を扱う。Router、search
 ## Reference
 
 - [CSP設計1.1照合記録](references/csp-stage-one-design-1.1-audit-2026-10-31.md)
+- [CSP Stage 1設計1.4実装と受入条件](references/csp-stage-one-design-1.4-audit-2026-11-01.md)
 - [CSP Stage 1設計1.2照合と受入条件](references/csp-stage-one-design-1.2-audit-2026-11-01.md)
 - [CSP Stage 1隔離検証記録](references/csp-stage-one-validation-2026-10-31.md)
 - [TOC native source sessionの検証記録](references/toc-native-source-session-validation-2026-10-19.md)

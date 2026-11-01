@@ -12,6 +12,7 @@ export default defineConfig({
     'csp-worker-observation.ts',
     'csp-privacy.ts',
     'csp-observer-faults.ts',
+    'csp-real-wasm.ts',
   ],
   timeout: 30_000,
   retries: 0,

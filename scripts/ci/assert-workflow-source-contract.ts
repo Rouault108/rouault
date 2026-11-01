@@ -634,7 +634,7 @@ export const assertCspWorkflowContract = (source: string): void => {
         validator,
         ['pnpm', 'exec', 'tsx', 'scripts/ci/assert-csp-browser-results.ts', `${target}-csp`],
       ],
-      [coverage, ['pnpm', 'exec', 'tsx', 'scripts/ci/assert-csp-coverage.ts', `${target}-csp`]],
+      [coverage, ['pnpm', 'exec', 'tsx', 'scripts/ci/evaluate-csp-stage.ts', `${target}-csp`]],
       [
         summary,
         ['pnpm', 'exec', 'tsx', 'scripts/ci/summarize-csp-worker-diagnostics.ts', `${target}-csp`],
@@ -664,7 +664,7 @@ export const assertCspWorkflowContract = (source: string): void => {
       normalizeWorkflowExpression(upload['if']) === afterTest &&
       options['name'] === 'rouault-csp-${{ matrix.target }}-results' &&
       options['path'] ===
-        '.generated/csp/browser-results.json\n.generated/csp/worker-observation-*.json\n.generated/csp/worker-diagnostics-*.json\n.generated/csp/coverage-*.json\n' &&
+        '.generated/csp/browser-results.json\n.generated/csp/worker-observation-*.json\n.generated/csp/worker-diagnostics-*.json\n.generated/csp/coverage-*.json\n.generated/csp/worker-bindings-*.json\n.generated/csp/document-ro-*.json\n.generated/csp/wasm-*.json\n.generated/csp/notification-registry-*.json\n.generated/csp/acceptance-*.json\n' &&
       options['retention-days'] === 7 &&
       options['include-hidden-files'] === true &&
       options['if-no-files-found'] === 'error',

@@ -17,6 +17,8 @@ describe('independent mandatory CSP coverage workflow', () => {
     'bypass-public-gate',
     'removed-matrix',
     'raw-artifact',
+    'old-coverage-gate',
+    'missing-stage-artifact',
   ])('rejects %s', async (change) => {
     const workflow = record(yaml.load(await readFile('.github/workflows/ci-cd.yml', 'utf8')));
     const jobs = record(workflow['jobs']);
@@ -38,6 +40,15 @@ describe('independent mandatory CSP coverage workflow', () => {
       record(job['strategy'])['matrix'] = {
         include: [{ target: 'chromium', browser: 'chromium' }],
       };
+    if (change === 'old-coverage-gate')
+      record(steps.find((step) => step['id'] === 'verify-csp-coverage'))['run'] =
+        'pnpm exec tsx scripts/ci/assert-csp-coverage.ts ${{ matrix.target }}-csp';
+    if (change === 'missing-stage-artifact') {
+      const options = record(
+        record(steps.find((step) => step['name'] === 'preserve CSP results'))['with'],
+      );
+      options['path'] = String(options['path']).replace('.generated/csp/acceptance-*.json\n', '');
+    }
     if (change === 'raw-artifact')
       record(record(steps.find((step) => step['name'] === 'preserve CSP results'))['with'])[
         'path'

@@ -7,6 +7,7 @@ import { readVerifiedCspStageOne, renderCspHeaders } from './build/security/csp-
 import { createCspReportOnlyMiddleware } from './build/preview/csp-report-only.js';
 import { createCspMediaAliasMiddleware } from './build/preview/csp-media-aliases.js';
 import { createCspNotFoundMiddleware } from './build/preview/csp-not-found.js';
+import { createWasmWorkerHttpMiddleware } from './test/e2e/support/csp-wasm-worker-http.js';
 
 export default mergeConfig(
   preview,
@@ -24,6 +25,9 @@ export default mergeConfig(
           );
           const headers = await readFile('.generated/csp/report-only.headers', 'utf8');
           if (headers !== renderCspHeaders(manifest)) throw new Error('Stale CSP header fragment');
+          server.middlewares.use(
+            await createWasmWorkerHttpMiddleware(server.config.build.outDir, manifest),
+          );
           server.middlewares.use(createCspReportOnlyMiddleware(manifest));
           server.middlewares.use(createCspMediaAliasMiddleware(server.config.root, manifest));
           const fallback = await readFile(

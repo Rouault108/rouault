@@ -12,11 +12,14 @@ import {
 } from '../../scripts/ci/csp-worker-acceptance.js';
 
 import { startWorkerObservationFixture } from './support/csp-worker-observation-fixture.js';
+import { readVerifiedCspStageOne } from '../../build/security/csp-report-only.js';
+import { cspFingerprint } from '../../scripts/ci/csp-notification-registry.js';
 
 test('Worker RO observation with controls; capability evaluation is separate', async ({
   browser,
 }, info) => {
   const rows: ObservationRow[] = [];
+  const bindings: unknown[] = [];
   for (const scenario of CSP_OBSERVATION_CASES) {
     const fixture = await startWorkerObservationFixture(scenario);
     const context = await browser.newContext({ locale: 'en-US' });
@@ -89,6 +92,18 @@ test('Worker RO observation with controls; capability evaluation is separate', a
         operationStarted: scenario !== 'ro-no-operation',
         eventWindowMs: fixture.windowMs,
       });
+      bindings.push({
+        caseId: scenario,
+        fixtureDigest: fixture.workerDigest,
+        policyFingerprint: cspFingerprint(fixture.policy?.value ?? 'no-policy'),
+        mode:
+          fixture.policy?.name === 'Content-Security-Policy-Report-Only'
+            ? 'report-only'
+            : fixture.policy
+              ? 'enforce'
+              : 'none',
+        windowMs: fixture.windowMs,
+      });
     } finally {
       await context.close();
       await fixture.close();
@@ -115,5 +130,18 @@ test('Worker RO observation with controls; capability evaluation is separate', a
   await writeFile(
     `.generated/csp/worker-observation-${info.project.name}.json`,
     JSON.stringify(report),
+  );
+  const manifest = await readVerifiedCspStageOne('dist', '.generated/csp/manifest.json');
+  await writeFile(
+    `.generated/csp/worker-bindings-${info.project.name}.json`,
+    JSON.stringify({
+      schema: 1,
+      kind: 'worker-fixture-bindings',
+      engine: info.project.name,
+      sha: report.sha,
+      run: report.run,
+      buildId: manifest.buildId,
+      rows: bindings,
+    }),
   );
 });

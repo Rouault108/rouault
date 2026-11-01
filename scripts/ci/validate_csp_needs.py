@@ -13,14 +13,14 @@ def main() -> int:
     require_success(needs, failures, "detect-changes", "change detection is required")
     _content, _app, build = require_detect_change_outputs(needs, failures)
     if build:
-        require_success(needs, failures, "test-csp", "build=true requires all CSP engines and mandatory coverage")
+        require_success(needs, failures, "test-csp", "build=true requires all CSP engines and Stage 1 acceptance with retained raw notification coverage")
     else:
         require_skipped(needs, failures, "test-csp", "build=false must skip CSP matrix")
     if failures:
         for failure in failures:
-            print(f"CSP coverage gate: {failure}")
+            print(f"CSP Stage 1 gate: {failure}")
         return 1
-    print("CSP coverage gate passed.")
+    print("CSP Stage 1 gate passed.")
     return 0
 
 

@@ -1,0 +1,105 @@
+{
+  "schema": 1,
+  "fixture": "worker-observation-1.2",
+  "bytesDigest": "93a44bbb96c751218e4c00d479e4c14358122a389acca16205b1e4d0dc5f9476",
+  "cases": [
+    {
+      "caseId": "baseline",
+      "fixtureDigest": "0a6a9fa31253f062b5ee0e842602c3e202bf20ef2efdf9ca3f7e69156339059a",
+      "policyFingerprint": "67da0ab19cf2bab070be081de4a661d9e7415cb0e151e110d9f7490ff1fca07a",
+      "mode": "none",
+      "windowMs": 250
+    },
+    {
+      "caseId": "ro-allowed",
+      "fixtureDigest": "2df80ae65b658d0d925f3deef10f8317c6ebb8fef09d7b6a83cbc29dbff54113",
+      "policyFingerprint": "2fe44926a05296b3751b6ef63f7276f9fc6194e12d96213fb0d2bfa00ec96036",
+      "mode": "report-only",
+      "windowMs": 250
+    },
+    {
+      "caseId": "ro-no-operation",
+      "fixtureDigest": "35df029efaf95f32b54908aac4e8d31dbb31477e2a80a79a2df6f03adefa1388",
+      "policyFingerprint": "997f5d05badad0fdeb1ba9a2dbaffdfff0eb5d2eaa50362b206dac6490d9242c",
+      "mode": "report-only",
+      "windowMs": 250
+    },
+    {
+      "caseId": "ro-connect",
+      "fixtureDigest": "d6fe8a920a95e78ea415602bca17216764080af2afc1dc030f34e55a0f2e5999",
+      "policyFingerprint": "58d6fe4f9cac213018436d0ff1ac640b26497b4dc13e1f71a05ded16df12dcef",
+      "mode": "report-only",
+      "windowMs": 250
+    },
+    {
+      "caseId": "ro-wasm",
+      "fixtureDigest": "80c49e6bc83b35dbb39e23df2610a4f28b9badf5e8b7eb8ef7cef2c26724b00a",
+      "policyFingerprint": "846781dcef9253f7f0de46166daf2300d2c1083406a0db10f539c6733ce832e2",
+      "mode": "report-only",
+      "windowMs": 250
+    },
+    {
+      "caseId": "ro-both",
+      "fixtureDigest": "3c7c5b1fd43d7b10c5c173f4e599fa00008453436e22e17325c7526b22444fed",
+      "policyFingerprint": "997f5d05badad0fdeb1ba9a2dbaffdfff0eb5d2eaa50362b206dac6490d9242c",
+      "mode": "report-only",
+      "windowMs": 250
+    },
+    {
+      "caseId": "enforce-connect",
+      "fixtureDigest": "ff21a1092ab8a3d977bf6d05a3ce23acfb1a8b94f122b2b1f703787898213599",
+      "policyFingerprint": "58d6fe4f9cac213018436d0ff1ac640b26497b4dc13e1f71a05ded16df12dcef",
+      "mode": "enforce",
+      "windowMs": 250
+    },
+    {
+      "caseId": "enforce-wasm",
+      "fixtureDigest": "836b18e03b91627e88385ba42d23e88faa75cfcadfb6bfd664a2528bcb406846",
+      "policyFingerprint": "846781dcef9253f7f0de46166daf2300d2c1083406a0db10f539c6733ce832e2",
+      "mode": "enforce",
+      "windowMs": 250
+    },
+    {
+      "caseId": "enforce-both",
+      "fixtureDigest": "a68a87b9a7e41f9944eb0a84cc0a5c85c5420e9e3801c9b2b880d1ef4c6134bb",
+      "policyFingerprint": "997f5d05badad0fdeb1ba9a2dbaffdfff0eb5d2eaa50362b206dac6490d9242c",
+      "mode": "enforce",
+      "windowMs": 250
+    },
+    {
+      "caseId": "ro-both-delayed",
+      "fixtureDigest": "e618b554abead61da10b0176c07bd8e8b6445c6aa7973ea33c8697351535df70",
+      "policyFingerprint": "997f5d05badad0fdeb1ba9a2dbaffdfff0eb5d2eaa50362b206dac6490d9242c",
+      "mode": "report-only",
+      "windowMs": 1000
+    },
+    {
+      "caseId": "spoof",
+      "fixtureDigest": "1822f503390f3bede7a6e6b5450dc07c23f9c1a8920f2c7b411619d0a0b4d23d",
+      "policyFingerprint": "67da0ab19cf2bab070be081de4a661d9e7415cb0e151e110d9f7490ff1fca07a",
+      "mode": "none",
+      "windowMs": 250
+    },
+    {
+      "caseId": "foreign-spoof",
+      "fixtureDigest": "649a682295542cfbe5776982dd4950638cb45a3986e57a328181c4506dbacecc",
+      "policyFingerprint": "67da0ab19cf2bab070be081de4a661d9e7415cb0e151e110d9f7490ff1fca07a",
+      "mode": "none",
+      "windowMs": 250
+    },
+    {
+      "caseId": "invalid-wasm",
+      "fixtureDigest": "a26dbb52c866b7f7d23545f5360eb1b685a499d3fb5d563e313fa43193602fd8",
+      "policyFingerprint": "67da0ab19cf2bab070be081de4a661d9e7415cb0e151e110d9f7490ff1fca07a",
+      "mode": "none",
+      "windowMs": 250
+    },
+    {
+      "caseId": "aborted-fetch",
+      "fixtureDigest": "91322e09acd9b96539d890dcea065709e728d370be068adcee3ec4b712a31796",
+      "policyFingerprint": "67da0ab19cf2bab070be081de4a661d9e7415cb0e151e110d9f7490ff1fca07a",
+      "mode": "none",
+      "windowMs": 250
+    }
+  ]
+}

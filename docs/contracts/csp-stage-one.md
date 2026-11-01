@@ -10,7 +10,7 @@ policyは`build/security/csp-policy.ts`、inventoryは`csp-inventory.ts`、資�
 通常の`build` / `build:production`、`vite.preview.config.ts`、配信用`_headers`にはCSPを追加しない。
 生成先は非配信の`.generated/csp/manifest.json`と`.generated/csp/report-only.headers`のみ。
 本番公開、preview runner、sandbox token、外部report collectorは変更しない。
-明示承認されたCI継続検証として、通常E2Eと独立したCSP matrixと必須coverage gateを使う。
+明示承認されたCI継続検証として、通常E2Eと独立したCSP matrix、raw通知能力、段階別進行判定を使う。
 
 ## 生成と検証
 
@@ -77,9 +77,9 @@ Cache-Controlは通常previewの既存middlewareを再利用する。隔離serve
 CIの`test-csp`は`build=true`で起動し、記事・`_headers`・`_redirects`・`wrangler.jsonc`だけの変更も対象とする。
 通常production E2Eのapp/event gateは変更しない。固定Playwright container・Node・pnpmを共用し、browser/OS installは追加しない。
 専用試験、完全な固定case集合の結果検証、意味上のcoverage判定を別stepとする。
-`csp-required`はCSP必須coverageを独立して所有する。通常jobの結果と分け、既存merge gateの`ci-required`もそのsuccessを必須にする。公開も双方のsuccessを必要とする。
+`csp-required`はStage 1内部限定ROの進行判定を独立して所有する。通常jobの結果と分け、既存merge gateの`ci-required`もそのsuccessを必須にする。既存公開jobも双方のsuccessを必要とするが、Stage 1成功はCSPの配信承認ではない。
 skip・flaky・retry・期待された失敗・空/欠損/別engine/別SHA/runの証跡を成功にしない。
-必須能力の未達も非ゼロ終了で公開を止める。通常CIの成功は未達を解消しない。
+raw能力判定は従来どおり、未達なら非ゼロ相当の結果を保持する。段階判定だけが以下の完全キー限定例外を評価し、それ以外の必須未達・健全性不備・必須A不足は非ゼロ終了とする。通常CIの成功は未達を解消しない。
 
 `scripts/ci/csp-worker-acceptance.ts`が設計1.2の固定版受入を評価する。
 Chromium/FirefoxはWorker event、固定WebKitのconnectだけは単一Worker・WorkerだけのHTTP CSPを持つ隔離fixtureのnative consoleを採用する。
@@ -123,11 +123,72 @@ report-uri / report-to / 外部送信先は追加しない。全訪問者の観�
 現行srcdocのhelper/author JS・base/frame等はknown-legacy-preview、権限を狭める対照はfixtureとして分類する。
 Report-Onlyなので既存previewは継続実行する。違反を消すための親policy拡張は行わない。
 
+## 設計1.4の受入軸と実使用WASM
+
+`scripts/ci/csp-notification-registry.ts`が通知の有限case・完全キー・役割を所有する。
+context、effectiveDirective、policy fingerprint/mode、disposition、API/case、fixture/bytes digest、
+engine/browser、observer/経路を固定し、candidate SHA/run/buildIdと環境・artifact digestを結び付ける。
+既存Document inline/srcdoc ROと、隔離Worker connect/WASM compile ROは必須Bである。
+実Suzume enforceと隔離enforceの通知は診断用であり、未観測から新たな必須Bを生成しない。
+役割・段階の必須集合を結果側の自己申告で変更できない。
+
+`scripts/ci/csp-stage-acceptance.ts`は個別試験`pass/fail/not-run`、A、Bの`success/unmet`、
+診断通知・健全性、段階/phase、公開承認を別に保存する。
+`evaluate-csp-stage.ts`が候補の全証跡を検証し、Stage 1内部判定の終了コードをCIへ返す。
+従来の`assert-csp-coverage.ts`とraw enumは保持し、WebKit未達のraw exit 1を0へ書き換えない。
+16件の専用試験の成功は、証拠収集・自己試験の成功であり、実WASMのAや全段階完了とは別である。
+
+例外`WK26.6-worker-wasm-ro`は固定WebKit 26.6 / Playwright 1.63.0 / en-US /
+observer `worker-ro-1.2-v1` / 承認済みcontainer digestの隔離Worker compile ROだけに適用する。
+正常小moduleと14条件のfixture/policy指紋、現candidateのSHA/run/build、稼働・負対照、
+既知product policyとSuzume bytesが一致し、他の必須Bと当該段階のAが成立するときだけ、
+当該一能力のunmetを残して段階1〜4で非阻害にできる。
+Document・enforce・別API/fixture・native Safari・未知環境・observer故障へ拡張しない。
+変更時は自動継承せず再評価する。旧runは当時の契約のfailureのままである。
+
+`test/e2e/csp-real-wasm.ts`は実生成検索module WorkerとSuzume 0.9.11の正常578362 bytes
+（SHA-256 `f0ee2d14fcbbb0559c3246263aa907987012a1ff45939484ee6b79bae1821baf`）を使う。
+専用serverのHTTP fixtureだけが有限の試験headerを受理し、既存Worker bytesへAPI計測を付加する。
+親は候補ROのまま、対象Worker応答だけをenforceする。正常配信用artifactと製品コードは変更しない。
+新context/Workerごとに許可あり/なしを対比し、streaming自身のfulfilledとbytes試行0回をA-W1とする。
+A-W2は正常bytes/importsを維持してnative streamingへ非対応MIMEを与える予定対照から、
+既存glueのbytes fallbackを選ぶ。選択理由・native API別結果・digest・imports契約を保存する。
+importsは実glue由来の`a.{a,b,c,d,e}`関数集合、契約IDは`suzume-0.9.11-emscripten-a-abcde-v1`である。
+A-W3/W4はWASM許可だけを除き、streaming拒否後のbytes再試行も記録し、いずれかの成功はfailとする。
+親Documentでも同じglue/正常bytesの両APIの許可対照と拒否を独立実行する。
+WASM許可とJS eval/Function/文字列timerの拒否を分け、JS許可の隔離対照も取る。
+Catalogへの退避は別の機能診断として保存し、WASM成功に数えない。
+
+wrapperはnative Promise/例外をそのまま返し、通常のHTTP scriptからAPIを呼ぶ。
+automationは結果を読み取るだけで、評価関数からWASM/evalを実行してCSP証拠にしない。
+streamingが取得前にCSP拒否されbytesを観測できない場合は`pre-fetch-control`と明示する。
+そのdigestは同じ正常入力の対照に基づく値であり、その呼出しでbytesを測定した証拠ではない。
+許可対照の実測digest、凍結Worker/実HTTP、providerの検証済みbytes/importsを別に照合する。
+通常のmeasured digestと混同せず、成功経路でこの代替値を許可しない。
+
+A計測はBroadcastChannelの最小snapshot、通知診断はconsole分類として分離する。
+診断だけの切断を故障注入し、Aが独立して測定できる場合だけunavailableを記録して非阻害とする。
+共通計測故障・summary欠損・未知console・誤分類・証跡不整合は停止する。
+JSONには生console/完全URL/本文等を追加せず、strict schemaの漏出負対照を維持する。
+既知Catalog警告は意図した許可除去caseとapp chunk由来の場合だけ分類し、CSP通知には数えない。
+
+## 段階と配信phase
+
+Stage 1は既存14 RO試験、静的整合、実検索/Catalog不使用、RO HTTPとBの健全性を要求する。
+新runnerや製品全体enforceを前提にしない。
+Stage 2は実WASM A-W1〜W4/D1/J1/H1/F1に加えて、製品enforce・preview・cacheを要求する。
+現在これら後段製品条件は`not-run / not-implemented`であり、実WASMだけが成功してもStage 2完了にはしない。
+Stage 3限定ROはStage 2から独立し、Stage 0、限定範囲のRO互換、承認済み検証配信先と切戻しを要求する。
+Stage 4は製品enforce/previewを含む対応する全Aが必要である。
+配信前検証と別公開承認の後にだけ着手でき、配信後の対象HTTP/redirect/404/cache/代表操作を終えるまで
+当該配信先の受入完了にしない。現在のCLIは公開承認をすべてfalseで出力する。
+Cloudflare・native Safari・runner・Stage 0未決をローカルPlaywright成功で代用しない。
+
 ## 判定と後段ゲート
 
 - [設計1.2との照合と条件変更](../references/csp-stage-one-design-1.2-audit-2026-11-01.md)を参照する。
   Stage 0全体完了と、許可された検証実装の開始は別である。
-  限定内部検証の整理ができても、WASM RO未達を含む必須coverageはfailureのままで公開しない。
+  当時のrunとraw通知coverageのfailureは保持する。現在の段階判定は[設計1.4照合記録](../references/csp-stage-one-design-1.4-audit-2026-11-01.md)と以下の規則に従う。
 
 - [提供された設計1.1との照合記録](../references/csp-stage-one-design-1.1-audit-2026-10-31.md)を参照する。
   Library materializeではなく親からの正当な本文引渡しとして照合した。第6〜7章も3部の連続した追補で受領済み。

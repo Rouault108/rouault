@@ -2,6 +2,8 @@ import { readFile } from 'node:fs/promises';
 import type { Page, TestInfo } from '@playwright/test';
 import { expect, test } from './support/csp-test.js';
 import { classifyWorkerConsole } from '../../scripts/ci/csp-worker-diagnostics.js';
+import { CSP_INLINE_TEXT } from '../../scripts/ci/csp-notification-registry.js';
+import { writeDocumentRegistryEvidence } from './support/csp-registry-evidence.js';
 import {
   collectCspStageOne,
   CSP_REPORT_ONLY_HEADER,
@@ -172,14 +174,14 @@ for (const preference of ['system', 'light', 'dark', 'storage-denied'] as const)
 }
 
 test('unknown inline reports and continues in Report-Only', async ({ page }, info) => {
-  await observe(page, info.project.name);
+  const messages = await observe(page, info.project.name);
   await page.goto('/');
   await ready(page);
-  await page.evaluate(() => {
+  await page.evaluate((text) => {
     const script = document.createElement('script');
-    script.textContent = 'document.documentElement.dataset.cspProbe="executed";';
+    script.textContent = text;
     document.body.append(script);
-  });
+  }, CSP_INLINE_TEXT);
   await expect(page.locator('html')).toHaveAttribute('data-csp-probe', 'executed');
   await expect
     .poll(async () =>
@@ -192,6 +194,7 @@ test('unknown inline reports and continues in Report-Only', async ({ page }, inf
     )
     .toBe(true);
   await attach(page, info, 'inline-probe', 'unknown-inline-probe', 'fixture');
+  await writeDocumentRegistryEvidence(page, info, 'inline-probe', true, messages);
 });
 
 test('production Worker continues lexical operations in RO; notifications are evaluated in isolated controls', async ({
@@ -322,6 +325,14 @@ test('style exception is intentional; legacy srcdoc script/base/frame violations
       blocked: directive === 'base-uri' ? 'http://127.0.0.1:4173' : 'inline',
       disposition: 'report',
     })),
+  );
+  await writeDocumentRegistryEvidence(
+    page,
+    info,
+    'legacy-preview',
+    true,
+    messages,
+    consoleDirectives.includes('base-uri'),
   );
 });
 
