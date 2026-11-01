@@ -86,6 +86,7 @@ describe('case-bound real WASM console classification', () => {
     'type',
   ])('rejects mismatched identity or author imitation: %s', (mutation) => {
     const { scope, record } = fixture();
+    if (mutation === 'source-bytes') scope.sourceVerified = false;
     if (mutation === 'owner') record.owner = 'unknown';
     if (mutation === 'missing-url') record.url = '';
     if (mutation === 'foreign-url') record.url = 'http://127.0.0.1:4173/author.js';
