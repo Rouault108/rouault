@@ -89,6 +89,7 @@ describe('CSP harness identity and minimized evidence', () => {
       'Setting base URI violates the following Content Security Policy directive: base-uri',
       'Executing inline script violates Content Security Policy directive script-src',
       'Content-Security-Policy: The page settings would block script-src-elem',
+      '[JavaScript Error: "Content-Security-Policy: (Report-Only policy) block script-src-elem"]',
       '[Report Only] Refused inline script because of the Content Security Policy script-src',
     ])
       expect(classifyDocumentConsole(text, 'fixed')).toBe('violation');

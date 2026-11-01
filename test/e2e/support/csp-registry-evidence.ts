@@ -18,7 +18,7 @@ export const classifyDocumentConsole = (
     `The Content Security Policy '${policy}' was delivered in report-only mode, but does not specify a 'report-to'; the policy will have no effect. Please either add a 'report-to' directive, or deliver the policy via the 'Content-Security-Policy' header.`
   )
     return 'warning';
-  return /^(?:\[Report Only\] )?(?:Refused|Executing|Loading|Setting|Framing|The source list|Content-Security-Policy:)/iu.test(
+  return /^(?:\[Report Only\] )?(?:Refused|Executing|Loading|Setting|Framing|The source list|(?:\[JavaScript (?:Error|Warning): ["'])?Content-Security-Policy:)/iu.test(
     text,
   ) &&
     /(?:Content Security Policy|Content-Security-Policy)/iu.test(text) &&
