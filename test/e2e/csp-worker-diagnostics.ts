@@ -1,5 +1,5 @@
 import { mkdir, writeFile } from 'node:fs/promises';
-import { expect, test } from '@playwright/test';
+import { expect, test } from './support/csp-test.js';
 import { startWorkerDiagnosticFixture } from './support/csp-worker-diagnostic-fixture.js';
 import {
   WORKER_DIAGNOSTIC_CASES,

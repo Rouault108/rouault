@@ -49,6 +49,8 @@ def main() -> int:
         "required CI must pass before deployment validation",
     )
 
+    require_success(needs, failures, "csp-required", "mandatory CSP coverage must pass before publication")
+
     if is_main_push() and build_required:
         require_success(
             needs,

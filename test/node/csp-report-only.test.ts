@@ -205,6 +205,30 @@ describe('isolated CSP Stage 1', () => {
       );
     }));
 
+  it('accepts only the finite static Vite 8 Worker URL form', async () =>
+    fixture(async (dist, viteManifestFile) => {
+      const file = path.join(dist, 'client-assets/client.js');
+      await writeFile(
+        file,
+        'new Worker(new URL(`/client-assets/lexical-hash.js`,``+import.meta.url),{type:`module`});',
+      );
+      const result = await collectCspStageOne(dist, null, { viteManifestFile });
+      expect(result.rules.filter((rule) => rule.context === 'worker')).toHaveLength(1);
+      for (const source of [
+        'new Worker(new URL(`/client-assets/${dynamic}.js`,``+import.meta.url),{type:`module`});',
+        'new Worker(new URL(`/client-assets/lexical-hash.js`,`https://elsewhere/`+import.meta.url),{type:`module`});',
+        'new Worker(new URL(`/client-assets/lexical-hash.js`,dynamicBase),{type:`module`});',
+        'new Worker(new URL(`/client-assets/lexical-hash.js`,``+import.meta.url),{type:`${dynamic}`});',
+        'new Worker(new URL(`/client-assets/lexical-hash.js`,``+import.meta.url),{type:`module`,...dynamic});',
+        'new Worker(new URL(`/client-assets/lexical-hash.js`,``+import.meta.url),{type:`module`,type:dynamic});',
+      ]) {
+        await writeFile(file, source);
+        await expect(collectCspStageOne(dist, null, { viteManifestFile })).rejects.toThrow(
+          'Worker constructor',
+        );
+      }
+    }));
+
   it('rejects an unowned executable, dynamic Worker, unknown bundle, and executable envelope', async () =>
     fixture(async (dist, viteManifestFile) => {
       const options = { viteManifestFile };

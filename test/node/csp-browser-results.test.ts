@@ -1,26 +1,30 @@
 import { describe, expect, it } from 'vitest';
+import { CSP_REQUIRED_CASE_IDS } from '../../scripts/ci/csp-test-cases.js';
 import { assertCspBrowserResults } from '../../scripts/ci/assert-csp-browser-results.js';
 
 const fixture = () => ({
+  schema: 1,
+  kind: 'private-csp-test-results',
+  sha: 'local',
+  run: 'local',
   suites: [
     {
-      specs: [
-        {
-          ok: true,
-          tests: [
-            {
-              projectName: 'webkit-csp',
-              expectedStatus: 'passed',
-              status: 'expected',
-              results: [{ status: 'passed', retry: 0, errors: [] as unknown[] }],
-            },
-          ],
-        },
-      ],
+      specs: CSP_REQUIRED_CASE_IDS.map((caseId) => ({
+        caseId,
+        ok: true,
+        tests: [
+          {
+            projectName: 'webkit-csp',
+            expectedStatus: 'passed',
+            status: 'expected',
+            results: [{ status: 'passed', retry: 0, errors: [] as unknown[] }],
+          },
+        ],
+      })),
     },
   ],
   errors: [] as unknown[],
-  stats: { expected: 1, skipped: 0, unexpected: 0, flaky: 0 },
+  stats: { expected: CSP_REQUIRED_CASE_IDS.length, skipped: 0, unexpected: 0, flaky: 0 },
 });
 const firstTest = (report: ReturnType<typeof fixture>) => {
   const test = report.suites[0]?.specs[0]?.tests[0];
@@ -35,7 +39,16 @@ const firstResult = (report: ReturnType<typeof fixture>) => {
 
 describe('CSP engine result gate', () => {
   it('requires every selected test to pass once in the expected engine', () => {
-    expect(assertCspBrowserResults(fixture(), 'webkit-csp')).toBe(1);
+    expect(assertCspBrowserResults(fixture(), 'webkit-csp')).toBe(CSP_REQUIRED_CASE_IDS.length);
+  });
+  it('rejects private fields and stale SHA/run', () => {
+    expect(() =>
+      assertCspBrowserResults({ ...fixture(), rawConsole: 'private' }, 'webkit-csp'),
+    ).toThrow();
+    expect(() =>
+      assertCspBrowserResults({ ...fixture(), sha: 'a'.repeat(40) }, 'webkit-csp'),
+    ).toThrow();
+    expect(() => assertCspBrowserResults({ ...fixture(), run: '123' }, 'webkit-csp')).toThrow();
   });
   it.each(['skipped', 'unexpected', 'flaky'] as const)('rejects %s results', (kind) => {
     const report = fixture();

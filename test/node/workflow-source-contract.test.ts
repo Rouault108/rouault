@@ -86,12 +86,16 @@ const matrixFixture = async () => {
   const steps = readRecords(job['steps']);
   job['steps'] = steps;
   const test = workflowRecord(steps.find((step) => step['id'] === 'playwright-production'));
-  const cspTest = workflowRecord(steps.find((step) => step['id'] === 'playwright-csp'));
-  const cspValidator = workflowRecord(steps.find((step) => step['id'] === 'verify-csp-results'));
+  const cspSteps = readRecords(workflowRecord(jobs['test-csp'])['steps']);
+  workflowRecord(jobs['test-csp'])['steps'] = cspSteps;
+  const cspTest = workflowRecord(cspSteps.find((step) => step['id'] === 'playwright-csp'));
+  const cspValidator = workflowRecord(cspSteps.find((step) => step['id'] === 'verify-csp-results'));
   const diagnosticSummary = workflowRecord(
-    steps.find((step) => step['id'] === 'summarize-csp-worker-diagnostics'),
+    cspSteps.find((step) => step['id'] === 'summarize-csp-worker-diagnostics'),
   );
-  const cspUpload = workflowRecord(steps.find((step) => step['name'] === 'preserve CSP results'));
+  const cspUpload = workflowRecord(
+    cspSteps.find((step) => step['name'] === 'preserve CSP results'),
+  );
   const verification = workflowRecord(steps.find((step) => step['id'] === 'verify-e2e-container'));
   const upload = workflowRecord(
     steps.find((step) => step['name'] === 'preserve production E2E diagnostics'),
@@ -112,6 +116,7 @@ const matrixFixture = async () => {
     entries,
     steps,
     test,
+    cspSteps,
     cspTest,
     cspValidator,
     diagnosticSummary,
@@ -182,7 +187,7 @@ describe('production E2E matrix structural contract', () => {
     [
       'CSP missing validator',
       (f) => {
-        f.steps.splice(f.steps.indexOf(f.cspValidator), 1);
+        f.cspSteps.splice(f.cspSteps.indexOf(f.cspValidator), 1);
       },
     ],
     [
@@ -207,7 +212,7 @@ describe('production E2E matrix structural contract', () => {
     [
       'CSP missing evidence',
       (f) => {
-        f.steps.splice(f.steps.indexOf(f.cspUpload), 1);
+        f.cspSteps.splice(f.cspSteps.indexOf(f.cspUpload), 1);
       },
     ],
     ...[
@@ -770,6 +775,8 @@ const writeWorkflowContractFixture = async (options: {
   const repositoryWorkflow = await readFile('.github/workflows/ci-cd.yml', 'utf8');
   const orchestrationJobs = [
     'test-e2e-production',
+    'test-csp',
+    'csp-required',
     'test-e2e-dev',
     'ci-required',
     'verify-production-deployment',
@@ -790,6 +797,10 @@ const writeWorkflowContractFixture = async (options: {
       options.extraRun ? `      - run: ${options.extraRun}` : '',
       ...workflowDeploySteps.map((line) => line.replace(/^ {6}(release-state-)/u, '        $1')),
       ...orchestrationJobs,
+      '  deploy-production:',
+      '    needs: [csp-required]',
+      '    steps: []',
+      "    if: ${{ needs.csp-required.result == 'success' }}",
       '',
     ].join('\n'),
     'utf8',
@@ -1241,9 +1252,9 @@ describe('workflow source contract', () => {
     expect(report.actionEvidence.every((evidence) => evidence.runsUsing === 'node24')).toBe(true);
     expect(report.workflowPath).toBe('.github/workflows/ci-cd.yml');
     expect(report.wranglerVersion).toBe('4.100.0');
-    expect(report.workflowUses).toHaveLength(47);
+    expect(report.workflowUses).toHaveLength(51);
     const source = await readFile('.github/workflows/ci-cd.yml', 'utf8');
-    expect(source.match(/^[\t ]*(?:-[\t ]+)?uses:/gmu)).toHaveLength(47);
+    expect(source.match(/^[\t ]*(?:-[\t ]+)?uses:/gmu)).toHaveLength(51);
     const reviewed = new Set(
       report.actionEvidence.map((item) => `${item.actionName}@${item.reviewedCommitSha}`),
     );

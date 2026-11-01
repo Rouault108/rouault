@@ -88,6 +88,8 @@ def main() -> int:
                 "extended tests are not required in this context",
             )
 
+    require_success(needs, failures, "csp-required", "mandatory CSP coverage is required before merge or publication")
+
     if failures:
         print("Required CI contract violations:")
         for failure in failures:

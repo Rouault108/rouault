@@ -311,14 +311,29 @@ const inventoryBundles = async (
       owners.set(target, owner);
       if (target.endsWith('.js')) queue.push(target);
     };
+    // Vite 8は置換式のないtemplate literalと空文字+import.meta.urlを出力する。
+    // 実行して評価せず、静的に同じ意味の構文だけを受け入れる。
+    const literalText = (node: ts.Node | undefined): string | undefined =>
+      node && (ts.isStringLiteral(node) || ts.isNoSubstitutionTemplateLiteral(node))
+        ? node.text
+        : undefined;
+    const importMetaBase = (node: ts.Node | undefined): boolean =>
+      Boolean(
+        node &&
+          (node.getText(ast) === 'import.meta.url' ||
+            (ts.isBinaryExpression(node) &&
+              node.operatorToken.kind === ts.SyntaxKind.PlusToken &&
+              literalText(node.left) === '' &&
+              node.right.getText(ast) === 'import.meta.url')),
+      );
     const visit = (node: ts.Node): void => {
       if (ts.isImportDeclaration(node) && ts.isStringLiteral(node.moduleSpecifier))
         add(node.moduleSpecifier.text, 'bundle-import');
       if (ts.isCallExpression(node) && node.expression.kind === ts.SyntaxKind.ImportKeyword) {
         const first = node.arguments[0];
-        if (!first || !ts.isStringLiteral(first))
+        if (!first || literalText(first) === undefined)
           throw new Error('[csp] unclassified dynamic import');
-        add(first.text, 'bundle-dynamic-import');
+        add(literalText(first) ?? '', 'bundle-dynamic-import');
       }
       if (
         ts.isNewExpression(node) &&
@@ -330,37 +345,39 @@ const inventoryBundles = async (
         const moduleOption =
           options &&
           ts.isObjectLiteralExpression(options) &&
+          options.properties.length === 1 &&
           options.properties.some(
             (property) =>
               ts.isPropertyAssignment(property) &&
               property.name.getText(ast).replace(/['"]/gu, '') === 'type' &&
-              ts.isStringLiteral(property.initializer) &&
-              property.initializer.text === 'module',
+              literalText(property.initializer) === 'module',
           );
         if (
+          node.arguments?.length !== 2 ||
           !first ||
           !ts.isNewExpression(first) ||
           !ts.isIdentifier(first.expression) ||
           first.expression.text !== 'URL' ||
+          first.arguments?.length !== 2 ||
           !first.arguments?.[0] ||
-          !ts.isStringLiteral(first.arguments[0]) ||
-          first.arguments[1]?.getText(ast) !== 'import.meta.url' ||
+          literalText(first.arguments[0]) === undefined ||
+          !importMetaBase(first.arguments[1]) ||
           !moduleOption
         )
           throw new Error('[csp] unclassified Worker constructor');
-        const target = resolve(first.arguments[0].text, file);
+        const target = resolve(literalText(first.arguments[0]) ?? '', file);
         workers.push(target);
-        add(first.arguments[0].text, 'lexical-worker');
+        add(literalText(first.arguments[0]) ?? '', 'lexical-worker');
       }
       if (
         ts.isNewExpression(node) &&
         ts.isIdentifier(node.expression) &&
         node.expression.text === 'URL' &&
         node.arguments?.[0] &&
-        ts.isStringLiteral(node.arguments[0]) &&
-        /\.(?:wasm|woff2?)$/u.test(node.arguments[0].text)
+        literalText(node.arguments[0]) !== undefined &&
+        /\.(?:wasm|woff2?)$/u.test(literalText(node.arguments[0]) ?? '')
       )
-        add(node.arguments[0].text, 'bundle-url-asset');
+        add(literalText(node.arguments[0]) ?? '', 'bundle-url-asset');
       ts.forEachChild(node, visit);
     };
     visit(ast);

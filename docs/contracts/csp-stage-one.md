@@ -10,7 +10,7 @@ policyは`build/security/csp-policy.ts`、inventoryは`csp-inventory.ts`、資�
 通常の`build` / `build:production`、`vite.preview.config.ts`、配信用`_headers`にはCSPを追加しない。
 生成先は非配信の`.generated/csp/manifest.json`と`.generated/csp/report-only.headers`のみ。
 本番公開、preview runner、sandbox token、外部report collectorは変更しない。
-明示承認されたCI継続検証として、既存production E2E matrixに専用試験を追加する。
+明示承認されたCI継続検証として、通常E2Eと独立したCSP matrixと必須coverage gateを使う。
 
 ## 生成と検証
 
@@ -74,24 +74,47 @@ Cache-Controlは通常previewの既存middlewareを再利用する。隔離serve
 
 `test/e2e/csp-report-only.ts`は専用Playwright configで明示実行する。
 通常E2Eの既定`*.spec.ts` / `*.test.ts`には含めない。
-CIでは既存production E2Eの各engineで、通常試験の後に`test:csp-stage1 --project={engine}-csp`を独立stepとして実行する。
-既存の固定Playwright container・Node・pnpm版を共用し、追加installは行わない。
-JSON結果を検証し、選択engineでの全試験の初回成功を必須とする。skip・flaky・retry・期待された失敗・空結果は拒否する。
-専用stepまたは結果検証の失敗はmatrix jobを失敗させ、既存の`ci-required`へ伝わる。
-成功・失敗時の`.generated/csp/browser-results.json`は`rouault-csp-{engine}-results`へ7日保存し、通常E2Eのartifactと分ける。
-通常試験の失敗等で専用stepがskipされた場合は、専用試験成功とは数えない。
-`csp-worker-diagnostics.ts`は受入試験とは別の追加診断である。固定版loopback Workerの7条件で、
-native console、Worker event、Blob fetch、WASM compileを分離し、イベント観測windowは250msとする。
-policyなし・RO・診断用enforceを比較するが、このenforceは一時的なloopback fixture応答だけに閉じる。
-受入試験の失敗は残し、イベント未観測やRO実行継続を合格へ読み替えない。
-最小schemaの診断はJSON attachmentとengine別CI noticeへ保存する。生console、完全URL、query、sampleは保存しない。
-元の専用試験が失敗しても診断summaryを出し、`ci-required`の失敗を維持する。
+CIの`test-csp`は`build=true`で起動し、記事・`_headers`・`_redirects`・`wrangler.jsonc`だけの変更も対象とする。
+通常production E2Eのapp/event gateは変更しない。固定Playwright container・Node・pnpmを共用し、browser/OS installは追加しない。
+専用試験、完全な固定case集合の結果検証、意味上のcoverage判定を別stepとする。
+`csp-required`はCSP必須coverageを独立して所有する。通常jobの結果と分け、既存merge gateの`ci-required`もそのsuccessを必須にする。公開も双方のsuccessを必要とする。
+skip・flaky・retry・期待された失敗・空/欠損/別engine/別SHA/runの証跡を成功にしない。
+必須能力の未達も非ゼロ終了で公開を止める。通常CIの成功は未達を解消しない。
+
+`scripts/ci/csp-worker-acceptance.ts`が設計1.2の固定版受入を評価する。
+Chromium/FirefoxはWorker event、固定WebKitのconnectだけは単一Worker・WorkerだけのHTTP CSPを持つ隔離fixtureのnative consoleを採用する。
+固定WebKitのWASM RO通知が未観測の場合は`unmet / webkit-wasm-ro-unobserved`を保持する。
+同じ正常bytesの隔離enforce拒否、RO継続、通常検索成功は、この未達を成功にしない。
+既存run `41254644810`のfailureを遡って変更しない。
+
+新しい`csp-worker-observation.ts`は14条件を別context/serverで実行する。
+policyなし、両許可ありRO、操作しないRO、許可を1つ/両方除くRO、対応する隔離enforce、
+有界遅延/負荷と1000ms window、同Worker/別documentからのconsole模倣、不正WASM、fetch中断を区別する。
+Worker listener登録後のREADYを受けて操作を始め、通常windowは250msとする。
+HTTP policy/MIME/nosniff、固定fixture bytes、単一Worker request、lifetime、console canaryを確認する。
+listener未登録、console切断、canary欠落、未知文言、帰属不能な別lifetime、欠損artifactは負対照で失敗する。
+ログ数の重複や順序と、必要な違反種別を分け、固定の2件を要求しない。
+
+consoleは固定版の完全な文言・expected policy・loopback originに照合する。warning、実違反、unknownを分ける。
+分類できないログはunknownのまま当該受入を失敗させ、owner不明もunknownを保持する。
+模倣console単独は受入を成立させない。consoleは署名された情報ではなく、不信なauthor JSを含む実画面一般への帰属保証ではない。
+環境にはengine/browser/Playwright、分類器版、locale、SHA/run、window、fixture条件を関連付ける。
+browser/Playwright/container/locale/観測器の変更時は対照を再実行し、版差をレビューする。
+
+従来7条件の`csp-worker-diagnostics.ts`も追加診断として保持し、schemaの妥当性と受入判定を混同しない。
+最小JSONとcoverage理由は`rouault-csp-{engine}-results`に7日保存し、通常E2Eのartifactとは分ける。
+生console、完全URL、query、検索語、本文、sample、local absolute pathはJSON・assertion・trace・report・stdoutのいずれにも保存しない。
+専用reporterは固定case ID/結果だけを記録し、fixture teardownでエラー本文/stack/DOM contextを最小化する。
+実行wrapperもconfig読込・起動前のstdout/stderrをメモリー内で制限し、未承認の出力を保存せず非ゼロ終了にする。
+自動DOM採取、trace、screenshot、videoを止め、失敗保存の対照でassertion・DOM・console・stdout・ソースの漏出を検出する。
+`PLAYWRIGHT_NO_COPY_PROMPT`だけではerror-contextのエラー/ソース保存を止めないため、これを単独の保護としない。
+
 Nodeのhash・policy・HTTP検証は既存Node suiteへ含む。
 browser試験は外部client runtimeを止めたtheme bootstrapの実行、未知inlineの違反eventと継続実行、
 Worker専用HTTP policy、実検索/WASMとCatalog不使用、Worker policyを狭めた対照、404・srcdocを扱う。
 `securitypolicyviolation`とconsoleを初期load前から観測し、保存前に最小schemaを検証する。
 保存するのはbuildId/browser/route class/directive/disposition/blocked originまたはscheme/statusと、owner/分類のみ。
-生console、完全URL、query、fragment、検索語、本文、script sampleはattachmentへ保存しない。
+生console、完全URL、query、fragment、検索語、本文、script sampleは保存しない。
 RO試験の想定外HTTP(S) originはharnessで送信前に止め、試験失敗とする。
 opaque srcdocのeventは親へbubbleしないためconsoleも必要である。
 report-uri / report-to / 外部送信先は追加しない。全訪問者の観測や本番観測が済んだとは扱わない。
@@ -100,7 +123,11 @@ report-uri / report-to / 外部送信先は追加しない。全訪問者の観�
 現行srcdocのhelper/author JS・base/frame等はknown-legacy-preview、権限を狭める対照はfixtureとして分類する。
 Report-Onlyなので既存previewは継続実行する。違反を消すための親policy拡張は行わない。
 
-## 後段ゲート
+## 判定と後段ゲート
+
+- [設計1.2との照合と条件変更](../references/csp-stage-one-design-1.2-audit-2026-11-01.md)を参照する。
+  Stage 0全体完了と、許可された検証実装の開始は別である。
+  限定内部検証の整理ができても、WASM RO未達を含む必須coverageはfailureのままで公開しない。
 
 - [提供された設計1.1との照合記録](../references/csp-stage-one-design-1.1-audit-2026-10-31.md)を参照する。
   Library materializeではなく親からの正当な本文引渡しとして照合した。第6〜7章も3部の連続した追補で受領済み。

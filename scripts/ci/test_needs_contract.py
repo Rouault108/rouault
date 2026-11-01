@@ -8,6 +8,7 @@ import needs_contract
 import validate_deployment_needs
 import validate_prebuild_needs
 import validate_required_needs
+import validate_csp_needs
 
 
 def job(result: str, outputs: dict[str, str] | None = None) -> dict[str, object]:
@@ -102,6 +103,7 @@ def required_needs(
     needs: dict[str, object] = {
         "detect-changes": detect(False, False, False) if detect_job is None else detect_job,
         "prebuild-gate": job(prebuild_gate),
+        "csp-required": job("success"),
         "build-production": job(build_production),
     }
     needs.update({name: job(extended_tests) for name in EXTENDED_TEST_JOBS})
@@ -271,6 +273,16 @@ class ValidateRequiredNeedsTest(unittest.TestCase):
                 with patch.dict("os.environ", with_needs(needs, env), clear=True):
                     self.assertEqual(validate_required_needs.main(), 1)
 
+    def test_normal_success_does_not_override_failed_or_missing_csp_gate(self) -> None:
+        for result in ("failure", "cancelled", "skipped", "missing"):
+            needs = required_needs(detect_job=detect(False, True, True), build_production="success", extended_tests="success")
+            if result == "missing":
+                del needs["csp-required"]
+            else:
+                needs["csp-required"] = job(result)
+            with patch.dict("os.environ", with_needs(needs, {"GITHUB_EVENT_NAME":"workflow_dispatch"}), clear=True):
+                self.assertEqual(validate_required_needs.main(), 1)
+
     def test_content_only_requires_build_and_skips_extended_tests(self) -> None:
         needs = required_needs(
             detect_job=detect(True, False, True),
@@ -292,7 +304,8 @@ class ValidateRequiredNeedsTest(unittest.TestCase):
             "prebuild-gate": job("success"),
             "test-e2e-production": job("success"),
             "test-e2e-dev": job("success"),
-            "build-production": job("success"),
+            "csp-required": job("success"),
+        "build-production": job("success"),
         }
         env = {
             "GITHUB_EVENT_NAME": "push",
@@ -324,7 +337,8 @@ class ValidateRequiredNeedsTest(unittest.TestCase):
             "prebuild-gate": job("success"),
             "test-e2e-production": job("skipped"),
             "test-e2e-dev": job("skipped"),
-            "build-production": job("success"),
+            "csp-required": job("success"),
+        "build-production": job("success"),
         }
         env = {
             "GITHUB_EVENT_NAME": "pull_request",
@@ -341,7 +355,8 @@ class ValidateRequiredNeedsTest(unittest.TestCase):
             "prebuild-gate": job("success"),
             "test-e2e-production": job("skipped"),
             "test-e2e-dev": job("skipped"),
-            "build-production": job("skipped"),
+            "csp-required": job("success"),
+        "build-production": job("skipped"),
         }
         env = {
             "GITHUB_EVENT_NAME": "workflow_dispatch",
@@ -358,7 +373,8 @@ class ValidateRequiredNeedsTest(unittest.TestCase):
             "prebuild-gate": job("success"),
             "test-e2e-production": job("skipped"),
             "test-e2e-dev": job("skipped"),
-            "build-production": job("skipped"),
+            "csp-required": job("success"),
+        "build-production": job("skipped"),
         }
         env = {
             "GITHUB_EVENT_NAME": "push",
@@ -511,10 +527,37 @@ class ValidateRequiredNeedsTest(unittest.TestCase):
             self.assertEqual(validate_required_needs.main(), 1)
 
 
+class ValidateCspNeedsTest(unittest.TestCase):
+    def test_mandatory_coverage_cannot_be_skipped_or_missing(self) -> None:
+        for content, app in ((True, False), (False, True), (False, False)):
+            for result in ("failure", "cancelled", "skipped", "missing"):
+                with self.subTest(content=content, app=app, result=result):
+                    needs = {"detect-changes": detect(content, app, True)}
+                    if result != "missing":
+                        needs["test-csp"] = job(result)
+                    with patch.dict("os.environ", with_needs(needs), clear=True):
+                        self.assertEqual(validate_csp_needs.main(), 1)
+
+    def test_build_false_is_the_only_skip_context(self) -> None:
+        for build in (True, False):
+            needs = {"detect-changes": detect(False, False, build), "test-csp": job("success" if build else "skipped")}
+            with patch.dict("os.environ", with_needs(needs), clear=True):
+                self.assertEqual(validate_csp_needs.main(), 0)
+
+    def test_publication_rejects_missing_or_failed_coverage_even_with_normal_ci_green(self) -> None:
+        for result in ("failure", "skipped", "cancelled", "missing"):
+            needs = {"detect-changes": detect(True, False, True), "ci-required": job("success"), "deploy-production": job("success")}
+            if result != "missing":
+                needs["csp-required"] = job(result)
+            with patch.dict("os.environ", with_needs(needs, {"GITHUB_EVENT_NAME":"push", "GITHUB_REF":"refs/heads/main"}), clear=True):
+                self.assertEqual(validate_deployment_needs.main(), 1)
+
+
 class ValidateDeploymentNeedsTest(unittest.TestCase):
     def test_main_push_build_true_rejects_failed_deploy(self) -> None:
         needs = {
             "detect-changes": detect(True, False, True),
+            "csp-required": job("success"),
             "ci-required": job("success"),
             "deploy-production": job("failure"),
         }
@@ -526,6 +569,7 @@ class ValidateDeploymentNeedsTest(unittest.TestCase):
     def test_main_push_build_true_requires_deploy_success(self) -> None:
         needs = {
             "detect-changes": detect(True, False, True),
+            "csp-required": job("success"),
             "ci-required": job("success"),
             "deploy-production": job("success"),
         }
@@ -537,6 +581,7 @@ class ValidateDeploymentNeedsTest(unittest.TestCase):
     def test_main_push_build_true_rejects_skipped_deploy(self) -> None:
         needs = {
             "detect-changes": detect(True, False, True),
+            "csp-required": job("success"),
             "ci-required": job("success"),
             "deploy-production": job("skipped"),
         }
@@ -548,6 +593,7 @@ class ValidateDeploymentNeedsTest(unittest.TestCase):
     def test_main_push_build_true_rejects_missing_deploy(self) -> None:
         needs = {
             "detect-changes": detect(True, False, True),
+            "csp-required": job("success"),
             "ci-required": job("success"),
         }
         env = {"GITHUB_EVENT_NAME": "push", "GITHUB_REF": "refs/heads/main"}
@@ -558,6 +604,7 @@ class ValidateDeploymentNeedsTest(unittest.TestCase):
     def test_main_push_build_false_requires_deploy_skipped(self) -> None:
         needs = {
             "detect-changes": detect(False, False, False),
+            "csp-required": job("success"),
             "ci-required": job("success"),
             "deploy-production": job("skipped"),
         }
@@ -569,6 +616,7 @@ class ValidateDeploymentNeedsTest(unittest.TestCase):
     def test_main_push_build_false_rejects_successful_deploy(self) -> None:
         needs = {
             "detect-changes": detect(False, False, False),
+            "csp-required": job("success"),
             "ci-required": job("success"),
             "deploy-production": job("success"),
         }
@@ -580,6 +628,7 @@ class ValidateDeploymentNeedsTest(unittest.TestCase):
     def test_ci_required_failure_fails_deployment_validation(self) -> None:
         needs = {
             "detect-changes": detect(True, False, True),
+            "csp-required": job("success"),
             "ci-required": job("failure"),
             "deploy-production": job("success"),
         }
@@ -591,6 +640,7 @@ class ValidateDeploymentNeedsTest(unittest.TestCase):
     def test_non_main_context_requires_deploy_skipped(self) -> None:
         needs = {
             "detect-changes": detect(True, True, True),
+            "csp-required": job("success"),
             "ci-required": job("success"),
             "deploy-production": job("skipped"),
         }
@@ -602,6 +652,7 @@ class ValidateDeploymentNeedsTest(unittest.TestCase):
     def test_workflow_dispatch_rejects_successful_deploy(self) -> None:
         needs = {
             "detect-changes": detect(True, True, True),
+            "csp-required": job("success"),
             "ci-required": job("success"),
             "deploy-production": job("success"),
         }
@@ -613,6 +664,7 @@ class ValidateDeploymentNeedsTest(unittest.TestCase):
     def test_non_main_context_rejects_successful_deploy(self) -> None:
         needs = {
             "detect-changes": detect(True, True, True),
+            "csp-required": job("success"),
             "ci-required": job("success"),
             "deploy-production": job("success"),
         }
@@ -624,6 +676,7 @@ class ValidateDeploymentNeedsTest(unittest.TestCase):
     def test_main_push_build_true_rejects_cancelled_deploy(self) -> None:
         needs = {
             "detect-changes": detect(True, False, True),
+            "csp-required": job("success"),
             "ci-required": job("success"),
             "deploy-production": job("cancelled"),
         }
@@ -635,6 +688,7 @@ class ValidateDeploymentNeedsTest(unittest.TestCase):
     def test_missing_detect_output_fails(self) -> None:
         needs = {
             "detect-changes": job("success", {"content": "true", "app": "false"}),
+            "csp-required": job("success"),
             "ci-required": job("success"),
             "deploy-production": job("success"),
         }
@@ -649,6 +703,7 @@ class ValidateDeploymentNeedsTest(unittest.TestCase):
                 "success",
                 {"content": "true", "app": "false", "build": ""},
             ),
+            "csp-required": job("success"),
             "ci-required": job("success"),
             "deploy-production": job("success"),
         }

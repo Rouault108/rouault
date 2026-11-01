@@ -229,12 +229,64 @@ jobs:
           retention-days: 7
           if-no-files-found: warn
 
+
+  test-csp:
+    name: test-csp (${{ matrix.target }})
+    runs-on: ubuntu-26.04
+    timeout-minutes: 35
+    container:
+      image: mcr.microsoft.com/playwright:v1.63.0-resolute@sha256:b022639ae9197f864040f92eef7b57c6d4b47db2190f77c909d8a5d902dd4b7e
+      options: --ipc=host
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: chromium
+            browser: chromium
+          - target: firefox
+            browser: firefox
+          - target: webkit
+            browser: webkit
+    needs:
+      - detect-changes
+      - prebuild-gate
+    if: ${{ !cancelled() && needs.detect-changes.result == 'success' && needs.prebuild-gate.result == 'success' && needs.detect-changes.outputs.build == 'true' }}
+    env:
+      # root 実行と HOME の所有者を揃え、Firefox の起動前検証を成立させる。
+      HOME: /root
+      CSP_CONTAINER_DIGEST: sha256:b022639ae9197f864040f92eef7b57c6d4b47db2190f77c909d8a5d902dd4b7e
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+      - run: echo "ROUAULT_BUILD_LABEL=${GITHUB_SHA::7}" >> "$GITHUB_ENV"
+      - uses: pnpm/action-setup@0e279bb959325dab635dd2c09392533439d90093
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+      - run: corepack enable
+      - run: pnpm install --frozen-lockfile
+      - id: verify-e2e-container
+        name: verify pinned Playwright container
+        run: |
+          set -euo pipefail
+          test "$(id -u)" = "0"
+          test "$HOME" = "/root"
+          test "$(stat -c %u "$HOME")" = "$(id -u)"
+          test "$PLAYWRIGHT_BROWSERS_PATH" = "/ms-playwright"
+          command -v bash
+          test "$(node --version)" = "v${NODE_VERSION}"
+          node scripts/ci/assert-pnpm-version.mjs
+          pnpm exec playwright install --dry-run ${{ matrix.browser }}
       - id: playwright-csp
         name: CSP Report-Only (${{ matrix.target }})
         run: pnpm run test:csp-stage1 --project=${{ matrix.target }}-csp
       - id: verify-csp-results
         name: require complete CSP results
         run: pnpm exec tsx scripts/ci/assert-csp-browser-results.ts ${{ matrix.target }}-csp
+      - id: verify-csp-coverage
+        name: require CSP observation coverage
+        if: ${{ always() && (steps.playwright-csp.outcome == 'success' || steps.playwright-csp.outcome == 'failure') }}
+        run: pnpm exec tsx scripts/ci/assert-csp-coverage.ts ${{ matrix.target }}-csp
       - id: summarize-csp-worker-diagnostics
         name: summarize independent Worker diagnostics
         if: ${{ always() && (steps.playwright-csp.outcome == 'success' || steps.playwright-csp.outcome == 'failure') }}
@@ -244,10 +296,27 @@ jobs:
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
           name: rouault-csp-${{ matrix.target }}-results
-          path: .generated/csp/browser-results.json
+          path: |
+            .generated/csp/browser-results.json
+            .generated/csp/worker-observation-*.json
+            .generated/csp/worker-diagnostics-*.json
+            .generated/csp/coverage-*.json
           include-hidden-files: true
           retention-days: 7
           if-no-files-found: error
+
+  csp-required:
+    name: csp-required
+    runs-on: ubuntu-26.04
+    timeout-minutes: 5
+    if: ${{ always() }}
+    needs: [detect-changes, test-csp]
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+      - name: validate mandatory CSP coverage
+        env:
+          NEEDS_JSON: ${{ toJson(needs) }}
+        run: python3 scripts/ci/validate_csp_needs.py
 
   test-e2e-dev:
     name: test-e2e-dev
@@ -342,6 +411,7 @@ jobs:
       - test-e2e-production
       - test-e2e-dev
       - build-production
+      - csp-required
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
       - name: validate required results
@@ -360,6 +430,7 @@ jobs:
       - detect-changes
       - build-production
       - ci-required
+      - csp-required
     outputs:
       deployment-url: ${{ steps.deploy-cloudflare-pages.outputs.deployment-url }}
       deployment-id: ${{ steps.deploy-cloudflare-pages.outputs.deployment-id }}
@@ -372,6 +443,7 @@ jobs:
         && needs.detect-changes.result == 'success'
         && needs.build-production.result == 'success'
         && needs.ci-required.result == 'success'
+        && needs.csp-required.result == 'success'
         && github.event_name == 'push'
         && github.ref == 'refs/heads/main'
         && needs.detect-changes.outputs.build == 'true'
@@ -484,6 +556,7 @@ jobs:
     needs:
       - detect-changes
       - ci-required
+      - csp-required
       - deploy-production
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10

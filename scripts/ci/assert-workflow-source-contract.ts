@@ -417,6 +417,7 @@ export const assertProductionE2EMatrixContract = (source: string): void => {
   const container = requireWorkflowRecord(job['container'], 'Production E2E container');
   assertCondition(
     Object.keys(container).length === 2 &&
+      Object.keys(container).length === 2 &&
       container['image'] === PLAYWRIGHT_RESOLUTE_IMAGE &&
       container['options'] === '--ipc=host',
     'Production E2E matrix must use only the approved digest-pinned Playwright resolute container',
@@ -439,39 +440,12 @@ export const assertProductionE2EMatrixContract = (source: string): void => {
   const steps = workflowRecords(job['steps'], 'Production E2E matrix steps');
   const tests = steps.filter((step) => step['id'] === 'playwright-production');
   const verifications = steps.filter((step) => step['id'] === 'verify-e2e-container');
-  const cspTests = steps.filter((step) => step['id'] === 'playwright-csp');
-  const cspValidators = steps.filter((step) => step['id'] === 'verify-csp-results');
-  const diagnosticSummaries = steps.filter(
-    (step) => step['id'] === 'summarize-csp-worker-diagnostics',
-  );
   assertCondition(
-    tests.length === 1 &&
-      verifications.length === 1 &&
-      cspTests.length === 1 &&
-      cspValidators.length === 1 &&
-      diagnosticSummaries.length === 1,
-    'Production E2E matrix needs one test and one pinned-container verification step',
+    tests.length === 1 && verifications.length === 1,
+    'Production E2E needs tests and environment verification',
   );
-  const test = requireWorkflowRecord(tests[0], 'Production E2E matrix test');
-  const cspTest = requireWorkflowRecord(cspTests[0], 'CSP matrix test');
-  const cspValidator = requireWorkflowRecord(cspValidators[0], 'CSP result validator');
-  const diagnosticSummary = requireWorkflowRecord(
-    diagnosticSummaries[0],
-    'Worker diagnostic summary',
-  );
-  assertCondition(
-    normalizeWorkflowExpression(diagnosticSummary['if']) ===
-      "${{ always() && (steps.playwright-csp.outcome == 'success' || steps.playwright-csp.outcome == 'failure') }}" &&
-      steps.indexOf(cspValidator) < steps.indexOf(diagnosticSummary),
-    'Independent Worker diagnostics must be reported after CSP failure without replacing acceptance',
-  );
-  assertCondition(
-    !Object.hasOwn(cspTest, 'if') &&
-      !Object.hasOwn(cspValidator, 'if') &&
-      steps.indexOf(test) < steps.indexOf(cspTest) &&
-      steps.indexOf(cspTest) < steps.indexOf(cspValidator),
-    'CSP tests and complete-result validation must run after ordinary E2E without conditional skips',
-  );
+  const test = requireWorkflowRecord(tests[0], 'Production E2E test');
+  assertCspWorkflowContract(source);
   const verification = requireWorkflowRecord(
     verifications[0],
     'Production E2E matrix container verification',
@@ -501,30 +475,6 @@ export const assertProductionE2EMatrixContract = (source: string): void => {
   for (const entry of entries) {
     const target = String(entry['target']);
     const projects = expectedProjects[target] ?? [];
-    assertCondition(
-      JSON.stringify(matrixCommandArguments(diagnosticSummary['run'], entry)) ===
-        JSON.stringify([
-          'pnpm',
-          'exec',
-          'tsx',
-          'scripts/ci/summarize-csp-worker-diagnostics.ts',
-          `${target}-csp`,
-        ]),
-      'Worker diagnostic summary must use the matching engine',
-    );
-    assertCondition(
-      JSON.stringify(matrixCommandArguments(cspTest['run'], entry)) ===
-        JSON.stringify(['pnpm', 'run', 'test:csp-stage1', `--project=${target}-csp`]) &&
-        JSON.stringify(matrixCommandArguments(cspValidator['run'], entry)) ===
-          JSON.stringify([
-            'pnpm',
-            'exec',
-            'tsx',
-            'scripts/ci/assert-csp-browser-results.ts',
-            `${target}-csp`,
-          ]),
-      'CSP matrix must run and validate the exact dedicated project for every engine',
-    );
     const verificationLines = String(verification['run'])
       .replace(/\$\{\{\s*matrix\.browser\s*\}\}/gu, String(entry['browser']))
       .split(/\r?\n/u)
@@ -558,29 +508,10 @@ export const assertProductionE2EMatrixContract = (source: string): void => {
     (step) =>
       typeof step['uses'] === 'string' && /^(?:\.\/)?actions\/upload-artifact@/u.test(step['uses']),
   );
-  assertCondition(
-    uploads.length === 2,
-    'production E2E and CSP results must have separate uploads',
-  );
+  assertCondition(uploads.length === 1, 'production E2E must preserve only ordinary diagnostics');
   const upload = requireWorkflowRecord(
     uploads.find((step) => step['name'] === 'preserve production E2E diagnostics'),
     'production E2E diagnostics upload',
-  );
-  const cspUpload = requireWorkflowRecord(
-    uploads.find((step) => step['name'] === 'preserve CSP results'),
-    'CSP results upload',
-  );
-  const cspOptions = requireWorkflowRecord(cspUpload['with'], 'CSP results options');
-  assertCondition(
-    normalizeWorkflowExpression(cspUpload['if']) ===
-      "${{ always() && (steps.playwright-csp.outcome == 'success' || steps.playwright-csp.outcome == 'failure') }}" &&
-      steps.indexOf(cspValidator) < steps.indexOf(cspUpload) &&
-      cspOptions['name'] === 'rouault-csp-${{ matrix.target }}-results' &&
-      cspOptions['path'] === '.generated/csp/browser-results.json' &&
-      cspOptions['include-hidden-files'] === true &&
-      cspOptions['retention-days'] === 7 &&
-      cspOptions['if-no-files-found'] === 'error',
-    'CSP evidence must preserve each engine result on success or failure without mixing ordinary diagnostics',
   );
   const options = requireWorkflowRecord(upload['with'], 'production E2E diagnostics options');
   assertCondition(
@@ -604,6 +535,7 @@ export const assertProductionE2EMatrixContract = (source: string): void => {
     'test-e2e-production',
     'test-e2e-dev',
     'build-production',
+    'csp-required',
   ]);
   const validators = workflowRecords(gate['steps'], 'ci-required.steps').filter(
     (step) => step['run'] === 'python3 scripts/ci/validate_required_needs.py',
@@ -621,6 +553,146 @@ export const assertProductionE2EMatrixContract = (source: string): void => {
       validatorEnv['GITHUB_REF'] === '${{ github.ref }}' &&
       validatorEnv['GITHUB_BASE_REF'] === '${{ github.base_ref }}',
     'Production E2E matrix must preserve always-on required-result validation and skip semantics',
+  );
+};
+
+export const assertCspWorkflowContract = (source: string): void => {
+  const jobs = requireWorkflowRecord(
+    requireWorkflowRecord(loadWorkflowYaml(source), 'workflow')['jobs'],
+    'jobs',
+  );
+  const job = requireWorkflowRecord(jobs['test-csp'], 'test-csp');
+  assertWorkflowNeeds(job['needs'], ['detect-changes', 'prebuild-gate']);
+  assertCondition(
+    normalizeWorkflowExpression(job['if']) ===
+      "${{ !cancelled() && needs.detect-changes.result == 'success' && needs.prebuild-gate.result == 'success' && needs.detect-changes.outputs.build == 'true' }}",
+    'CSP must cover content and delivery changes in every build context',
+  );
+  const container = requireWorkflowRecord(job['container'], 'CSP container');
+  assertCondition(
+    requireWorkflowRecord(job['env'], 'CSP environment')['CSP_CONTAINER_DIGEST'] ===
+      PLAYWRIGHT_RESOLUTE_IMAGE.split('@')[1] &&
+      requireWorkflowRecord(job['env'], 'CSP environment')['HOME'] === '/root',
+    'CSP metadata must match the approved environment',
+  );
+  const strategy = requireWorkflowRecord(job['strategy'], 'CSP strategy');
+  const matrix = requireWorkflowRecord(strategy['matrix'], 'CSP matrix');
+  const entries = workflowRecords(matrix['include'], 'CSP entries');
+  assertCondition(
+    Object.keys(matrix).length === 1 &&
+      Object.hasOwn(matrix, 'include') &&
+      !Object.hasOwn(strategy, 'max-parallel') &&
+      !Object.hasOwn(job, 'concurrency'),
+    'CSP matrix must retain independent coverage',
+  );
+  assertCondition(
+    Object.keys(container).length === 2 &&
+      container['image'] === PLAYWRIGHT_RESOLUTE_IMAGE &&
+      container['options'] === '--ipc=host' &&
+      strategy['fail-fast'] === false &&
+      entries.length === 3 &&
+      ['chromium', 'firefox', 'webkit'].every(
+        (target) =>
+          entries.filter((entry) => entry['target'] === target && entry['browser'] === target)
+            .length === 1,
+      ),
+    'CSP needs three independent engines in the approved container',
+  );
+  const steps = workflowRecords(job['steps'], 'CSP steps');
+  assertCondition(
+    !Object.hasOwn(job, 'continue-on-error') &&
+      steps.every((step) => !Object.hasOwn(step, 'continue-on-error')),
+    'CSP must not suppress failures',
+  );
+  const step = (id: string) => {
+    const found = steps.filter((step) => step['id'] === id);
+    assertCondition(found.length === 1, 'CSP step missing or duplicated');
+    return requireWorkflowRecord(found[0], 'CSP step');
+  };
+  const test = step('playwright-csp');
+  const validator = step('verify-csp-results');
+  const coverage = step('verify-csp-coverage');
+  const summary = step('summarize-csp-worker-diagnostics');
+  const verification = step('verify-e2e-container');
+  const afterTest =
+    "${{ always() && (steps.playwright-csp.outcome == 'success' || steps.playwright-csp.outcome == 'failure') }}";
+  assertCondition(
+    !Object.hasOwn(test, 'if') &&
+      !Object.hasOwn(validator, 'if') &&
+      steps.indexOf(test) < steps.indexOf(validator) &&
+      normalizeWorkflowExpression(coverage['if']) === afterTest &&
+      normalizeWorkflowExpression(summary['if']) === afterTest &&
+      steps.indexOf(validator) < steps.indexOf(coverage) &&
+      steps.indexOf(coverage) < steps.indexOf(summary),
+    'CSP evidence and coverage must remain mandatory after test failure',
+  );
+  for (const entry of entries) {
+    const target = String(entry['target']);
+    for (const [item, command] of [
+      [test, ['pnpm', 'run', 'test:csp-stage1', `--project=${target}-csp`]],
+      [
+        validator,
+        ['pnpm', 'exec', 'tsx', 'scripts/ci/assert-csp-browser-results.ts', `${target}-csp`],
+      ],
+      [coverage, ['pnpm', 'exec', 'tsx', 'scripts/ci/assert-csp-coverage.ts', `${target}-csp`]],
+      [
+        summary,
+        ['pnpm', 'exec', 'tsx', 'scripts/ci/summarize-csp-worker-diagnostics.ts', `${target}-csp`],
+      ],
+    ] as const)
+      assertCondition(
+        JSON.stringify(matrixCommandArguments(item['run'], entry)) === JSON.stringify(command),
+        'CSP command must preserve exact engine, evidence and exit status',
+      );
+  }
+  assertCondition(
+    steps.indexOf(verification) < steps.indexOf(test) &&
+      !Object.hasOwn(verification, 'if') &&
+      String(verification['run']).includes('node scripts/ci/assert-pnpm-version.mjs') &&
+      String(verification['run']).includes('playwright install --dry-run'),
+    'CSP must verify the pinned environment',
+  );
+  const uploads = steps.filter(
+    (step) =>
+      typeof step['uses'] === 'string' && /^(?:\.\/)?actions\/upload-artifact@/u.test(step['uses']),
+  );
+  const upload = requireWorkflowRecord(uploads[0], 'CSP upload');
+  const options = requireWorkflowRecord(upload['with'], 'CSP upload options');
+  assertCondition(
+    uploads.length === 1 &&
+      upload['name'] === 'preserve CSP results' &&
+      normalizeWorkflowExpression(upload['if']) === afterTest &&
+      options['name'] === 'rouault-csp-${{ matrix.target }}-results' &&
+      options['path'] ===
+        '.generated/csp/browser-results.json\n.generated/csp/worker-observation-*.json\n.generated/csp/worker-diagnostics-*.json\n.generated/csp/coverage-*.json\n' &&
+      options['retention-days'] === 7 &&
+      options['include-hidden-files'] === true &&
+      options['if-no-files-found'] === 'error',
+    'CSP must upload only minimal dedicated evidence',
+  );
+  const gate = requireWorkflowRecord(jobs['csp-required'], 'csp-required');
+  assertWorkflowNeeds(gate['needs'], ['detect-changes', 'test-csp']);
+  const gates = workflowRecords(gate['steps'], 'CSP gate steps').filter(
+    (step) => step['run'] === 'python3 scripts/ci/validate_csp_needs.py',
+  );
+  assertCondition(
+    normalizeWorkflowExpression(gate['if']) === '${{ always() }}' &&
+      !Object.hasOwn(gate, 'continue-on-error') &&
+      gates.length === 1 &&
+      !Object.hasOwn(gates[0] ?? {}, 'if') &&
+      !Object.hasOwn(gates[0] ?? {}, 'continue-on-error') &&
+      requireWorkflowRecord(gates[0]?.['env'], 'CSP gate env')['NEEDS_JSON'] ===
+        '${{ toJson(needs) }}',
+    'CSP gate must reject skipped, failed and missing mandatory coverage',
+  );
+  const deployment = requireWorkflowRecord(jobs['deploy-production'], 'deploy-production');
+  assertCondition(
+    Array.isArray(deployment['needs']) &&
+      deployment['needs'].includes('csp-required') &&
+      normalizeWorkflowExpression(deployment['if']).includes(
+        "needs.csp-required.result == 'success'",
+      ),
+    'Publication must require CSP coverage independently of normal CI',
   );
 };
 

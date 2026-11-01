@@ -1,5 +1,7 @@
 import { readFile } from 'node:fs/promises';
-import { expect, test, type Page, type TestInfo } from '@playwright/test';
+import type { Page, TestInfo } from '@playwright/test';
+import { expect, test } from './support/csp-test.js';
+import { classifyWorkerConsole } from '../../scripts/ci/csp-worker-diagnostics.js';
 import {
   collectCspStageOne,
   CSP_REPORT_ONLY_HEADER,
@@ -12,7 +14,7 @@ import {
 
 const observations = new WeakMap<Page, string[]>();
 test.afterEach(async ({ page }) => {
-  expect(observations.get(page) ?? []).not.toContain('unexpected-origin-request');
+  expect((observations.get(page) ?? []).includes('unexpected-origin-request')).toBe(false);
 });
 
 const observe = async (page: Page, browser: string): Promise<string[]> => {
@@ -25,7 +27,7 @@ const observe = async (page: Page, browser: string): Promise<string[]> => {
       return route.abort();
     },
   );
-  // 生consoleはassertionにだけ使い、永続化しない。
+  // 生consoleはメモリー内だけで分類し、assertionにも渡さない。
   page.context().on('console', (message) => messages.push(message.text()));
   await page.addInitScript((browser) => {
     const records: unknown[] = [];
@@ -192,7 +194,7 @@ test('unknown inline reports and continues in Report-Only', async ({ page }, inf
   await attach(page, info, 'inline-probe', 'unknown-inline-probe', 'fixture');
 });
 
-test('Worker response missing both permissions reports both violations while lexical search continues', async ({
+test('production Worker continues lexical operations in RO; notifications are evaluated in isolated controls', async ({
   page,
   context,
 }, info) => {
@@ -218,20 +220,6 @@ test('Worker response missing both permissions reports both violations while lex
   await expect(page.locator('a.result-link').first()).toBeVisible({ timeout: 15_000 });
   expect(intercepted).toBe(true);
   expect(paths.some((path) => path.endsWith('/search-catalog.json'))).toBe(false);
-  for (const [directive, blocked] of [
-    ['connect-src', 'blob:'],
-    ['script-src', 'wasm-eval'],
-  ])
-    await expect
-      .poll(() =>
-        messages.some(
-          (message) =>
-            message.includes(`"directive":"${directive}"`) &&
-            message.includes(`"blocked":"${blocked}"`) &&
-            message.includes('"disposition":"report"'),
-        ),
-      )
-      .toBe(true);
   const observations = messages
     .filter((message) => message.startsWith('worker-csp-event '))
     .map((message) => {
@@ -278,11 +266,15 @@ test('production lexical Worker has the separate HTTP policy, correct MIME, WASM
   expect((await request.head(wasm)).headers()['x-content-type-options']).toBe('nosniff');
   expect(paths.some((path) => path.endsWith('/search-catalog.json'))).toBe(false);
   expect(await records(page)).toEqual([]);
+  const categories = messages.map(classifyWorkerConsole);
   expect(
-    messages.filter((message) =>
-      /content.security.policy|violat.*(?:script-src|connect-src)/iu.test(message),
+    categories.some(
+      (category) =>
+        category === 'connect-violation' ||
+        category === 'wasm-violation' ||
+        category === 'other-csp',
     ),
-  ).toEqual([]);
+  ).toBe(false);
   await attach(page, info, 'worker-observation', 'lexical-worker', 'fixture');
 });
 
@@ -407,7 +399,7 @@ test('unknown paths receive app 404 with global policy; 304 retains the correct 
     expect(response.headers()['content-security-policy-report-only']).toBe(parent);
     expect(response.headers()['cache-control']).toBe('no-store');
     expect(response.headers()['content-type']).toContain('text/html');
-    expect(await response.text()).toBe(fallback);
+    expect((await response.text()) === fallback).toBe(true);
   }
   const root304 = await request.get('/', {
     headers: { 'If-None-Match': top.headers()['etag'] ?? '' },
