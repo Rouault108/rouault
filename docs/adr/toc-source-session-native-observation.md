@@ -18,6 +18,18 @@ reload/history/BFCacheではviewportを古いURL hashより優先する。直ア
 
 位置受理の証明と、接続済みsource/shellで通常観測を続ける権限は別に保持する。earlyの通常観測も現在のXY/range・独立track・witnessをstrict検証するが、元の位置受理結果やsequenceを成功へ書き換えない。pagehideでは未処理の位置要求と受理証明を明示失効させる。session、shell、通常観測は保持し、pageshowで新たな位置観測を行う。復帰前のload/rAF callbackは新sequenceを上書きしない。通常予約も実行時にgeometry/policyを読み直す。
 
+### 2026-10-31：managed初回fragmentのcandidateとarrival
+
+初回fragmentのReading移動では、target安定だけで実到達前にsettledとなることと、native移動中のinstant補正を避ける。移動の要求世代・有限sample・共通5秒期限はReadingが所有する。TOCへnative animationの所有判定や新しい移動writerを持たせない。
+
+classifiedはjob設置後に伝え、分類だけで購読を前倒ししない。実到達candidateは同じsource sessionのstrict取引を一度要求する。TOCのselection commitと通知後、Readingがresolverから最新identity/rect/offset/range/XY/readinessを採り直し、期限とownerが有効ならarrivedを確定する。arrivedは受理時点のimmutable記録であり、最終通知でTOCのDOM取引やruntime公開を繰り返さない。通常hash選択は先に表示でき、aria-currentをarrival証明にはしない。
+
+candidateのpositionProofはcallback終了で閉じるが、earlyAuthorityは検証済shellと現在bindingの寿命を持つ。normalAllowedによる正規activationも独立する。Readingの同一候補key抑止は通常更新/activationへ適用しない。skip後もfreshな通常観測で回復でき、過去の同期結果やarrivalを成功へ書き換えない。全writerのstamp化やReading/TOC全体のatomic commitは導入しない。
+
+初回入力抑止はContentContextのbinding単位policy一件を使い、job終了後も残す。新trackerの最初のrefresh前に初期hash選択とhold双方を抑止し、明示的な新hash intentでは旧抑止を解除する。同entry・同intent・同fragmentの既知initialization/normalization replaceだけは、feature tokenのcauseと成功後のownerを確認し、binding採用と入力policy key更新をobserver通知前に行う。失敗や新intent再入では旧処理が新policyを変更しない。旧Reading job/candidate/位置証明のexact URLは引き継がない。
+
+受理前のcallback再入は取消、受理後の再入/例外/期限経過は過去arrivedを維持して旧後続だけを停止する。旧jobは取消時の停止scrollを出さず、既発行nativeの物理停止は保証しない。元の画面録画との同一原因や新smooth方式の体感は、この設計判断だけでは証明しない。
+
 ## Transactionと再入
 
 入力側で取消・期限・許可済みtabs revealを処理した後、owner/policyと一つのnowを固定する。隠れたtarget、移動済みviewport、期限切れ、新intentのhold取消は入力境界で消費し、後から見出しが再表示されても復活させない。candidate算出はholdを変更せず、DOM apply一回、verify一回、canonical commit、通知の順に行う。strictは独立track、XY/range、全見出しwitnessとDOM属性を確認する。normalは正規activation後だけ許可し、owner/source、DOM属性、適用後のvisible/current候補を確認する。strict失敗の同じ呼出し内でnormalへ切り替えない。
@@ -38,6 +50,6 @@ DOM repairだけではruntimeへ再通知しない。新surfaceは同期し、�
 
 ## 非保証と検証
 
-head bootstrap、async geometry cache、timer集約、新しい位置補正は追加しない。SSRは先頭currentを出さず、CSSの見た目を変更しない。Reading起動前やUAが最初に表示する全経路のframe、任意の後発layout変化、native rollback後の元座標は保証しない。8ms/16msの上限も設定しない。
+TOC ownerにhead bootstrap、async geometry cache、timer集約、新しい位置補正は追加しない。SSRは先頭currentを出さず、CSSの見た目を変更しない。Reading起動前やUAが最初に表示する全経路のframe、任意の後発layout変化、native rollback後の元座標は保証しない。8ms/16msの上限も設定しない。
 
 実施した試験・性能・環境制約は[検証記録](../references/toc-native-source-session-validation-2026-10-19.md)に記載する。

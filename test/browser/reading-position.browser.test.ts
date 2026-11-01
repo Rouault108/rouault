@@ -2001,8 +2001,9 @@ describe('同期受理した履歴本文のraw XY先行適用', () => {
     content.innerHTML = savedHtml;
     if (condition === 'hash' || condition === 'hash-existing') {
       history.replaceState(history.state, '', readAddress() + '#saved-heading');
-      initializeContentContext(content);
+      const epoch = initializeContentContext(content);
       adoptContentBinding(readAddress());
+      setContentReadiness({ contentEpoch: epoch, root: content, shellCommitId: 0, status: 'settled', started: true });
     }
     if (condition === 'hash-existing')
       content.insertAdjacentHTML('afterbegin', '<h2 id="saved-heading">stale hash at top</h2>');
@@ -2205,7 +2206,8 @@ describe('明示hashの停止位置とCSS offset', () => {
     '初期hashの%sはroot paddingとheading marginの和を使い到達範囲へclampする',
     async (position) => {
       const { content, target } = await startHash(position);
-      await expect.poll(() => content.dataset['readingPositionStatus']).toBe('settled');
+      // smoothの実到達を待つ。製品の共通5秒期限/±2px判定は変更しない。
+      await expect.poll(() => content.dataset['readingPositionStatus'], { timeout: 5000 }).toBe('settled');
       const offset =
         Number.parseFloat(getComputedStyle(document.documentElement).scrollPaddingTop) +
         Number.parseFloat(getComputedStyle(target).scrollMarginTop);

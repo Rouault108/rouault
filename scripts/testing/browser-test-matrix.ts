@@ -35,6 +35,9 @@ const webkitUrlStateTestFiles = [
 ] as const;
 
 const webkitNavigationStateTestFiles = [
+  'test/browser/initial-fragment-context.browser.test.ts',
+  'test/browser/initial-fragment-position.browser.test.ts',
+  'test/browser/initial-fragment-target.browser.test.ts',
   'test/browser/history-presentation-coordinator.browser.test.ts',
   'test/browser/history-presentation-geometry.browser.test.ts',
   'test/browser/layout-sidebar-selection-patch.browser.test.ts',

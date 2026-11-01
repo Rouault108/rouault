@@ -31,7 +31,7 @@ export class RouterDocumentHostPostRenderController {
       syncAcceptedTocPosition(position);
     },
     (observation) => {
-      observeNativeTocPosition(observation);
+      return observeNativeTocPosition(observation);
     },
   );
   private disposed = false;

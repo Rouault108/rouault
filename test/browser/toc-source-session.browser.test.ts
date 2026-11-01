@@ -12,6 +12,11 @@ import {
   initializeContentContext,
   readContentContext,
   releaseContentContext,
+  registerInitialFragmentSelectionPolicy,
+  recordInitialFragmentInput,
+  captureFeatureSource,
+  beginFeatureNavigation,
+  writeFeatureHistoryEntry,
 } from '../../src/navigation/content-navigation-context.js';
 import {
   readAddress,
@@ -28,6 +33,7 @@ import { resolveTocScrollMetrics } from '../../src/toc/toc-scroll-contract.js';
 import type {
   AcceptedReadingPosition,
   NativeReadingPositionObservation,
+  InitialFragmentArrival,
 } from '../../src/components/app/controllers/reading-position-controller.js';
 
 const originalState: unknown = history.state;
@@ -171,7 +177,246 @@ const nativeObservation = (
   isCurrent,
 });
 
+const setupInitial = async (hash = 'session-two', activeTracking = true) => {
+  const setupResult = await setup();
+  const content = setupResult.position.root;
+  const url = `${originalUrl.split('#')[0]}#${hash}`;
+  history.replaceState(history.state, '', url);
+  const contentEpoch = initializeContentContext(content);
+  const intent = beginNavigationIntent('initial', readAddress());
+  const binding = {
+    root: content,
+    contentEpoch,
+    shellCommitId: readCurrentShellCommitId(),
+    intentId: intent.intentId,
+    entryId: readHistoryEntry()?.id ?? null,
+    url: readAddress(),
+  };
+  registerInitialFragmentSelectionPolicy(binding, false);
+  requireFixtureValue(controller).setAttribute(
+    'capabilities-json',
+    JSON.stringify({ activeTracking }),
+  );
+  const session = requireFixtureValue(getTocSourceSession(requireFixtureValue(controller)));
+  const observation: NativeReadingPositionObservation = {
+    ...binding,
+    intent,
+    sequence: 100,
+    policy: 'initial-fragment',
+    phase: 'candidate',
+    isCurrent: () => session.isCurrent(),
+  };
+  return { session, observation, binding };
+};
+
+const shellDetail = async (url: string): Promise<AppShellValidatedDetail> => {
+  const header = await fixture('<header data-layout-header style="height:0"></header>');
+  return {
+    header,
+    shellCommitId: readCurrentShellCommitId(),
+    navigationUrl: url,
+    shell: { headerHtml: header.outerHTML, sidebarProjection: null },
+    linkValidationContext: {
+      siteUrlContext: { siteOrigin: location.origin, basePath: '' },
+      currentAbsoluteUrl: new URL(url, location.origin).href,
+      normalizedNavigationUrl: url,
+      routeManifestState: {
+        status: 'loaded',
+        manifest: {
+          version: 1,
+          buildId: 'session-shell-proof-test',
+          buildLabel: 'test',
+          generatedAt: '2026-10-19T00:00:00.000Z',
+          siteOrigin: location.origin,
+          basePath: '',
+          routes: [url],
+        },
+        routeSet: { routes: [url], has: (path) => path === url },
+      },
+    },
+  };
+};
+
 describe('TocSourceSession の単一所有と予約・transaction 契約', () => {
+  it('期限を閉じたcandidateをshell検証で再実行せず、新候補後はbindingのearly権限を使う', async () => {
+    const { session, observation } = await setupInitial();
+    const detail = await shellDetail(readAddress());
+    const scheduling = captureScheduling();
+    let candidateCurrent = true;
+    const candidate = { ...observation, isCurrent: () => candidateCurrent && session.isCurrent() };
+    expect(observeNativeTocPosition(candidate)).toBe('skipped');
+    candidateCurrent = false;
+    recordValidatedShellProof(detail, document);
+    expect(session.snapshot).toBeNull();
+    candidateCurrent = true;
+    expect(observeNativeTocPosition({ ...candidate, sequence: 101 })).toBe('accepted');
+    candidateCurrent = false;
+    window.scrollTo({ top: 2550, behavior: 'instant' });
+    window.dispatchEvent(new Event('scroll'));
+    scheduling.frames.splice(0).forEach((frame) => frame(performance.now()));
+    assertCurrent(session.binding.nav, 'session-three');
+    detail.header.replaceWith(detail.header.cloneNode(true));
+    window.scrollTo({ top: 1300, behavior: 'instant' });
+    window.dispatchEvent(new Event('scroll'));
+    scheduling.frames.splice(0).forEach((frame) => frame(performance.now()));
+    assertCurrent(session.binding.nav, 'session-three');
+  });
+
+  it('初回candidateの短命証明が閉じてもearlyの通常strict観測を継続する', async () => {
+    const { session, observation } = await setupInitial();
+    captureScheduling();
+    let candidateCurrent = true;
+    const authority = (): boolean => session.isCurrent();
+    expect(session.observe({ ...observation, isCurrent: () => candidateCurrent }, authority)).toBe(
+      'accepted',
+    );
+    assertCurrent(session.binding.nav, 'session-two');
+    candidateCurrent = false;
+    window.scrollTo({ top: 2550, behavior: 'instant' });
+    expect(session.refresh()).toBe('accepted');
+    assertCurrent(session.binding.nav, 'session-three');
+  });
+
+  it.each(['same-owner', 'new-owner'] as const)(
+    'candidate期限跨ぎの部分writeは%sの所有を照合してcleanupする',
+    async (ownership) => {
+      const { session, observation } = await setupInitial();
+      recordValidatedShellProof(await shellDetail(readAddress()), document);
+      captureScheduling();
+      vi.spyOn(console, 'error').mockImplementation(() => undefined);
+      let now = 4999;
+      vi.spyOn(performance, 'now').mockImplementation(() => now);
+      const before = session.binding.toc.outerHTML;
+      const listener = vi.fn();
+      session.subscribe(listener);
+      listener.mockClear();
+      const link = requireFixtureValue(
+        session.binding.nav.querySelector<HTMLElement>('a[data-heading-id="session-two"]'),
+      );
+      const write = link.setAttribute.bind(link);
+      let crossedDeadline = false;
+      vi.spyOn(link, 'setAttribute').mockImplementation((name, value) => {
+        write(name, value);
+        if (name !== 'data-active' || crossedDeadline) return;
+        crossedDeadline = true;
+        now = 5001;
+        if (ownership === 'new-owner') {
+          beginNavigationIntent('native-navigation', readAddress(), 'native');
+          // 新ownerが同じ値を採用しても、旧journalはその状態を戻してはいけない。
+          write('aria-current', 'location');
+          write('data-active', 'true');
+          link.classList.add('is-active');
+        }
+      });
+      expect(
+        observeNativeTocPosition({
+          ...observation,
+          isCurrent: () => now < 5000 && session.isCurrent(),
+        }),
+      ).toBe('superseded');
+      expect(crossedDeadline).toBe(true);
+      expect(session.snapshot).toBeNull();
+      expect(listener).not.toHaveBeenCalled();
+      if (ownership === 'same-owner') expect(session.binding.toc.outerHTML).toBe(before);
+      else assertCurrent(session.binding.nav, 'session-two');
+    },
+  );
+
+  it('初回arrivedは既存sessionへの記録だけでDOM再取引と再通知を起こさない', async () => {
+    const { session, observation, binding } = await setupInitial();
+    const scheduling = captureScheduling();
+    expect(session.observe(observation, () => session.isCurrent())).toBe('accepted');
+    const listener = vi.fn();
+    session.subscribe(listener);
+    listener.mockClear();
+    const observe = vi.spyOn(session.tracker, 'observe');
+    const adopt = vi.spyOn(session.tracker, 'adoptSnapshot');
+    const html = session.binding.nav.outerHTML;
+    const arrival: InitialFragmentArrival = Object.freeze({
+      acceptedAt: performance.now(),
+      targetKind: 'element',
+      element: document.getElementById('session-two'),
+      geometryRevision: 1,
+      requestGeneration: 1,
+      actual: Object.freeze({ x: scrollX, y: scrollY }),
+      target: Object.freeze({ x: scrollX, y: scrollY }),
+      range: Object.freeze({ x: 0, y: 5000 }),
+      readiness: 'settled',
+      tocResult: 'accepted',
+      binding: Object.freeze(binding),
+    });
+    observeNativeTocPosition({ ...observation, phase: 'arrived', arrival });
+    expect(session.arrival).toBe(arrival);
+    expect(session.binding.nav.outerHTML).toBe(html);
+    expect(listener).not.toHaveBeenCalled();
+    expect(observe).not.toHaveBeenCalled();
+    expect(adopt).not.toHaveBeenCalled();
+    expect(scheduling.frames).toHaveLength(0);
+    expect(scheduling.timers).toHaveLength(0);
+  });
+
+  it('初回candidateのstrict skipは後の正規activationを妨げない', async () => {
+    const { session, observation } = await setupInitial();
+    captureScheduling();
+    requireFixtureValue(
+      observation.root.querySelector<HTMLElement>('.note-shell'),
+    ).style.setProperty('--note-toc-track', 'auto');
+    let candidateCurrent = true;
+    expect(session.observe({ ...observation, isCurrent: () => candidateCurrent })).toBe('skipped');
+    candidateCurrent = false;
+    expect(session.snapshot).toBeNull();
+    session.activate();
+    assertCurrent(session.binding.nav, 'session-two');
+  });
+
+  it('空のtrackerにも初回入力抑止を最初のrefresh前に適用し、新intentでは解除する', async () => {
+    const { session } = await setupInitial('session-three');
+    captureScheduling();
+    recordInitialFragmentInput(readCurrentShellCommitId());
+    session.activate();
+    assertCurrent(session.binding.nav, 'session-two');
+    beginNavigationIntent('native-navigation', readAddress(), 'native');
+    window.dispatchEvent(new HashChangeEvent('hashchange'));
+    assertCurrent(session.binding.nav, 'session-three');
+  });
+
+  it('本人入力後の許可された正規化を経ても遅延trackerは初回hashを再選択しない', async () => {
+    const { observation } = await setupInitial('session-three');
+    const scheduling = captureScheduling();
+    recordInitialFragmentInput(readCurrentShellCommitId());
+    const source = captureFeatureSource(observation.root);
+    const token = requireFixtureValue(beginFeatureNavigation(source, 'normalization'));
+    const url = new URL(readAddress(), location.origin);
+    url.searchParams.set('tab', 'normalized');
+    expect(
+      writeFeatureHistoryEntry(source, token, {
+        mode: 'replace',
+        url: `${url.pathname}${url.search}${url.hash}`,
+        state: history.state,
+      }),
+    ).not.toBeNull();
+    const session = requireFixtureValue(getTocSourceSession(requireFixtureValue(controller)));
+    session.activate();
+    assertCurrent(session.binding.nav, 'session-two');
+    scheduling.drainMicrotasks();
+    assertCurrent(session.binding.nav, 'session-two');
+  });
+
+  it('初回入力抑止はactiveTracking=falseへscroll追跡を追加しない', async () => {
+    const { session } = await setupInitial('session-three', false);
+    const scheduling = captureScheduling();
+    recordInitialFragmentInput(readCurrentShellCommitId());
+    session.activate();
+    assertCurrent(session.binding.nav, 'session-one');
+    window.scrollTo({ top: 2550, behavior: 'instant' });
+    window.dispatchEvent(new Event('scroll'));
+    scheduling.frames.splice(0).forEach((frame) => frame(performance.now()));
+    assertCurrent(session.binding.nav, 'session-one');
+    beginNavigationIntent('native-navigation', readAddress(), 'native');
+    window.dispatchEvent(new HashChangeEvent('hashchange'));
+    assertCurrent(session.binding.nav, 'session-three');
+  });
+
   it('取得は副作用を起こさず、early受理から通常activationまで同じtrackerを保持する', async () => {
     const { session, position } = await setup();
     const scheduling = captureScheduling();
@@ -445,33 +690,9 @@ describe('TocSourceSession の単一所有と予約・transaction 契約', () =>
 
   it('production native接続は同じshell証明の再発行を許容し、header実体交換でearly追跡権限を失効する', async () => {
     const { session, position } = await setup();
-    const header = await fixture('<header data-layout-header style="height:0"></header>');
+    const detail = await shellDetail(readAddress());
+    const header = detail.header;
     const scheduling = captureScheduling();
-    const url = readAddress();
-    const detail: AppShellValidatedDetail = {
-      header,
-      shellCommitId: readCurrentShellCommitId(),
-      navigationUrl: url,
-      shell: { headerHtml: header.outerHTML, sidebarProjection: null },
-      linkValidationContext: {
-        siteUrlContext: { siteOrigin: location.origin, basePath: '' },
-        currentAbsoluteUrl: new URL(url, location.origin).href,
-        normalizedNavigationUrl: url,
-        routeManifestState: {
-          status: 'loaded',
-          manifest: {
-            version: 1,
-            buildId: 'session-shell-proof-test',
-            buildLabel: 'test',
-            generatedAt: '2026-10-19T00:00:00.000Z',
-            siteOrigin: location.origin,
-            basePath: '',
-            routes: [url],
-          },
-          routeSet: { routes: [url], has: (path) => path === url },
-        },
-      },
-    };
     let positionCurrent = true;
     observeNativeTocPosition(
       nativeObservation(position, 10, () => positionCurrent && session.isCurrent()),

@@ -2,6 +2,7 @@ import { expect, test } from '@playwright/test';
 
 import { loadNotesData } from '../../build/data/notes.js';
 import { e2eNoteFixtures } from './support/note-fixtures.js';
+import { normalizeBlackShadowSerialization } from './support/shadow-css-value.js';
 
 const sizes = ['sm', 'md', 'lg', 'glow'] as const;
 const lightShadows = [
@@ -68,8 +69,12 @@ for (const os of ['light', 'dark'] as const) {
         expect(shadow.expected, `literal shadow ${shadow.name}`).not.toBe('none');
         if (resolved === 'dark')
           expect.soft(shadow.primitive, `dark primitive ${shadow.name}`).not.toBe('');
-        expect.soft(shadow.actual, `root elevation ${shadow.name}`).toBe(shadow.expected);
+        expect
+          .soft(normalizeBlackShadowSerialization(shadow.actual), `root elevation ${shadow.name}`)
+          .toBe(normalizeBlackShadowSerialization(shadow.expected));
       }
+      const largeShadow = rootShadows.find((item) => item.name === 'lg');
+      if (largeShadow === undefined) throw new Error('large shadow probe is required');
 
       const preview = page
         .locator('[data-code-preview-root]')
@@ -81,8 +86,8 @@ for (const os of ['light', 'dark'] as const) {
       expect(await panel.evaluate((node) => node.closest('[data-preview-content]'))).toBeNull();
       const menuShadow = await panel.evaluate((node) => getComputedStyle(node).boxShadow);
       expect
-        .soft(menuShadow, 'visible command menu')
-        .toBe(rootShadows.find((item) => item.name === 'lg')?.expected);
+        .soft(normalizeBlackShadowSerialization(menuShadow), 'visible command menu')
+        .toBe(normalizeBlackShadowSerialization(largeShadow.expected));
       await testInfo.attach('command-menu', {
         body: await page.screenshot(),
         contentType: 'image/png',
@@ -144,8 +149,8 @@ for (const os of ['light', 'dark'] as const) {
       await expect(footnote).toBeVisible();
       const footnoteShadow = await footnote.evaluate((node) => getComputedStyle(node).boxShadow);
       expect
-        .soft(footnoteShadow, 'visible footnote popover')
-        .toBe(rootShadows.find((item) => item.name === 'lg')?.expected);
+        .soft(normalizeBlackShadowSerialization(footnoteShadow), 'visible footnote popover')
+        .toBe(normalizeBlackShadowSerialization(largeShadow.expected));
       await testInfo.attach('footnote-popover', {
         body: await page.screenshot(),
         contentType: 'image/png',

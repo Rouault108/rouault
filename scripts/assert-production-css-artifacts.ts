@@ -79,13 +79,17 @@ const REQUIRED_MEDIA_RULES = [
   },
 ] as const satisfies readonly ExpectedMediaRule[];
 
-const normalizeCssValue = (value: string): string =>
-  value
+export const normalizeProductionCssDeclarationValue = (property: string, value: string): string => {
+  const normalized = value
     .trim()
     .replace(/\s+/gu, ' ')
     .replace(/\s*,\s*/gu, ', ')
     .replace(/\(\s+/gu, '(')
     .replace(/\s+\)/gu, ')');
+
+  // gridの先頭trackに限って0pxと0を揃え、calc内の単位等は消さない。
+  return property === 'grid-template-columns' ? normalized.replace(/^0px(?=\s)/u, '0') : normalized;
+};
 
 const collectRuleDeclarations = (rule: Rule): Map<string, Set<string>> => {
   const declarations = new Map<string, Set<string>>();
@@ -95,7 +99,7 @@ const collectRuleDeclarations = (rule: Rule): Map<string, Set<string>> => {
       return;
     }
     const values = declarations.get(node.prop) ?? new Set<string>();
-    values.add(normalizeCssValue(node.value));
+    values.add(normalizeProductionCssDeclarationValue(node.prop, node.value));
     declarations.set(node.prop, values);
   });
 
@@ -110,7 +114,9 @@ const ruleHasDeclarations = (
 
   return expectedDeclarations.every(
     (expected) =>
-      declarations.get(expected.property)?.has(normalizeCssValue(expected.value)) === true,
+      declarations
+        .get(expected.property)
+        ?.has(normalizeProductionCssDeclarationValue(expected.property, expected.value)) === true,
   );
 };
 
@@ -131,11 +137,32 @@ const ruleHasSelector = (rule: Rule, expectedSelector: string): boolean => {
   return found;
 };
 
+export const matchesViewportWidthMedia = (actual: string, expected: string): boolean => {
+  const range = /^\(\s*width\s*(>=|<)\s*(\d+)px\s*\)$/u;
+  const expectedRange = range.exec(expected.trim());
+  if (!expectedRange) return false;
+
+  const actualRange = range.exec(actual.trim());
+  if (actualRange) {
+    return (
+      actualRange[1] === expectedRange[1] && Number(actualRange[2]) === Number(expectedRange[2])
+    );
+  }
+
+  // Lightning CSSのmin-width表現でも、境界値と包含・排他を変えずに検査する。
+  const equivalent =
+    expectedRange[1] === '>='
+      ? /^\(\s*min-width\s*:\s*(\d+)px\s*\)$/u
+      : /^not\s+\(\s*min-width\s*:\s*(\d+)px\s*\)$/u;
+  const actualMinimum = equivalent.exec(actual.trim());
+  return actualMinimum !== null && Number(actualMinimum[1]) === Number(expectedRange[2]);
+};
+
 const expectMediaRuleHasDeclarations = (css: string, contract: ExpectedMediaRule): void => {
   const rules: Rule[] = [];
   // container queryや別featureの同じrangeだけではviewport契約の到達証拠にならない。
   postcss.parse(css).walkAtRules('media', (media) => {
-    if (media.params.replace(/\s+/gu, '') !== contract.params.replace(/\s+/gu, '')) return;
+    if (!matchesViewportWidthMedia(media.params, contract.params)) return;
     media.walkRules((rule) => {
       rules.push(rule);
     });
