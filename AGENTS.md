@@ -422,6 +422,11 @@ Browser runner、browser selection、fixture lifecycleを含むtesting harness�
 
 secretらしき値を見つけた場合は、値そのものを出力せず、ファイル名と文脈だけを示してください。
 
+### コミットメッセージ
+
+- 作成するコミットメッセージは英語のConventional Commits形式（`type(scope): description`、scopeは省略可）とする。breaking changeの`!`表記など、仕様上正当な形式も使用できる。
+- commit前に候補メッセージを確認し、push・main取り込み前に対象の全新規コミットが規約に適合することを確認する。
+
 ### 変更前
 
 - 関連する`docs/`と既存テストを先に確認してください。
