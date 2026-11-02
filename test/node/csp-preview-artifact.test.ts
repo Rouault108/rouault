@@ -21,6 +21,7 @@ import {
   PREVIEW_TARGET,
   previewReceipt,
   previewBuildStamp,
+  previewDigest,
   scanPreviewFiles,
   validatePreviewIdentity,
   verifyPreviewCopy,
@@ -30,7 +31,11 @@ import {
   assertPreviewPublication,
   previewPublicationFiles,
   validatePreviewRedirects,
+  validatePreviewSourceFiles,
 } from '../../build/security/csp-preview-source.js';
+import { createInternalDocumentRouteManifest } from '../../shared/navigation/internal-document-route-manifest.js';
+import { createInternalDocumentRouteSet } from '../../shared/navigation/internal-document-route-set.js';
+import { LEXICAL_COMPATIBILITY } from '../../shared/search/lexical-artifacts.js';
 import { buildThemeDocumentBootstrapScript } from '../../src/theme/theme-document-bootstrap.js';
 import { buildThemeChromeBootstrapScript } from '../../src/theme/theme-chrome-bootstrap.js';
 import { escapeInlineExecutableScriptText } from '../../src/layouts/html-output.js';
@@ -76,7 +81,104 @@ const fixture = async (
   }
 };
 
+// 実allowlist構築の小さな入力。WASM動作やproduction assertionの合格を表すfixtureではない。
+const sourceFixture = async (run: (root: string, dist: string) => Promise<void>) =>
+  fixture(async (root, dist) => {
+    for (const directory of [
+      'src/assets',
+      'examples/media',
+      'dist/assets',
+      'dist/search',
+      'dist/__router',
+    ])
+      await mkdir(path.join(root, directory), { recursive: true });
+    for (const file of ['src/assets/favicon.ico', 'dist/assets/favicon.ico', 'dist/favicon.ico'])
+      await writeFile(path.join(root, file), 'fixture-icon');
+    await writeFile(path.join(dist, '404.html'), await readFile(path.join(dist, 'index.html')));
+    await writeFile(
+      path.join(dist, '__router/index.router.json'),
+      JSON.stringify({ buildId: '12345678', document: { html: '' }, shell: { headerHtml: '' } }),
+    );
+    const routeManifest = createInternalDocumentRouteManifest({
+      buildId: '12345678',
+      buildLabel: 'fixture',
+      generatedAt: '2026-11-02T00:00:00.000Z',
+      siteUrlContext: { siteOrigin: PREVIEW_TARGET.origin, basePath: '' },
+      routeSet: createInternalDocumentRouteSet(['/']),
+    });
+    await writeFile(
+      path.join(dist, 'assets/internal-document-routes.json'),
+      JSON.stringify(routeManifest),
+    );
+    await writeFile(path.join(dist, 'search-catalog.json'), '[]');
+    const digest = previewDigest('{}');
+    const descriptor = (name: string, hash = digest) => ({
+      path: `/search/${name}.${hash}.json`,
+      sha256: hash,
+      bytes: 2,
+    });
+    const lexical = {
+      ...LEXICAL_COMPATIBILITY,
+      buildId: 'lexical-fixture',
+      documentIndexSha256: digest,
+      passageIndexSha256: digest,
+      passageStoreSha256: digest,
+      documentIndex: descriptor('document'),
+      passageIndex: descriptor('passage'),
+      passageStore: descriptor('store'),
+      providerArtifact: descriptor('provider', LEXICAL_COMPATIBILITY.providerArtifactSha256),
+      providerConfig: descriptor('config', LEXICAL_COMPATIBILITY.providerConfigSha256),
+    };
+    for (const item of [
+      lexical.documentIndex,
+      lexical.passageIndex,
+      lexical.passageStore,
+      lexical.providerArtifact,
+      lexical.providerConfig,
+    ])
+      await writeFile(path.join(dist, item.path.slice(1)), '{}');
+    await writeFile(path.join(dist, 'search/manifest.json'), JSON.stringify(lexical));
+    for (const owner of ['suzume', 'minisearch'])
+      await writeFile(path.join(dist, `search/${owner}-LICENSE.${digest}.txt`), 'fixture-license');
+    const redirects = await readFile(new URL('../../_redirects', import.meta.url), 'utf8');
+    await writeFile(path.join(root, '_headers'), cache);
+    for (const file of ['_redirects', 'dist/_redirects'])
+      await writeFile(path.join(root, file), redirects);
+    const manifest = await collectCspStageOne(dist, PREVIEW_TARGET.mediaOrigin, {
+      viteManifestFile: path.join(root, 'vite.json'),
+    });
+    await validatePreviewSourceFiles(root, manifest, await scanPreviewFiles(dist), ['/']);
+    await run(root, dist);
+  });
+
 describe('unprivileged preview preparation', () => {
+  it.each([
+    'diagnostic.json',
+    'search/diagnostic.json',
+    'functions/index.js',
+    '_worker.js',
+    '_routes.json',
+    'private/index.html',
+  ])('rejects an extra payload through the real source allowlist (%s)', async (file) =>
+    sourceFixture(async (root, dist) => {
+      const target = path.join(dist, file);
+      await mkdir(path.dirname(target), { recursive: true });
+      await writeFile(
+        target,
+        file.endsWith('.html')
+          ? await readFile(path.join(dist, 'index.html'))
+          : 'fixture-private-payload',
+      );
+      const manifest = await collectCspStageOne(dist, PREVIEW_TARGET.mediaOrigin, {
+        viteManifestFile: path.join(root, 'vite.json'),
+      });
+      await expect(
+        validatePreviewSourceFiles(root, manifest, await scanPreviewFiles(dist), ['/']),
+      ).rejects.toThrow(
+        file.endsWith('.html') ? 'private/unknown document' : 'unknown, missing or extra payload',
+      );
+    }),
+  );
   it('preserves the configured package cache while excluding unrelated child environment', () => {
     const env = createPreviewBuildEnvironment(
       { PATH: '/safe', XDG_CACHE_HOME: '/safe/cache', UNRELATED_PRIVATE: 'private-value' },
