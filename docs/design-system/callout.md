@@ -37,4 +37,6 @@
 
 `--callout-accent-color`は既存互換のaliasとして維持する。ただし、新しい公開override契約として文書化しない。実装内部の追加変数はprivateな`--_callout-*`として扱う。
 
+`success`の左線は通常本文・tab panelともに`--fg-success`を直接参照し、祖先での同tokenの上書きを継承する。既定の色・線幅と背景の50% color-mixは維持する。未定義かつ公開override契約のなかった`--border-success-subtle`へのfallback参照は廃止したため、外部CSSで同名変数を設定しても左線には反映されない。forced-colorsでは専用のborder・system color規則を優先する。
+
 `.callout-icon`と`[data-callout-icon-svg]`の両方は、既定icon生成と既存CSS互換のためscope付きselectorで維持する。
