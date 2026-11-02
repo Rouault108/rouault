@@ -42,7 +42,7 @@
   > [data-tab-panel]
   > [data-callout][data-callout-kind='success'] {
   --_callout-bg: color-mix(in srgb, var(--bg-success-subtle) 50%, transparent);
-  --_callout-rule-color: var(--border-success-subtle, var(--fg-success));
+  --_callout-rule-color: var(--fg-success);
   --_callout-accent-color: var(--fg-success);
 }
 

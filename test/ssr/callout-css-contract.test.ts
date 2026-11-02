@@ -229,6 +229,20 @@ describe('callout CSS contract', () => {
     ).toEqual([]);
   });
 
+  it('success の通常本文と tab panel は fg-success を左線へ直接参照すること', () => {
+    for (const panel of [false, true]) {
+      expect(
+        declarationValuesForSelector(kindSelector('success', panel), '--_callout-rule-color'),
+      ).toEqual(['var(--fg-success)']);
+      expect(declarationValuesForSelector(kindSelector('success', panel), '--_callout-bg')).toEqual(
+        ['color-mix(in srgb, var(--bg-success-subtle) 50%, transparent)'],
+      );
+    }
+    root.walkDecls((declaration) => {
+      expect(declaration.value).not.toMatch(/var\(\s*--border-success-subtle\b/u);
+    });
+  });
+
   it('icon互換selectorを scope 付きで維持すること', () => {
     const selectors = selectorsIn();
     expect(selectors).toContain(':is(.prose,.about-prose)>[data-callout]>.callout-icon');

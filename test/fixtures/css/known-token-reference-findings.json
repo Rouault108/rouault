@@ -20,26 +20,6 @@
     "reason": "shell から lead への DOM 継承は selector に祖先が明記されず静的に未証明。"
   },
   {
-    "file": "callout.css",
-    "selector": ":is(.prose, .about-prose) > [data-callout][data-callout-kind='success']",
-    "property": "--_callout-rule-color",
-    "reference": "--border-success-subtle",
-    "conditions": [],
-    "kind": "undefined-fallback",
-    "count": 1,
-    "reason": "既存の fallback 付き未定義 token 参照。命名の旧契約・typo・任意 override のどれかを断定する根拠がないため正常とは扱わない。Copy focus 以外の修正へ広げず箇所と条件・件数を固定。"
-  },
-  {
-    "file": "callout.css",
-    "selector": ":is(.prose, .about-prose)\n  > [data-tabs-root]\n  > [data-tab-panel]\n  > [data-callout][data-callout-kind='success']",
-    "property": "--_callout-rule-color",
-    "reference": "--border-success-subtle",
-    "conditions": [],
-    "kind": "undefined-fallback",
-    "count": 1,
-    "reason": "既存の fallback 付き未定義 token 参照。命名の旧契約・typo・任意 override のどれかを断定する根拠がないため正常とは扱わない。Copy focus 以外の修正へ広げず箇所と条件・件数を固定。"
-  },
-  {
     "file": "code-preview.css",
     "selector": "[data-code-preview-root]",
     "property": "width",
