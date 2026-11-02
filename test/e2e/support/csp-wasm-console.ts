@@ -119,7 +119,7 @@ export const classifyWasmConsole = (
   if (
     scope.parentPolicy &&
     record.owner === 'document' &&
-    record.type === 'warning' &&
+    record.type === (scope.engine === 'webkit-csp' ? 'error' : 'warning') &&
     record.args === 0 &&
     record.text ===
       `The Content Security Policy '${scope.parentPolicy}' was delivered in report-only mode, but does not specify a 'report-to'; the policy will have no effect. Please either add a 'report-to' directive, or deliver the policy via the 'Content-Security-Policy' header.`

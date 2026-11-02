@@ -168,6 +168,7 @@ const measured = async (page: import('@playwright/test').Page, missing: boolean)
           const m = readWasmMeasurement(await snapshot(page));
           return (
             m.calls.length > 0 &&
+            m.js.timer !== 'pending' &&
             m.calls.every((c) => c.outcome !== 'pending' && c.digest !== 'pending')
           );
         } catch {

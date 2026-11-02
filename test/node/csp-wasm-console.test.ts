@@ -116,7 +116,10 @@ describe('case-bound real WASM console classification', () => {
     'owner',
     'source',
     'policy',
+    'trusted-eval-policy',
+    'case',
     'outcome',
+    'pending',
     'directive',
     'short',
   ])('binds the fixed WebKit native timer rejection to its actual API: %s', (mutation) => {
@@ -129,9 +132,12 @@ describe('case-bound real WASM console classification', () => {
     if (mutation === 'owner') record.owner = 'unknown';
     if (mutation === 'source') record.url = '';
     if (mutation === 'outcome') scope.measurement.js.timer = 'allowed';
+    if (mutation === 'pending') scope.measurement.js.timer = 'pending';
+    if (mutation === 'case') scope.caseId = 'document-js-control';
     if (mutation === 'directive') record.text = record.text.replace('script-src', 'img-src');
     if (mutation === 'short') record.text = 'unsafe-eval';
     if (mutation === 'policy') scope.policy = "script-src 'self' 'unsafe-eval'";
+    if (mutation === 'trusted-eval-policy') scope.policy = "script-src 'self' 'trusted-types-eval'";
     expect(classifyWasmConsole(record, scope)).toBe(
       mutation === 'valid' ? 'js-rejection' : 'unknown',
     );
@@ -162,6 +168,16 @@ describe('case-bound real WASM console classification', () => {
     record.text =
       "The Content Security Policy 'fixed' was delivered in report-only mode, but does not specify a 'report-to'; the policy will have no effect. Please either add a 'report-to' directive, or deliver the policy via the 'Content-Security-Policy' header.";
     expect(classifyWasmConsole(record, scope)).toBe('warning');
+    scope.engine = 'webkit-csp';
+    expect(classifyWasmConsole(record, scope)).toBe('unknown');
+    record.type = 'error';
+    expect(classifyWasmConsole(record, scope)).toBe('warning');
+    record.args = 1;
+    expect(classifyWasmConsole(record, scope)).toBe('unknown');
+    record.args = 0;
+    record.text += ' unsafe-eval';
+    expect(classifyWasmConsole(record, scope)).toBe('unknown');
+    record.text = record.text.slice(0, -' unsafe-eval'.length);
     record.owner = 'unknown';
     expect(classifyWasmConsole(record, scope)).toBe('unknown');
   });
