@@ -90,12 +90,9 @@ describe('unprivileged preview preparation', () => {
       createPreviewBuildEnvironment({ CLOUDFLARE_API_TOKEN: 'private-value' }, sha),
     ).toThrow();
   });
-  it('refuses CLI target/command overrides and credentials without echoing secrets or a stack', () => {
-    for (const args of [
-      ['deploy'],
-      ['dry-run', '--branch', 'main'],
-      ['assemble', '../arbitrary'],
-    ]) {
+  it.each([['deploy'], ['dry-run', '--branch', 'main'], ['assemble', '../arbitrary']])(
+    'refuses one CLI target/command override (%s)',
+    (...args) => {
       const result = spawnSync(
         process.execPath,
         ['--import', 'tsx', 'scripts/prepare-csp-preview.ts', ...args],
@@ -104,7 +101,9 @@ describe('unprivileged preview preparation', () => {
       expect(result.status).toBe(1);
       expect(result.stdout).toBe('');
       expect(result.stderr).toContain('without other arguments');
-    }
+    },
+  );
+  it('refuses credentials without echoing secrets or a stack', () => {
     const result = spawnSync(
       process.execPath,
       ['--import', 'tsx', 'scripts/prepare-csp-preview.ts', 'dry-run'],
