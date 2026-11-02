@@ -144,6 +144,8 @@ const fixture = async (run: (root: string, packet: string) => Promise<void>) => 
       root + '/.generated/csp',
       root + '/.generated/client/.vite',
       packet,
+      root + '/src/assets/css',
+      dist + '/assets/css',
     ])
       await mkdir(directory, { recursive: true });
     const scripts = [buildThemeDocumentBootstrapScript(), buildThemeChromeBootstrapScript()].map(
@@ -158,6 +160,11 @@ const fixture = async (run: (root: string, packet: string) => Promise<void>) => 
       'new Worker(new URL("./worker.js",import.meta.url),{type:"module"});',
     );
     await writeFile(path.join(dist, 'client-assets/worker.js'), 'export {};');
+    for (const destination of [
+      root + '/src/assets/css/about-shell.css',
+      dist + '/assets/css/about-shell.css',
+    ])
+      await copyFile('src/assets/css/about-shell.css', destination);
     await copyFile('_redirects', path.join(dist, '_redirects'));
     const cache = '/client-assets/*\n  Cache-Control: public, max-age=31536000, immutable\n';
     await writeFile(path.join(dist, '_headers'), cache);
@@ -301,7 +308,7 @@ describe('trusted preview packet', () => {
   it('recomputes header-only transformation and independent digests', async () =>
     fixture(async (_root, packet) => {
       const result = await inspectPreviewPacket(packet, sha);
-      expect(result.fileCount).toBe(5);
+      expect(result.fileCount).toBe(6);
       expect(result.artifactDigest).not.toBe(result.baselineDigest);
       verifyApprovedPreviewPacket(withPacket(result), result);
       expect(() => verifyApprovedPreviewPacket(approval, result)).toThrow('independently');
@@ -324,6 +331,7 @@ describe('trusted preview packet', () => {
   it.each([
     'report-only/client-assets/worker.js',
     'baseline/index.html',
+    'baseline/assets/css/about-shell.css',
     'proof/build.json',
     'preparation.json',
   ])('rejects changed bytes %s', async (file) =>

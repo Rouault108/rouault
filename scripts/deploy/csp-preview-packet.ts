@@ -1,5 +1,6 @@
 import { copyFile, lstat, mkdir, readFile, readdir, realpath } from 'node:fs/promises';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import {
   assertCredentialFreePreview,
   assertPreviewFileSet,
@@ -85,6 +86,7 @@ export const inspectPreviewPacket = async (
     output = path.join(root, 'report-only');
   const manifest = await readVerifiedCspStageOne(baseline, path.join(root, 'proof/manifest.json'), {
     viteManifestFile: path.join(root, 'proof/vite-manifest.json'),
+    sourceRoot: fileURLToPath(new URL('../../src', import.meta.url)),
   });
   validatePreviewIdentity(PREVIEW_TARGET, sourceSha, manifest);
   const files = await scanPreviewFiles(baseline);

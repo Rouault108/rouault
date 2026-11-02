@@ -63,6 +63,8 @@ export interface CspStageOneManifest {
 }
 export interface InventoryOptions {
   viteManifestFile?: string;
+  // 再配置したcopyでも正本と照合する。公開入口でcandidate由来のpathを受け取らない。
+  sourceRoot?: string;
 }
 
 export const routeClass = (file: string): string => {
@@ -412,6 +414,7 @@ export const collectCspStageOne = async (
   )
     throw new Error('[csp] mediaOrigin must be an explicit HTTPS origin');
   const files = await filesUnder(dist);
+  const sourceRoot = options.sourceRoot ?? path.resolve(dist, '../src');
   const documents: CspDocumentInventory[] = [];
   let siteOrigin: string | undefined;
   let basePath: string | undefined;
@@ -498,7 +501,7 @@ export const collectCspStageOne = async (
     (file) => file.endsWith('.css') && !activeStylesheets.has(file),
   )) {
     if (!file.startsWith('assets/css/')) throw new Error('[csp] unclassified inactive stylesheet');
-    const source = await readFile(path.resolve(dist, '../src', file));
+    const source = await readFile(path.resolve(sourceRoot, file));
     const output = await readFile(path.join(dist, file));
     if (!source.equals(output)) throw new Error('[csp] inactive stylesheet differs from source');
     inactiveStylesheets.push({
@@ -549,7 +552,7 @@ export const collectCspStageOne = async (
     if (resource.kind === 'style' && !graph.has(file)) {
       if (!file.startsWith('assets/css/')) throw new Error('[csp] unowned stylesheet');
       // Eleventyの既存passthrough資産はprefixだけで承認せず、sourceとのbytes一致まで照合する。
-      const source = await readFile(path.resolve(dist, '../src', file));
+      const source = await readFile(path.resolve(sourceRoot, file));
       const output = await readFile(path.join(dist, file));
       if (!source.equals(output)) throw new Error('[csp] copied stylesheet differs from source');
     }

@@ -65,6 +65,8 @@ trusted verifierはbounded file scanと既存hash/resource inventory・header pa
 baselineはCSP-free、ROは`_headers`だけ変更、Workerはdetach→set、非header bytesと全file集合が一致することを再計算する。
 余剰proof/診断file、private root、Functions、`_worker.js`、`_routes.json`、Wrangler設定等を拒否する。
 元のsource-owned publication検査と独立承認した全体digestを維持し、発見だけで許可を増やさない。
+再配置後のpassthrough CSSもtrusted checkoutの`src/`とbytes照合する。source rootをcandidate inputで上書きしない。
+承認candidateのCSSがtrusted正本と異なれば停止し、対応する正本更新をレビューする。
 小fixtureの合格は構造検査であり、実WASMや全publication routeの検証済み証拠ではない。
 
 live adapterを接続する場合、trusted runnerは承認済みpacketだけをdataとしてdownloadし、ZIP/service digestも照合する。
