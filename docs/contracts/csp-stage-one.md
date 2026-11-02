@@ -12,6 +12,9 @@ policyは`build/security/csp-policy.ts`、inventoryは`csp-inventory.ts`、資�
 本番公開、preview runner、sandbox token、外部report collectorは変更しない。
 明示承認されたCI継続検証として、通常E2Eと独立したCSP matrix、raw通知能力、段階別進行判定を使う。
 
+公開権限を使わないpreview用copyの組立て・dry-runは[preview成果物の準備](csp-preview-preparation.md)が所有する。
+通常の`dist/_headers`へCSPを追加せず、本Stageの隔離guardと受入結果を変更しない。
+
 ## 生成と検証
 
 1. `ROUAULT_SITE_ORIGIN`を設定して`pnpm build:production`を実行する。

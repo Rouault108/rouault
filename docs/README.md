@@ -18,6 +18,7 @@
 ## 正本Contract
 
 - `docs/contracts/csp-stage-one.md`
+- `docs/contracts/csp-preview-preparation.md`
 - `docs/contracts/static-first-and-no-js.md`
 - `docs/contracts/reading-position.md`
 - `docs/contracts/router.md`
