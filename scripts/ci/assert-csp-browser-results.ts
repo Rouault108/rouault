@@ -45,7 +45,10 @@ export const assertCspBrowserResults = (
         exact(spec, ['caseId', 'ok', 'tests']);
         cases.push(String(spec['caseId']));
         if (spec['ok'] !== true) throw new Error('[csp-results] unsuccessful spec');
-        tests.push(...sequence(spec['tests']).map(record));
+        const specTests = sequence(spec['tests']);
+        if (specTests.length !== 1)
+          throw new Error('[csp-results] expected one test per required case');
+        tests.push(record(specTests[0]));
       }
       if (suite['suites'] !== undefined) visit(suite['suites']);
     }
@@ -57,7 +60,7 @@ export const assertCspBrowserResults = (
     cases.length !== CSP_REQUIRED_CASE_IDS.length ||
     new Set(cases).size !== CSP_REQUIRED_CASE_IDS.length ||
     !CSP_REQUIRED_CASE_IDS.every((id) => cases.includes(id)) ||
-    tests.length === 0 ||
+    tests.length !== CSP_REQUIRED_CASE_IDS.length ||
     stats['expected'] !== tests.length ||
     stats['skipped'] !== 0 ||
     stats['unexpected'] !== 0 ||
