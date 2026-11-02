@@ -177,7 +177,7 @@ export const classifyWasmConsole = (
       scope.engine === 'webkit-csp' &&
       record.args === 0 &&
       record.line === consoleApiLine(scope, 'timer') &&
-      scope.measurement.js.timer === 'rejected' &&
+      scope.measurement.js.timer !== 'allowed' &&
       !directive.split(/\s+/u).some((x) => ["'unsafe-eval'", "'trusted-types-eval'"].includes(x)) &&
       record.text === webkitTimerConsoleText()
     )

@@ -12,6 +12,7 @@ import {
 } from '../e2e/support/csp-wasm-console.js';
 import { wasmInstrumentation } from '../e2e/support/csp-wasm-instrumentation.js';
 import { stageInputFixture } from './helpers/csp-stage-fixture.js';
+import { evaluateWasmProtection } from '../../scripts/ci/csp-wasm-evidence.js';
 const fixture = (engine: WasmConsoleScope['engine'] = 'firefox-csp') => {
   const data = stageInputFixture();
   const measurement = data.wasm.rows.find((r) => r.caseId === 'document-stream-deny')?.measurement;
@@ -139,7 +140,16 @@ describe('case-bound real WASM console classification', () => {
     if (mutation === 'policy') scope.policy = "script-src 'self' 'unsafe-eval'";
     if (mutation === 'trusted-eval-policy') scope.policy = "script-src 'self' 'trusted-types-eval'";
     expect(classifyWasmConsole(record, scope)).toBe(
-      mutation === 'valid' ? 'js-rejection' : 'unknown',
+      mutation === 'valid' || mutation === 'pending' ? 'js-rejection' : 'unknown',
+    );
+  });
+  it('does not use a native timer log to satisfy required A-J1 timer completion', () => {
+    const evidence = stageInputFixture().wasm;
+    const row = evidence.rows.find((row) => row.caseId === 'worker-stream-allow');
+    if (!row?.measurement) throw new Error('fixture');
+    row.measurement.js.timer = 'pending';
+    expect(evaluateWasmProtection(evidence.rows).find((row) => row.id === 'A-J1')?.status).toBe(
+      'fail',
     );
   });
   it('correlates glue with the actual native API error, source and case', () => {

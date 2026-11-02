@@ -177,7 +177,9 @@ JavaScript文字列評価の拒否とWASM通知を分け、unsafe-eval単語や�
 固定WebKitの文字列timerは、固定上流`4d05d732`の`allowEval`が生成する完全なscript-src文言を
 timerの呼出し位置・native引数形・実拒否結果・HTTP policyと照合する。eval/FunctionやWASMへ流用しない。
 RO endpoint未指定の設定警告は、完全な親policy・Page元・native引数形・engineごとのlevelを照合し、
-通知には数えない。API計測は文字列timerの結果も確定してから診断へ渡す。
+通知には数えない。生存するWorkerの許可対照とDocumentでは文字列timerの結果も確定してから診断へ渡す。
+製品がWASM拒否でWorkerを終了する経路では、終了後のtimer callbackを待たない。
+呼出し位置付きnative拒否ログの分類と、A-J1が要求する実timer結果は別であり、ログでpendingを合格化しない。
 Suzume glueは同じnative APIの例外と完全一致する既知メッセージだけを、そのglueのURL/位置で分類する。
 この照合用の例外文字列は別channelのRAM内だけで扱い、Aのschema・artifact・stdoutへ保存しない。
 分類前の待機は有界100msとし、console件数・文字列長・例外集合も制限する。

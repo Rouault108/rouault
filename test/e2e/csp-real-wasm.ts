@@ -159,7 +159,11 @@ const snapshot = async (page: import('@playwright/test').Page) =>
     const indirect = box && typeof box === 'object' && 'last' in box ? box.last : null;
     return direct ?? indirect ?? null;
   });
-const measured = async (page: import('@playwright/test').Page, missing: boolean) => {
+const measured = async (
+  page: import('@playwright/test').Page,
+  missing: boolean,
+  waitForTimer = true,
+) => {
   if (missing) return null;
   await expect
     .poll(
@@ -168,7 +172,7 @@ const measured = async (page: import('@playwright/test').Page, missing: boolean)
           const m = readWasmMeasurement(await snapshot(page));
           return (
             m.calls.length > 0 &&
-            m.js.timer !== 'pending' &&
+            (!waitForTimer || m.js.timer !== 'pending') &&
             m.calls.every((c) => c.outcome !== 'pending' && c.digest !== 'pending')
           );
         } catch {
@@ -243,7 +247,13 @@ const workerProbe = async (
     } catch {
       visible = false;
     }
-    const measurement = await measured(page, caseId === 'worker-shared-fault');
+    // WASM拒否で製品がWorkerを終了する経路は、終了後のtimer callbackを待たない。
+    // A-J1の必須timer結果は生存する許可対照とDocumentで独立に検証する。
+    const measurement = await measured(
+      page,
+      caseId === 'worker-shared-fault',
+      !caseId.endsWith('deny'),
+    );
     await state.finish(page, measurement, httpVerified && parentVerified && fixtureVerified);
     return readWasmRow({
       caseId: CSP_WASM_CASES.includes(caseId as WasmCase) ? caseId : 'worker-stream-allow',
