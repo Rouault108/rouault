@@ -1,0 +1,22 @@
+{
+  "schema": 1,
+  "repository": "Rouault108/rouault",
+  "target": {
+    "project": "rouault",
+    "branch": "csp-verify",
+    "origin": "https://csp-verify.rouault.pages.dev",
+    "mediaOrigin": "https://media.rouault.page",
+    "basePath": "",
+    "hostnameStatus": "proposed-unverified",
+    "accountStatus": "unknown"
+  },
+  "deliveryEnabled": false,
+  "accountId": null,
+  "existingCredentialBinding": null,
+  "credentialScopeConfirmed": false,
+  "actionsReadApproved": false,
+  "destinationReviewed": false,
+  "stage0Reviewed": false,
+  "rollbackRetentionConfirmed": false,
+  "approvals": []
+}

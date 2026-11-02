@@ -3,6 +3,7 @@
 ## 範囲と正本
 
 本契約は公開権限を使わない組立て・検査・dry-runだけを所有する。
+[後続の配信authorityと未接続gate](csp-preview-delivery.md)は別契約が所有する。
 実装は`build/security/csp-preview-{artifact,headers,source}.ts`、入口は`scripts/prepare-csp-preview.ts`。
 通常build、`dist/_headers`、Stage 1隔離、productionのmain専用authorityは変更しない。
 新しいworkflow、privileged upload、Wrangler起動、R2 upload、DNS/Analytics/Access変更は含まない。

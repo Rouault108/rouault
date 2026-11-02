@@ -1,0 +1,87 @@
+name: csp-preview-delivery
+run-name: csp-preview delivery preparation
+
+on:
+  workflow_dispatch:
+    inputs:
+      operation:
+        type: choice
+        options: [prepare, delivery-preflight]
+        default: prepare
+        required: true
+      source_sha:
+        description: Full reviewed candidate SHA for credential-free preparation
+        type: string
+        required: false
+      approval_id:
+        description: Identifier in the reviewed default-branch policy
+        type: string
+        required: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: csp-preview-rouault-csp-verify
+  cancel-in-progress: false
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  prepare:
+    if: ${{ github.ref == 'refs/heads/main' && inputs.operation == 'prepare' }}
+    runs-on: ubuntu-26.04
+    timeout-minutes: 20
+    env:
+      NODE_VERSION: 24.14.1
+      ROUAULT_SITE_ORIGIN: https://csp-verify.rouault.pages.dev
+      ROUAULT_MEDIA_BASE_URL: https://media.rouault.page
+      ROUAULT_BASE_PATH: ''
+    steps:
+      - name: validate candidate SHA
+        run: node -e "const v = JSON.parse(require('fs').readFileSync(process.env.GITHUB_EVENT_PATH, 'utf8')).inputs.source_sha; if (typeof v !== 'string' || !/^[a-f0-9]{40}$/.test(v)) process.exit(1)"
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        with:
+          ref: ${{ inputs.source_sha }}
+          persist-credentials: false
+      - uses: pnpm/action-setup@0e279bb959325dab635dd2c09392533439d90093
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      - run: corepack enable
+      - run: pnpm install --frozen-lockfile
+      - name: verify preparation boundary
+        run: pnpm exec vitest --project node --run test/node/csp-preview-artifact.test.ts test/node/csp-preview-delivery.test.ts
+      - run: pnpm build:csp-preview
+      - run: pnpm generate:csp-stage1
+      - run: pnpm verify:csp-stage1
+      - run: pnpm prepare:csp-preview
+      - run: pnpm dry-run:csp-preview
+      - run: node --import tsx scripts/deploy/prepare-csp-preview-delivery.ts stage
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: rouault-csp-preview-packet
+          path: .generated/csp-preview/
+          if-no-files-found: error
+          retention-days: 30
+
+  trusted-delivery-preflight:
+    if: ${{ github.ref == 'refs/heads/main' && inputs.operation == 'delivery-preflight' }}
+    runs-on: ubuntu-26.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        with:
+          ref: ${{ github.workflow_sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e
+        with:
+          node-version: 24.14.1
+      - uses: pnpm/action-setup@0e279bb959325dab635dd2c09392533439d90093
+      - run: corepack enable
+      - run: pnpm install --frozen-lockfile --ignore-scripts
+      - name: require confirmed trusted delivery authority
+        run: node --import tsx scripts/deploy/prepare-csp-preview-delivery.ts preflight
+      # account/scope・Actions read・既存credential bindingの確認前にはlive adapterを接続しない。
