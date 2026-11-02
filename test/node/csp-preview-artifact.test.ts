@@ -15,6 +15,7 @@ import {
 import {
   assertCredentialFreePreview,
   assertPreviewPaths,
+  createPreviewBuildEnvironment,
   assertPreviewFileSet,
   copyPreviewBaseline,
   PREVIEW_TARGET,
@@ -76,6 +77,19 @@ const fixture = async (
 };
 
 describe('unprivileged preview preparation', () => {
+  it('preserves the configured package cache while excluding unrelated child environment', () => {
+    const env = createPreviewBuildEnvironment(
+      { PATH: '/safe', XDG_CACHE_HOME: '/safe/cache', UNRELATED_PRIVATE: 'private-value' },
+      sha,
+    );
+    expect(env['XDG_CACHE_HOME']).toBe('/safe/cache');
+    expect(env['UNRELATED_PRIVATE']).toBeUndefined();
+    expect(env['ROUAULT_SITE_ORIGIN']).toBe(PREVIEW_TARGET.origin);
+    expect(env['GITHUB_SHA']).toBe(sha);
+    expect(() =>
+      createPreviewBuildEnvironment({ CLOUDFLARE_API_TOKEN: 'private-value' }, sha),
+    ).toThrow();
+  });
   it('refuses CLI target/command overrides and credentials without echoing secrets or a stack', () => {
     for (const args of [
       ['deploy'],

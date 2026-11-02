@@ -85,6 +85,42 @@ export const assertCredentialFreePreview = (env: NodeJS.ProcessEnv): void => {
     throw new Error('[preview] deployment credentials/configuration must not enter preparation');
 };
 
+export const createPreviewBuildEnvironment = (
+  source: NodeJS.ProcessEnv,
+  sourceSha: string,
+): NodeJS.ProcessEnv => {
+  assertCredentialFreePreview(source);
+  const names = [
+    'PATH',
+    'HOME',
+    'USERPROFILE',
+    'SystemRoot',
+    'COMSPEC',
+    'TEMP',
+    'TMP',
+    'TMPDIR',
+    'PNPM_HOME',
+    'COREPACK_HOME',
+    'XDG_CACHE_HOME',
+    'npm_execpath',
+    'NODE_EXTRA_CA_CERTS',
+    'HTTP_PROXY',
+    'HTTPS_PROXY',
+    'NO_PROXY',
+  ];
+  const env: NodeJS.ProcessEnv = Object.fromEntries(
+    names.flatMap((name) => (source[name] === undefined ? [] : [[name, source[name]]])),
+  );
+  return {
+    ...env,
+    ROUAULT_SITE_ORIGIN: PREVIEW_TARGET.origin,
+    ROUAULT_MEDIA_BASE_URL: PREVIEW_TARGET.mediaOrigin,
+    ROUAULT_BASE_PATH: '',
+    ROUAULT_BUILD_ID: sourceSha.slice(0, 8),
+    GITHUB_SHA: sourceSha,
+  };
+};
+
 export const assertPreviewPaths = async (repo: string): Promise<void> => {
   for (const name of [
     'dist',

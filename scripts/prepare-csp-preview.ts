@@ -6,6 +6,7 @@ import { assemblePreviewHeaders } from '../build/security/csp-preview-headers.js
 import {
   assertCredentialFreePreview,
   assertPreviewPaths,
+  createPreviewBuildEnvironment,
   copyPreviewBaseline,
   PREVIEW_TARGET,
   previewReceipt,
@@ -48,33 +49,7 @@ const run = async (): Promise<void> => {
   const stampFile = path.join(repo, '.generated/csp-preview-build.json');
   if (action[0] === 'build') {
     // build childには配信credentialや任意のbuild modeを継承させない。
-    const names = [
-      'PATH',
-      'HOME',
-      'USERPROFILE',
-      'SystemRoot',
-      'COMSPEC',
-      'TEMP',
-      'TMP',
-      'TMPDIR',
-      'PNPM_HOME',
-      'COREPACK_HOME',
-      'npm_execpath',
-      'NODE_EXTRA_CA_CERTS',
-      'HTTP_PROXY',
-      'HTTPS_PROXY',
-      'NO_PROXY',
-    ];
-    const env: NodeJS.ProcessEnv = Object.fromEntries(
-      names.flatMap((name) => (process.env[name] === undefined ? [] : [[name, process.env[name]]])),
-    );
-    Object.assign(env, {
-      ROUAULT_SITE_ORIGIN: PREVIEW_TARGET.origin,
-      ROUAULT_MEDIA_BASE_URL: PREVIEW_TARGET.mediaOrigin,
-      ROUAULT_BASE_PATH: '',
-      ROUAULT_BUILD_ID: sourceSha.slice(0, 8),
-      GITHUB_SHA: sourceSha,
-    });
+    const env = createPreviewBuildEnvironment(process.env, sourceSha);
     const invocation = createPnpmInvocation({
       env,
       platform: process.platform,
