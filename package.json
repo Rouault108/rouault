@@ -67,7 +67,7 @@
     "@libraz/suzume": "0.9.11",
     "@shikijs/transformers": "4.5.0",
     "iconify-icon": "3.0.5",
-    "katex": "0.16.27",
+    "katex": "0.16.47",
     "minisearch": "7.2.0",
     "sharp": "0.34.5",
     "shiki": "4.5.0"
