@@ -48,6 +48,7 @@ describe('preview delivery authority', () => {
       JSON.parse(await readFile('.github/csp-preview-delivery.json', 'utf8')) as unknown,
     );
     expect(actual.deliveryEnabled).toBe(false);
+    expect(actual.actionsReadApproved).toBe(true);
     expect(actual.approvals).toEqual([]);
     expect(() => authorizePreviewDelivery(actual, 'review-1', execution)).toThrow('confirmed');
     expect(authorizePreviewDelivery(policy(), 'review-1', execution)).toEqual(approval);
@@ -391,15 +392,27 @@ describe('preview transaction model without live adapters', () => {
 });
 
 describe('preview delivery workflow and CLI boundary', () => {
-  it('separates uncredentialed candidate execution and trusted preflight without extra grants', async () => {
+  it('limits the approved Actions read permission to the trusted job', async () => {
+    const workflow = deliveryRecord(
+        yaml.load(await readFile('.github/workflows/csp-preview-delivery.yml', 'utf8')),
+      ),
+      jobs = deliveryRecord(workflow['jobs']);
+    expect(workflow['permissions']).toEqual({ contents: 'read' });
+    expect(Object.keys(jobs).sort()).toEqual(['prepare', 'trusted-delivery-preflight']);
+    for (const [name, job] of Object.entries(jobs)) {
+      const permissions = deliveryRecord(job)['permissions'];
+      if (name === 'trusted-delivery-preflight')
+        expect(permissions).toEqual({ contents: 'read', actions: 'read' });
+      else expect(permissions).toBeUndefined();
+    }
+  });
+  it('separates uncredentialed candidate execution and trusted preflight without publication grants', async () => {
     const raw = await readFile('.github/workflows/csp-preview-delivery.yml', 'utf8');
     const w = deliveryRecord(yaml.load(raw)),
       jobs = deliveryRecord(w['jobs']);
     expect(w['permissions']).toEqual({ contents: 'read' });
     expect(Object.keys(deliveryRecord(w['on']))).toEqual(['workflow_dispatch']);
-    expect(raw).not.toMatch(
-      /secrets\.|environment:|R2_|CLOUDFLARE_API_TOKEN|actions: read|pages deploy/u,
-    );
+    expect(raw).not.toMatch(/secrets\.|environment:|R2_|CLOUDFLARE_API_TOKEN|pages deploy/u);
     for (const job of Object.values(jobs)) {
       const row = deliveryRecord(job);
       expect(row['if']).toContain("github.ref == 'refs/heads/main'");

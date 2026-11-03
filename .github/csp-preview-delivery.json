@@ -14,7 +14,7 @@
   "accountId": null,
   "existingCredentialBinding": null,
   "credentialScopeConfirmed": false,
-  "actionsReadApproved": false,
+  "actionsReadApproved": true,
   "destinationReviewed": false,
   "stage0Reviewed": false,
   "rollbackRetentionConfirmed": false,

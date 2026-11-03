@@ -48,7 +48,7 @@ const run = async (): Promise<void> => {
         deliveryAdapters: 'not-connected',
         pendingGates: [
           ...PREVIEW_PENDING_GATES,
-          'actions-read-and-service-fetch',
+          'service-fetch-and-artifact-verification',
           'journal-bootstrap-and-reviewed-live-bindings',
         ],
       }),

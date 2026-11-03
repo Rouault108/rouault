@@ -69,6 +69,10 @@ jobs:
 
   trusted-delivery-preflight:
     if: ${{ github.ref == 'refs/heads/main' && inputs.operation == 'delivery-preflight' }}
+    # 別runの履歴・artifact照合用の読み取りはtrusted側だけに限定する。
+    permissions:
+      contents: read
+      actions: read
     runs-on: ubuntu-26.04
     timeout-minutes: 5
     steps:
@@ -84,4 +88,4 @@ jobs:
       - run: pnpm install --frozen-lockfile --ignore-scripts
       - name: require confirmed trusted delivery authority
         run: node --import tsx scripts/deploy/prepare-csp-preview-delivery.ts preflight
-      # account/scope・Actions read・既存credential bindingの確認前にはlive adapterを接続しない。
+      # account/scope・journal・既存credential bindingの確認前にはlive adapterを接続しない。

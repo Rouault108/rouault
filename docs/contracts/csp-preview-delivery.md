@@ -15,12 +15,14 @@
 | cross-run artifact取得・永続reservation・Wrangler/Pages API・実HTTPのlive adapter | 実装・transport/process/storage注入とloopbackで検証。実service接続は未実施 |
 | workflow登録・main反映・credential binding・限定preview公開                       | 未実施。検証branchの追加だけでは登録済みとしない                           |
 
-`delivery-preflight`は現在必ず非ゼロで停止する。credentialの参照・環境割当て・権限追加は含めない。
+`delivery-preflight`は現在必ず非ゼロで停止する。公開credentialの参照・環境割当ては含めない。
 準備jobは`contents: read`だけとし、candidateのinstall/test/buildへ公開資格情報を渡さない。
+承認済みの`actions: read`は`trusted-delivery-preflight`のjob単位にだけ宣言する。
+用途は別runの履歴・artifactの出どころの照合である。現jobはローカルのauthority確認だけで、実API取得は未接続である。
 trusted jobは`${{ github.workflow_sha }}`をcheckoutし、candidate checkout/package実行を行わない。
 trusted lockfileのinstallは資格情報接続前にlifecycle scriptを無効にして行う。
 adapterの模擬試験成功だけで「公開jobが運用可能」と表示しない。
-`deliveryEnabled=false`、`journal=null`、`actionsReadApproved=false`と承認集合空を維持する。
+`actionsReadApproved=true`で読み取り承認を記録し、`deliveryEnabled=false`、`journal=null`と承認集合空を維持する。
 CLIはclean trusted checkout・default branch identity・review済みpolicyを検査し、無効時はcredential getterにも到達しない。
 
 ## 固定targetと独立承認
@@ -30,7 +32,7 @@ project `rouault`、branch `csp-verify`、origin `https://csp-verify.rouault.pag
 media originは`https://media.rouault.page`に限定し、previewからR2へuploadしない。
 
 `.github/csp-preview-delivery.json`はtrusted default branchでレビューする非秘密のauthorityを所有する。
-現在はaccount/binding不明、全gate false、承認集合空で、公開不可である。
+現在はActions読み取り承認だけを反映し、account/binding不明、他gate未確認、承認集合空で、公開不可である。
 candidate receipt、workflow output、dispatch入力から承認値を自動採用しない。
 
 公開前に次の非秘密情報・判断が必要である。token値は入力・出力・資料へ記載しない。
@@ -38,7 +40,7 @@ candidate receipt、workflow output、dispatch入力から承認値を自動採�
 - 対象account ID、既存credential bindingの所在、既存tokenの対象accountとPages権限。token有効性だけをscope確認の代用にしない。
 - project実在、production branchがmainであること、preview branch/alias、共有設定・Access・公開範囲。`noindex`はアクセス制限ではない。
 - Stage 0の有限inventory・互換、同一preview originのbaseline保持、対象artifactへの公開承認。
-- cross-run artifactと過去attemptを読む`actions: read`の追加承認。現workflowには追加していない。
+- cross-run artifactと過去attemptを読む`actions: read`はtrusted jobに限定して承認・宣言済み。実service取得・artifact照合は未実施。
 - adapterの独立レビュー、必要なdefault branch反映・登録、資格情報の利用方法の承認。
 - journalの専用保存先・Object Read/Write権限・初期化と永続bindingの承認。既存production mediaのR2権限を転用しない。
 
@@ -111,7 +113,8 @@ receipt ID・成功stage・aliasで絞る前に、全deploymentの同じmarker�
 SDKのretryは1 attemptに固定する。管理者による過去object全体への復元をhash chainだけで検出できるとは扱わず、
 将来の保存先運用では削除・巻戻しを禁止し、権限・復旧手順をレビューする。
 
-必要な追加権限はtrusted jobの`actions: read`と専用journalのObject Read/Writeで、どちらも未承認・未設定である。
+trusted jobの`actions: read`は承認・宣言済みで、準備jobとworkflow全体へ広げない。
+専用journalのObject Read/Write・初期化・永続bindingは未承認・未設定である。
 R2の権限bundleにDelete/Listが含まれる場合はその範囲も事前説明し、コードはDelete/List/CreateBucketを呼ばない。
 新PAT、`actions: write`、repository code writeは要求しない。Pages tokenのscope・account確認と永続bindingも別判断とする。
 
