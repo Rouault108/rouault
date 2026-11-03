@@ -34,14 +34,28 @@ const serverFixture = async (
       bytes,
     });
     if (req.url?.endsWith('/deployments')) {
+      if (mode === 'upgrade') {
+        res.writeHead(101, { connection: 'upgrade', upgrade: 'mock' });
+        res.end();
+        return;
+      }
       if (mode === 'disconnect') {
         req.socket.destroy();
         return;
       }
-      res.writeHead(mode === '5xx' ? 500 : mode === 'redirect' ? 302 : 200, {
-        'content-type': 'application/json',
-        ...(mode === 'redirect' ? { location: 'https://example.invalid/' } : {}),
-      });
+      res.writeHead(
+        ['204', '205', '304'].includes(mode)
+          ? Number(mode)
+          : mode === '5xx'
+            ? 500
+            : mode === 'redirect'
+              ? 302
+              : 200,
+        {
+          'content-type': 'application/json',
+          ...(mode === 'redirect' ? { location: 'https://example.invalid/' } : {}),
+        },
+      );
       res.end(
         JSON.stringify({
           success: false,
@@ -71,7 +85,7 @@ const serverFixture = async (
 };
 
 describe('one external deployment POST', () => {
-  it.each(['error', '5xx', 'redirect', 'disconnect'])(
+  it.each(['error', '5xx', 'redirect', 'disconnect', '204', '205', '304', 'upgrade'])(
     'never resends on %s even if the service accepted the request',
     async (mode) =>
       serverFixture(async (origin, requests) => {

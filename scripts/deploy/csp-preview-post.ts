@@ -77,22 +77,30 @@ export const previewSinglePost =
             reject(new Error('[preview-delivery] deployment response uncertain'));
           });
           response.on('end', () => {
-            const resultHeaders = new Headers();
-            for (const [name, value] of Object.entries(response.headers))
-              if (value !== undefined)
-                for (const item of Array.isArray(value) ? value : [value])
-                  resultHeaders.append(name, item);
-            resolve(
-              new Response(Uint8Array.from(Buffer.concat(chunks)), {
-                status: response.statusCode ?? 500,
-                headers: resultHeaders,
-              }),
-            );
+            try {
+              const resultHeaders = new Headers();
+              for (const [name, value] of Object.entries(response.headers))
+                if (value !== undefined)
+                  for (const item of Array.isArray(value) ? value : [value])
+                    resultHeaders.append(name, item);
+              resolve(
+                new Response(Uint8Array.from(Buffer.concat(chunks)), {
+                  status: response.statusCode ?? 500,
+                  headers: resultHeaders,
+                }),
+              );
+            } catch {
+              reject(new Error('[preview-delivery] invalid deployment response'));
+            }
           });
         },
       );
       request.on('error', () => {
         reject(new Error('[preview-delivery] deployment POST outcome unknown'));
+      });
+      request.on('upgrade', (_response, socket) => {
+        socket.destroy();
+        reject(new Error('[preview-delivery] unsupported deployment protocol'));
       });
       request.end(init.body);
     });
