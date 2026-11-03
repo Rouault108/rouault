@@ -5,7 +5,7 @@ import remarkRehype from 'remark-rehype';
 import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
 import rehypeRaw from 'rehype-raw';
-import rehypeKatex from 'rehype-katex';
+import { rehypeStaticMath } from '../rehype/static-math.js';
 import { remarkExpandExampleIncludes } from '../remark/expand-example-includes.js';
 import { remarkDisallowRawHtml } from '../remark/disallow-raw-html.js';
 import { remarkRouaultDirectives } from '../remark/rouault-directives.js';
@@ -110,7 +110,7 @@ export const compileContentInput = async (
     .use(remarkRehype)
     .use(rehypeCodeMeta)
     .use(rehypeRaw)
-    .use(rehypeKatex)
+    .use(rehypeStaticMath)
     .use(rehypeRouaultComponents)
     .use(rehypeHeadingIds)
     .use(rehypePreviewSandbox)

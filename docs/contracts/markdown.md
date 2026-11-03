@@ -285,7 +285,7 @@ Code Preview profileの解決は`note-content-contracts.ts`で一度行い、`re
   9. `remarkRehype`
   10. `rehypeCodeMeta`
   11. `rehypeRaw`
-  12. `rehypeKatex`
+  12. `rehypeStaticMath`
   13. `rehypeRouaultComponents`
   14. `rehypeHeadingIds`
   15. `rehypePreviewSandbox`
@@ -297,6 +297,8 @@ Code Preview profileの解決は`note-content-contracts.ts`で一度行い、`re
   21. `rehypeOrderedListContracts`
   22. `rehypeDisallowDangerousProps`
 - `remarkCollectSourceLinks`はinclude展開済み・directive変換済みの木からURL属性とソース位置をコピーする。リンクカード化やURL書換えより前に収集し、検証のための本文再解析・include再展開を行わない。純粋なHTMLコメントだけを除去し、コメントと生HTMLが混在するnodeは拒否する。
+- 数式は`remark-math`で構文を解析し、`rehypeStaticMath`が直接依存KaTeXの公式`renderToString`を呼んでHASTへ変換する。notes / memos / memos importは同じadapterを使う。`trust: false`、`strict: "warn"`、HTML + MathMLを維持し、無効なTeXはVFile warningとKaTeXのescaped error出力で残し、予期しないrenderer例外はbuildを失敗させる。HTMLの安全検査は数式変換の後に行う。
+- 数式用CSSは`math.css`から同じ直接依存の`katex/dist/katex.css`を読み、フォントもViteが同packageから配信する。内部クラスを独自に再構成しない。`remark-math`配下のmicromarkが持つ旧KaTeXは`mathHtml`用の推移依存であり、このMarkdown→MDAST→HAST pipelineの描画には使用しない。
 - Parser / transformer / adapterがMarkdownを最終DOMへ正規化する。
 - authoring grammarに関わる意味論変更は、remark層の正本と実装順序の双方を整合させる。
 - 出力DOMに関わる意味論変更は、rehype層の正本と実装順序の双方を整合させる。
