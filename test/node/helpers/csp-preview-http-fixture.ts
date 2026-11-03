@@ -117,7 +117,8 @@ export const withPreviewHttpServer = async <T>(
     if (mutation === 'enforce') headers['content-security-policy'] = "default-src 'none'";
     if (mutation === 'mime') headers['content-type'] = 'text/plain';
     if (mutation === 'cache') headers['cache-control'] = 'public,max-age=1';
-    if (mutation === 'nosniff') delete headers['x-content-type-options'];
+    if (mutation === 'nosniff' || (mutation === 'css-nosniff' && file.endsWith('.css')))
+      delete headers['x-content-type-options'];
     if (request.headers['if-none-match'] === headers['etag']) {
       response.writeHead(mutation === '304' ? 200 : 304, headers);
       response.end();

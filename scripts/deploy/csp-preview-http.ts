@@ -187,7 +187,7 @@ export const verifyPreviewHttp = async (
     if (!expectedTypes || !type || !expectedTypes.includes(type))
       throw new Error('[preview-delivery] HTTP MIME mismatch');
     if (
-      ['.html', '.js', '.wasm'].includes(path.extname(file.file)) &&
+      ['.html', '.js', '.css', '.wasm'].includes(path.extname(file.file)) &&
       response.headers.get('x-content-type-options')?.toLowerCase() !== 'nosniff'
     )
       throw new Error('[preview-delivery] HTTP nosniff missing');

@@ -187,7 +187,7 @@ describe('preview HTTP verifier on actual loopback responses', () => {
         );
       }, true),
   );
-  it.each(['worker-leak', 'enforce', 'mime', 'cache', 'nosniff', 'body', '304'])(
+  it.each(['worker-leak', 'enforce', 'mime', 'cache', 'nosniff', 'css-nosniff', 'body', '304'])(
     'rejects %s from real HTTP responses',
     async (mutation) =>
       fixture(async (_root, packet) => {
