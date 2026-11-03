@@ -3,9 +3,10 @@ import path from 'node:path';
 import { PREVIEW_TARGET, previewDigest } from '../../build/security/csp-preview-artifact.js';
 import {
   authorizePreviewDelivery,
+  parsePreviewRecovery,
+  type PreviewRecoveryReference,
   deliveryRecord,
   exactDeliveryFields,
-  parsePreviewApproval,
   verifyPreviewServiceEvidence,
   type PreviewApproval,
   type PreviewDeliveryPolicy,
@@ -21,8 +22,9 @@ export interface DeploymentSnapshot {
   deployments: readonly unknown[];
 }
 export interface PreviewAttempt {
-  schema: 2;
+  schema: 3;
   approvalId: string;
+  recoveryFrom: PreviewRecoveryReference | null;
   mode: PreviewApproval['mode'];
   sourceSha: string;
   payloadDigest: string;
@@ -34,9 +36,16 @@ export interface PreviewAttempt {
   attemptId: string;
   before: { observedAt: string; ids: string[]; digest: string };
   uploadStartedAt: string | null;
-  status: 'reserved' | 'upload-started' | 'deployed-unverified' | 'verified' | 'uncertain';
+  status:
+    | 'reserved'
+    | 'upload-started'
+    | 'deployed-unverified'
+    | 'verified'
+    | 'uncertain'
+    | 'failed-confirmed';
   deploymentId: string | null;
   confirmation: { createdAt: string; observedAt: string } | null;
+  verificationFailure: 'http-differs' | 'http-unavailable' | 'alias-mismatch' | null;
   contentStatus: 'not-checked' | 'matches' | 'differs' | 'unavailable';
   operationStatus: 'not-started' | 'unknown' | 'confirmed';
 }
@@ -77,6 +86,8 @@ export const parsePreviewAttempt = (value: unknown): PreviewAttempt => {
   exactDeliveryFields(row, [
     'schema',
     'approvalId',
+    'recoveryFrom',
+    'verificationFailure',
     'mode',
     'sourceSha',
     'payloadDigest',
@@ -94,13 +105,16 @@ export const parsePreviewAttempt = (value: unknown): PreviewAttempt => {
     'contentStatus',
     'operationStatus',
   ]);
+  const recovery = parsePreviewRecovery(row['recoveryFrom']);
+  if (recovery && row['mode'] !== 'baseline')
+    throw new Error('[preview-delivery] non-baseline recovery');
   const before = deliveryRecord(row['before']);
   exactDeliveryFields(before, ['observedAt', 'ids', 'digest']);
   const runId = row['runId'],
     runAttempt = row['runAttempt'],
     attemptId = row['attemptId'];
   if (
-    row['schema'] !== 2 ||
+    row['schema'] !== 3 ||
     typeof row['approvalId'] !== 'string' ||
     !/^[A-Za-z0-9][A-Za-z0-9_-]{0,99}$/u.test(row['approvalId']) ||
     typeof row['mode'] !== 'string' ||
@@ -128,9 +142,14 @@ export const parsePreviewAttempt = (value: unknown): PreviewAttempt => {
     new Set(before['ids']).size !== before['ids'].length ||
     before['ids'].length > 10000 ||
     typeof row['status'] !== 'string' ||
-    !['reserved', 'upload-started', 'deployed-unverified', 'verified', 'uncertain'].includes(
-      row['status'],
-    ) ||
+    ![
+      'reserved',
+      'upload-started',
+      'deployed-unverified',
+      'verified',
+      'uncertain',
+      'failed-confirmed',
+    ].includes(row['status']) ||
     typeof row['contentStatus'] !== 'string' ||
     !['not-checked', 'matches', 'differs', 'unavailable'].includes(row['contentStatus']) ||
     typeof row['operationStatus'] !== 'string' ||
@@ -161,6 +180,14 @@ export const parsePreviewAttempt = (value: unknown): PreviewAttempt => {
       throw new Error('[preview-delivery] invalid service confirmation');
   }
   if (
+    (row['verificationFailure'] !== null &&
+      (typeof row['verificationFailure'] !== 'string' ||
+        !['http-differs', 'http-unavailable', 'alias-mismatch'].includes(
+          row['verificationFailure'],
+        ))) ||
+    (row['status'] === 'failed-confirmed' &&
+      (row['verificationFailure'] === null || row['operationStatus'] !== 'confirmed')) ||
+    (row['status'] !== 'failed-confirmed' && row['verificationFailure'] !== null) ||
     (row['status'] === 'verified' &&
       (row['operationStatus'] !== 'confirmed' || row['contentStatus'] !== 'matches')) ||
     (row['operationStatus'] === 'confirmed' &&
@@ -179,24 +206,6 @@ export const parsePreviewAttempt = (value: unknown): PreviewAttempt => {
 
 export const previewAttemptMarker = (attempt: Pick<PreviewAttempt, 'attemptId'>): string =>
   `rouault-preview:${attempt.attemptId}`;
-export const previewWranglerArgs = (
-  approval: PreviewApproval,
-  attemptId: string,
-): readonly string[] => {
-  parsePreviewApproval(approval);
-  if (!/^[1-9][0-9]{0,19}\.[1-9][0-9]*\.[a-f0-9-]{36}$/u.test(attemptId))
-    throw new Error('[preview-delivery] invalid command attempt identity');
-  return [
-    'pages',
-    'deploy',
-    'payload',
-    '--project-name=rouault',
-    '--branch=csp-verify',
-    `--commit-hash=${approval.sourceSha}`,
-    '--commit-dirty=false',
-    `--commit-message=${previewAttemptMarker({ attemptId })}`,
-  ];
-};
 export const assertUnusedPreviewApproval = (
   approval: PreviewApproval,
   history: { complete: boolean; attemptedApprovalIds: readonly string[] },
@@ -250,7 +259,7 @@ export interface PreviewDeliveryPorts {
   reserve: (attempt: PreviewAttempt) => Promise<void>;
   persist: (attempt: PreviewAttempt) => Promise<void>;
   upload: (
-    args: readonly string[],
+    attempt: PreviewAttempt,
     payload: { directory: string; digest: string; accountId: string },
   ) => Promise<{ deploymentId: string } | null>;
   observe: () => Promise<DeploymentSnapshot>;
@@ -270,6 +279,16 @@ export const reconcilePreviewAttempt = async (
     after = snapshotBeforeUpload(snapshot);
   if (Date.parse(after.observedAt) < Date.parse(attempt.before.observedAt))
     throw new Error('[preview-delivery] stale observation');
+  const correlated = snapshot.deployments.filter((value) => {
+    const row = deliveryRecord(value);
+    return (
+      deliveryRecord(deliveryRecord(row['deployment_trigger'])['metadata'])['commit_message'] ===
+      previewAttemptMarker(attempt)
+    );
+  });
+  // receipt・stage・aliasで絞る前に全marker候補を数える。失敗/進行中の重複も隠さない。
+  if (correlated.length > 1)
+    throw new Error('[preview-delivery] multiple deployments for one attempt');
   const matching = snapshot.deployments.flatMap((value) => {
     try {
       return [{ value, deployment: verifyPreviewDeployment(value, attempt.sourceSha, false) }];
@@ -298,14 +317,19 @@ export const reconcilePreviewAttempt = async (
         !attempt.before.ids.includes(deployment.id) &&
         metadata['commit_message'] === previewAttemptMarker(attempt) &&
         created >= Date.parse(attempt.before.observedAt) &&
-        created <= Date.parse(after.observedAt) + 999 &&
-        (attempt.deploymentId === null || attempt.deploymentId === deployment.id)
+        created <= Date.parse(after.observedAt) + 999
       );
     } catch {
       return false;
     }
   });
   const confirmed = operation.length === 1 ? operation[0] : undefined;
+  if (
+    confirmed &&
+    attempt.deploymentId !== null &&
+    attempt.deploymentId !== confirmed.deployment.id
+  )
+    throw new Error('[preview-delivery] receipt and unique attempt deployment differ');
   const confirmation =
     attempt.confirmation ??
     (confirmed
@@ -315,17 +339,68 @@ export const reconcilePreviewAttempt = async (
         }
       : null);
   const deploymentId = confirmed?.deployment.id ?? attempt.deploymentId;
+  const verified =
+    !!confirmed && contentStatus === 'matches' && current[0]?.deployment.id === deploymentId;
+  const verificationFailure =
+    confirmed && !verified
+      ? contentStatus === 'differs'
+        ? 'http-differs'
+        : contentStatus === 'unavailable'
+          ? 'http-unavailable'
+          : 'alias-mismatch'
+      : null;
   return parsePreviewAttempt({
     ...attempt,
     contentStatus,
     operationStatus: confirmation ? 'confirmed' : 'unknown',
     confirmation,
     deploymentId,
-    status:
-      confirmation && contentStatus === 'matches' && current[0]?.deployment.id === deploymentId
-        ? 'verified'
-        : 'uncertain',
+    verificationFailure,
+    status: verified ? 'verified' : verificationFailure ? 'failed-confirmed' : 'uncertain',
   });
+};
+
+export const assertRecoverablePreviewSnapshot = (
+  attempt: PreviewAttempt,
+  snapshot: DeploymentSnapshot,
+): void => {
+  if (
+    attempt.status !== 'failed-confirmed' ||
+    attempt.operationStatus !== 'confirmed' ||
+    !attempt.confirmation ||
+    !attempt.deploymentId
+  )
+    throw new Error('[preview-delivery] unresolved operation cannot recover');
+  const after = snapshotBeforeUpload(snapshot);
+  if (Date.parse(after.observedAt) < Date.parse(attempt.confirmation.observedAt))
+    throw new Error('[preview-delivery] stale recovery snapshot');
+  const candidates = snapshot.deployments.filter(
+    (value) =>
+      deliveryRecord(deliveryRecord(deliveryRecord(value)['deployment_trigger'])['metadata'])[
+        'commit_message'
+      ] === previewAttemptMarker(attempt),
+  );
+  if (candidates.length !== 1)
+    throw new Error('[preview-delivery] ambiguous/missing recovery operation');
+  const value = candidates[0],
+    identity = verifyPreviewDeployment(value, attempt.sourceSha);
+  const owners = snapshot.deployments.filter((value) => {
+    const aliases = deliveryRecord(value)['aliases'];
+    return (
+      Array.isArray(aliases) &&
+      aliases.some(
+        (alias) => alias === PREVIEW_TARGET.origin || alias === PREVIEW_TARGET.origin + '/',
+      )
+    );
+  });
+  if (
+    owners.length !== 1 ||
+    !['http-differs', 'http-unavailable'].includes(attempt.verificationFailure ?? '') ||
+    identity.id !== attempt.deploymentId ||
+    attempt.before.ids.includes(identity.id) ||
+    previewTimestamp(deliveryRecord(value)['created_on']) !== attempt.confirmation.createdAt
+  )
+    throw new Error('[preview-delivery] recovery service identity mismatch');
 };
 
 export const executePreviewTransaction = async (
@@ -351,8 +426,10 @@ export const executePreviewTransaction = async (
   if (!PREVIEW_UUID.test(nonce) || !request.policy.accountId)
     throw new Error('[preview-delivery] invalid attempt setup');
   let attempt = parsePreviewAttempt({
-    schema: 2,
+    schema: 3,
     approvalId: approval.id,
+    recoveryFrom: approval.recoveryFrom,
+    verificationFailure: null,
     mode: approval.mode,
     sourceSha: approval.sourceSha,
     payloadDigest: approval.mode === 'baseline' ? approval.baselineDigest : approval.artifactDigest,
@@ -379,7 +456,7 @@ export const executePreviewTransaction = async (
       operationStatus: 'unknown',
     };
     await ports.persist(attempt);
-    const receipt = await ports.upload(previewWranglerArgs(approval, attempt.attemptId), {
+    const receipt = await ports.upload(attempt, {
       directory: path.join(request.packetRoot, approval.mode),
       digest: attempt.payloadDigest,
       accountId: attempt.accountId,
@@ -396,7 +473,10 @@ export const executePreviewTransaction = async (
     await ports.persist(attempt);
     return attempt;
   } catch {
-    attempt = { ...attempt, status: 'uncertain' };
+    attempt = {
+      ...attempt,
+      status: attempt.verificationFailure ? 'failed-confirmed' : 'uncertain',
+    };
     await ports.persist(attempt);
     return attempt;
   }

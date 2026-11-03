@@ -46,6 +46,7 @@ export const approval: PreviewApproval = {
   ciRunAttempt: 1,
   ciWorkflowDigest: digest,
   approvalRef: 'Sentinel_review_1',
+  recoveryFrom: null,
 };
 export const withPacket = (identity: PreviewPacketIdentity): PreviewApproval => ({
   ...approval,

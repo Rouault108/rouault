@@ -15,8 +15,10 @@ import { approval, evidence, execution, attemptSetup } from './csp-preview-deliv
 import { type PreviewFetch } from '../../../scripts/deploy/csp-preview-transport.js';
 
 export const makeAttempt = (): PreviewAttempt => ({
-  schema: 2,
+  schema: 3,
   approvalId: approval.id,
+  recoveryFrom: null,
+  verificationFailure: null,
   mode: approval.mode,
   sourceSha: approval.sourceSha,
   payloadDigest: approval.artifactDigest,
@@ -203,4 +205,22 @@ export const githubFixture = (
     },
     data,
   };
+};
+
+// 署名のないloopback専用JWT。実serviceへは送らない。
+export const assetJwt =
+  'eyJhbGciOiJub25lIn0.eyJleHAiOjQxMDI0NDQ4MDAsIm1heF9maWxlX2NvdW50X2FsbG93ZWQiOjIwMDAwfQ.mock';
+export const fakeAssetOutput = async (
+  request: import('../../../scripts/deploy/csp-preview-wrangler.js').PreviewProcessRequest,
+  invalid = false,
+): Promise<void> => {
+  const { writeFile } = await import('node:fs/promises');
+  const files = await scanPreviewFiles(path.join(request.cwd, 'payload'));
+  const manifest = Object.fromEntries(
+    files
+      .filter(({ file }) => !['_headers', '_redirects'].includes(file))
+      .map(({ file, sha256 }) => ['/' + file, sha256.slice(0, 32)]),
+  );
+  if (invalid) manifest['/unapproved'] = '0'.repeat(32);
+  await writeFile(path.join(request.cwd, 'state/manifest.json'), JSON.stringify(manifest));
 };

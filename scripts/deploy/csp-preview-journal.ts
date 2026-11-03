@@ -42,6 +42,7 @@ const sameIdentity = (a: PreviewAttempt, b: PreviewAttempt): boolean =>
   [
     'schema',
     'approvalId',
+    'recoveryFrom',
     'mode',
     'sourceSha',
     'payloadDigest',
@@ -56,9 +57,18 @@ const sameIdentity = (a: PreviewAttempt, b: PreviewAttempt): boolean =>
     (key) => JSON.stringify(deliveryRecord(a)[key]) === JSON.stringify(deliveryRecord(b)[key]),
   );
 const transition = (before: PreviewAttempt, after: PreviewAttempt): void => {
+  const allowed: Record<PreviewAttempt['status'], readonly PreviewAttempt['status'][]> = {
+    reserved: ['upload-started', 'uncertain'],
+    'upload-started': ['deployed-unverified', 'uncertain'],
+    'deployed-unverified': ['verified', 'failed-confirmed', 'uncertain'],
+    uncertain: ['verified', 'failed-confirmed', 'uncertain'],
+    'failed-confirmed': ['verified', 'failed-confirmed', 'uncertain'],
+    verified: [],
+  };
   if (
     !sameIdentity(before, after) ||
     before.status === 'verified' ||
+    !allowed[before.status].includes(after.status) ||
     (before.uploadStartedAt !== null && after.uploadStartedAt !== before.uploadStartedAt) ||
     (before.deploymentId !== null && after.deploymentId !== before.deploymentId) ||
     (before.confirmation !== null &&
@@ -68,6 +78,42 @@ const transition = (before: PreviewAttempt, after: PreviewAttempt): void => {
     (before.status !== 'reserved' && after.uploadStartedAt === null)
   )
     throw new Error('[preview-delivery] journal identity/state regression');
+};
+
+const assertReservation = (latest: Map<string, PreviewAttempt>, attempt: PreviewAttempt): void => {
+  if (attempt.status !== 'reserved')
+    throw new Error('[preview-delivery] unreserved journal attempt');
+  const covered = new Set(
+    [...latest.values()].flatMap((value) =>
+      value.recoveryFrom ? [value.recoveryFrom.approvalId] : [],
+    ),
+  );
+  const active = [...latest.values()].filter(
+    (value) => !covered.has(value.approvalId) && value.status !== 'verified',
+  );
+  const reference = attempt.recoveryFrom;
+  if (!reference) {
+    if (active.length)
+      throw new Error('[preview-delivery] unresolved attempt requires explicit recovery authority');
+    return;
+  }
+  const prior = active[0];
+  if (
+    active.length !== 1 ||
+    prior?.status !== 'failed-confirmed' ||
+    prior.operationStatus !== 'confirmed' ||
+    !prior.confirmation ||
+    !prior.deploymentId ||
+    !['http-differs', 'http-unavailable'].includes(prior.verificationFailure ?? '') ||
+    attempt.accountId !== prior.accountId ||
+    attempt.mode !== 'baseline' ||
+    prior.approvalId !== reference.approvalId ||
+    prior.attemptId !== reference.attemptId ||
+    prior.deploymentId !== reference.deploymentId ||
+    !attempt.before.ids.includes(prior.deploymentId) ||
+    Date.parse(attempt.before.observedAt) < Date.parse(prior.confirmation.observedAt)
+  )
+    throw new Error('[preview-delivery] baseline recovery identity/confirmation mismatch');
 };
 
 export const parsePreviewJournal = (bytes: Buffer, generation: string): PreviewJournal => {
@@ -102,11 +148,7 @@ export const parsePreviewJournal = (bytes: Buffer, generation: string): PreviewJ
       throw new Error('[preview-delivery] missing/corrupt journal event');
     const before = latest.get(attempt.approvalId);
     if (before) transition(before, attempt);
-    else if (
-      attempt.status !== 'reserved' ||
-      [...latest.values()].some((a) => a.status !== 'verified')
-    )
-      throw new Error('[preview-delivery] overlapping/unreserved attempt');
+    else assertReservation(latest, attempt);
     latest.set(attempt.approvalId, attempt);
     previous = event['digest'];
     return {

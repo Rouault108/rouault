@@ -7,6 +7,13 @@ import {
   type DeploymentSnapshot,
 } from './csp-preview-transaction.js';
 import { nativePreviewFetch, readPreviewJson, type PreviewFetch } from './csp-preview-transport.js';
+import { previewSinglePost } from './csp-preview-post.js';
+import { type PreviewUploadedAssets } from './csp-preview-wrangler.js';
+import {
+  type PreviewAttempt,
+  previewAttemptMarker,
+  parsePreviewAttempt,
+} from './csp-preview-transaction.js';
 
 const marker = /^rouault-preview:[1-9][0-9]{0,19}\.[1-9][0-9]*\.[a-f0-9-]{36}$/u;
 const sanitizeDeployment = (value: unknown): Record<string, unknown> => {
@@ -64,9 +71,12 @@ const sanitizeDeployment = (value: unknown): Record<string, unknown> => {
 export class PreviewPagesAdapter {
   private readonly base: string;
   constructor(
-    accountId: string,
+    private readonly accountId: string,
     private readonly token: string,
     private readonly transport: PreviewFetch = nativePreviewFetch,
+    private readonly post: PreviewFetch = transport === nativePreviewFetch
+      ? previewSinglePost()
+      : transport,
   ) {
     if (!/^[a-f0-9]{32}$/u.test(accountId) || !token || /[\r\n]/u.test(token))
       throw new Error('[preview-delivery] Pages binding unavailable');
@@ -96,6 +106,82 @@ export class PreviewPagesAdapter {
       project = deliveryRecord(body['result']);
     if (project['name'] !== PREVIEW_TARGET.project || project['production_branch'] !== 'main')
       throw new Error('[preview-delivery] Pages project/production branch mismatch');
+  }
+  async uploadToken(): Promise<string> {
+    const { body } = await this.get('/upload-token'),
+      jwt = deliveryRecord(body['result'])['jwt'];
+    if (
+      typeof jwt !== 'string' ||
+      jwt.length > 16384 ||
+      !/^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/u.test(jwt)
+    )
+      throw new Error('[preview-delivery] invalid limited asset JWT');
+    return jwt;
+  }
+  async createDeployment(
+    attempt: PreviewAttempt,
+    assets: PreviewUploadedAssets,
+  ): Promise<{ deploymentId: string }> {
+    parsePreviewAttempt(attempt);
+    if (
+      attempt.accountId !== this.accountId ||
+      attempt.status !== 'upload-started' ||
+      attempt.operationStatus !== 'unknown'
+    )
+      throw new Error('[preview-delivery] deployment POST identity/state mismatch');
+    const form = new FormData();
+    form.set('manifest', JSON.stringify(assets.manifest));
+    form.set('branch', PREVIEW_TARGET.branch);
+    form.set('commit_hash', attempt.sourceSha);
+    form.set('commit_dirty', 'false');
+    form.set('commit_message', previewAttemptMarker(attempt));
+    form.set('_headers', new File([assets.headers], '_headers'));
+    form.set('_redirects', new File([assets.redirects], '_redirects'));
+    const encoded = new Request(this.base + '/deployments', { method: 'POST', body: form });
+    const bytes = new Uint8Array(await encoded.arrayBuffer());
+    if (bytes.length > 8 * 1024 * 1024) throw new Error('[preview-delivery] deployment form limit');
+    // 8000000、5xx、切断、応答欠損も再送しない。結果はjournalからread-onlyで照合する。
+    const response = await this.post(this.base + '/deployments', {
+      method: 'POST',
+      redirect: 'manual',
+      credentials: 'omit',
+      headers: {
+        Authorization: `Bearer ${this.token}`,
+        'Content-Type': encoded.headers.get('content-type') ?? '',
+        Accept: 'application/json',
+        'Accept-Encoding': 'identity',
+      },
+      body: bytes,
+    });
+    const body = deliveryRecord(await readPreviewJson(response));
+    if (body['success'] !== true || !Array.isArray(body['errors']) || body['errors'].length)
+      throw new Error('[preview-delivery] deployment POST requires reconciliation');
+    const value = sanitizeDeployment(body['result']),
+      metadata = deliveryRecord(deliveryRecord(value['deployment_trigger'])['metadata']);
+    if (
+      typeof value['id'] !== 'string' ||
+      !PREVIEW_UUID.test(value['id']) ||
+      value['project_name'] !== PREVIEW_TARGET.project ||
+      value['environment'] !== 'preview' ||
+      metadata['branch'] !== PREVIEW_TARGET.branch ||
+      metadata['commit_hash'] !== attempt.sourceSha ||
+      metadata['commit_dirty'] !== false ||
+      metadata['commit_message'] !== previewAttemptMarker(attempt)
+    )
+      throw new Error('[preview-delivery] deployment creation identity mismatch');
+    return { deploymentId: value['id'] };
+  }
+  async waitForDeployment(id: string): Promise<void> {
+    for (let poll = 0; poll < 12; poll++) {
+      const value = await this.deployment(id),
+        stage = deliveryRecord(value['latest_stage']);
+      if (
+        stage['name'] === 'deploy' &&
+        ['success', 'failure', 'canceled'].includes(String(stage['status']))
+      )
+        return;
+      if (poll < 11) await new Promise((resolve) => setTimeout(resolve, 1000));
+    }
   }
   async snapshot(): Promise<DeploymentSnapshot> {
     const deployments: Record<string, unknown>[] = [];

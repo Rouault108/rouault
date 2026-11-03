@@ -19,10 +19,11 @@ import {
   executePreviewTransaction,
   reconcilePreviewAttempt,
   verifyPreviewDeployment,
+  assertRecoverablePreviewSnapshot,
   type PreviewAttempt,
 } from './csp-preview-transaction.js';
 import { verifyPreviewHttp, type PreviewHttpEvidence } from './csp-preview-http.js';
-import { runTrustedPreviewWrangler, type PreviewProcess } from './csp-preview-wrangler.js';
+import { uploadTrustedPreviewAssets, type PreviewProcess } from './csp-preview-wrangler.js';
 import { type PreviewFetch } from './csp-preview-transport.js';
 
 export interface PreviewRuntimeBindings {
@@ -49,6 +50,7 @@ export const runPreviewDelivery = async (
   },
   ports: {
     transport?: PreviewFetch;
+    post?: PreviewFetch;
     process?: PreviewProcess;
     store?: (accountId: string, credentials: PreviewRuntimeBindings['journal']) => PreviewCasStore;
   } = {},
@@ -60,7 +62,7 @@ export const runPreviewDelivery = async (
     throw new Error('[preview-delivery] journal authority missing');
   const credentials = request.bindings(),
     github = new PreviewGithubAdapter(credentials.githubToken, ports.transport),
-    pages = new PreviewPagesAdapter(account, credentials.pagesToken, ports.transport),
+    pages = new PreviewPagesAdapter(account, credentials.pagesToken, ports.transport, ports.post),
     journal = new PreviewJournalAdapter(
       (ports.store ?? createPreviewR2JournalStore)(account, credentials.journal),
       binding.generation,
@@ -120,7 +122,19 @@ export const runPreviewDelivery = async (
       attempt = await executePreviewTransaction(
         { ...request, evidence, packetRoot: packet, history },
         {
-          snapshot: () => pages.snapshot(),
+          snapshot: async () => {
+            const snapshot = await pages.snapshot();
+            if (approval.recoveryFrom) {
+              const prior = await journal.attempt(approval.recoveryFrom.approvalId);
+              if (
+                prior.attemptId !== approval.recoveryFrom.attemptId ||
+                prior.deploymentId !== approval.recoveryFrom.deploymentId
+              )
+                throw new Error('[preview-delivery] recovery authority differs');
+              assertRecoverablePreviewSnapshot(prior, snapshot);
+            }
+            return snapshot;
+          },
           reserve: async (attempt) => {
             await github.assertTrustedHead(request.execution.workflowSha);
             await journal.reserve(attempt);
@@ -131,19 +145,29 @@ export const runPreviewDelivery = async (
             const current = await journal.attempt(approval.id);
             if (current.status !== 'upload-started')
               throw new Error('[preview-delivery] durable upload start missing');
-            return runTrustedPreviewWrangler(
+            const assets = await uploadTrustedPreviewAssets(
               {
                 trustedRoot: request.trustedRoot,
                 packetRoot: packet,
                 approval,
-                attemptId: current.attemptId,
-                accountId: account,
-                token: credentials.pagesToken,
+                jwt: await pages.uploadToken(),
               },
               ports.process,
             );
+            await github.assertTrustedHead(request.execution.workflowSha);
+            await pages.project();
+            if (approval.recoveryFrom)
+              assertRecoverablePreviewSnapshot(
+                await journal.attempt(approval.recoveryFrom.approvalId),
+                await pages.snapshot(),
+              );
+            return pages.createDeployment(current, assets);
           },
-          observe: () => pages.snapshot(),
+          observe: async () => {
+            const current = await journal.attempt(approval.id);
+            if (current.deploymentId) await pages.waitForDeployment(current.deploymentId);
+            return pages.snapshot();
+          },
           verifyHttp,
         },
       );

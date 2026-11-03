@@ -29,6 +29,7 @@ describe('durable preview conditional journal', () => {
     await journal.initialize();
     await journal.reserve(makeAttempt());
     await journal.persist(started());
+    await journal.persist({ ...started(), status: 'deployed-unverified' });
     await journal.persist({
       ...started(),
       status: 'verified',
@@ -43,6 +44,7 @@ describe('durable preview conditional journal', () => {
     expect((await journal.read()).journal.events.map((e) => e.attempt.status)).toEqual([
       'reserved',
       'upload-started',
+      'deployed-unverified',
       'verified',
     ]);
     expect((await journal.history()).attemptedApprovalIds).toEqual(['review-1']);

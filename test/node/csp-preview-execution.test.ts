@@ -2,7 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { access, readFile, writeFile, readdir } from 'node:fs/promises';
 import path from 'node:path';
 import {
-  runTrustedPreviewWrangler,
+  uploadTrustedPreviewAssets,
   nativePreviewProcess,
   previewWranglerEnvironment,
   type PreviewProcessRequest,
@@ -11,7 +11,6 @@ import { verifyPreviewHttp } from '../../scripts/deploy/csp-preview-http.js';
 import { PreviewJournalAdapter } from '../../scripts/deploy/csp-preview-journal.js';
 import { runPreviewDelivery } from '../../scripts/deploy/csp-preview-runtime.js';
 import { inspectPreviewPacket } from '../../scripts/deploy/csp-preview-packet.js';
-import { type PreviewApproval } from '../../scripts/deploy/csp-preview-authority.js';
 import {
   fixture,
   approval,
@@ -26,52 +25,36 @@ import {
   githubFixture,
   zipPacket,
   jsonResponse,
+  assetJwt,
+  fakeAssetOutput,
 } from './helpers/csp-preview-adapter-fixture.js';
 import { withPreviewHttpServer } from './helpers/csp-preview-http-fixture.js';
 
-const structuredOutput = (request: PreviewProcessRequest, approved: PreviewApproval): string => {
-  const d = deployment();
-  return [
-    {
-      type: 'wrangler-session',
-      version: 1,
-      wrangler_version: '4.100.0',
-      command_line_args: request.args.slice(1),
-    },
-    { type: 'pages-deploy', version: 1, pages_project: 'rouault', deployment_id: d.id, url: d.url },
-    {
-      type: 'pages-deploy-detailed',
-      version: 1,
-      pages_project: 'rouault',
-      deployment_id: d.id,
-      url: d.url,
-      alias: d.aliases[0],
-      environment: 'preview',
-      production_branch: 'main',
-      deployment_trigger: { metadata: { commit_hash: approved.sourceSha } },
-    },
-  ]
-    .map((value) => JSON.stringify(value))
-    .join('\n');
-};
 describe('isolated trusted uploader', () => {
   it('passes only copied payload and minimum environment, then removes owned raw output', async () =>
     fixture(async (_root, packet) => {
       const approved = withPacket(await inspectPreviewPacket(packet, approval.sourceSha));
       let cwd = '';
-      const result = await runTrustedPreviewWrangler(
+      const result = await uploadTrustedPreviewAssets(
         {
           trustedRoot: process.cwd(),
           packetRoot: packet,
           approval: approved,
-          attemptId: makeAttempt().attemptId,
-          accountId: 'c'.repeat(32),
-          token: 'mock-pages',
+          jwt: assetJwt,
         },
         async (request) => {
           cwd = request.cwd;
           expect(request.command).toBe(process.execPath);
-          expect(request.env['CLOUDFLARE_API_TOKEN']).toBe('mock-pages');
+          expect(request.env['CLOUDFLARE_API_TOKEN']).toBe(assetJwt);
+          expect(request.env['CF_PAGES_UPLOAD_JWT']).toBe(assetJwt);
+          expect(request.args.slice(1)).toEqual([
+            'pages',
+            'project',
+            'upload',
+            'payload',
+            '--output-manifest-path=state/manifest.json',
+            '--skip-caching',
+          ]);
           expect(
             Object.keys(request.env).some((key) => /GITHUB|AWS|R2|NODE_OPTIONS/u.test(key)),
           ).toBe(false);
@@ -81,14 +64,11 @@ describe('isolated trusted uploader', () => {
           expect(await readFile(path.join(request.cwd, 'payload/_headers'), 'utf8')).toContain(
             'Content-Security-Policy-Report-Only',
           );
-          await writeFile(
-            request.env['WRANGLER_OUTPUT_FILE_PATH'] ?? '',
-            structuredOutput(request, approved),
-          );
+          await fakeAssetOutput(request);
           return { started: true, interrupted: false, exitCode: 0, signal: null };
         },
       );
-      expect(result.deploymentId).toBe(deployment().id);
+      expect(Object.keys(result.manifest)).toHaveLength(4);
       await expect(access(cwd)).rejects.toThrow();
     }));
   it.each(['tamper', 'identity', 'interrupted', 'exit', 'missing-output'])(
@@ -98,26 +78,18 @@ describe('isolated trusted uploader', () => {
         const approved = withPacket(await inspectPreviewPacket(packet, approval.sourceSha));
         let calls = 0;
         await expect(
-          runTrustedPreviewWrangler(
+          uploadTrustedPreviewAssets(
             {
               trustedRoot: process.cwd(),
               packetRoot: packet,
               approval: approved,
-              attemptId: makeAttempt().attemptId,
-              accountId: 'c'.repeat(32),
-              token: 'mock',
+              jwt: assetJwt,
             },
             async (request) => {
               calls++;
               if (mode === 'tamper')
                 await writeFile(path.join(request.cwd, 'payload/index.html'), 'tampered');
-              if (mode !== 'missing-output')
-                await writeFile(
-                  request.env['WRANGLER_OUTPUT_FILE_PATH'] ?? '',
-                  mode === 'identity'
-                    ? structuredOutput(request, { ...approved, sourceSha: '0'.repeat(40) })
-                    : structuredOutput(request, approved),
-                );
+              if (mode !== 'missing-output') await fakeAssetOutput(request, mode === 'identity');
               return {
                 started: true,
                 interrupted: mode === 'interrupted',
@@ -131,7 +103,7 @@ describe('isolated trusted uploader', () => {
       }),
   );
   it('does not inherit arbitrary process variables or start an already aborted process', async () => {
-    const env = previewWranglerEnvironment('/tmp/mock', 'c'.repeat(32), 'mock');
+    const env = previewWranglerEnvironment('/tmp/mock', assetJwt);
     expect(env['NODE_OPTIONS']).toBeUndefined();
     expect(
       await nativePreviewProcess({
@@ -249,6 +221,7 @@ describe('composed preview adapters with no external connection', () => {
           );
         await journal.initialize();
         let uploads = 0,
+          posts = 0,
           uploaded = false,
           marker = '';
         await withPreviewHttpServer(packet, 'report-only', async (http) => {
@@ -268,13 +241,29 @@ describe('composed preview adapters with no external connection', () => {
             if (url.startsWith('https://api.github.com/') || url.includes('blob.core'))
               return github.transport(url, init);
             if (url.startsWith('https://api.cloudflare.com/')) {
+              if (init.method === 'POST') {
+                posts++;
+                const form = await new Request(url, {
+                  method: 'POST',
+                  headers: init.headers ?? {},
+                  body: init.body ?? null,
+                }).formData();
+                expect(form.get('branch')).toBe('csp-verify');
+                uploaded = true;
+                marker = String(form.get('commit_message'));
+                if (mode === 'lost-upload-response')
+                  throw new Error('lost creation response after acceptance');
+                return jsonResponse({ success: true, errors: [], result: live() });
+              }
               const u = new URL(url),
                 rows = uploaded || mode === 'old-identical' ? [live()] : [];
-              const result = u.pathname.endsWith('/rouault')
-                ? { name: 'rouault', production_branch: 'main' }
-                : u.pathname.endsWith('/deployments')
-                  ? rows
-                  : live();
+              const result = u.pathname.endsWith('/upload-token')
+                ? { jwt: assetJwt }
+                : u.pathname.endsWith('/rouault')
+                  ? { name: 'rouault', production_branch: 'main' }
+                  : u.pathname.endsWith('/deployments')
+                    ? rows
+                    : live();
               return jsonResponse(
                 {
                   success: true,
@@ -313,17 +302,7 @@ describe('composed preview adapters with no external connection', () => {
             store: () => memory.store,
             process: async (input: PreviewProcessRequest) => {
               uploads++;
-              uploaded = true;
-              marker =
-                input.args
-                  .find((arg) => arg.startsWith('--commit-message='))
-                  ?.slice('--commit-message='.length) ?? '';
-              if (mode === 'lost-upload-response')
-                throw new Error('connection lost after service accepted');
-              await writeFile(
-                input.env['WRANGLER_OUTPUT_FILE_PATH'] ?? '',
-                structuredOutput(input, approved),
-              );
+              await fakeAssetOutput(input);
               return { started: true, interrupted: false, exitCode: 0, signal: null };
             },
           };
@@ -358,6 +337,7 @@ describe('composed preview adapters with no external connection', () => {
             }
           }
           await expect(runPreviewDelivery(request, ports)).rejects.toThrow();
+          expect(posts).toBe(1);
           expect((await journal.history()).attemptedApprovalIds).toEqual([approval.id]);
           expect(JSON.stringify((await journal.read()).journal)).not.toContain('mock-pages');
         });

@@ -80,7 +80,7 @@ baselineはCSP-free、ROは`_headers`だけ変更、Workerはdetach→set、非h
 live adapterを接続する場合、trusted runnerは承認済みpacketだけをdataとしてdownloadし、ZIP/service digestも照合する。
 候補install/script/package lifecycle/Wrangler configを実行しない。
 選択した`report-only/`か`baseline/`だけをisolated cwdの固定`payload/`へcopyし、copy後のdigestも照合する。
-proof/receiptは公開rootへ含めない。trusted lockfileの固定Wranglerを明示account/project/branch/source SHAで起動する。
+proof/receiptは公開rootへ含めない。trusted lockfileの固定Wranglerはasset uploadだけに使い、account/project/branch/source SHAを拘束したdeployment POSTは親の専用adapterが行う。
 production scriptを流用してmain guardやproduction release schemaを緩めない。
 
 ## attempt・切戻し・配信後確認
@@ -92,10 +92,11 @@ upload開始後のerror、API/alias/HTTP確認不能は`uncertain`とし、自�
 一覧0件や有限時間の未観測から未実行を推定しない。複数候補・不一致・HTTP未確認はuncertainを保持する。
 解消後も再操作には新しい承認を要求する。
 
-`schema:2`のattemptにGitHub run/attempt・random UUID marker・trusted workflow SHA、完全な事前deployment ID集合と
-server時刻/digest、upload開始、service deployment IDと確認した作成/観測時刻を保存する。markerはWranglerのcommit metadataへ明示する。
+`schema:3`のattemptにGitHub run/attempt・random UUID marker・trusted workflow SHA、完全な事前deployment ID集合と
+server時刻/digest、upload開始、service deployment IDと確認した作成/観測時刻、HTTP検証失敗理由、明示的な回復元を保存する。markerはWranglerのcommit metadataへ明示する。
 reconcileは現在aliasのHTTP内容一致（`contentStatus`）と今回のservice受理確認（`operationStatus`）を別判定する。
 事前集合にないID、今回marker、service作成時刻、既知receipt IDが一致し、そのdeploymentが現在aliasでなければverifiedにしない。
+receipt ID・成功stage・aliasで絞る前に、全deploymentの同じmarkerを数える。失敗/進行中を含め複数なら停止し、receiptの一件だけを成功へ選ばない。
 古い同一SHA・同一payloadだけなら`contentStatus=matches / operationStatus=unknown / status=uncertain`を保持する。
 `reconcile`はuploadを実行しない。既にverifiedの承認は再実行しない。
 
@@ -117,9 +118,9 @@ R2の権限bundleにDelete/Listが含まれる場合はその範囲も事前説�
 ## adapterの検証範囲
 
 `csp-preview-pages.ts`は固定account/projectのpreview全件snapshot・server時刻・deploymentを読み、自由なcommit本文やenv値を保存しない。
-`csp-preview-wrangler.ts`はtrusted固定versionのentryを、最小env・shellなし・private cwdで起動する。
+`csp-preview-wrangler.ts`はtrusted固定versionのentryを、最小env・shellなし・private cwdでasset-only commandを起動する。
 payloadだけをcopyして起動前後に再hashし、親/candidate config探索を最小configで止める。stdout/stderrは保存せず、
-bounded structured receiptのIDをPages APIで独立照合する。candidateのpackageやproofは実行・公開しない。
+bounded asset manifestのpath集合を照合し、deployment IDは親の単一POST応答とPages APIで独立照合する。candidateのpackageやproofは実行・公開しない。
 `csp-preview-http.ts`はalias/immutable両方の全included fileとroute/envelope、Worker/parent CSP、MIME/nosniff、
 正規化・404・cache・ETag/304・資源のbytesを照合する。外部mediaは固定originのcontent-hash key/MIME/cacheへ限定する。
 HTTP検査はbrowserの304合成・enforce・RO event検査を代替しない。両方not-runを残す。
@@ -151,3 +152,36 @@ Stage 2製品enforce・HTTP runner・cache等は未完のまま残る。
 [Pages deployment API](https://developers.cloudflare.com/api/resources/pages/subresources/projects/subresources/deployments/methods/list/)。
 
 保存仕様: [R2 conditional PutObject](https://developers.cloudflare.com/r2/api/s3/api/)、[R2 consistency](https://developers.cloudflare.com/r2/reference/consistency/)。
+
+## deployment POSTの単一試行と回復
+
+固定Wrangler 4.100.0の`pages deploy`は`8000000`応答でdeployment POSTを最大3回行うため、配信adapterには使用しない。
+`pages project upload payload --output-manifest-path=state/manifest.json --skip-caching`だけを固定argvで実行する。
+取得元を固定した`upload-token`のasset JWTだけを渡し、固定版cfetchのlogin検査のため`CF_PAGES_UPLOAD_JWT`と
+`CLOUDFLARE_API_TOKEN`の両方へ同じ限定JWTを設定する。親のPages tokenは子へ渡さない。
+これはstockの固定版との互換契約であり、dependency更新時は実stock CLIのloopback試験と上流経路のレビューを要求する。
+assetのcontent-addressed upload/upsertに存在する再送を、deployment作成の再送と混同しない。
+
+`csp-preview-post.ts`は固定account/projectのcreation URLへ、socketを再利用しないNode HTTP requestを一度だけ行う。
+branch、source SHA、attempt marker、manifest、検証済み_headers/_redirectsだけをFormDataにする。
+redirect・8000000・5xx・切断・不正応答でも再送しない。応答不明はread-only reconcileへ進む。
+これはclientのPOST一回の保証であり、service側のexactly-once処理を保証しない。重複markerは引き続き停止する。
+APIの完了待ちは有界のGETだけで、POST再送で補わない。
+
+単一のservice deploymentが確認済みで、HTTPの内容不一致/取得不能に限る失敗は`failed-confirmed`として
+`verificationFailure`と共に保存する。個別失敗や公開停止をsuccessへ変換しない。
+別のbaseline承認行が`recoveryFrom`へ元のapproval ID・attempt ID・deployment IDを正確に指定した場合だけ、
+新しい予約を認める。通常承認は`recoveryFrom:null`である。結果側から回復authorityを作らない。
+回復元は同account、現在も唯一のmarker/alias所有者、成功stageであり、snapshotが確認時刻以後であることを
+予約前とPOST直前に再確認する。alias移動、未知操作、複数marker、未確認API、証跡欠損はこの回復対象にしない。
+
+journalは回復元の失敗eventを削除/上書きせず、新しいbaseline attemptから参照して同じCAS内で予約する。
+未解決leaf attemptがある間は他の予約を拒否し、同じ元試行に対する競合回復は一件だけを受理する。
+baseline完了後も元の失敗を保持し、次の通常操作には新しい独立承認を必要とする。
+回復も一つの承認につきclient POST一回で、失敗時の自動再試行や無限loopはない。
+不明操作・asset upload中断・alias変更等の対象外ケースは停止したまま、追加の調査・運用判断を要求する。
+旧attempt schemaを自動変換したり、欠けたjournalを空で作り直したりしない。
+
+根拠: [Wrangler 4.100.0 deployment retry](https://github.com/cloudflare/workers-sdk/blob/wrangler%404.100.0/packages/wrangler/src/api/pages/deploy.ts#L452)、
+[constants](https://github.com/cloudflare/workers-sdk/blob/wrangler%404.100.0/packages/wrangler/src/pages/constants.ts#L14)、
+[asset-only CLI](https://github.com/cloudflare/workers-sdk/blob/wrangler%404.100.0/packages/wrangler/src/pages/upload.ts#L30)。

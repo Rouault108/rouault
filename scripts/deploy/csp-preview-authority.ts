@@ -22,6 +22,24 @@ const text = (value: unknown, pattern: RegExp): string => {
   return value;
 };
 
+export interface PreviewRecoveryReference {
+  approvalId: string;
+  attemptId: string;
+  deploymentId: string;
+}
+export const parsePreviewRecovery = (value: unknown): PreviewRecoveryReference | null => {
+  if (value === null) return null;
+  const row = deliveryRecord(value);
+  exactDeliveryFields(row, ['approvalId', 'attemptId', 'deploymentId']);
+  return {
+    approvalId: text(row['approvalId'], LABEL),
+    attemptId: text(row['attemptId'], /^[1-9][0-9]{0,19}\.[1-9][0-9]*\.[a-f0-9-]{36}$/u),
+    deploymentId: text(
+      row['deploymentId'],
+      /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/u,
+    ),
+  };
+};
 export interface PreviewApproval {
   id: string;
   mode: 'report-only' | 'baseline';
@@ -39,6 +57,7 @@ export interface PreviewApproval {
   ciRunAttempt: number;
   ciWorkflowDigest: string;
   approvalRef: string;
+  recoveryFrom: PreviewRecoveryReference | null;
 }
 export interface PreviewDeliveryPolicy {
   schema: 1;
@@ -82,6 +101,7 @@ export const parsePreviewApproval = (value: unknown): PreviewApproval => {
     'ciRunAttempt',
     'ciWorkflowDigest',
     'approvalRef',
+    'recoveryFrom',
   ]);
   if (row['mode'] !== 'report-only' && row['mode'] !== 'baseline')
     throw new Error('[preview-delivery] unsupported delivery mode');
@@ -92,7 +112,11 @@ export const parsePreviewApproval = (value: unknown): PreviewApproval => {
     Number(row['ciRunAttempt']) < 1
   )
     throw new Error('[preview-delivery] invalid producer attempt');
+  const recoveryFrom = parsePreviewRecovery(row['recoveryFrom']);
+  if (recoveryFrom && row['mode'] !== 'baseline')
+    throw new Error('[preview-delivery] recovery requires baseline approval');
   return {
+    recoveryFrom,
     id: text(row['id'], LABEL),
     mode: row['mode'],
     sourceSha: text(row['sourceSha'], SHA),

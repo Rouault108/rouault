@@ -21,7 +21,6 @@ import {
 import {
   assertUnusedPreviewApproval,
   executePreviewTransaction,
-  previewWranglerArgs,
   reconcilePreviewAttempt,
   verifyPreviewDeployment,
   type PreviewAttempt,
@@ -198,17 +197,7 @@ describe('trusted preview packet', () => {
 
 describe('preview transaction model without live adapters', () => {
   const history = { complete: true, attemptedApprovalIds: [] };
-  it('fixes branch and command; incomplete or used histories never retry', () => {
-    expect(previewWranglerArgs(approval, '201.1.aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee')).toEqual([
-      'pages',
-      'deploy',
-      'payload',
-      '--project-name=rouault',
-      '--branch=csp-verify',
-      `--commit-hash=${sha}`,
-      '--commit-dirty=false',
-      '--commit-message=rouault-preview:201.1.aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee',
-    ]);
+  it('incomplete or used histories never retry', () => {
     for (const h of [
       { complete: false, attemptedApprovalIds: [] },
       { complete: true, attemptedApprovalIds: [approval.id] },
@@ -231,8 +220,9 @@ describe('preview transaction model without live adapters', () => {
           persist: async (v) => {
             calls.push(v.status);
           },
-          upload: async (_args, payload) => {
+          upload: async (attempt, payload) => {
             calls.push('upload');
+            expect(attempt.attemptId).toBe('201.1.aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee');
             expect(payload.directory).toBe(path.join(packet, mode));
             expect(payload.digest).toBe(
               mode === 'baseline' ? identity.baselineDigest : identity.artifactDigest,
@@ -304,20 +294,26 @@ describe('preview transaction model without live adapters', () => {
       expect(
         (await reconcilePreviewAttempt(result, observation([]), async () => true)).status,
       ).toBe('uncertain');
-      expect(
-        (
-          await reconcilePreviewAttempt(
-            result,
-            observation([
-              { ...deployment(), id: '11234567-89ab-cdef-0123-456789abcdef' },
-              deployment(),
-            ]),
-            async () => true,
-          )
-        ).status,
-      ).toBe('uncertain');
+      for (const receipt of [null, deployment().id])
+        for (const stage of ['success', 'failure']) {
+          await expect(
+            reconcilePreviewAttempt(
+              { ...result, deploymentId: receipt },
+              observation([
+                {
+                  ...deployment(),
+                  id: '11234567-89ab-cdef-0123-456789abcdef',
+                  aliases: [],
+                  latest_stage: { name: 'deploy', status: stage },
+                },
+                deployment(),
+              ]),
+              async () => true,
+            ),
+          ).rejects.toThrow('multiple deployments');
+        }
       expect((await reconcilePreviewAttempt(result, observation(), async () => false)).status).toBe(
-        'uncertain',
+        'failed-confirmed',
       );
       expect((await reconcilePreviewAttempt(result, observation(), async () => true)).status).toBe(
         'verified',

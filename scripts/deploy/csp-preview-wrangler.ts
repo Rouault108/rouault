@@ -12,7 +12,6 @@ import {
   parsePreviewApproval,
   type PreviewApproval,
 } from './csp-preview-authority.js';
-import { PREVIEW_UUID, previewWranglerArgs } from './csp-preview-transaction.js';
 
 export const PREVIEW_WRANGLER_VERSION = '4.100.0';
 export interface PreviewProcessRequest {
@@ -79,14 +78,13 @@ export const nativePreviewProcess: PreviewProcess = (request) =>
 
 export const previewWranglerEnvironment = (
   root: string,
-  accountId: string,
-  token: string,
+  jwt: string,
   transportEnv: Partial<
     Pick<NodeJS.ProcessEnv, 'NODE_EXTRA_CA_CERTS' | 'HTTPS_PROXY' | 'HTTP_PROXY' | 'NO_PROXY'>
   > = {},
 ): NodeJS.ProcessEnv => {
-  if (!/^[a-f0-9]{32}$/u.test(accountId) || !token || token.length > 4096 || /[\r\n]/u.test(token))
-    throw new Error('[preview-delivery] invalid uploader binding');
+  if (!/^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/u.test(jwt) || jwt.length > 16384)
+    throw new Error('[preview-delivery] limited asset JWT unavailable');
   const allowed: NodeJS.ProcessEnv = {};
   for (const key of ['NODE_EXTRA_CA_CERTS', 'HTTPS_PROXY', 'HTTP_PROXY', 'NO_PROXY'] as const) {
     const value = transportEnv[key];
@@ -110,79 +108,60 @@ export const previewWranglerEnvironment = (
     NO_COLOR: '1',
     WRANGLER_SEND_METRICS: 'false',
     WRANGLER_LOG_LEVEL: 'error',
-    CLOUDFLARE_ACCOUNT_ID: accountId,
-    CLOUDFLARE_API_TOKEN: token,
+    CF_PAGES_UPLOAD_JWT: jwt,
+    // 固定版cfetchのlogin検査にも同じasset JWTだけを渡す。Pages tokenは子へ渡さない。
+    CLOUDFLARE_API_TOKEN: jwt,
     WRANGLER_OUTPUT_FILE_PATH: path.join(root, 'state/wrangler.jsonl'),
   };
 };
 
-const parseReceipt = (
+export interface PreviewUploadedAssets {
+  manifest: Record<string, string>;
+  headers: string;
+  redirects: string;
+}
+export const previewAssetArgs = (): readonly string[] => [
+  'pages',
+  'project',
+  'upload',
+  'payload',
+  '--output-manifest-path=state/manifest.json',
+  '--skip-caching',
+];
+const parseAssetManifest = (
   raw: string,
-  args: readonly string[],
-  sourceSha: string,
-): { deploymentId: string } => {
+  files: readonly { file: string }[],
+): Record<string, string> => {
   if (Buffer.byteLength(raw) > 1024 * 1024)
-    throw new Error('[preview-delivery] structured output limit');
-  const lines = raw.trim().split(/\r?\n/u);
-  if (lines.length !== 3 || lines.some((line) => Buffer.byteLength(line) > 16384))
-    throw new Error('[preview-delivery] unsupported structured output');
-  let events: Record<string, unknown>[];
-  try {
-    events = lines.map((line) => deliveryRecord(JSON.parse(line) as unknown));
-  } catch {
-    throw new Error('[preview-delivery] invalid structured output');
-  }
-  const session = events.filter((event) => event['type'] === 'wrangler-session'),
-    deploy = events.filter((event) => event['type'] === 'pages-deploy'),
-    detailed = events.filter((event) => event['type'] === 'pages-deploy-detailed');
-  const s = session[0],
-    d = deploy[0],
-    detail = detailed[0];
+    throw new Error('[preview-delivery] asset manifest limit');
+  const manifest = deliveryRecord(JSON.parse(raw) as unknown),
+    expected = files
+      .filter(({ file }) => !['_headers', '_redirects'].includes(file))
+      .map(({ file }) => '/' + file)
+      .sort();
   if (
-    session.length !== 1 ||
-    deploy.length !== 1 ||
-    detailed.length !== 1 ||
-    !s ||
-    !d ||
-    !detail ||
-    events.some((event) => event['version'] !== 1) ||
-    s['wrangler_version'] !== PREVIEW_WRANGLER_VERSION ||
-    JSON.stringify(s['command_line_args']) !== JSON.stringify(args) ||
-    d['pages_project'] !== 'rouault' ||
-    detail['pages_project'] !== 'rouault' ||
-    d['deployment_id'] !== detail['deployment_id'] ||
-    typeof d['deployment_id'] !== 'string' ||
-    !PREVIEW_UUID.test(d['deployment_id']) ||
-    d['url'] !== detail['url'] ||
-    typeof d['url'] !== 'string' ||
-    !/^https:\/\/[a-f0-9]{8,32}\.rouault\.pages\.dev\/?$/u.test(d['url']) ||
-    detail['environment'] !== 'preview' ||
-    detail['production_branch'] !== 'main' ||
-    !['https://csp-verify.rouault.pages.dev', 'https://csp-verify.rouault.pages.dev/'].includes(
-      String(detail['alias']),
-    ) ||
-    deliveryRecord(deliveryRecord(detail['deployment_trigger'])['metadata'])['commit_hash'] !==
-      sourceSha
+    JSON.stringify(Object.keys(manifest).sort()) !== JSON.stringify(expected) ||
+    Object.values(manifest).some(
+      (value) => typeof value !== 'string' || !/^[a-f0-9]{32}$/u.test(value),
+    )
   )
-    throw new Error('[preview-delivery] structured uploader identity mismatch');
-  return { deploymentId: d['deployment_id'] };
+    throw new Error('[preview-delivery] asset manifest identity mismatch');
+  return Object.fromEntries(Object.entries(manifest).map(([file, hash]) => [file, String(hash)]));
 };
 
-export const runTrustedPreviewWrangler = async (
+export const uploadTrustedPreviewAssets = async (
   request: {
     trustedRoot: string;
     packetRoot: string;
     approval: PreviewApproval;
-    attemptId: string;
-    accountId: string;
-    token: string;
+    jwt: string;
     transportEnv?: Partial<
       Pick<NodeJS.ProcessEnv, 'NODE_EXTRA_CA_CERTS' | 'HTTPS_PROXY' | 'HTTP_PROXY' | 'NO_PROXY'>
     >;
     signal?: AbortSignal;
   },
   execute: PreviewProcess = nativePreviewProcess,
-): Promise<{ deploymentId: string }> => {
+): Promise<PreviewUploadedAssets> => {
   const approval = parsePreviewApproval(request.approval),
     source = path.join(request.packetRoot, approval.mode),
     files = await scanPreviewFiles(source),
@@ -204,7 +183,7 @@ export const runTrustedPreviewWrangler = async (
   )
     throw new Error('[preview-delivery] unreviewed Wrangler version');
   const entry = await realpath(
-    path.join(request.trustedRoot, 'node_modules/wrangler/bin/wrangler.js'),
+    path.join(request.trustedRoot, 'node_modules/wrangler/wrangler-dist/cli.js'),
   );
   const root = await mkdtemp(path.join(tmpdir(), 'rouault-csp-upload-'));
   try {
@@ -221,13 +200,8 @@ export const runTrustedPreviewWrangler = async (
       JSON.stringify({ name: 'rouault', pages_build_output_dir: './payload' }),
       { flag: 'wx', mode: 0o600 },
     );
-    const args = previewWranglerArgs(approval, request.attemptId),
-      env = previewWranglerEnvironment(
-        root,
-        request.accountId,
-        request.token,
-        request.transportEnv,
-      );
+    const args = previewAssetArgs(),
+      env = previewWranglerEnvironment(root, request.jwt, request.transportEnv);
     const result = await execute({
       command: process.execPath,
       args: [entry, ...args],
@@ -242,8 +216,12 @@ export const runTrustedPreviewWrangler = async (
       previewDigest(JSON.stringify(await scanPreviewFiles(path.join(root, 'payload')))) !== expected
     )
       throw new Error('[preview-delivery] uploader changed payload');
-    const raw = await readFile(path.join(root, 'state/wrangler.jsonl'), 'utf8');
-    return parseReceipt(raw, args, approval.sourceSha);
+    const raw = await readFile(path.join(root, 'state/manifest.json'), 'utf8');
+    return {
+      manifest: parseAssetManifest(raw, files),
+      headers: await readFile(path.join(root, 'payload/_headers'), 'utf8'),
+      redirects: await readFile(path.join(root, 'payload/_redirects'), 'utf8'),
+    };
   } finally {
     // stdout/stderrやstructured rawをartifactへ残さず、所有する一時directoryだけを片付ける。
     await rm(root, { recursive: true, force: true });
