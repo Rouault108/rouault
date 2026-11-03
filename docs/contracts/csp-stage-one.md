@@ -35,6 +35,7 @@ hash改変、script追加・欠落、凍結後の資源変更はnegative testで
 ## ポリシーと棚卸し
 
 親文書は`default-src 'none'`から、same-origin scriptと承認済みhash2本、same-origin CSS/font/connect/Workerを明示する。
+font資産（woff/woff2/ttf/otf/eot）はViteのsize依存inlineを使わず、hash付きsame-origin fileへ出力する。font以外のassetは既定のinline判定を維持する。
 `script-src-attr 'none'`と`object-src 'none'`を置く。scriptの`unsafe-inline` / `unsafe-eval`は許可しない。
 style属性はShiki、KaTeX、layout custom property、CSSOMによる更新と別に評価し、
 設計1.1の初期例外に合わせ`style-src` / `style-src-elem`はselfとunsafe-inline、

@@ -162,7 +162,7 @@ describe('eleventy config', () => {
     const source = readFileSync(new URL('../../eleventy.config.ts', import.meta.url), 'utf8');
     expect(source).toContain("eleventyConfig.on('eleventy.before', lifecycle.before)");
     expect(source).toContain("eleventyConfig.on('eleventy.after', lifecycle.after)");
-    expect(source).toContain('await generateContent()');
+    expect(source).toContain('await generateContent(');
     expect(source).not.toContain("from 'velite'");
     expect(source).not.toContain('beforeWatch');
     expect(source).not.toContain('Continuing in development');

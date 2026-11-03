@@ -31,6 +31,9 @@ export default defineConfig({
   },
   build: {
     target: 'es2022',
+    // CSPのfont-src 'self'に合わせ、fontだけはサイズによらず外部化する。
+    assetsInlineLimit: (filePath) =>
+      /\.(?:woff2?|ttf|otf|eot)$/iu.test(filePath) ? false : undefined,
     outDir: '.generated/client',
     emptyOutDir: true,
     manifest: true,

@@ -5,7 +5,7 @@ import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
 import remarkStringify from 'remark-stringify';
 import remarkRehype from 'remark-rehype';
-import rehypeKatex from 'rehype-katex';
+import { rehypeStaticMath } from '../../build/rehype/static-math.js';
 import type { Root, Nodes, RootContent, PhrasingContent, Heading, Link, Definition } from 'mdast';
 import {
   createUniqueHeadingId,
@@ -20,7 +20,7 @@ const processor = unified()
   .use(remarkGfm, { singleTilde: false })
   .use(remarkMath)
   .use(remarkStringify);
-const semanticProcessor = unified().use(remarkRehype).use(rehypeKatex);
+const semanticProcessor = unified().use(remarkRehype).use(rehypeStaticMath);
 const childrenOf = (node: Nodes): Nodes[] => ('children' in node ? node.children : []);
 const textOf = (node: Nodes): string =>
   'value' in node ? node.value : childrenOf(node).map(textOf).join('');

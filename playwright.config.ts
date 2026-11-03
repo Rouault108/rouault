@@ -4,6 +4,7 @@ import { defineConfig, devices } from '@playwright/test';
 import process from 'node:process';
 
 const crossBrowserFinalCheck = [
+  '**/math-rendering.spec.ts',
   '**/navigation-transition.spec.ts',
   '**/history-scroll-restoration.spec.ts',
   '**/memos.spec.ts',

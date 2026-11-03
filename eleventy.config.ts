@@ -5,6 +5,7 @@ import EleventyVitePlugin from '@11ty/eleventy-plugin-vite';
 import type { Connect, ViteDevServer } from 'vite';
 import type { ContentDocumentContext } from './build/content/content-build-context.js';
 import { generateContent } from './build/content/generate-content.js';
+import { reportContentDiagnostic } from './build/content/content-diagnostics.js';
 import {
   createContentBuildLifecycle,
   developmentSearchAvailability,
@@ -200,7 +201,7 @@ export default function configureEleventy(eleventyConfig: UserConfig) {
     availability: developmentSearchAvailability,
     generateContent: async () => {
       contentBuildContexts = new Map();
-      const generated = await generateContent();
+      const generated = await generateContent({ reportDiagnostic: reportContentDiagnostic });
       contentBuildContexts = generated.contexts;
       return generated;
     },

@@ -202,7 +202,7 @@ export const enhanceLayoutSidebar = (root: HTMLElement, signal: AbortSignal): vo
   };
   const settleFallback = (receipt: FocusReceipt, provisional = false): void => {
     publish(provisional ? 'staged' : root.hidden ? 'dormant' : 'fallback');
-    quiesce(receipt, root.hidden);
+    quiesce(receipt, Boolean(root.hidden));
     if (provisional) return;
     if (layoutSidebarController.readRuntimeSnapshot(sidebarId).overlayState !== 'collapsed')
       layoutSidebarController.setOverlayStateWithoutPersisting(sidebarId, 'collapsed');
@@ -470,7 +470,7 @@ export const enhanceLayoutSidebar = (root: HTMLElement, signal: AbortSignal): vo
     cleanupPending = false;
     const receipt = capture();
     publish('fallback');
-    quiesce(receipt, !root.isConnected || root.hidden);
+    quiesce(receipt, !root.isConnected || Boolean(root.hidden));
     listeners.abort();
     observer.disconnect();
     connectionObserver.disconnect();

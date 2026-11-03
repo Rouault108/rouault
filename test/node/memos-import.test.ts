@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import sharp from 'sharp';
 import {
   buildImportPlan,
@@ -26,7 +26,7 @@ import remarkParse from 'remark-parse';
 import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
 import remarkRehype from 'remark-rehype';
-import rehypeKatex from 'rehype-katex';
+import { rehypeStaticMath } from '../../build/rehype/static-math.js';
 import { rehypeHeadingIds } from '../../build/rehype/rehype-heading-ids.js';
 const guards = {
   maxBlobBytes: 2_000_000,
@@ -100,6 +100,21 @@ const plan = (
     ...overrides,
   });
 describe('manual memo importer', () => {
+  it('不正数式の中間見出し解析をstderrやconsoleへ報告しない', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    const stderr = vi.spyOn(process.stderr, 'write').mockReturnValue(true);
+    try {
+      const output = (await transform({ '02_notes/A.md': note('Broken $\\frac{$.\n') })).get(
+        '02_notes/A.md',
+      );
+      expect(output?.markdown).toContain('\\frac{');
+      expect(warn).not.toHaveBeenCalled();
+      expect(stderr).not.toHaveBeenCalled();
+    } finally {
+      warn.mockRestore();
+      stderr.mockRestore();
+    }
+  });
   it.each([
     ['quoted', '> ## Quoted\n> [local](#Quoted)\n'],
     ['listed', '- ## Listed\n  [local](#Listed)\n'],
@@ -175,7 +190,7 @@ describe('manual memo importer', () => {
       .use(remarkGfm)
       .use(remarkMath)
       .use(remarkRehype)
-      .use(rehypeKatex)
+      .use(rehypeStaticMath)
       .use(rehypeHeadingIds);
     const tree: unknown = await renderer.run(renderer.parse(output.markdown));
     const ids: string[] = [];
@@ -223,7 +238,7 @@ describe('manual memo importer', () => {
       .use(remarkGfm)
       .use(remarkMath)
       .use(remarkRehype)
-      .use(rehypeKatex)
+      .use(rehypeStaticMath)
       .use(rehypeHeadingIds);
     const tree: unknown = await renderer.run(renderer.parse(result.markdown));
     const ids: string[] = [];

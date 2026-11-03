@@ -25,3 +25,11 @@ ESLintのrecommended・strict presetは更新に追従する。rule名だけで�
 専用検証ブランチへ保存した最終SHAを、既存の`ci-cd.yml`の`workflow_dispatch`で検証する。branchへのpushだけではE2Eが実行されるとは限らないため、event・branch・head SHAとdev／production E2E全matrixの完了を確認する。検証ブランチの公開jobのskipは公開成功ではない。mainへの取り込み・公開は検証結果を示した後の別承認とし、mainが進んだ場合は差分を再評価する。
 
 最新版TypeScript等がpeer対応を先行した場合は、対応範囲内の版を一時維持し、保留理由と上流の対応確認条件を記録する。その依存だけを保留し、他の互換な更新まで止めない。新しいbot・workflow・恒久的な全rule snapshotを追加することは更新の前提にしない。
+
+## TypeScriptのCLIとプログラムAPI
+
+TypeScript 7の型検査CLIと、既存ツールが利用するTypeScript 6のAPIを併用する。公式の[併用案内](https://devblogs.microsoft.com/typescript/announcing-typescript-7-0/)に従い、`@typescript/native`はnative版`typescript`、`typescript`はAPI互換package`@typescript/typescript6`へのnpm aliasとする。exact版と解決結果の正本はmanifestとlockfileである。
+
+通常の型検査入口`pnpm typecheck`の`tsc`はnative版を使う。`import ts from 'typescript'`は互換層を使い、typescript-eslintとimport境界・CSP・テスト補助のAST操作を支える。互換層の`tsc6`は比較用であり、通常の型検査を旧版へ戻す入口にはしない。
+
+更新時はstrict peer検査に加え、`pnpm exec tsc --version`、`pnpm exec tsc6 --version`、`typescript`のimportが公開する`version`と`createSourceFile`を確認する。互換package自身の版と、内部で解決されたAPI実体の版は区別する。native版の新しいプログラムAPIへ移す場合は、API契約と利用側を改めて評価する。
