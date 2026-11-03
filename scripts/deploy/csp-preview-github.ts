@@ -147,6 +147,8 @@ export class PreviewGithubAdapter {
       `/actions/runs/${approval.producerRunId}/attempts/${String(approval.producerAttempt)}/jobs`,
       'jobs',
     );
+    if (new Set(jobs.map((job) => job['name'])).size !== jobs.length)
+      throw new Error('[preview-delivery] ambiguous producer job identity');
     if (
       !jobs.some(
         (j) =>
@@ -203,9 +205,10 @@ export class PreviewGithubAdapter {
       'test-csp (webkit)',
     ])
       if (
-        ciJobs.filter(
+        ciJobs.filter((j) => j['name'] === name).length !== 1 ||
+        !ciJobs.some(
           (j) => j['name'] === name && j['status'] === 'completed' && j['conclusion'] === 'success',
-        ).length !== 1
+        )
       )
         throw new Error('[preview-delivery] required candidate CI proof missing');
     const file = deliveryRecord(

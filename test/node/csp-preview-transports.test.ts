@@ -54,6 +54,22 @@ describe('bounded preview service transports', () => {
       new PreviewGithubAdapter('mock', f.transport).approvedEvidence(f.approval),
     ).rejects.toThrow('provenance');
   });
+  it.each(['101', '103'])('rejects duplicate producer/CI job names in run %s', async (run) => {
+    const f = githubFixture(undefined, (key, value) => {
+      if (!key.startsWith(`/actions/runs/${run}/attempts/1/jobs?`)) return value;
+      const row = deliveryRecord(value),
+        jobs = row['jobs'];
+      if (!Array.isArray(jobs) || !jobs[0]) throw new Error('fixture');
+      return {
+        ...row,
+        total_count: Number(row['total_count']) + 1,
+        jobs: [...jobs, { ...deliveryRecord(jobs[0]), id: 999, conclusion: 'failure' }],
+      };
+    });
+    await expect(
+      new PreviewGithubAdapter('mock', f.transport).approvedEvidence(f.approval),
+    ).rejects.toThrow();
+  });
   it('reads every collection page and rejects missing, duplicate and foreign links', async () => {
     const base = 'https://api.github.com/repos/Rouault108/rouault/actions/runs/101/artifacts';
     for (const mode of ['valid', 'missing', 'duplicate', 'foreign']) {
