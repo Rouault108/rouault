@@ -15,8 +15,9 @@ test('static math keeps layout, MathML and package fonts without JavaScript', as
   await expect(page.locator('.katex-display')).toHaveCount(2);
   await expect(page.locator('.katex-mathml math')).toHaveCount(3);
   await expect(page.locator('.katex-base').first()).toBeVisible();
-  const rendering = await page.evaluate(async () => {
-    await document.fonts.ready;
+  // Firefoxのno-JS文書内ではPromiseの解決を待たず、runnerから同期状態を待つ。
+  await expect.poll(() => page.evaluate(() => document.fonts.status)).toBe('loaded');
+  const rendering = await page.evaluate(() => {
     const fraction = document.querySelector('.frac-line');
     const display = document.querySelector('.katex-display');
     const mathml = document.querySelector('.katex-mathml');
