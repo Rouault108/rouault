@@ -36,6 +36,7 @@ export interface PreviewApproval {
   artifactDigest: string;
   baselineDigest: string;
   ciRunId: string;
+  ciRunAttempt: number;
   ciWorkflowDigest: string;
   approvalRef: string;
 }
@@ -51,6 +52,14 @@ export interface PreviewDeliveryPolicy {
   destinationReviewed: boolean;
   stage0Reviewed: boolean;
   rollbackRetentionConfirmed: boolean;
+  journal: null | {
+    provider: 'r2-conditional-object';
+    bucket: 'rouault-csp-preview-journal';
+    key: 'csp-preview/rouault/csp-verify/journal-v1.json';
+    generation: string;
+    bindingId: string;
+    writeApproved: boolean;
+  };
   approvals: PreviewApproval[];
 }
 
@@ -70,12 +79,18 @@ export const parsePreviewApproval = (value: unknown): PreviewApproval => {
     'artifactDigest',
     'baselineDigest',
     'ciRunId',
+    'ciRunAttempt',
     'ciWorkflowDigest',
     'approvalRef',
   ]);
   if (row['mode'] !== 'report-only' && row['mode'] !== 'baseline')
     throw new Error('[preview-delivery] unsupported delivery mode');
-  if (!Number.isSafeInteger(row['producerAttempt']) || Number(row['producerAttempt']) < 1)
+  if (
+    !Number.isSafeInteger(row['producerAttempt']) ||
+    Number(row['producerAttempt']) < 1 ||
+    !Number.isSafeInteger(row['ciRunAttempt']) ||
+    Number(row['ciRunAttempt']) < 1
+  )
     throw new Error('[preview-delivery] invalid producer attempt');
   return {
     id: text(row['id'], LABEL),
@@ -91,6 +106,7 @@ export const parsePreviewApproval = (value: unknown): PreviewApproval => {
     artifactDigest: text(row['artifactDigest'], DIGEST),
     baselineDigest: text(row['baselineDigest'], DIGEST),
     ciRunId: text(row['ciRunId'], ID),
+    ciRunAttempt: Number(row['ciRunAttempt']),
     ciWorkflowDigest: text(row['ciWorkflowDigest'], DIGEST),
     approvalRef: text(row['approvalRef'], LABEL),
   };
@@ -110,6 +126,7 @@ export const parsePreviewDeliveryPolicy = (value: unknown): PreviewDeliveryPolic
     'destinationReviewed',
     'stage0Reviewed',
     'rollbackRetentionConfirmed',
+    'journal',
     'approvals',
   ]);
   if (
@@ -129,6 +146,36 @@ export const parsePreviewDeliveryPolicy = (value: unknown): PreviewDeliveryPolic
   ])
     if (typeof row[key] !== 'boolean') throw new Error('[preview-delivery] invalid gate');
   const approvals = row['approvals'].map(parsePreviewApproval);
+  let journal: PreviewDeliveryPolicy['journal'] = null;
+  if (row['journal'] !== null) {
+    const value = deliveryRecord(row['journal']);
+    exactDeliveryFields(value, [
+      'provider',
+      'bucket',
+      'key',
+      'generation',
+      'bindingId',
+      'writeApproved',
+    ]);
+    if (
+      value['provider'] !== 'r2-conditional-object' ||
+      value['bucket'] !== 'rouault-csp-preview-journal' ||
+      value['key'] !== 'csp-preview/rouault/csp-verify/journal-v1.json' ||
+      typeof value['writeApproved'] !== 'boolean'
+    )
+      throw new Error('[preview-delivery] fixed journal binding mismatch');
+    journal = {
+      provider: 'r2-conditional-object',
+      bucket: 'rouault-csp-preview-journal',
+      key: 'csp-preview/rouault/csp-verify/journal-v1.json',
+      generation: text(
+        value['generation'],
+        /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/u,
+      ),
+      bindingId: text(value['bindingId'], LABEL),
+      writeApproved: value['writeApproved'],
+    };
+  }
   if (new Set(approvals.map(({ id }) => id)).size !== approvals.length)
     throw new Error('[preview-delivery] duplicate approval');
   return {
@@ -146,6 +193,7 @@ export const parsePreviewDeliveryPolicy = (value: unknown): PreviewDeliveryPolic
     destinationReviewed: row['destinationReviewed'] === true,
     stage0Reviewed: row['stage0Reviewed'] === true,
     rollbackRetentionConfirmed: row['rollbackRetentionConfirmed'] === true,
+    journal,
     approvals,
   };
 };
@@ -157,6 +205,8 @@ export interface PreviewTrustedExecution {
   workflowRef: string;
   workflowSha: string;
   checkoutSha: string;
+  runId: string;
+  runAttempt: number;
 }
 export const authorizePreviewDelivery = (
   policy: PreviewDeliveryPolicy,
@@ -171,7 +221,10 @@ export const authorizePreviewDelivery = (
     execution.ref !== 'refs/heads/main' ||
     execution.workflowRef !== `${PREVIEW_REPOSITORY}/${PREVIEW_WORKFLOW}@refs/heads/main` ||
     !SHA.test(execution.workflowSha) ||
-    execution.checkoutSha !== execution.workflowSha
+    execution.checkoutSha !== execution.workflowSha ||
+    !ID.test(execution.runId) ||
+    !Number.isSafeInteger(execution.runAttempt) ||
+    execution.runAttempt < 1
   )
     throw new Error('[preview-delivery] trusted default-branch execution required');
   if (
@@ -182,7 +235,8 @@ export const authorizePreviewDelivery = (
     !policy.actionsReadApproved ||
     !policy.destinationReviewed ||
     !policy.stage0Reviewed ||
-    !policy.rollbackRetentionConfirmed
+    !policy.rollbackRetentionConfirmed ||
+    !policy.journal?.writeApproved
   )
     throw new Error(
       '[preview-delivery] confirmed account, scope, destination and read permission required',
@@ -231,6 +285,7 @@ export const verifyPreviewServiceEvidence = (
     throw new Error('[preview-delivery] artifact service identity/digest mismatch');
   if (
     String(ci['id']) !== approval.ciRunId ||
+    ci['run_attempt'] !== approval.ciRunAttempt ||
     ci['path'] !== '.github/workflows/ci-cd.yml' ||
     ci['head_sha'] !== approval.sourceSha ||
     ci['status'] !== 'completed' ||

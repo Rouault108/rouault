@@ -28,11 +28,12 @@ const PROOF_FILES = [
   ['.generated/csp-preview-build.json', 'build.json'],
 ] as const;
 
-const assertBoundedPacket = async (root: string): Promise<void> => {
+const assertBoundedPacket = async (root: string): Promise<Set<string>> => {
   if ((await realpath(root)) !== path.resolve(root))
     throw new Error('[preview-delivery] indirect packet root');
   let count = 0,
     bytes = 0;
+  const directories = new Set<string>();
   const visit = async (directory: string, depth: number): Promise<void> => {
     if (depth > 32) throw new Error('[preview-delivery] packet depth limit');
     for (const entry of await readdir(directory, { withFileTypes: true })) {
@@ -44,8 +45,10 @@ const assertBoundedPacket = async (root: string): Promise<void> => {
       )
         throw new Error('[preview-delivery] packet entry limit or indirection');
       const file = path.join(directory, entry.name);
-      if (entry.isDirectory()) await visit(file, depth + 1);
-      else if (entry.isFile()) {
+      if (entry.isDirectory()) {
+        directories.add(path.relative(root, file).split(path.sep).join('/'));
+        await visit(file, depth + 1);
+      } else if (entry.isFile()) {
         const stat = await lstat(file);
         bytes += stat.size;
         if (stat.size > 32 * 1024 * 1024 || bytes > 128 * 1024 * 1024)
@@ -54,6 +57,7 @@ const assertBoundedPacket = async (root: string): Promise<void> => {
     }
   };
   await visit(root, 0);
+  return directories;
 };
 
 export interface PreviewPacketIdentity {
@@ -70,8 +74,16 @@ export const inspectPreviewPacket = async (
   root: string,
   sourceSha: string,
 ): Promise<PreviewPacketIdentity> => {
-  await assertBoundedPacket(root);
+  const directories = await assertBoundedPacket(root);
   const all = await scanPreviewFiles(root);
+  const parents = new Set(
+    all.flatMap(({ file }) => {
+      const parts = file.split('/');
+      return parts.slice(0, -1).map((_, index) => parts.slice(0, index + 1).join('/'));
+    }),
+  );
+  if ([...directories].some((directory) => !parents.has(directory)))
+    throw new Error('[preview-delivery] unrepresented empty packet directory');
   // Wranglerの自動検出対象・private root・診断出力は、承認digestがあっても配信しない。
   if (
     all.some(

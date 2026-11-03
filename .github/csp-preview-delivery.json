@@ -18,5 +18,6 @@
   "destinationReviewed": false,
   "stage0Reviewed": false,
   "rollbackRetentionConfirmed": false,
+  "journal": null,
   "approvals": []
 }

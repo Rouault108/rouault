@@ -1,21 +1,10 @@
-import { copyFile, mkdir, mkdtemp, readFile, rm, symlink, writeFile } from 'node:fs/promises';
-import { tmpdir } from 'node:os';
+import { mkdir, readFile, symlink, writeFile, mkdtemp, rm } from 'node:fs/promises';
 import path from 'node:path';
+import { tmpdir } from 'node:os';
 import { spawnSync } from 'node:child_process';
 import { describe, expect, it } from 'vitest';
 import yaml from 'js-yaml';
-import {
-  copyPreviewBaseline,
-  PREVIEW_TARGET,
-  previewBuildStamp,
-  previewReceipt,
-  scanPreviewFiles,
-} from '../../build/security/csp-preview-artifact.js';
-import { collectCspStageOne, renderCspHeaders } from '../../build/security/csp-report-only.js';
-import { assemblePreviewHeaders } from '../../build/security/csp-preview-headers.js';
-import { buildThemeDocumentBootstrapScript } from '../../src/theme/theme-document-bootstrap.js';
-import { buildThemeChromeBootstrapScript } from '../../src/theme/theme-chrome-bootstrap.js';
-import { escapeInlineExecutableScriptText } from '../../src/layouts/html-output.js';
+import { PREVIEW_TARGET } from '../../build/security/csp-preview-artifact.js';
 import {
   authorizePreviewDelivery,
   deliveryRecord,
@@ -24,14 +13,10 @@ import {
   PREVIEW_REPOSITORY,
   PREVIEW_WORKFLOW,
   verifyPreviewServiceEvidence,
-  type PreviewApproval,
-  type PreviewDeliveryPolicy,
 } from '../../scripts/deploy/csp-preview-authority.js';
 import {
   inspectPreviewPacket,
-  stagePreviewPacket,
   verifyApprovedPreviewPacket,
-  type PreviewPacketIdentity,
 } from '../../scripts/deploy/csp-preview-packet.js';
 import {
   assertUnusedPreviewApproval,
@@ -43,167 +28,20 @@ import {
   type PreviewDeliveryPorts,
 } from '../../scripts/deploy/csp-preview-transaction.js';
 
-const sha = '12345678'.repeat(5),
-  trustedSha = 'a'.repeat(40),
-  digest = 'b'.repeat(64);
-const approval: PreviewApproval = {
-  id: 'review-1',
-  mode: 'report-only',
-  sourceSha: sha,
-  producerRunId: '101',
-  producerAttempt: 1,
-  producerWorkflowSha: trustedSha,
-  artifactId: '102',
-  artifactZipDigest: `sha256:${digest}`,
-  packetDigest: digest,
-  receiptDigest: digest,
-  artifactDigest: digest,
-  baselineDigest: digest,
-  ciRunId: '103',
-  ciWorkflowDigest: digest,
-  approvalRef: 'Sentinel_review_1',
-};
-const withPacket = (identity: PreviewPacketIdentity): PreviewApproval => ({
-  ...approval,
-  sourceSha: identity.sourceSha,
-  packetDigest: identity.packetDigest,
-  receiptDigest: identity.receiptDigest,
-  artifactDigest: identity.artifactDigest,
-  baselineDigest: identity.baselineDigest,
-});
-const policy = (): PreviewDeliveryPolicy => ({
-  schema: 1,
-  repository: PREVIEW_REPOSITORY,
-  target: PREVIEW_TARGET,
-  deliveryEnabled: true,
-  accountId: 'c'.repeat(32),
-  existingCredentialBinding: 'reviewed-existing-binding',
-  credentialScopeConfirmed: true,
-  actionsReadApproved: true,
-  destinationReviewed: true,
-  stage0Reviewed: true,
-  rollbackRetentionConfirmed: true,
-  approvals: [approval],
-});
-const execution = {
-  repository: PREVIEW_REPOSITORY,
-  event: 'workflow_dispatch',
-  ref: 'refs/heads/main',
-  workflowRef: `${PREVIEW_REPOSITORY}/${PREVIEW_WORKFLOW}@refs/heads/main`,
-  workflowSha: trustedSha,
-  checkoutSha: trustedSha,
-};
-const evidence = () => ({
-  producer: {
-    id: 101,
-    run_attempt: 1,
-    path: PREVIEW_WORKFLOW,
-    head_sha: trustedSha,
-    head_branch: 'main',
-    event: 'workflow_dispatch',
-    status: 'completed',
-    conclusion: 'success',
-    repository: { full_name: PREVIEW_REPOSITORY },
-  },
-  artifact: {
-    id: 102,
-    name: 'rouault-csp-preview-packet',
-    expired: false,
-    digest: `sha256:${digest}`,
-    workflow_run: { id: 101, head_sha: trustedSha },
-  },
-  ci: {
-    id: 103,
-    path: '.github/workflows/ci-cd.yml',
-    head_sha: sha,
-    event: 'workflow_dispatch',
-    status: 'completed',
-    conclusion: 'success',
-    repository: { full_name: PREVIEW_REPOSITORY },
-  },
-  ciWorkflowDigest: digest,
-});
-const deployment = () => ({
-  id: '01234567-89ab-cdef-0123-456789abcdef',
-  url: 'https://1234abcd.rouault.pages.dev',
-  project_name: 'rouault',
-  environment: 'preview',
-  aliases: [PREVIEW_TARGET.origin],
-  deployment_trigger: { metadata: { branch: 'csp-verify', commit_hash: sha, commit_dirty: false } },
-  latest_stage: { name: 'deploy', status: 'success' },
-});
-
-// packet構造の小fixture。source-owned allowlistと実WASMの合格は、既存試験・実buildで別に確認する。
-const fixture = async (run: (root: string, packet: string) => Promise<void>) => {
-  const root = await mkdtemp(path.join(tmpdir(), 'csp-delivery-'));
-  const dist = path.join(root, 'dist'),
-    packet = path.join(root, '.generated/csp-preview');
-  try {
-    for (const directory of [
-      dist + '/client-assets',
-      root + '/.generated/csp',
-      root + '/.generated/client/.vite',
-      packet,
-      root + '/src/assets/css',
-      dist + '/assets/css',
-    ])
-      await mkdir(directory, { recursive: true });
-    const scripts = [buildThemeDocumentBootstrapScript(), buildThemeChromeBootstrapScript()].map(
-      escapeInlineExecutableScriptText,
-    );
-    await writeFile(
-      path.join(dist, 'index.html'),
-      `<html><head><meta name="rouault-site-origin" content="${PREVIEW_TARGET.origin}"><meta name="rouault-build-id" content="12345678"><script>${scripts[0]}</script><script type="module" src="/client-assets/app.js"></script></head><body><script>${scripts[1]}</script></body></html>`,
-    );
-    await writeFile(
-      path.join(dist, 'client-assets/app.js'),
-      'new Worker(new URL("./worker.js",import.meta.url),{type:"module"});',
-    );
-    await writeFile(path.join(dist, 'client-assets/worker.js'), 'export {};');
-    for (const destination of [
-      root + '/src/assets/css/about-shell.css',
-      dist + '/assets/css/about-shell.css',
-    ])
-      await copyFile('src/assets/css/about-shell.css', destination);
-    await copyFile('_redirects', path.join(dist, '_redirects'));
-    const cache = '/client-assets/*\n  Cache-Control: public, max-age=31536000, immutable\n';
-    await writeFile(path.join(dist, '_headers'), cache);
-    const viteManifestFile = path.join(root, '.generated/client/.vite/manifest.json');
-    await writeFile(
-      viteManifestFile,
-      JSON.stringify({ 'src/client.ts': { file: 'client-assets/app.js', isEntry: true } }),
-    );
-    const manifest = await collectCspStageOne(dist, PREVIEW_TARGET.mediaOrigin, {
-      viteManifestFile,
-    });
-    const fragment = renderCspHeaders(manifest),
-      files = await scanPreviewFiles(dist);
-    await writeFile(path.join(root, '.generated/csp/manifest.json'), JSON.stringify(manifest));
-    await writeFile(path.join(root, '.generated/csp/report-only.headers'), fragment);
-    await writeFile(
-      path.join(root, '.generated/csp-preview-build.json'),
-      previewBuildStamp(sha, files),
-    );
-    await copyPreviewBaseline(dist, packet + '/baseline', files);
-    await copyPreviewBaseline(dist, packet + '/report-only', files);
-    await writeFile(
-      path.join(packet, 'report-only/_headers'),
-      assemblePreviewHeaders(cache, fragment, manifest),
-    );
-    const receipt = previewReceipt(
-      sha,
-      manifest,
-      files,
-      await scanPreviewFiles(packet + '/report-only'),
-      fragment,
-    );
-    await writeFile(path.join(packet, 'preparation.json'), JSON.stringify(receipt, null, 2) + '\n');
-    await stagePreviewPacket(root, sha);
-    await run(root, packet);
-  } finally {
-    await rm(root, { recursive: true, force: true });
-  }
-};
+import {
+  sha,
+  trustedSha,
+  digest,
+  approval,
+  withPacket,
+  policy,
+  execution,
+  evidence,
+  deployment,
+  observation,
+  attemptSetup,
+  fixture,
+} from './helpers/csp-preview-delivery-fixture.js';
 
 describe('preview delivery authority', () => {
   it('requires independent approval and keeps repository policy inactive', async () => {
@@ -328,6 +166,11 @@ describe('trusted preview packet', () => {
       await expect(inspectPreviewPacket(packet, sha)).rejects.toThrow();
     }),
   );
+  it('rejects empty discovery directories outside the approved file digest', async () =>
+    fixture(async (_root, packet) => {
+      await mkdir(path.join(packet, 'report-only/functions'));
+      await expect(inspectPreviewPacket(packet, sha)).rejects.toThrow('unrepresented');
+    }));
   it.each([
     'report-only/client-assets/worker.js',
     'baseline/index.html',
@@ -356,7 +199,7 @@ describe('trusted preview packet', () => {
 describe('preview transaction model without live adapters', () => {
   const history = { complete: true, attemptedApprovalIds: [] };
   it('fixes branch and command; incomplete or used histories never retry', () => {
-    expect(previewWranglerArgs(approval)).toEqual([
+    expect(previewWranglerArgs(approval, '201.1.aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee')).toEqual([
       'pages',
       'deploy',
       'payload',
@@ -364,6 +207,7 @@ describe('preview transaction model without live adapters', () => {
       '--branch=csp-verify',
       `--commit-hash=${sha}`,
       '--commit-dirty=false',
+      '--commit-message=rouault-preview:201.1.aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee',
     ]);
     for (const h of [
       { complete: false, attemptedApprovalIds: [] },
@@ -380,6 +224,7 @@ describe('preview transaction model without live adapters', () => {
         const p = { ...policy(), approvals: [approved] },
           calls: string[] = [];
         const ports: PreviewDeliveryPorts = {
+          ...attemptSetup,
           reserve: async () => {
             calls.push('reserve');
           },
@@ -392,8 +237,9 @@ describe('preview transaction model without live adapters', () => {
             expect(payload.digest).toBe(
               mode === 'baseline' ? identity.baselineDigest : identity.artifactDigest,
             );
+            return { deploymentId: deployment().id };
           },
-          observe: async () => deployment(),
+          observe: async () => observation(),
           verifyHttp: async () => true,
         };
         const request = {
@@ -427,6 +273,7 @@ describe('preview transaction model without live adapters', () => {
       const saved: PreviewAttempt[] = [];
       let uploads = 0;
       const ports: PreviewDeliveryPorts = {
+        ...attemptSetup,
         reserve: async (v) => {
           saved.push(v);
         },
@@ -437,7 +284,7 @@ describe('preview transaction model without live adapters', () => {
           uploads++;
           throw new Error('unknown result');
         },
-        observe: async () => deployment(),
+        observe: async () => observation(),
         verifyHttp: async () => true,
       };
       const result = await executePreviewTransaction(
@@ -454,25 +301,52 @@ describe('preview transaction model without live adapters', () => {
       expect(uploads).toBe(1);
       expect(result.status).toBe('uncertain');
       expect(saved.at(-1)).toEqual(result);
-      expect((await reconcilePreviewAttempt(result, [], async () => true)).status).toBe(
+      expect(
+        (await reconcilePreviewAttempt(result, observation([]), async () => true)).status,
+      ).toBe('uncertain');
+      expect(
+        (
+          await reconcilePreviewAttempt(
+            result,
+            observation([
+              { ...deployment(), id: '11234567-89ab-cdef-0123-456789abcdef' },
+              deployment(),
+            ]),
+            async () => true,
+          )
+        ).status,
+      ).toBe('uncertain');
+      expect((await reconcilePreviewAttempt(result, observation(), async () => false)).status).toBe(
         'uncertain',
       );
-      expect(
-        (await reconcilePreviewAttempt(result, [deployment(), deployment()], async () => true))
-          .status,
-      ).toBe('uncertain');
-      expect(
-        (await reconcilePreviewAttempt(result, [deployment()], async () => false)).status,
-      ).toBe('uncertain');
-      expect((await reconcilePreviewAttempt(result, [deployment()], async () => true)).status).toBe(
+      expect((await reconcilePreviewAttempt(result, observation(), async () => true)).status).toBe(
         'verified',
       );
+      const old = {
+        ...deployment(),
+        created_on: '2026-11-01T00:00:00.000Z',
+        deployment_trigger: {
+          metadata: {
+            ...deployment().deployment_trigger.metadata,
+            commit_message: 'old-same-sha-and-payload',
+          },
+        },
+      };
+      const sameContent = await reconcilePreviewAttempt(
+        result,
+        observation([old]),
+        async () => true,
+      );
+      expect(sameContent.status).toBe('uncertain');
+      expect(sameContent.contentStatus).toBe('matches');
+      expect(sameContent.operationStatus).toBe('unknown');
     }));
   it.each(['reserve', 'persist'] as const)('never uploads after %s failure', async (phase) =>
     fixture(async (_root, packet) => {
       const approved = withPacket(await inspectPreviewPacket(packet, sha));
       let uploads = 0;
       const ports: PreviewDeliveryPorts = {
+        ...attemptSetup,
         reserve: async () => {
           if (phase === 'reserve') throw new Error('reservation unavailable');
         },
@@ -481,8 +355,9 @@ describe('preview transaction model without live adapters', () => {
         },
         upload: async () => {
           uploads++;
+          return null;
         },
-        observe: async () => deployment(),
+        observe: async () => observation(),
         verifyHttp: async () => true,
       };
       await expect(

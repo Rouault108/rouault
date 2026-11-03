@@ -49,7 +49,7 @@ const run = async (): Promise<void> => {
         pendingGates: [
           ...PREVIEW_PENDING_GATES,
           'actions-read-and-service-fetch',
-          'durable-reservation-and-live-adapters',
+          'journal-bootstrap-and-reviewed-live-bindings',
         ],
       }),
     );
@@ -77,10 +77,12 @@ const run = async (): Promise<void> => {
     workflowRef: process.env['GITHUB_WORKFLOW_REF'] ?? '',
     workflowSha: process.env['GITHUB_WORKFLOW_SHA'] ?? '',
     checkoutSha: sourceSha,
+    runId: process.env['GITHUB_RUN_ID'] ?? '',
+    runAttempt: Number(process.env['GITHUB_RUN_ATTEMPT']),
   });
   // 未確認のcredential bindingやActions権限をこの実装で暗黙に有効化しない。
   throw new Error(
-    '[preview-delivery] live artifact download, credential binding and uploader adapters require separate review',
+    '[preview-delivery] live bindings, journal bootstrap and workflow activation require separate review',
   );
 };
 
