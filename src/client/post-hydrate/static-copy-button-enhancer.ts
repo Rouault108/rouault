@@ -85,7 +85,7 @@ const resolveCopyValue = (button: HTMLButtonElement): string | null => {
 };
 
 const isHidden = (button: HTMLButtonElement): boolean =>
-  button.hidden || button.closest('[hidden], [aria-hidden="true"]') !== null;
+  Boolean(button.hidden) || button.closest('[hidden], [aria-hidden="true"]') !== null;
 
 const getClipboard = (): Clipboard | null => {
   const clipboard: Clipboard | undefined =
