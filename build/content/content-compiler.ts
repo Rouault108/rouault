@@ -1,5 +1,6 @@
 import { toHtml } from 'hast-util-to-html';
 import { unified } from 'unified';
+import { VFile } from 'vfile';
 import remarkParse from 'remark-parse';
 import remarkRehype from 'remark-rehype';
 import remarkGfm from 'remark-gfm';
@@ -10,6 +11,12 @@ import { remarkExpandExampleIncludes } from '../remark/expand-example-includes.j
 import { remarkDisallowRawHtml } from '../remark/disallow-raw-html.js';
 import { remarkRouaultDirectives } from '../remark/rouault-directives.js';
 import { remarkLinkCards } from '../remark/remark-link-cards.js';
+import { remarkMathDiagnosticOrigins } from '../remark/math-diagnostic-origins.js';
+import {
+  collectContentDiagnostics,
+  type ContentDiagnostic,
+  type ContentDiagnosticOptions,
+} from './content-diagnostics.js';
 import { createNotePolicyContext } from '../remark/directives/policy/note-policy-context.js';
 import type { MdastNode } from '../remark/directives/types.js';
 import { rehypeAnnotateLinkKinds } from '../rehype/annotate-link-kinds.js';
@@ -80,7 +87,13 @@ const rehypeCodeMeta =
 export const compileContentInput = async (
   input: ContentInput,
   context: ContentDocumentContext,
-): Promise<{ note?: CompiledNote; memo?: SourceMemo; links: CollectedMarkdownUrl[] }> => {
+  options: ContentDiagnosticOptions = {},
+): Promise<{
+  note?: CompiledNote;
+  memo?: SourceMemo;
+  links: CollectedMarkdownUrl[];
+  diagnostics: ContentDiagnostic[];
+}> => {
   const metadata = input.metadata as NoteMetadata;
   const isNote = input.identity.collectionId === 'notes';
   const kind = isNote ? (metadata.kind ?? 'reader') : 'reader';
@@ -107,6 +120,7 @@ export const compileContentInput = async (
     .use(remarkRouaultDirectives)
     .use(remarkCollectSourceLinks)
     .use(remarkLinkCards)
+    .use(remarkMathDiagnosticOrigins)
     .use(remarkRehype)
     .use(rehypeCodeMeta)
     .use(rehypeRaw)
@@ -121,12 +135,25 @@ export const compileContentInput = async (
     .use(rehypeInlineCodeTranslateNo)
     .use(rehypeOrderedListContracts)
     .use(rehypeDisallowDangerousProps);
-  const file = {
+  const file = new VFile({
     path: input.sourceFilePath,
     value: input.body,
     data: { rouaultPolicyContext: policy, rouaultContentContext: context },
-  };
-  const tree = await processor.run(processor.parse(file), file);
+  });
+  const tree = await processor.run(processor.parse(file), file).catch((error: unknown) => {
+    // 同一文書の後段transformerが失敗しても、生成済み警告を例外より先に通知する。
+    try {
+      for (const diagnostic of collectContentDiagnostics(file, input))
+        options.reportDiagnostic?.(diagnostic);
+    } catch {
+      // 診断の表示失敗で、元の変換エラーを置き換えない。
+    }
+    throw error;
+  });
+  const diagnostics = collectContentDiagnostics(file, input);
+  for (const diagnostic of diagnostics) options.reportDiagnostic?.(diagnostic);
+  const fatal = file.messages.find((message) => message.fatal === true);
+  if (fatal) throw fatal;
   // notesのnamespaceだけは既存JSONと同様に末尾/indexを除く。memosのidentityは保持する。
   const namespace = input.sourceLabel.replace(/\.md$/u, '').replace(/\/index$/u, '');
   const staticHtml = normalizeRouaultStaticSurfaceHtml(
@@ -155,6 +182,7 @@ export const compileContentInput = async (
         content,
       },
       links,
+      diagnostics,
     };
   }
   validateNoteContentContracts({
@@ -179,5 +207,6 @@ export const compileContentInput = async (
       status: metadata.status ?? '',
     },
     links,
+    diagnostics,
   };
 };

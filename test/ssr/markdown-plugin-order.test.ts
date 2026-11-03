@@ -57,6 +57,7 @@ describe('markdown plugin order', () => {
       'remarkRouaultDirectives',
       'remarkCollectSourceLinks',
       'remarkLinkCards',
+      'remarkMathDiagnosticOrigins',
       'remarkRehype',
       'rehypeCodeMeta',
       'rehypeRaw',

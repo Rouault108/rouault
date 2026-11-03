@@ -20,6 +20,20 @@ JSONの保存先は引き続き`.velite/notes.json`と`.velite/memos.json`。同
 
 分類情報は共通生成結果のMapをEleventyのglobal data経由で最終ページ投影にも明示的に渡す。分類情報、URL、ソース位置、診断はJSONへ保存しない。入力群と全依存ファイルの同時点スナップショットは保証しない。独立した複数プロセスによる同じ出力先への並行生成・読込は対象外。
 
+## 数式の診断
+
+共通コンパイラーはparseとrunに同じVFileを渡し、不正TeXの非fatal診断を記事やリンクと別の`diagnostics`として返す。通常の本文とincludeを診断のために再読込・再展開しない。診断のために原稿、記事identity、HTML、heading ID、公開hashを変更しない。
+
+コンパイラーは同じVFileから診断を回収した時点で呼出元のreporterへ一度通知する。同一文書の数式後の変換や契約検査が失敗しても、生成済み警告を通知して元の例外を伝播する。後続文書やリンク検査が失敗しても、既出通知は取り消さない。`compileContentInputs`は入力順に診断を集約し、再度表示しない。同じ式でも別の発生箇所は別診断とし、位置不明の複数件もまとめて消さない。
+
+`codegen:content`、`validate:note-links`、Eleventyのbeforeは共通reporterを指定し、警告をstderrへ表示する。低レベルのコンパイルAPIは既定で表示しない。診断の戻り値を入口で再度表示しない。watchでは生成試行ごとに再報告し、修正後の試行では警告が消える。プロセス全体をまたぐ重複除去は行わない。
+
+表示は相対source label、取得できた行・列、source/ruleId、安全に分類した短い理由を一行にまとめる。式全文、絶対path、stack、制御文字を警告へ流さない。通常本文の行はfrontmatterを含む原稿位置へ補正し、inline式または数式ブロックの開始位置として扱う。KaTeXの式内offsetを文書の列へ直接足さない。include由来の式は展開元refを保持し、元の原稿位置を保証できない場合は行・列を推測しない。
+
+不正TeXの警告だけなら終了コード0を維持し、escaped error表示、JSON保存、後段の生成を続ける。予期しないrenderer例外、記法の安全検査、schema、リンク、保存の失敗は従来どおり伝播する。KaTeX自身の`strict: "warn"`によるUnicode・フォント警告は別経路として維持する。
+
+memo importの見出し索引・中間展開・asset discoveryでは診断を新たに表示しない。確定して取り込まれたMarkdownは通常のコンテンツ生成で診断する。importは複数の検証buildを実行するため、操作全体で一度だけの表示は保証しない。外部private Metis handlerへの構造化診断の返却とstrict callbackの統合は別の対応範囲である。
+
 ## 失敗と検索配信
 
 開発サーバー稼働中の検索状態はプロセス内で一つ。初期値は利用不可で、beforeの最初に配信を閉じて試行トークンを取得する。before/afterは同じEleventyイベントobjectに結び付くトークンを参照する。configureServerは状態を初期化し直さない。

@@ -2,6 +2,12 @@ import katex from 'katex';
 import { fromHtmlIsomorphic } from 'hast-util-from-html-isomorphic';
 import type { Element, Root } from 'hast';
 import type { Plugin } from 'unified';
+import {
+  getMathStartPosition,
+  takeMathNodeOrigin,
+  recordMathDiagnosticOrigin,
+  type MathDiagnosticOrigin,
+} from '../content/math-diagnostic-origin.js';
 
 const classesOf = (node: Element): readonly unknown[] => {
   const value = node.properties['className'];
@@ -23,7 +29,7 @@ const textOf = (node: Element): string =>
 export const rehypeStaticMath: Plugin<[], Root> =
   () =>
   (tree, file): void => {
-    const visit = (parent: Root | Element): void => {
+    const visit = (parent: Root | Element, inheritedOrigin?: MathDiagnosticOrigin): void => {
       for (let index = 0; index < parent.children.length; index++) {
         const node = parent.children[index];
         if (node?.type !== 'element') continue;
@@ -33,8 +39,12 @@ export const rehypeStaticMath: Plugin<[], Root> =
           code.tagName === 'code' &&
           classesOf(code).includes('language-math');
         const source = fenced ? code : node;
+        const origin =
+          (fenced ? takeMathNodeOrigin(file, source.properties) : undefined) ??
+          takeMathNodeOrigin(file, node.properties) ??
+          inheritedOrigin;
         if (!isMath(source)) {
-          visit(node);
+          visit(node, origin);
           continue;
         }
         // 信頼済みHTML命令を許可せず、数式間のmacro stateを共有しない。
@@ -51,12 +61,19 @@ export const rehypeStaticMath: Plugin<[], Root> =
           // TeXの入力不備だけをwarningとescaped error表示へ縮退させる。
           // 予期しないrenderer障害はbuildを失敗させて検知する。
           if (!(error instanceof katex.ParseError)) throw error;
-          file.message('Could not render math with KaTeX', {
+          // display mathのcode childには位置がないため、注釈なしの呼出しでも外側preへ戻る。
+          const position = origin
+            ? origin.kind === 'document'
+              ? origin.position
+              : undefined
+            : getMathStartPosition(source.position ?? node.position);
+          const message = file.message('Could not render math with KaTeX', {
             cause: error,
             source: 'rouault-static-math',
             ruleId: 'parseerror',
-            ...(source.position ? { place: source.position } : {}),
+            ...(position ? { place: position } : {}),
           });
+          if (origin) recordMathDiagnosticOrigin(file, message, origin);
           html = katex.renderToString(textOf(source), { ...options, throwOnError: false });
         }
         const result = fromHtmlIsomorphic(html, { fragment: true }).children.filter(
@@ -67,4 +84,14 @@ export const rehypeStaticMath: Plugin<[], Root> =
       }
     };
     visit(tree);
+    // template内の不活性な数式は描画対象に加えず、変換を渡った診断属性だけを除去する。
+    const removeOrigins = (parent: Root | Element): void => {
+      for (const child of parent.children) {
+        if (child.type !== 'element') continue;
+        takeMathNodeOrigin(file, child.properties);
+        removeOrigins(child);
+        if (child.content) removeOrigins(child.content);
+      }
+    };
+    removeOrigins(tree);
   };

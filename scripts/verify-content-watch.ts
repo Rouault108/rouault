@@ -40,11 +40,13 @@ const valid = (marker: string) =>
 await writeFile(fixture, '---\ntitle: []\n---\nInvalid');
 const configFile = path.join(root, 'eleventy.config.ts');
 let config = await readFile(configFile, 'utf8');
+const generationCall = /const generated = await generateContent\(([\s\S]*?)\);/u;
+assert(generationCall.test(config), 'content generation call must be instrumented');
 config = config.replace(
-  'const generated = await generateContent();',
-  `console.log('[verify:content:start]');
+  generationCall,
+  (_call, options: string) => `console.log('[verify:content:start]');
       await new Promise((resolve) => setTimeout(resolve, 300));
-      const generated = await generateContent().finally(() => { console.log('[verify:content:end]'); });`,
+      const generated = await generateContent(${options}).finally(() => { console.log('[verify:content:end]'); });`,
 );
 
 const faultPath = (phase: string) => path.join(root, `.verify-fault-${phase}`);
@@ -92,6 +94,8 @@ await new Promise<void>((resolve, reject) =>
 const base = `http://127.0.0.1:${String(port)}`;
 let child: ChildProcess | undefined;
 let log = '';
+let stdoutLog = '';
+let stderrLog = '';
 const events: { check: string; result: 'passed'; detail?: string }[] = [];
 const record = (check: string, detail?: string) => {
   events.push({ check, result: 'passed', ...(detail ? { detail } : {}) });
@@ -121,10 +125,12 @@ const start = () => {
     },
   );
   child.stdout?.on('data', (data: Buffer) => {
+    stdoutLog += data.toString();
     log += data.toString();
     writeFileSync(path.join(root, 'live-server.log'), log);
   });
   child.stderr?.on('data', (data: Buffer) => {
+    stderrLog += data.toString();
     log += data.toString();
     writeFileSync(path.join(root, 'live-server.log'), log);
   });
@@ -191,6 +197,53 @@ try {
     'watch recovery',
   );
   record('corrected article recovers through watch without restart');
+  const mathWarnings = (value: string) =>
+    value
+      .split('\n')
+      .filter(
+        (line) =>
+          line.startsWith('[content] warning ') &&
+          line.includes('content/notes/watch-canary.md:') &&
+          line.includes('[rouault-static-math:parseerror]'),
+      );
+  for (const marker of ['WATCH-MATH-ONE', 'WATCH-MATH-TWO']) {
+    const beforeWarning = stderrLog.length;
+    const beforeOutput = stdoutLog.length;
+    await writeFile(fixture, valid(`${marker}\n\nInvalid $\\frac{WATCH_PRIVATE_FORMULA$.`));
+    await until(
+      async () =>
+        (await status()) === 200 &&
+        mathWarnings(stderrLog.slice(beforeWarning)).length > 0 &&
+        (await readFile(path.join(root, 'dist/notes/watch-canary/index.html'), 'utf8')).includes(
+          marker,
+        ),
+      `${marker} warning reaches stderr and watch stays successful`,
+    );
+    // 同じ編集が複数試行にまとめられても、各生成の発生箇所だけを一度報告する。
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+    await until(async () => (await status()) === 200, 'math warning build completes');
+    const warnings = mathWarnings(stderrLog.slice(beforeWarning));
+    const generations = [...stdoutLog.slice(beforeOutput).matchAll(/\[verify:content:start\]/gu)];
+    assert.equal(warnings.length, generations.length);
+    assert(!stdoutLog.slice(beforeOutput).includes('[content] warning '));
+    assert(warnings.every((warning) => !warning.includes(root)));
+    assert(warnings.every((warning) => !warning.includes('WATCH_PRIVATE_FORMULA')));
+    assert.equal(child.exitCode, null);
+    record(`${marker} reports once per generation on stderr without failing watch`);
+  }
+  const beforeMathCorrection = stderrLog.length;
+  await writeFile(fixture, valid('WATCH-MATH-CORRECTED\n\nValid $x^2$.'));
+  await until(
+    async () =>
+      (await status()) === 200 &&
+      (await readFile(path.join(root, 'dist/notes/watch-canary/index.html'), 'utf8')).includes(
+        'WATCH-MATH-CORRECTED',
+      ),
+    'corrected math is regenerated without warning',
+  );
+  await new Promise((resolve) => setTimeout(resolve, 1000));
+  assert.equal(mathWarnings(stderrLog.slice(beforeMathCorrection)).length, 0);
+  record('correcting math clears warnings without restarting watch');
   for (const phase of ['html', 'static', 'search']) {
     const startLog = log.length;
     await writeFile(faultPath(phase), 'synthetic failure');
@@ -279,10 +332,12 @@ try {
   await stop();
   await mkdir(path.join(root, 'evidence'), { recursive: true });
   await writeFile(path.join(root, 'evidence/server.log'), log);
+  await writeFile(path.join(root, 'evidence/server-stderr.log'), stderrLog);
   await writeFile(
     path.join(root, 'evidence/results.json'),
     JSON.stringify({ root, events }, null, 2),
   );
+  await mkdir(path.join(sourceRoot, 'tmp'), { recursive: true });
   await appendFile(
     path.join(sourceRoot, 'tmp/content-watch-evidence-path.txt'),
     `${root}/evidence\n`,

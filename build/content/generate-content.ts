@@ -4,6 +4,7 @@ import { randomUUID } from 'node:crypto';
 import { readContentInputs, type ContentInput } from './content-input.js';
 import { createContentBuildContext, type ContentDocumentContext } from './content-build-context.js';
 import { compileContentInput } from './content-compiler.js';
+import type { ContentDiagnostic, ContentDiagnosticOptions } from './content-diagnostics.js';
 import type { CompiledNote } from './content-schema.js';
 import type { SourceMemo } from '../data/memos.js';
 import { buildNotesCollection, filterPublicNotes } from '../data/notes.js';
@@ -49,10 +50,12 @@ export const saveContentCollections = async (
 
 export const compileContentInputs = async (
   inputs: readonly ContentInput[],
+  options: ContentDiagnosticOptions = {},
 ): Promise<{
   notes: CompiledNote[];
   memos: SourceMemo[];
   contexts: Map<string, ContentDocumentContext>;
+  diagnostics: ContentDiagnostic[];
 }> => {
   const siteUrlContext = process.env['ROUAULT_SITE_ORIGIN']
     ? resolveProductionSiteUrlContext()
@@ -61,11 +64,14 @@ export const compileContentInputs = async (
   const contexts = new Map<string, ContentDocumentContext>();
   const notes: CompiledNote[] = [];
   const memos: SourceMemo[] = [];
+  const diagnostics: ContentDiagnostic[] = [];
   const linksBySource = new Map<string, CollectedMarkdownUrl[]>();
   for (const input of inputs) {
     const context = contextFor(input);
     contexts.set(input.sourceLabel, context);
-    const compiled = await compileContentInput(input, context);
+    const compiled = await compileContentInput(input, context, options);
+    // 後続の文書・リンク検証が失敗しても、完了済み文書の診断を失わない。
+    diagnostics.push(...compiled.diagnostics);
     if (compiled.note) notes.push(compiled.note);
     if (compiled.memo) memos.push(compiled.memo);
     linksBySource.set(input.sourceLabel, compiled.links);
@@ -78,11 +84,11 @@ export const compileContentInputs = async (
       routePermalinks,
     );
   }
-  return { notes, memos, contexts };
+  return { notes, memos, contexts, diagnostics };
 };
 
-export const generateContent = async () => {
-  const collections = await compileContentInputs(readContentInputs());
+export const generateContent = async (options: ContentDiagnosticOptions = {}) => {
+  const collections = await compileContentInputs(readContentInputs(), options);
   await saveContentCollections(collections);
   return collections;
 };
