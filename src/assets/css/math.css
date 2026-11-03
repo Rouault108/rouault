@@ -1,7 +1,9 @@
+@import 'katex/dist/katex.css';
+
 /* ===========================================================================
  * KaTeX（Light DOM）
  *
- * rehype-katex が .prose 等の Light DOM へ直接出力する KaTeX HTML に対する
+ * rehypeStaticMath が .prose 等の Light DOM へ直接出力する KaTeX HTML に対する
  * グローバルスタイル。静的数式面では同等ルールを本文 CSS が担う
  * スタイルで管理するため、ここでは Light DOM のみを対象とする。
  *

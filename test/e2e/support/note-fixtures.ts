@@ -13,6 +13,7 @@ export type E2ENoteFixtureId =
   | 'note.interactive'
   | 'note.layout-rich'
   | 'note.markdown-basic'
+  | 'note.math-rendering'
   | 'note.sidebar-scroll-source'
   | 'note.sidebar-scroll-target'
   | 'note.toc-absent'

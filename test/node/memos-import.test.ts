@@ -26,7 +26,7 @@ import remarkParse from 'remark-parse';
 import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
 import remarkRehype from 'remark-rehype';
-import rehypeKatex from 'rehype-katex';
+import { rehypeStaticMath } from '../../build/rehype/static-math.js';
 import { rehypeHeadingIds } from '../../build/rehype/rehype-heading-ids.js';
 const guards = {
   maxBlobBytes: 2_000_000,
@@ -175,7 +175,7 @@ describe('manual memo importer', () => {
       .use(remarkGfm)
       .use(remarkMath)
       .use(remarkRehype)
-      .use(rehypeKatex)
+      .use(rehypeStaticMath)
       .use(rehypeHeadingIds);
     const tree: unknown = await renderer.run(renderer.parse(output.markdown));
     const ids: string[] = [];
@@ -223,7 +223,7 @@ describe('manual memo importer', () => {
       .use(remarkGfm)
       .use(remarkMath)
       .use(remarkRehype)
-      .use(rehypeKatex)
+      .use(rehypeStaticMath)
       .use(rehypeHeadingIds);
     const tree: unknown = await renderer.run(renderer.parse(result.markdown));
     const ids: string[] = [];

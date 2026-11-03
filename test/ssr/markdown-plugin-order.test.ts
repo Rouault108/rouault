@@ -60,7 +60,7 @@ describe('markdown plugin order', () => {
       'remarkRehype',
       'rehypeCodeMeta',
       'rehypeRaw',
-      'rehypeKatex',
+      'rehypeStaticMath',
       'rehypeRouaultComponents',
       'rehypeHeadingIds',
       'rehypePreviewSandbox',
