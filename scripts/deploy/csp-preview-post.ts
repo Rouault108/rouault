@@ -8,9 +8,35 @@ export type PreviewPostRequest = (
   callback: (response: IncomingMessage) => void,
 ) => ClientRequest;
 
+export const previewPostAgent = (proxyEnv: NodeJS.ProcessEnv = process.env): https.Agent =>
+  new https.Agent({
+    keepAlive: false,
+    maxSockets: 1,
+    maxFreeSockets: 0,
+    proxyEnv: Object.fromEntries(
+      ['HTTP_PROXY', 'http_proxy', 'HTTPS_PROXY', 'https_proxy', 'NO_PROXY', 'no_proxy']
+        .filter((key) => proxyEnv[key] !== undefined)
+        .map((key) => [key, proxyEnv[key]]),
+    ),
+  });
+const nativeProxyPost: PreviewPostRequest = (url, options, callback) => {
+  // 専用Agentは再利用せず、環境のproxy/CAを維持する。proxy障害をdirect接続へ置き換えない。
+  const agent = previewPostAgent();
+  try {
+    const request = https.request(url, { ...options, agent }, callback);
+    request.once('close', () => {
+      agent.destroy();
+    });
+    return request;
+  } catch (error) {
+    agent.destroy();
+    throw error;
+  }
+};
+
 // deployment作成だけはretryを持たないNode request一回に限定する。redirectもsocket再利用も行わない。
 export const previewSinglePost =
-  (factory: PreviewPostRequest = https.request): PreviewFetch =>
+  (factory: PreviewPostRequest = nativeProxyPost): PreviewFetch =>
   (url, init) =>
     new Promise((resolve, reject) => {
       const target = new URL(url);

@@ -1,5 +1,8 @@
 # CSP preview配信のauthority境界
 
+一回限りの監督付きlocal配信は[別契約](csp-preview-supervised.md)で扱う。
+その経路はR2 journalやmain workflow登録を必須とせず、ここで定義する自動配信のauthority・必須条件は緩めない。
+
 ## 状態と責務
 
 本契約は[成果物準備](csp-preview-preparation.md)に続く無資格情報のpacket作成とtrusted側の配信adapterを所有する。

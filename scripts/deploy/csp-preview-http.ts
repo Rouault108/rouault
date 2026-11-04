@@ -87,7 +87,7 @@ export interface PreviewHttpEvidence {
 
 export const verifyPreviewHttp = async (
   packetRoot: string,
-  attempt: PreviewAttempt,
+  attempt: Pick<PreviewAttempt, 'mode' | 'sourceSha' | 'payloadDigest'>,
   deploymentUrl: string,
   transport: PreviewFetch = nativePreviewFetch,
 ): Promise<PreviewHttpEvidence> => {

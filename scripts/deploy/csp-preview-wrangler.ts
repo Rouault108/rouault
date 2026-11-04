@@ -80,13 +80,30 @@ export const previewWranglerEnvironment = (
   root: string,
   jwt: string,
   transportEnv: Partial<
-    Pick<NodeJS.ProcessEnv, 'NODE_EXTRA_CA_CERTS' | 'HTTPS_PROXY' | 'HTTP_PROXY' | 'NO_PROXY'>
+    Pick<
+      NodeJS.ProcessEnv,
+      | 'NODE_EXTRA_CA_CERTS'
+      | 'HTTPS_PROXY'
+      | 'HTTP_PROXY'
+      | 'NO_PROXY'
+      | 'https_proxy'
+      | 'http_proxy'
+      | 'no_proxy'
+    >
   > = {},
 ): NodeJS.ProcessEnv => {
   if (!/^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/u.test(jwt) || jwt.length > 16384)
     throw new Error('[preview-delivery] limited asset JWT unavailable');
   const allowed: NodeJS.ProcessEnv = {};
-  for (const key of ['NODE_EXTRA_CA_CERTS', 'HTTPS_PROXY', 'HTTP_PROXY', 'NO_PROXY'] as const) {
+  for (const key of [
+    'NODE_EXTRA_CA_CERTS',
+    'HTTPS_PROXY',
+    'HTTP_PROXY',
+    'NO_PROXY',
+    'https_proxy',
+    'http_proxy',
+    'no_proxy',
+  ] as const) {
     const value = transportEnv[key];
     if (value !== undefined) {
       if (value.length > 8192 || /[\r\n]/u.test(value))
@@ -156,14 +173,45 @@ export const uploadTrustedPreviewAssets = async (
     approval: PreviewApproval;
     jwt: string;
     transportEnv?: Partial<
-      Pick<NodeJS.ProcessEnv, 'NODE_EXTRA_CA_CERTS' | 'HTTPS_PROXY' | 'HTTP_PROXY' | 'NO_PROXY'>
+      Pick<
+        NodeJS.ProcessEnv,
+        | 'NODE_EXTRA_CA_CERTS'
+        | 'HTTPS_PROXY'
+        | 'HTTP_PROXY'
+        | 'NO_PROXY'
+        | 'https_proxy'
+        | 'http_proxy'
+        | 'no_proxy'
+      >
     >;
     signal?: AbortSignal;
   },
   execute: PreviewProcess = nativePreviewProcess,
 ): Promise<PreviewUploadedAssets> => {
-  const approval = parsePreviewApproval(request.approval),
-    source = path.join(request.packetRoot, approval.mode),
+  const approval = parsePreviewApproval(request.approval);
+  return uploadSupervisedPreviewAssets({ ...request, selection: approval }, execute);
+};
+
+export type PreviewPayloadSelection = Pick<
+  PreviewApproval,
+  'mode' | 'sourceSha' | 'artifactDigest' | 'baselineDigest'
+>;
+// 成果物の選択と配信authorityを分離する。呼出し側の監督leaseなしにcreation POSTは行わない。
+export const uploadSupervisedPreviewAssets = async (
+  request: Omit<Parameters<typeof uploadTrustedPreviewAssets>[0], 'approval'> & {
+    selection: PreviewPayloadSelection;
+  },
+  execute: PreviewProcess = nativePreviewProcess,
+): Promise<PreviewUploadedAssets> => {
+  const approval = request.selection;
+  if (
+    !['report-only', 'baseline'].includes(approval.mode) ||
+    !/^[a-f0-9]{40}$/u.test(approval.sourceSha) ||
+    !/^[a-f0-9]{64}$/u.test(approval.artifactDigest) ||
+    !/^[a-f0-9]{64}$/u.test(approval.baselineDigest)
+  )
+    throw new Error('[preview-delivery] invalid payload selection');
+  const source = path.join(request.packetRoot, approval.mode),
     files = await scanPreviewFiles(source),
     expected = approval.mode === 'baseline' ? approval.baselineDigest : approval.artifactDigest;
   if (previewDigest(JSON.stringify(files)) !== expected)

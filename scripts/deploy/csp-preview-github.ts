@@ -30,10 +30,10 @@ const positive = (value: unknown): number => {
 
 export class PreviewGithubAdapter {
   constructor(
-    private readonly token: string,
+    private readonly token: string | null,
     private readonly transport: PreviewFetch = nativePreviewFetch,
   ) {
-    if (!token || /[\r\n]/u.test(token))
+    if (token !== null && (!token || /[\r\n]/u.test(token)))
       throw new Error('[preview-delivery] GitHub binding unavailable');
   }
   private async get(path: string): Promise<Response> {
@@ -43,7 +43,7 @@ export class PreviewGithubAdapter {
       redirect: 'manual',
       credentials: 'omit',
       headers: {
-        Authorization: `Bearer ${this.token}`,
+        ...(this.token === null ? {} : { Authorization: `Bearer ${this.token}` }),
         Accept: 'application/vnd.github+json',
         'Accept-Encoding': 'identity',
         'X-GitHub-Api-Version': '2026-03-10',
@@ -188,11 +188,39 @@ export class PreviewGithubAdapter {
       Date.parse(previewTimestamp(artifact['updated_at'])) > ended
     )
       throw new Error('[preview-delivery] artifact is from another attempt');
-    const ci = deliveryRecord(await this.json(`/actions/runs/${approval.ciRunId}`));
-    if (ci['run_attempt'] !== approval.ciRunAttempt)
+    const { ci, ciWorkflowDigest } = await this.verifiedCI({
+      sha: approval.sourceSha,
+      runId: approval.ciRunId,
+      attempt: approval.ciRunAttempt,
+      workflowDigest: approval.ciWorkflowDigest,
+    });
+    const evidence = { producer, artifact, ci, ciWorkflowDigest };
+    verifyPreviewServiceEvidence(approval, evidence);
+    if (producer['path'] !== PREVIEW_WORKFLOW)
+      throw new Error('[preview-delivery] foreign producer');
+    return evidence;
+  }
+
+  // 監督付きlocal配信はproducer workflowを要求せず、同じ固定CI証跡だけをserviceから確認する。
+  async verifiedCI(review: {
+    sha: string;
+    runId: string;
+    attempt: number;
+    workflowDigest: string;
+  }) {
+    if (
+      !/^[a-f0-9]{40}$/u.test(review.sha) ||
+      !/^[1-9][0-9]{0,19}$/u.test(review.runId) ||
+      !Number.isSafeInteger(review.attempt) ||
+      review.attempt < 1 ||
+      !/^[a-f0-9]{64}$/u.test(review.workflowDigest)
+    )
+      throw new Error('[preview-delivery] invalid reviewed CI identity');
+    const ci = deliveryRecord(await this.json(`/actions/runs/${review.runId}`));
+    if (ci['run_attempt'] !== review.attempt)
       throw new Error('[preview-delivery] CI attempt changed');
     const ciJobs = await this.pages(
-      `/actions/runs/${approval.ciRunId}/attempts/${String(positive(ci['run_attempt']))}/jobs`,
+      `/actions/runs/${review.runId}/attempts/${String(positive(ci['run_attempt']))}/jobs`,
       'jobs',
     );
     for (const name of [
@@ -212,7 +240,7 @@ export class PreviewGithubAdapter {
       )
         throw new Error('[preview-delivery] required candidate CI proof missing');
     const file = deliveryRecord(
-      await this.json(`/contents/.github/workflows/ci-cd.yml?ref=${approval.sourceSha}`),
+      await this.json(`/contents/.github/workflows/ci-cd.yml?ref=${review.sha}`),
     );
     if (
       file['type'] !== 'file' ||
@@ -231,11 +259,18 @@ export class PreviewGithubAdapter {
         .digest('hex') !== file['sha']
     )
       throw new Error('[preview-delivery] CI blob identity mismatch');
-    const evidence = { producer, artifact, ci, ciWorkflowDigest: previewDigest(bytes) };
-    verifyPreviewServiceEvidence(approval, evidence);
-    if (producer['path'] !== PREVIEW_WORKFLOW)
-      throw new Error('[preview-delivery] foreign producer');
-    return evidence;
+    if (
+      String(ci['id']) !== review.runId ||
+      ci['head_sha'] !== review.sha ||
+      ci['path'] !== '.github/workflows/ci-cd.yml' ||
+      ci['status'] !== 'completed' ||
+      ci['conclusion'] !== 'success' ||
+      !['push', 'workflow_dispatch'].includes(String(ci['event'])) ||
+      deliveryRecord(ci['repository'])['full_name'] !== PREVIEW_REPOSITORY ||
+      previewDigest(bytes) !== review.workflowDigest
+    )
+      throw new Error('[preview-delivery] candidate CI identity/definition mismatch');
+    return { ci, ciWorkflowDigest: previewDigest(bytes) };
   }
 
   async archive(approval: PreviewApproval): Promise<Buffer> {

@@ -15,7 +15,8 @@ import {
   parsePreviewAttempt,
 } from './csp-preview-transaction.js';
 
-const marker = /^rouault-preview:[1-9][0-9]{0,19}\.[1-9][0-9]*\.[a-f0-9-]{36}$/u;
+const marker =
+  /^(?:rouault-preview:[1-9][0-9]{0,19}\.[1-9][0-9]*\.[a-f0-9-]{36}|rouault-supervised:[a-f0-9]{64})$/u;
 const sanitizeDeployment = (value: unknown): Record<string, unknown> => {
   const row = deliveryRecord(value),
     trigger = row['deployment_trigger'],
@@ -101,10 +102,14 @@ export class PreviewPagesAdapter {
       throw new Error('[preview-delivery] Pages API rejected read');
     return { body, date: new Date(time).toISOString() };
   }
-  async project(): Promise<void> {
+  async project(expectedSubdomain?: 'rouault.pages.dev'): Promise<void> {
     const { body } = await this.get(''),
       project = deliveryRecord(body['result']);
-    if (project['name'] !== PREVIEW_TARGET.project || project['production_branch'] !== 'main')
+    if (
+      project['name'] !== PREVIEW_TARGET.project ||
+      project['production_branch'] !== 'main' ||
+      (expectedSubdomain !== undefined && project['subdomain'] !== expectedSubdomain)
+    )
       throw new Error('[preview-delivery] Pages project/production branch mismatch');
   }
   async uploadToken(): Promise<string> {
@@ -129,12 +134,31 @@ export class PreviewPagesAdapter {
       attempt.operationStatus !== 'unknown'
     )
       throw new Error('[preview-delivery] deployment POST identity/state mismatch');
+    return this.createBoundDeployment(attempt.sourceSha, previewAttemptMarker(attempt), assets);
+  }
+  async createSupervisedDeployment(
+    sourceSha: string,
+    attemptMarker: string,
+    assets: PreviewUploadedAssets,
+  ): Promise<{ deploymentId: string }> {
+    if (
+      !/^[a-f0-9]{40}$/u.test(sourceSha) ||
+      !/^rouault-supervised:[a-f0-9]{64}$/u.test(attemptMarker)
+    )
+      throw new Error('[preview-delivery] supervised creation identity missing');
+    return this.createBoundDeployment(sourceSha, attemptMarker, assets);
+  }
+  private async createBoundDeployment(
+    sourceSha: string,
+    attemptMarker: string,
+    assets: PreviewUploadedAssets,
+  ): Promise<{ deploymentId: string }> {
     const form = new FormData();
     form.set('manifest', JSON.stringify(assets.manifest));
     form.set('branch', PREVIEW_TARGET.branch);
-    form.set('commit_hash', attempt.sourceSha);
+    form.set('commit_hash', sourceSha);
     form.set('commit_dirty', 'false');
-    form.set('commit_message', previewAttemptMarker(attempt));
+    form.set('commit_message', attemptMarker);
     form.set('_headers', new File([assets.headers], '_headers'));
     form.set('_redirects', new File([assets.redirects], '_redirects'));
     const encoded = new Request(this.base + '/deployments', { method: 'POST', body: form });
@@ -164,9 +188,9 @@ export class PreviewPagesAdapter {
       value['project_name'] !== PREVIEW_TARGET.project ||
       value['environment'] !== 'preview' ||
       metadata['branch'] !== PREVIEW_TARGET.branch ||
-      metadata['commit_hash'] !== attempt.sourceSha ||
+      metadata['commit_hash'] !== sourceSha ||
       metadata['commit_dirty'] !== false ||
-      metadata['commit_message'] !== previewAttemptMarker(attempt)
+      metadata['commit_message'] !== attemptMarker
     )
       throw new Error('[preview-delivery] deployment creation identity mismatch');
     return { deploymentId: value['id'] };
