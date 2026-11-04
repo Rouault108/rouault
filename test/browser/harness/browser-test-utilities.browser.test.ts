@@ -81,20 +81,30 @@ describe('waitForCondition browser contract', () => {
   });
 
   it('honors custom timeout and interval and includes the message on timeout', async () => {
-    let attempts = 0;
+    // 実時間の短いwindowでは負荷遅延でpoll回数を保証できないため、intervalとdeadlineを制御時計で確かめる。
+    vi.useFakeTimers();
+    try {
+      const startedAt = performance.now();
+      const attempts: number[] = [];
+      const completion = expect(
+        waitForCondition(
+          () => {
+            attempts.push(performance.now() - startedAt);
+            return false;
+          },
+          'custom deadline reached',
+          { timeout: 30, interval: 5 },
+        ),
+      ).rejects.toThrow('custom deadline reached');
 
-    await expect(
-      waitForCondition(
-        () => {
-          attempts += 1;
-          return false;
-        },
-        'custom deadline reached',
-        { timeout: 30, interval: 5 },
-      ),
-    ).rejects.toThrow('custom deadline reached');
-
-    expect(attempts).toBeGreaterThan(1);
+      await vi.advanceTimersByTimeAsync(29);
+      expect(attempts).toEqual([0, 5, 10, 15, 20, 25]);
+      await vi.advanceTimersByTimeAsync(1);
+      await completion;
+      expect(performance.now() - startedAt).toBe(30);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it('times out a pending predicate at the settlement deadline', async () => {
