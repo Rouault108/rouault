@@ -136,6 +136,35 @@ describe('isolated trusted uploader', () => {
 });
 
 describe('preview HTTP verifier on actual loopback responses', () => {
+  it('verifies manifest-owned font responses and rejects an incorrect TTF MIME', async () =>
+    fixture(
+      async (_root, packet) => {
+        const identity = await inspectPreviewPacket(packet, approval.sourceSha),
+          attempt = { ...makeAttempt(), payloadDigest: identity.artifactDigest };
+        await withPreviewHttpServer(packet, 'report-only', async (http) => {
+          const seen = new Set<string>();
+          await verifyPreviewHttp(packet, attempt, deployment().url, async (url, init) => {
+            if (/\.(?:woff2?|ttf|otf)$/u.test(url)) seen.add(url);
+            return http(url, init);
+          });
+          expect(seen.size).toBe(8);
+          await expect(
+            verifyPreviewHttp(packet, attempt, deployment().url, async (url, init) => {
+              const response = await http(url, init);
+              if (!url.endsWith('.ttf')) return response;
+              const headers = new Headers(response.headers);
+              headers.set('content-type', 'text/plain');
+              return new Response(await response.arrayBuffer(), {
+                status: response.status,
+                headers,
+              });
+            }),
+          ).rejects.toThrow('HTTP MIME mismatch');
+        });
+      },
+      true,
+      ['woff', 'woff2', 'ttf', 'otf'],
+    ));
   it.each(['report-only', 'baseline'] as const)(
     'checks %s alias and immutable body/policy/404/cache/304 independently',
     async (mode) =>

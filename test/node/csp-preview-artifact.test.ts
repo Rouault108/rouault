@@ -152,6 +152,34 @@ const sourceFixture = async (run: (root: string, dist: string) => Promise<void>)
   });
 
 describe('unprivileged preview preparation', () => {
+  it.each(['woff', 'woff2', 'ttf', 'otf'])(
+    'accepts a manifest-owned %s font but rejects an unregistered font with the same extension',
+    async (format) =>
+      sourceFixture(async (root, dist) => {
+        const file = `client-assets/font.${format}`;
+        await writeFile(path.join(dist, file), 'fixture-font');
+        const viteManifestFile = path.join(root, 'vite.json');
+        await writeFile(
+          viteManifestFile,
+          JSON.stringify({
+            'src/client.ts': { file: 'client-assets/app.js', isEntry: true },
+            [`font.${format}`]: { file },
+          }),
+        );
+        const manifest = await collectCspStageOne(dist, PREVIEW_TARGET.mediaOrigin, {
+          viteManifestFile,
+        });
+        await validatePreviewSourceFiles(root, manifest, await scanPreviewFiles(dist), ['/']);
+
+        await writeFile(path.join(dist, `client-assets/unregistered.${format}`), 'extra-font');
+        const changed = await collectCspStageOne(dist, PREVIEW_TARGET.mediaOrigin, {
+          viteManifestFile,
+        });
+        await expect(
+          validatePreviewSourceFiles(root, changed, await scanPreviewFiles(dist), ['/']),
+        ).rejects.toThrow('unknown, missing or extra payload');
+      }),
+  );
   it.each([
     'diagnostic.json',
     'search/diagnostic.json',

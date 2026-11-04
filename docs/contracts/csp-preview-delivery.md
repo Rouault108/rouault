@@ -126,6 +126,7 @@ payloadだけをcopyして起動前後に再hashし、親/candidate config探索
 bounded asset manifestのpath集合を照合し、deployment IDは親の単一POST応答とPages APIで独立照合する。candidateのpackageやproofは実行・公開しない。
 `csp-preview-http.ts`はalias/immutable両方の全included fileとroute/envelope、Worker/parent CSP、MIME/nosniff、
 正規化・404・cache・ETag/304・資源のbytesを照合する。外部mediaは固定originのcontent-hash key/MIME/cacheへ限定する。
+fontのwoff/woff2/ttf/otfも対応するMIMEを照合し、誤ったContent-Typeを正常な資源として受理しない。
 HTTP検査はbrowserの304合成・enforce・RO event検査を代替しない。両方not-runを残す。
 
 自己試験では固定metadata、独立ZIP fixture、実SDK serializer、in-memory CAS、制御したlocal child、loopback HTTPを使う。

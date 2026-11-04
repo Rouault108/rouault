@@ -56,6 +56,9 @@ export const withPreviewHttpServer = async <T>(
   Object.assign(mimes, {
     '.wasm': 'application/wasm',
     '.woff2': 'font/woff2',
+    '.woff': 'font/woff',
+    '.ttf': 'font/ttf',
+    '.otf': 'font/otf',
     '.ico': 'image/x-icon',
     '.png': 'image/png',
     '.jpg': 'image/jpeg',

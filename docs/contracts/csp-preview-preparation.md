@@ -59,6 +59,7 @@ pnpm dry-run:csp-preview
 公開route集合はsourceのpublication policyと照合し、HTML/envelopeの欠落・余剰を拒否する。
 検索descriptor、Vite graph、sourceと一致する静的passthroughだけを認める。
 未知file、診断JSON/report、private route、symlink、Functions、`_worker.js`、`_routes.json`等をcopy集合へ加えない。
+Vite由来のfontは検証済みmanifest内のwoff/woff2/ttf/otfを扱い、同じ拡張子でも未登録のfileを許可しない。
 `_redirects`は現在の有限な200 rewriteだけを扱い、外部redirectや未知規則を拒否する。
 static `_headers`がredirect/Functions生成応答まで保護するとは説明しない。
 mediaのnetwork到達や新しいR2 object配信は実施しない。必要な外部資源の実到達は後続ゲートで確認する。

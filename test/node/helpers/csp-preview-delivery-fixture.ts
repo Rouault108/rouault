@@ -155,6 +155,7 @@ export const attemptSetup = {
 export const fixture = async (
   run: (root: string, packet: string) => Promise<void>,
   publication = false,
+  fontFormats: readonly ('woff' | 'woff2' | 'ttf' | 'otf')[] = [],
 ) => {
   const root = await mkdtemp(path.join(tmpdir(), 'csp-delivery-'));
   const dist = path.join(root, 'dist'),
@@ -190,10 +191,15 @@ export const fixture = async (
     const cache = '/client-assets/*\n  Cache-Control: public, max-age=31536000, immutable\n';
     await writeFile(path.join(dist, '_headers'), cache);
     const viteManifestFile = path.join(root, '.generated/client/.vite/manifest.json');
-    await writeFile(
-      viteManifestFile,
-      JSON.stringify({ 'src/client.ts': { file: 'client-assets/app.js', isEntry: true } }),
-    );
+    const entries: Record<string, { file: string; isEntry?: boolean }> = {
+      'src/client.ts': { file: 'client-assets/app.js', isEntry: true },
+    };
+    for (const format of fontFormats) {
+      const file = `client-assets/font.${format}`;
+      await writeFile(path.join(dist, file), 'fixture-font');
+      entries[`font.${format}`] = { file };
+    }
+    await writeFile(viteManifestFile, JSON.stringify(entries));
     if (publication) {
       await mkdir(path.join(dist, '__router'), { recursive: true });
       await writeFile(path.join(dist, '404.html'), await readFile(path.join(dist, 'index.html')));

@@ -100,7 +100,7 @@ export const validatePreviewSourceFiles = async (
   for (const { file } of licenses) allowed.add(file);
   for (const { file } of manifest.assets) {
     if (
-      /^client-assets\/[\w.-]+\.(?:js|css|wasm|woff2?)$/u.test(file) ||
+      /^client-assets\/[\w.-]+\.(?:js|css|wasm|woff2?|ttf|otf)$/u.test(file) ||
       /^assets\/fonts\/[\w./-]+\.woff2?$/u.test(file)
     )
       allowed.add(file);

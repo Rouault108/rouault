@@ -40,6 +40,8 @@ const mimes: Record<string, readonly string[]> = {
   '.wasm': ['application/wasm'],
   '.woff2': ['font/woff2', 'application/font-woff2'],
   '.woff': ['font/woff'],
+  '.ttf': ['font/ttf'],
+  '.otf': ['font/otf'],
   '.png': ['image/png'],
   '.jpg': ['image/jpeg'],
   '.jpeg': ['image/jpeg'],
