@@ -2,8 +2,14 @@ import { readFileSync } from 'node:fs';
 import { readdir } from 'node:fs/promises';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { resolveDevelopmentSiteUrlContext } from '../build/site/site-url-context.js';
-import { stripBasePathFromPathname } from '../shared/url/normalize-rouault-url.js';
+import { resolveProductionSiteUrlContext } from '../build/site/site-url-context.js';
+import type { SiteUrlContext } from '../shared/site/site-url-context.js';
+import { html as parse5Html, parse, type DefaultTreeAdapterMap } from 'parse5';
+import {
+  productionAssetUrl,
+  readProductionCssAsset,
+  resolveProductionAssetReference,
+} from './production-asset-reference.js';
 
 import postcss, { type Rule } from 'postcss';
 import selectorParser from 'postcss-selector-parser';
@@ -28,8 +34,6 @@ interface ProductionCssArtifactResult {
 
 const DIST_DIR = 'dist';
 const MANIFEST_PATH = '.generated/client/.vite/manifest.json';
-const STYLESHEET_LINK_RE = /<link\b[^>]*\brel=["']stylesheet["'][^>]*>/giu;
-const HREF_RE = /\bhref=["']([^"']+)["']/iu;
 const REQUIRED_CSS_PATTERNS = [
   /\.layout-toc-mobile-panel\b/u,
   /\.layout-toc-mobile-panel\[data-hydration-state=['"]?disposed['"]?\]/u,
@@ -220,19 +224,9 @@ const collectHtmlFiles = async (root: string): Promise<string[]> => {
   return files;
 };
 
-const normalizeAssetPath = (href: string): string | null => {
-  const withoutHash = href.split('#', 1)[0] ?? '';
-  const withoutQuery = withoutHash.split('?', 1)[0] ?? '';
-  if (!withoutQuery.endsWith('.css')) {
-    return null;
-  }
-
-  const { basePath } = resolveDevelopmentSiteUrlContext();
-  return stripBasePathFromPathname(withoutQuery, basePath).replace(/^\/+/, '');
-};
-
 export const collectProductionHtmlReachableCssAssets = async (
   repoRoot = process.cwd(),
+  context: SiteUrlContext = resolveProductionSiteUrlContext(),
 ): Promise<string[]> => {
   const distRoot = path.join(repoRoot, DIST_DIR);
   const htmlFiles = await collectHtmlFiles(distRoot);
@@ -240,18 +234,35 @@ export const collectProductionHtmlReachableCssAssets = async (
 
   for (const htmlFile of htmlFiles) {
     const html = readFileSync(htmlFile, 'utf8');
-    for (const linkMatch of html.matchAll(STYLESHEET_LINK_RE)) {
-      const link = linkMatch[0];
-      const href = HREF_RE.exec(link)?.[1];
-      if (href === undefined) {
-        continue;
+    const documentUrl = productionAssetUrl(
+      path.relative(distRoot, htmlFile).split(path.sep).join('/'),
+      context,
+    );
+    const visit = (node: DefaultTreeAdapterMap['node']): void => {
+      if ('tagName' in node && node.namespaceURI === parse5Html.NS.HTML) {
+        if (node.tagName === 'base') {
+          throw new Error('[production-assets] unexpected base element in production HTML');
+        }
+        if (node.tagName === 'link') {
+          const attrs = new Map(node.attrs.map(({ name, value }) => [name, value]));
+          if (
+            attrs
+              .get('rel')
+              ?.toLowerCase()
+              .split(/[\t\n\f\r ]+/u)
+              .includes('stylesheet')
+          ) {
+            const href = attrs.get('href') ?? '';
+            cssAssets.add(resolveProductionAssetReference(href, documentUrl, context).assetPath);
+          }
+        }
       }
-
-      const assetPath = normalizeAssetPath(href);
-      if (assetPath !== null) {
-        cssAssets.add(assetPath);
+      // template.contentは辿らず、実文書から直接linkされた集合だけを検査する。
+      if ('childNodes' in node) {
+        for (const child of node.childNodes) visit(child);
       }
-    }
+    };
+    visit(parse(html));
   }
 
   return [...cssAssets].sort();
@@ -277,8 +288,7 @@ const readReachableCss = (repoRoot: string, cssAssets: readonly string[]): Map<s
   const cssByAsset = new Map<string, string>();
 
   for (const asset of cssAssets) {
-    const absolutePath = path.join(repoRoot, DIST_DIR, asset);
-    cssByAsset.set(asset, readFileSync(absolutePath, 'utf8'));
+    cssByAsset.set(asset, readProductionCssAsset(repoRoot, asset));
   }
 
   return cssByAsset;

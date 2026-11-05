@@ -105,6 +105,14 @@
 - Final DOM、selector / hook / token参照、hydration budgetを固定する。
 - Reading chromeのstatic DOM、hydration marker、TOC density selector、production CSS到達性を固定する。
 
+### Production font artifacts
+
+`pnpm build:production`のfont assertionは、生成HTMLから直接stylesheet linkされたCSSの集合で、Noto Sans JPの既存WOFF2参照検査と、`Geist Mono Variable`固有の成果物検査を行う。HTML linkとGeistのsrc URLは本番site origin / base pathおよび参照元URLを基準に解決する。HTMLの`base`要素は許可しない。
+
+Geistは少なくとも一つの`@font-face`を必要とし、各定義でURLを含む`src`を要求する。`local()`のみ、重複descriptor、未知・不正なfamily/src構文は失敗とする。すべてのURL候補についてHTTP(S)のsame-origin、hosting base内のpathname、安全なdist内への対応、通常ファイル・非空を検査する。URLのquery / fragmentはファイルへの対応には使わない。symlinkは実体がdist内にある場合だけ許可する。ハッシュやsubset数には依存しない。
+
+これは直接リンクされたCSSの集合に対する静的検査であり、各ページでの適用、再帰的な`@import`、ブラウザでのフォント取得・デコード・実際の描画は保証しない。未リンク・template内・importのみのCSSにある定義では合格にしない。CSS/font参照とfilesystemの回帰fixtureは`test/node/production-font-assets.test.ts`が担当し、既存のsource import/token検査は`test/ssr/static-css-contracts.test.ts`に維持する。
+
 ### Client Runtime
 
 - Observable behaviorはbrowser/e2e testsで固定する。

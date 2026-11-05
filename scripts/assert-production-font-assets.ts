@@ -1,25 +1,34 @@
-import { existsSync, readFileSync, statSync } from 'node:fs';
-import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 
 import { collectProductionHtmlReachableCssAssets } from './assert-production-css-artifacts.js';
-import { resolveDevelopmentSiteUrlContext } from '../build/site/site-url-context.js';
+import { resolveProductionSiteUrlContext } from '../build/site/site-url-context.js';
+import { collectGeistMonoFontFaceUrls } from '../build/assets/font-face-sources.js';
+import type { SiteUrlContext } from '../shared/site/site-url-context.js';
+import {
+  assertProductionAssetFile,
+  productionAssetUrl,
+  readProductionCssAsset,
+  resolveProductionAssetReference,
+} from './production-asset-reference.js';
 import { stripBasePathFromPathname } from '../shared/url/normalize-rouault-url.js';
 
 interface ProductionFontAssetAssertionResult {
   readonly reachableCssAssets: string[];
   readonly fontPathnames: string[];
+  readonly geistFontPathnames: string[];
 }
 
-const DIST_DIR = 'dist';
 const NOTO_SANS_JP_FONT_PATHNAME_PREFIX = '/assets/fonts/noto-sans-jp/';
 const CSS_URL_RE = /url\(\s*(?:"([^"]*)"|'([^']*)'|([^'")]*?))\s*\)/giu;
 
-const normalizeNotoSansJpFontPathname = (rawUrl: string): string | null => {
+const normalizeNotoSansJpFontPathname = (
+  rawUrl: string,
+  context: SiteUrlContext,
+): string | null => {
   const trimmedUrl = rawUrl.trim();
   const pathname = stripBasePathFromPathname(
     (trimmedUrl.split('#', 1)[0] ?? '').split('?', 1)[0] ?? '',
-    resolveDevelopmentSiteUrlContext().basePath,
+    context.basePath,
   );
   if (
     pathname.startsWith(NOTO_SANS_JP_FONT_PATHNAME_PREFIX) &&
@@ -32,7 +41,7 @@ const normalizeNotoSansJpFontPathname = (rawUrl: string): string | null => {
   return null;
 };
 
-const collectNotoSansJpFontPathnames = (css: string): string[] => {
+const collectNotoSansJpFontPathnames = (css: string, context: SiteUrlContext): string[] => {
   const pathnames = new Set<string>();
 
   for (const match of css.matchAll(CSS_URL_RE)) {
@@ -41,7 +50,7 @@ const collectNotoSansJpFontPathnames = (css: string): string[] => {
       continue;
     }
 
-    const pathname = normalizeNotoSansJpFontPathname(rawUrl);
+    const pathname = normalizeNotoSansJpFontPathname(rawUrl, context);
     if (pathname !== null) {
       pathnames.add(pathname);
     }
@@ -50,22 +59,26 @@ const collectNotoSansJpFontPathnames = (css: string): string[] => {
   return [...pathnames].sort();
 };
 
-const toDistPath = (repoRoot: string, pathname: string): string =>
-  path.join(repoRoot, DIST_DIR, ...pathname.split('/').filter((segment) => segment.length > 0));
-
-const formatPathnameList = (pathnames: readonly string[]): string =>
-  pathnames.slice(0, 20).join(', ');
-
 export const assertProductionFontAssets = async (
   repoRoot = process.cwd(),
 ): Promise<ProductionFontAssetAssertionResult> => {
-  const reachableCssAssets = await collectProductionHtmlReachableCssAssets(repoRoot);
+  const context = resolveProductionSiteUrlContext();
+  const reachableCssAssets = await collectProductionHtmlReachableCssAssets(repoRoot, context);
   const fontPathnames = new Set<string>();
+  const geistFontPathnames = new Set<string>();
 
   for (const cssAsset of reachableCssAssets) {
-    const cssPath = path.join(repoRoot, DIST_DIR, cssAsset);
-    const css = readFileSync(cssPath, 'utf8');
-    for (const pathname of collectNotoSansJpFontPathnames(css)) {
+    const css = readProductionCssAsset(repoRoot, cssAsset);
+    for (const rawUrl of collectGeistMonoFontFaceUrls(css, cssAsset)) {
+      const reference = resolveProductionAssetReference(
+        rawUrl,
+        productionAssetUrl(cssAsset, context),
+        context,
+      );
+      assertProductionAssetFile(repoRoot, reference.assetPath, 'Geist Mono Variable');
+      geistFontPathnames.add(reference.pathname);
+    }
+    for (const pathname of collectNotoSansJpFontPathnames(css, context)) {
       fontPathnames.add(pathname);
     }
   }
@@ -77,40 +90,20 @@ export const assertProductionFontAssets = async (
     );
   }
 
-  const missingPathnames: string[] = [];
-  const emptyPathnames: string[] = [];
-
   for (const pathname of sortedFontPathnames) {
-    const fontPath = toDistPath(repoRoot, pathname);
-    if (!existsSync(fontPath)) {
-      missingPathnames.push(pathname);
-      continue;
-    }
-
-    if (statSync(fontPath).size === 0) {
-      emptyPathnames.push(pathname);
-    }
+    assertProductionAssetFile(repoRoot, pathname.slice(1), 'Noto Sans JP');
   }
 
-  if (missingPathnames.length > 0) {
+  if (geistFontPathnames.size === 0) {
     throw new Error(
-      `[production-font-assets] missing ${missingPathnames.length.toString()} Noto Sans JP font asset(s); first pathnames: ${formatPathnameList(
-        missingPathnames,
-      )}`,
-    );
-  }
-
-  if (emptyPathnames.length > 0) {
-    throw new Error(
-      `[production-font-assets] empty ${emptyPathnames.length.toString()} Noto Sans JP font asset(s); first pathnames: ${formatPathnameList(
-        emptyPathnames,
-      )}`,
+      '[production-font-assets] found no Geist Mono Variable @font-face URLs in production HTML directly linked CSS assets.',
     );
   }
 
   return {
     reachableCssAssets,
     fontPathnames: sortedFontPathnames,
+    geistFontPathnames: [...geistFontPathnames].sort(),
   };
 };
 
@@ -122,7 +115,9 @@ const isCliEntrypoint = (): boolean => {
 if (isCliEntrypoint()) {
   try {
     const result = await assertProductionFontAssets();
-    console.log(`assert-production-font-assets: ok (${result.fontPathnames.length.toString()})`);
+    console.log(
+      `assert-production-font-assets: ok (Noto Sans JP: ${result.fontPathnames.length.toString()}, Geist Mono: ${result.geistFontPathnames.length.toString()})`,
+    );
   } catch (error) {
     console.error(error instanceof Error ? error.message : String(error));
     process.exitCode = 1;
