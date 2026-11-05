@@ -41,8 +41,10 @@ node --import tsx scripts/deploy/run-csp-preview-supervised.ts inspect
 
 この操作は資格情報も外部通信も使わない。公開可否はfalseで、未確定条件を出力する。
 2026-11-05に固定sourceをNode 24.x・指定pnpm 11.28.9・frozen lockfileで、資格情報を
-渡さず再生成し、build/inventory/組立て/dry-runは成功した。ただしenvelope等に新しい
-generatedAtが含まれるため、432 fileでも以前のpacket/RO/baseline digestとは一致しない。
+渡さず再生成し、build/inventory/組立て/dry-runは成功した。再生成物のenvelope等には
+generatedAtが含まれ、432 fileでも以前のpacket/RO/baseline digestとは一致しない。
+元packetがないため、差分がgeneratedAtだけであるとは証明できず、他の差分も未確定である。
+時刻等を正規化した比較は診断だけに用い、公開を拘束するdigestは常に実bytesから計算する。
 `inspectSupervisedPacket`は`supervised-reviewed-packet-differs`で拒否した。再生成物を
 以前の固定packetとして採用せず、既存の独立digestと照合条件は維持する。元のpacketを
 回復するか、再生成物そのものの有限planを独立に再レビューするまで配信へ進めない。
@@ -71,6 +73,9 @@ processやfilesystem全体の巻戻し、同じ権限を持つ別operatorを機�
 新challengeへ応答せず、状態不明の間は読取による照合だけを行う。この運用を守れない無人配信には使わない。
 新しい承認refだけで重複を避けた扱いにもせず、同じaccount/packet/modeのservice markerを固定する。
 既存markerは成功・失敗・処理中を問わず新規配信を止める。ただし一覧0件は未実行の証明ではない。
+packetDigestの変更はmarkerも変更する。旧planの結果が不確実な間は、旧marker・deployment・
+保持した記録を先に照合し、新markerの未使用を理由に再配信しない。新旧の自己整合だけで
+固定digestを更新したり、一般承認を重複配信の許可へ読み替えたりしない。
 
 recordから再開できるのは次の読取操作だけである。
 
