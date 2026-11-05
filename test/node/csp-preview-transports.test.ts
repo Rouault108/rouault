@@ -11,6 +11,7 @@ import {
   previewCrc32,
 } from '../../scripts/deploy/csp-preview-zip.js';
 import { PreviewPagesAdapter } from '../../scripts/deploy/csp-preview-pages.js';
+import { previewTimestamp } from '../../scripts/deploy/csp-preview-transaction.js';
 import { approval, deployment, trustedSha } from './helpers/csp-preview-delivery-fixture.js';
 import { githubFixture, jsonResponse, storedZip } from './helpers/csp-preview-adapter-fixture.js';
 
@@ -197,6 +198,45 @@ describe('bounded ZIP and extraction', () => {
 describe('Pages read adapter', () => {
   const account = 'c'.repeat(32),
     date = { date: 'Mon, 02 Nov 2026 00:00:03 GMT' };
+  it('accepts the observed Pages microsecond timestamp in a complete deployment snapshot', async () => {
+    const pages = new PreviewPagesAdapter(account, 'mock', async () =>
+      jsonResponse(
+        {
+          success: true,
+          errors: [],
+          result: [{ ...deployment(), created_on: '2026-11-04T14:10:29.834679Z' }],
+          result_info: { page: 1, per_page: 25, count: 1, total_count: 1, total_pages: 1 },
+        },
+        { date: 'Wed, 04 Nov 2026 14:10:30 GMT' },
+      ),
+    );
+    const snapshot = await pages.snapshot();
+    expect(snapshot.complete).toBe(true);
+    expect(snapshot.deployments).toHaveLength(1);
+    expect(deliveryRecord(snapshot.deployments[0])['created_on']).toBe('2026-11-04T14:10:29.834Z');
+  });
+  it.each([
+    ['2026-11-04T14:10:29Z', '2026-11-04T14:10:29.000Z'],
+    ['2026-11-04T14:10:29.8Z', '2026-11-04T14:10:29.800Z'],
+    ['2026-11-04T14:10:29.834Z', '2026-11-04T14:10:29.834Z'],
+    ['2026-11-04T14:10:29.8346Z', '2026-11-04T14:10:29.834Z'],
+    ['2026-11-04T14:10:29.83467Z', '2026-11-04T14:10:29.834Z'],
+    ['2026-11-04T14:10:29.834679Z', '2026-11-04T14:10:29.834Z'],
+  ])('normalizes bounded UTC service timestamp %s', (input, normalized) => {
+    expect(previewTimestamp(input)).toBe(normalized);
+  });
+  it.each([
+    null,
+    1793801429834,
+    '',
+    '2026-11-04',
+    '2026-11-04T14:10:29.8346790Z',
+    '2026-11-04T14:10:29.834679+00:00',
+    '2026-13-04T14:10:29.834679Z',
+    '2026-11-04T14:10:29.834679Z\n',
+  ])('rejects missing, malformed or unsupported service timestamp %s', (input) => {
+    expect(() => previewTimestamp(input)).toThrow('service timestamp');
+  });
   it('validates project and strips free text and credentials from response data', async () => {
     const pages = new PreviewPagesAdapter(account, 'mock', async (url) =>
       jsonResponse(

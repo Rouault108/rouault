@@ -17,8 +17,13 @@ hostnameは作成・検証済みとしない。projectのproduction branchがmai
 serviceから確認する。account内の同名projectだけでなく`subdomain=rouault.pages.dev`も照合する。未確認aliasを上書きせず、reviewの`previousAliasId`と一致しなければ停止する。
 
 固定sourceは`0f6eac670e3e769f654c89f999eb75885ab0a018`、source CIは`41744799022` attempt 1。
-公開済みmain `a13792bd6411b4a5774fb0bf427e3bf1aa4e0d54`と本文・examples・通常の生成入力が一致し、
-本番CI `41731776238`で72 route・build ID・検索資産のHTTP確認が成功した証跡を再利用する。
+公開済みmainの確認基準は`b61a536546f30c9df4cb7386205728d0336219d5`へ更新した。
+固定sourceとこのmainの`content/`・`examples/`・`public/`・`eleventy.config.ts`・
+`package.json`・`pnpm-lock.yaml`に差分はない。main側の数式診断・macro隔離とフォント検査の
+変更は生成pipelineの差分として確認し、mainと旧sourceの成果物bytesが同一とは扱わない。
+payloadは引き続き旧sourceの固定packetだけとし、新しいmainのbuildへ置換しない。
+旧公開済みmain `a13792bd6411b4a5774fb0bf427e3bf1aa4e0d54`については、
+本番CI `41731776238`で72 route・build ID・検索資産のHTTP確認が成功した証跡を保持する。
 新しい監督toolのSHA/CIと、配信する旧sourceのSHA/CIを別々に固定する。
 公開本文やpayloadを変更した場合はこの有限planを再レビューする。source/workflow/SHAを任意入力へ拡張しない。
 
@@ -35,6 +40,12 @@ node --import tsx scripts/deploy/run-csp-preview-supervised.ts inspect
 ```
 
 この操作は資格情報も外部通信も使わない。公開可否はfalseで、未確定条件を出力する。
+2026-11-05に固定sourceをNode 24.x・指定pnpm 11.28.9・frozen lockfileで、資格情報を
+渡さず再生成し、build/inventory/組立て/dry-runは成功した。ただしenvelope等に新しい
+generatedAtが含まれるため、432 fileでも以前のpacket/RO/baseline digestとは一致しない。
+`inspectSupervisedPacket`は`supervised-reviewed-packet-differs`で拒否した。再生成物を
+以前の固定packetとして採用せず、既存の独立digestと照合条件は維持する。元のpacketを
+回復するか、再生成物そのものの有限planを独立に再レビューするまで配信へ進めない。
 `supervise`ではpacketのsource CIと現在のtool CIを固定GitHub APIから確認する。
 workflow bytes digest、run/attempt、SHA、repository、必須jobを検査し、mainが確認済みSHAから動いていれば停止する。
 public repositoryの読み取りには匿名APIを使い、新PATや`actions: write`を要求しない。
@@ -106,10 +117,26 @@ Pages Editはprojectの作成・変更・削除を含むaccount権限であり�
 branch/project限定や物理的一回限りとは説明しない。toolはproject/branchを固定してさらに制限する。
 OAuth loginは更新用credentialを保存するため、永続接続の別承認なしに代替採用しない。
 
-現在のmanaged executorはCloudflare API、projectのpages.dev、media hostが接続許可外で、
-適切な認証bindingもない。拒否や制限をproxy解除・別endpoint・旧build tokenで回避しない。
-ここで実行するなら、API/当該projectのaliasとservice発行hostname/mediaへの限定接続許可と
-認証方法の確認が必要である。別machineで実行する場合もreview済みtool/packetと同じ監督手順を使う。
+2026-11-05のmanaged executorでは、Cloudflare API、projectのpages.dev、media hostの
+接続許可がenforcedで、今回用secret bindingはreadyである。account token用verify APIは
+activeを返し、projectのname/subdomain/production branchも読取で確認した。
+これはPages Editの全操作を実試験した証拠ではない。user token用verify APIの401を
+account tokenの失効とは扱わず、正規のaccount verify結果と区別する。
+
+同日のpreview一覧は223件すべてを9ページで読取り、`csp-verify`のbranch/aliasと
+監督付きmarkerは0件だった。Pagesの`created_on`は小数秒6桁で返されたため、
+読取adapterはUTCの小数秒0〜6桁を受け付け、既存receiptと同じミリ秒へ正規化する。
+完全な一覧、重複ID、server時刻、未来のdeploymentを拒否する検査は維持する。
+
+既存immutable URL、候補alias、media rootへのPython標準clientのGETは403だった。
+応答本文・診断headerを保持できていないため、拒否元やerror codeは未確定である。
+公式の[Error 1010](https://developers.cloudflare.com/support/troubleshooting/http-status-codes/cloudflare-1xxx-errors/error-1010/)
+にはPages管理zoneで標準urllib User-Agentを拒否する条件と、実アプリを明示する
+User-Agentの案内がある。今回のclient条件とは整合するが、1010の実測証拠ではない。
+許可済みnetwork設定だけからHTTP到達を成功扱いにせず、同じ拒否操作の反復や
+proxy解除・別endpoint・旧build tokenによる回避は行わない。診断情報または明示した
+client条件での正規確認が得られるまで、実HTTPゲートと配信は未完のままにする。
+別machineで実行する場合もreview済みtool/packetと同じ監督手順を使う。
 main workflow登録なしのlocal実行は可能な設計だが、実認証・実ネットワーク接続の成功を意味しない。
 
 baselineは同じpreview originで生成済みのCSP-free copyと独立digestを保持する。

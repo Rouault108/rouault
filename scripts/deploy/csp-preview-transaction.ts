@@ -53,10 +53,11 @@ export interface PreviewAttempt {
 export const previewTimestamp = (value: unknown): string => {
   if (
     typeof value !== 'string' ||
-    !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,3})?Z$/u.test(value) ||
+    !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,6})?Z$/u.test(value) ||
     !Number.isFinite(Date.parse(value))
   )
     throw new Error('[preview-delivery] missing service timestamp');
+  // Pagesのcreated_onはマイクロ秒を返す。既存receiptと時刻比較はDateのミリ秒へ正規化する。
   return new Date(value).toISOString();
 };
 export const snapshotBeforeUpload = (snapshot: DeploymentSnapshot): PreviewAttempt['before'] => {

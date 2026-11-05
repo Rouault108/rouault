@@ -23,7 +23,7 @@ import { parseSupervisedReview } from './csp-preview-supervised.js';
 
 // 今回確認済みの公開済みsourceと独立packet digestだけを対象にする。汎用の任意成果物公開入口にしない。
 export const SUPERVISED_SOURCE = {
-  publishedMainSha: 'a13792bd6411b4a5774fb0bf427e3bf1aa4e0d54',
+  publishedMainSha: 'b61a536546f30c9df4cb7386205728d0336219d5',
   packet: {
     sourceSha: '0f6eac670e3e769f654c89f999eb75885ab0a018',
     buildId: '0f6eac67',

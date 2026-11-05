@@ -22,6 +22,7 @@ import {
 import { inspectSupervisedRecord } from '../../scripts/deploy/csp-preview-supervised-record.js';
 import { snapshotBeforeUpload } from '../../scripts/deploy/csp-preview-transaction.js';
 import { assertSupervisedEnvironment } from '../../scripts/deploy/csp-preview-supervised-runtime.js';
+import { SUPERVISED_SOURCE } from '../../scripts/deploy/csp-preview-supervised-runtime.js';
 import { supervisedPorts } from '../../scripts/deploy/csp-preview-supervised-runtime.js';
 import { deployment, approval } from './helpers/csp-preview-delivery-fixture.js';
 
@@ -99,6 +100,25 @@ const ports = (r: SupervisedReview) => {
 };
 
 describe('supervised local preview authority', () => {
+  it('accepts only the newly reviewed published main and still stops when main moves', async () => {
+    const publishedMainSha = 'b61a536546f30c9df4cb7386205728d0336219d5';
+    expect(SUPERVISED_SOURCE.publishedMainSha).toBe(publishedMainSha);
+    const fixture = (sha: string) =>
+      githubFixture(undefined, (key, value) =>
+        key === '/git/ref/heads/main' ? { ref: 'refs/heads/main', object: { sha } } : value,
+      );
+    await expect(
+      new PreviewGithubAdapter(null, fixture(publishedMainSha).transport).assertTrustedHead(
+        SUPERVISED_SOURCE.publishedMainSha,
+      ),
+    ).resolves.toBeUndefined();
+    for (const sha of ['a13792bd6411b4a5774fb0bf427e3bf1aa4e0d54', '0'.repeat(40)])
+      await expect(
+        new PreviewGithubAdapter(null, fixture(sha).transport).assertTrustedHead(
+          SUPERVISED_SOURCE.publishedMainSha,
+        ),
+      ).rejects.toThrow('stale');
+  });
   it('keeps creation on the single-POST port instead of the generic read transport', async () => {
     const r = review(),
       read = vi.fn(async () => {
