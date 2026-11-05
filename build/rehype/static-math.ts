@@ -2,6 +2,7 @@ import katex from 'katex';
 import { fromHtmlIsomorphic } from 'hast-util-from-html-isomorphic';
 import type { Element, Root } from 'hast';
 import type { Plugin } from 'unified';
+import { createQuietKatexMacros, reportSafeKatexStrictWarning } from './katex-log-policy.js';
 import {
   getMathStartPosition,
   takeMathNodeOrigin,
@@ -52,11 +53,15 @@ export const rehypeStaticMath: Plugin<[], Root> =
           displayMode: fenced || classesOf(source).includes('math-display'),
           output: 'htmlAndMathml',
           trust: false,
-          strict: 'warn',
+          strict: reportSafeKatexStrictWarning,
         } as const;
         let html: string;
         try {
-          html = katex.renderToString(textOf(source), { ...options, throwOnError: true });
+          html = katex.renderToString(textOf(source), {
+            ...options,
+            macros: createQuietKatexMacros(),
+            throwOnError: true,
+          });
         } catch (error) {
           // TeXの入力不備だけをwarningとescaped error表示へ縮退させる。
           // 予期しないrenderer障害はbuildを失敗させて検知する。
@@ -74,7 +79,11 @@ export const rehypeStaticMath: Plugin<[], Root> =
             ...(position ? { place: position } : {}),
           });
           if (origin) recordMathDiagnosticOrigin(file, message, origin);
-          html = katex.renderToString(textOf(source), { ...options, throwOnError: false });
+          html = katex.renderToString(textOf(source), {
+            ...options,
+            macros: createQuietKatexMacros(),
+            throwOnError: false,
+          });
         }
         const result = fromHtmlIsomorphic(html, { fragment: true }).children.filter(
           (child) => child.type !== 'doctype',

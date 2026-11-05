@@ -110,6 +110,101 @@ describe.each(['generate-content.ts', 'validate-note-source-links.ts'])(
       expect(result).toEqual({ code: 0, stdout: '', stderr: '' });
     }, 30_000);
 
+    it('strict警告と出力macroは原式をstdout・stderrへ流さず、描画とTeX注釈を保つ', async () => {
+      const directory = await fixture();
+      const payload = 'CLI_LOG_SENTINEL秘密\u0085\u202e';
+      const formulas = [
+        '\\text{😀}',
+        '漢',
+        `\\message{${payload}}x`,
+        `\\errmessage{${payload}}y`,
+        '\\show\\CLISHOWSENTINEL z',
+        `\\let\\emit\\message\\emit{${payload}}x`,
+        `\\let\\emit\\errmessage\\emit{${payload}}y`,
+        '\\let\\emit\\show\\emit\\CLISHOWSENTINEL z',
+        `\\gdef\\message#1{z}\\message{${payload}}`,
+        `\\message{${payload}}x`,
+        `\\def\\emit#1{\\message{#1}}\\emit{${payload}}y`,
+        `\\expandafter\\message\\expandafter{${payload}}x`,
+        '\\show',
+      ];
+      await writeFile(
+        path.join(directory, 'content/notes/math.md'),
+        noteSource(formulas.map((formula) => `\`\`\`math\n${formula}\n\`\`\``).join('\n\n')),
+      );
+      const result = await runCli(directory, script);
+      expect(result.code).toBe(0);
+      expect(result.stdout).toBe('');
+      for (const output of [result.stdout, result.stderr]) {
+        expect(output).not.toContain(directory);
+        expect(output).not.toMatch(/CLI_LOG_SENTINEL|CLISHOWSENTINEL|秘密|😀|漢/u);
+        expect(output.replaceAll('\n', '')).not.toMatch(/[\p{Cc}\p{Cf}\p{Zl}\p{Zp}]/u);
+      }
+      const strictWarnings = result.stderr.trimEnd().split('\n');
+      expect(strictWarnings.length).toBeGreaterThan(0);
+      for (const warning of strictWarnings) {
+        expect(warning).toMatch(
+          /^\[rouault-static-math:strict:(?:unknownSymbol|symbolNotInFont|unicodeTextInMathMode)\] LaTeX-incompatible input\.$/u,
+        );
+      }
+      expect(result.stderr).toContain('strict:symbolNotInFont');
+      expect(result.stderr).toContain('strict:unicodeTextInMathMode');
+      expect(warningsOf(result.stderr)).toEqual([]);
+      const notes = JSON.parse(
+        await readFile(path.join(directory, '.velite/notes.json'), 'utf8'),
+      ) as Record<string, unknown>[];
+      const html = notes[0]?.['content'];
+      expect(typeof html).toBe('string');
+      if (typeof html !== 'string') throw new Error('Missing generated math HTML');
+      expect(html.match(/class="katex"/gu)).toHaveLength(formulas.length);
+      expect(html.match(/<math\s/gu)).toHaveLength(formulas.length);
+      expect(html.match(/class="katex-html"/gu)).toHaveLength(formulas.length);
+      expect(html.match(/encoding="application\/x-tex"/gu)).toHaveLength(formulas.length);
+      for (const formula of formulas) expect(html).toContain(formula);
+      expect(html).not.toContain('katex-error');
+      expect(notes[0]).not.toHaveProperty('diagnostics');
+    }, 30_000);
+
+    it('macro後のParseError再描画と引数不足でもログを漏らさず、既存の診断分類を保つ', async () => {
+      const directory = await fixture();
+      const payload = 'CLI_FALLBACK_SENTINEL秘密\u0085\u202e';
+      const formulas = [
+        `\\message{${payload}}\\frac{`,
+        `\\errmessage{${payload}}\\frac{`,
+        '\\show\\CLIFALLBACKSENTINEL\\frac{',
+        '\\message',
+        '\\errmessage{',
+      ];
+      await writeFile(
+        path.join(directory, 'content/notes/math.md'),
+        noteSource(formulas.map((formula) => `\`\`\`math\n${formula}\n\`\`\``).join('\n\n')),
+      );
+      const result = await runCli(directory, script);
+      expect(result.code).toBe(0);
+      expect(result.stdout).toBe('');
+      for (const output of [result.stdout, result.stderr]) {
+        expect(output).not.toContain(directory);
+        expect(output).not.toMatch(/CLI_FALLBACK_SENTINEL|CLIFALLBACKSENTINEL|秘密|\\frac\{/u);
+        expect(output.replaceAll('\n', '')).not.toMatch(/[\p{Cc}\p{Cf}\p{Zl}\p{Zp}]/u);
+      }
+      const warnings = warningsOf(result.stderr);
+      expect(warnings).toHaveLength(formulas.length);
+      expect(result.stderr.trimEnd().split('\n')).toEqual(warnings);
+      for (const warning of warnings) {
+        expect(warning).toContain('[rouault-static-math:parseerror]');
+        expect(warning).toContain('数式の途中で入力が終了しています。');
+      }
+      const notes = JSON.parse(
+        await readFile(path.join(directory, '.velite/notes.json'), 'utf8'),
+      ) as Record<string, unknown>[];
+      const html = notes[0]?.['content'];
+      expect(typeof html).toBe('string');
+      if (typeof html !== 'string') throw new Error('Missing generated math HTML');
+      expect(html.match(/class="katex-error"/gu)).toHaveLength(formulas.length);
+      for (const formula of formulas) expect(html).toContain(formula);
+      expect(notes[0]).not.toHaveProperty('diagnostics');
+    }, 30_000);
+
     it('BOMとCRLFを持つ原稿もfrontmatter込みの開始位置を表示する', async () => {
       const directory = await fixture();
       const source = `\uFEFF${noteSource(`Before $${privateFormula}$.`).replaceAll('\n', '\r\n')}`;

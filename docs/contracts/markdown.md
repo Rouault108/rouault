@@ -298,7 +298,8 @@ Code Preview profileの解決は`note-content-contracts.ts`で一度行い、`re
   22. `rehypeOrderedListContracts`
   23. `rehypeDisallowDangerousProps`
 - `remarkCollectSourceLinks`はinclude展開済み・directive変換済みの木からURL属性とソース位置をコピーする。リンクカード化やURL書換えより前に収集し、検証のための本文再解析・include再展開を行わない。純粋なHTMLコメントだけを除去し、コメントと生HTMLが混在するnodeは拒否する。
-- 数式は`remark-math`で構文を解析し、`rehypeStaticMath`が直接依存KaTeXの公式`renderToString`を呼んでHASTへ変換する。notes / memos / memos importは同じadapterを使う。`trust: false`、`strict: "warn"`、HTML + MathMLを維持し、無効なTeXはVFile warningとKaTeXのescaped error出力で残し、予期しないrenderer例外はbuildを失敗させる。HTMLの安全検査は数式変換の後に行う。
+- 数式は`remark-math`で構文を解析し、`rehypeStaticMath`が直接依存KaTeXの公式`renderToString`を呼んでHASTへ変換する。notes / memos / memos importは同じadapterを使う。`trust: false`、strict警告時の非fatalな描画、HTML + MathMLと原式のTeX annotationを維持し、無効なTeXはVFile warningとKaTeXのescaped error出力で残し、予期しないrenderer例外はbuildを失敗させる。HTMLの安全検査は数式変換の後に行う。
+- strict callbackは既知コードの許可リストと固定文だけを警告し、未知コードは固定`unknown`に分類する。入力由来のmessage・tokenは出力せず、`ignore`を返してKaTeX自身の再出力を抑える。警告は構造化診断とは別経路に保つ。`\message`・`\errmessage`は`consumeArgs(1)`、`\show`は`popToken()`で元と同じ入力を消費して出力だけを抑える。別名・再定義・展開は通常のTeXの意味論に従う。macro objectは初回とParseError後の再描画を含む各`renderToString`呼出しごとに新規作成する。公開型が`object`の内部APIは必要なメソッドを実行時に検査し、receiverを保って呼び出す。不一致は原式を含まない固定エラーで失敗させる。グローバルconsoleは変更しない。
 - 共通コンパイラーは同じVFileのparse/runから不正TeXの構造化診断を取得し、生成入口のreporterがstderrへ表示する。本文相対の開始位置はfrontmatter込みの原稿位置へ補正する。display式の生成codeに位置がない場合は対応する外側の数式ブロックの位置を使う。include由来は出自を保持し、保証できない位置を推測しない。診断、位置補正、終了条件、watchの再表示とmemo importの範囲は[コンテンツ生成契約](content-generation.md#数式の診断)を正本とする。
 - 数式用CSSは`math.css`から同じ直接依存の`katex/dist/katex.css`を読み、フォントもViteが同packageから配信する。内部クラスを独自に再構成しない。`remark-math`配下のmicromarkが持つ旧KaTeXは`mathHtml`用の推移依存であり、このMarkdown→MDAST→HAST pipelineの描画には使用しない。
 - Parser / transformer / adapterがMarkdownを最終DOMへ正規化する。
