@@ -17,6 +17,8 @@ export default defineConfig(
       '.velite/',
       '.generated/',
       'node_modules/',
+      // Git管理外のローカル検証用設定を、型付きlintのsourceとして扱わない。
+      'tmp/',
       '*.config.js',
       '*.config.ts',
       '*.config.mjs',

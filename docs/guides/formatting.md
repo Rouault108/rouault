@@ -12,6 +12,8 @@ pnpm typecheck # アプリ・Node.jsの型検査
 
 整形を検査だけ行う場合は`pnpm exec biome format .`を使う。これは既存CIへ新しいgateを追加するものではない。
 
+ルートの`tmp/`はGit管理外の一時作業領域であり、ESLintの対象からも除外する。環境固有のbrowser実行設定などをここへ置いても、型付きlintのTypeScript projectへ追加しない。`src/`、`scripts/`、`tools/`内のsourceや設定ファイルは引き続き各lint設定に従って検査する。これは`.gitignore`全体の自動適用や、任意の階層にあるconfigファイルの一律除外ではない。
+
 ## 対象と所有者
 
 TS/JS、CSS、JSON/JSONC、YAML、HTML、MarkdownはBiomeが担当する。既存のVCS ignoreに加え、次は自動整形しない。
