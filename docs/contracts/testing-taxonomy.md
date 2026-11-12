@@ -113,6 +113,18 @@ Geistは少なくとも一つの`@font-face`を必要とし、各定義でURLを
 
 これは直接リンクされたCSSの集合に対する静的検査であり、各ページでの適用、再帰的な`@import`、ブラウザでのフォント取得・デコード・実際の描画は保証しない。未リンク・template内・importのみのCSSにある定義では合格にしない。CSS/font参照とfilesystemの回帰fixtureは`test/node/production-font-assets.test.ts`が担当し、既存のsource import/token検査は`test/ssr/static-css-contracts.test.ts`に維持する。
 
+### Production Geist Mono browser regression
+
+静的検査に加え、`test/e2e/geist-mono-loading.spec.ts`はproduction build / previewの代表ページ`note.markdown-basic`をno-JSで直接開き、既存のASCIIインラインコード`inline code`を画面内へスクロールして検査する。デスクトップChromium / Firefox / WebKitで、CSS先頭family、実際のweight / styleと全文字を含むunicode-rangeに対応する`@font-face`、そのCSS参照先からのsame-origin取得成功、対応するFontFaceの`loaded`を個別に要求する。別subsetの取得・loadedを代用せず、ハッシュ・不要なsubset数には依存しない。初回navigation前から通信を観測し、`fonts.load()`等で強制取得せず、runnerから同期状態をpollする。
+
+`test/e2e/geist-mono-rendering.spec.ts`はChromium専用で、同じ子要素なしのASCII要素をCDP `CSS.getPlatformFontsForNode`で検査する。正のglyph数を持つ全使用フォントにGeistの内部名とcustom fontを要求する。CSS適用・取得・デコードと実使用は別の保証であり、Firefox / WebKitの検査を実使用の証明として扱わない。
+
+負例はtestごとのfresh contextで実施する。取得遮断では対応URLへの介入・request failure・応答不在、HTTP 200破損では介入・200応答・対応FontFaceの`error`を確認する。どちらも文書200・一意な可視要素・CSS適用は独立した前提とする。フォールバック負例はChromiumで正常な読み込み・実使用を先に確認し、同じ要素のfamilyを変更してCSS変更・Geist使用消失・別フォントの正のglyph数を確認する。総合判定の失敗だけで負例を合格させない。
+
+Playwrightは既存serverを再利用せず対象checkoutからproduction buildを作る。既存CI workflowを変更せず、検証ブランチへpush後に`workflow_dispatch`をそのrefで起動し、runのhead SHAと対象commitの一致、3ブラウザのproduction jobおよび新テストの実行・非skipをログで確認する。各テストは成功時にもproject / test名をログに出し、face・通信・CDPの証拠をreport attachmentへ残す。dispatchは本番deploy条件を満たさない。
+
+保証範囲は代表ページ・対象ASCII文字・デスクトップ3エンジンの直接navigationに限る。全ページ・全文字・日本語・モバイル・全weight / style・client navigation・本番HTTP環境は対象外。CSPはこの回帰テストの対象外とし、既存の静的検査およびその保証限界を維持する。
+
 ### Client Runtime
 
 - Observable behaviorはbrowser/e2e testsで固定する。
