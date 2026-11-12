@@ -5,6 +5,7 @@ import process from 'node:process';
 
 const crossBrowserFinalCheck = [
   '**/math-rendering.spec.ts',
+  '**/geist-mono-loading.spec.ts',
   '**/navigation-transition.spec.ts',
   '**/history-scroll-restoration.spec.ts',
   '**/memos.spec.ts',
@@ -120,7 +121,7 @@ export default defineConfig({
     command:
       'pnpm run build:production && pnpm exec vite preview --config vite.preview.config.ts --host 127.0.0.1 --port 4173 --strictPort',
     port: productionPreviewPort,
-    reuseExistingServer: !isCI,
+    reuseExistingServer: false,
     timeout: 120 * 1000,
     env: {
       ...toPlaywrightEnv(process.env),
